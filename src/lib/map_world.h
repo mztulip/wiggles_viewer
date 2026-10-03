@@ -31,8 +31,17 @@ struct ScenarioPlacement {
 	int x = 0, y = 0;   // w blokach
 };
 
+// Kamera gry: set_view x y zoom dx dy (pierwsze wywołanie w skrypcie). Prawo z exe za
+// Zimennik/Diggles-Unity (MIT, Runtime/Engine/DigglesCameraController.cs): cel = (x, y, 14) bloków,
+// R = zoom·16 − 10, oko = cel + R·(cos dx·sin(−dy), sin dx, cos dx·cos dy),
+// góra = (sin dx·sin(−dy), −cos dx, sin dx·cos dy), poziomy pół-kąt widzenia = 0,3·proporcje.
+struct GameView {
+	float x = 0, y = 0, zoom = 1.38f, dx = -0.355f, dy = 0.f;
+};
+
 struct Scenario {
 	int width = 0, height = 0; // z map create (0 = nie podano)
+	std::optional<GameView> view;
 	std::vector<ScenarioPlacement> placements;
 	bool usesGenerator = false; // StoryMgr load_level/load_sandbox: świat proceduralny (nieobsługiwany)
 };
@@ -46,6 +55,7 @@ struct BuiltWorld {
 	L2m layer;
 	std::vector<TemplateObject> objects; // pozycje względem przyciętego świata
 	int originX = 0, originY = 0;        // lewy górny róg przycięcia w blokach świata
+	std::optional<GameView> view;        // set_view przeliczone na współrzędne przyciętego świata
 	std::vector<std::string> placedScripts;
 	std::vector<std::string> errors;
 };

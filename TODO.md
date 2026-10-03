@@ -16,7 +16,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Sonda: zrzut wyników `db_*` dla wszystkich modeli (nazwy animacji, długości): wzorzec do testów naszego parsera `.3db`
 - [ ] Opcjonalnie: zbudować barnacle (SDK) pod Wine, gdy czysty Tcl nie wystarczy
 - [x] Zrzuty obrazu z gry: `tools/lab/capture.sh menu|template|scene` (Xvfb, wirtualny pulpit Wine, pełny ekran 1024×768, pełna ścieżka C:\\Wiggles\\Wiggles.exe)
-- [ ] Kamera wigview odpowiadająca `set_view x y zoom kąt kąt` z gry (porównania 1:1)
+- [x] Kamera wigview odpowiadająca `set_view x y zoom dx dy` z gry (prawo z exe za Diggles-Unity); menu ze `systeminit.tcl` zgodne 1:1 ze zrzutem gry
+- [ ] Winieta / przyciemnienie brzegów ekranu jak w grze (🔬 skąd się bierze)
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
 ## Faza 1: szkielet projektu i build
@@ -83,6 +84,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
+- [x] Menu gry jako scenariusz (`systeminit.tcl`: unq_menue + dwa korytarze + set_view)
 - [x] Składanie świata z szablonów (prawo przezroczystości z exe) i scenariusze stałe z `Gamesave/*.tcl` w wigview (`--scenario`)
 - [ ] Świat generowany proceduralnie (kampania, sandbox: `StoryMgr load_level`, `lg_*`, WORLDGEN_ORIGINAL_RE)
 

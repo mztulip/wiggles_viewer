@@ -59,6 +59,7 @@ void MapView::init(const Vfs* vfs, TextureCache* textures, const std::vector<Vec
 		blocksError_ = e.what();
 	}
 	scenarios_.clear();
+	scenarios_.push_back("systeminit.tcl"); // menu gry
 	for (auto& f : vfs->list("Data/Gamesave"))
 		if (endsWithI(f, ".tcl")) scenarios_.push_back(f);
 	files_.clear();
@@ -131,7 +132,8 @@ bool MapView::loadTemplate(const std::string& file) {
 bool MapView::loadScenario(const std::string& file) {
 	file_ = file;
 	scenarioMode_ = true;
-	Scenario sc = parseScenario(*vfs_, "Data/Gamesave/" + file);
+	// systeminit.tcl (menu gry) leży w Data/, pozostałe scenariusze w Data/Gamesave/.
+	Scenario sc = parseScenario(*vfs_, Vfs::lower(file) == "systeminit.tcl" ? "Data/systeminit.tcl" : "Data/Gamesave/" + file);
 	scenarioInfo_.clear();
 	if (sc.placements.empty() && sc.usesGenerator)
 		scenarioInfo_ = "Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.";
@@ -154,12 +156,14 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	heights_.reset();
 	terrain_.clear();
 	placed_ = 0;
+	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
 	BuiltWorld bw = buildWorld(*vfs_, sc, margin);
 	for (auto& e : bw.errors) error_ += (error_.empty() ? "" : "; ") + e;
 	if (!bw.placedScripts.empty()) {
 		placed_ = int(bw.placedScripts.size());
+		gameView_ = bw.view;
 		worldOrigin_[0] = bw.originX;
 		worldOrigin_[1] = bw.originY;
 		pmp_ = std::move(bw.grid);

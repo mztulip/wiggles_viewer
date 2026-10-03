@@ -87,6 +87,9 @@ void parseInto(const Vfs& vfs, const std::string& gamePath, Scenario& sc, int de
 			std::string low = Vfs::lower(target);
 			if (low.find("templates/") != std::string::npos) pending = fileName(target);
 			else if (low.find("gamesave/") != std::string::npos) parseInto(vfs, "Data/Gamesave/" + fileName(target), sc, depth + 1);
+		} else if (cmd == "set_view" && !sc.view) {
+			GameView v;
+			if (ws >> v.x >> v.y >> v.zoom >> v.dx >> v.dy) sc.view = v;
 		} else if (cmd == "MapTemplateSet" && !pending.empty()) {
 			ScenarioPlacement p;
 			p.script = pending;
@@ -144,6 +147,11 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin) {
 	if (sc.height > 0) y0 = std::max(y0, 0), y1 = std::min(y1, sc.height);
 	out.originX = x0;
 	out.originY = y0;
+	if (sc.view) {
+		out.view = sc.view;
+		out.view->x -= float(x0);
+		out.view->y -= float(y0);
+	}
 	out.grid = makeWorldGrid(x1 - x0, y1 - y0);
 	out.layer.width = out.grid.width;
 	out.layer.height = out.grid.height;

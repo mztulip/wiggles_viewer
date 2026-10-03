@@ -22,6 +22,17 @@ Prawo nakładania szablonu (`FUN_005992b0` w exe), za [Zimennik/Diggles-Unity](h
 - ⚠ **Korekta wcześniejszego wniosku:** w eksperymencie z korytarzem o samych typach 0 gra pokazała litą skałę, bo **wszystkie pola były przezroczyste** (widać było domyślny świat). Typ 0 nie oznacza „niewykopanego tunelu”. Pojedyncze pola typu 0 obok niezerowych są zapisywane razem z kształtem bloku.
 - **Scenariusze** (`Data/Gamesave/*.tcl`): mapy stałe to `map create` i seria `call templates/X.tcl` + `MapTemplateSet x y` (np. `single_Knockersdorf` z 46 szablonami, `oberwelt.tcl` z samouczka, `single_wassermatch`, `single_Test_Lorelei_Brains` z 159). Skrypty mogą wołać inne przez `call data/gamesave/…`. Kampania i sandbox (`StoryMgr load_level` / `load_sandbox`) generują świat proceduralnie (komendy `lg_*`, Diggles-Unity `WORLDGEN_ORIGINAL_RE.md`); tego jeszcze nie obsługujemy.
 
+## Kamera gry (`set_view`) ✅
+`set_view x y zoom dx dy` (np. menu: `set_view 32.368 40.858 1.38 -0.355 0.165`). Prawo z exe za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT, `DigglesCameraController.cs`), w układzie gry w blokach (x w prawo, y w dół, z do widza):
+```
+cel = (x, y, 14)                  R = zoom·16 − 10
+oko = cel + R·(cos dx·sin(−dy), sin dx, cos dx·cos dy)
+góra = (sin dx·sin(−dy), −cos dx, sin dx·cos dy)
+perspektywa: poziomy pół-kąt = 0,3·(szer./wys.) rad  (4:3 → 45,8° w poziomie)
+zoom: gra 1,0–2,5, skrypty i przerywniki 0,5–6,0
+```
+✅ wigview (`--scenario systeminit` w 1024×768) daje kadr menu zgodny ze zrzutem gry.
+
 ## Układ współrzędnych ✅
 - Pozycja obiektu `x y z`: x i y w **blokach** (x w prawo, y w dół). **z ze skryptu przelicza się na głębokość świata wzorem z·0,5 + 7** bloków (stałe `DAT_0073708c` = 0,5 i `DAT_00737520` = 7,0 w exe, za Diggles-Unity `COORDINATE_SYSTEM.md` §3.3). Skóra jaskini z z = 15,01 trafia więc na przednią płaszczyznę 14,5, a mech z z = 13,54 na 13,77. ✅ Po tej poprawce scena menu zgadza się ze zrzutem gry (jezioro i drzewa w otworze, skrzynki, mech).
 - 1 blok = **200 jednostek modelu `.3db`** (wzorzec: OBJ z `save_map`). Krasnal ma ok. 1 blok wysokości.

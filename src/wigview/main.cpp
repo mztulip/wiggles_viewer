@@ -216,6 +216,10 @@ struct Viewer {
 		return glm::translate(m, -center);
 	}
 
+	// Kamera gry (set_view): gdy aktywna, viewProj używa jej zamiast orbity; ruch myszą ją wyłącza.
+	bool gameCam = false;
+	ow::GameView gameCamView;
+
 	// Widok mapy jak w grze: kamera z przodu (+z w układzie gry), lekko z góry.
 	void frameMap(bool resetAngles = true) {
 		if (resetAngles) {
@@ -226,10 +230,29 @@ struct Viewer {
 		radius = maps.radius();
 		dist = radius * 2.4f;
 		pan = glm::vec3(0.f);
+		gameCam = false;
+		if (const auto& gv = maps.gameView()) {
+			gameCam = true;
+			gameCamView = *gv;
+			center = glm::vec3(gv->x, gv->y, 14.f) * MapView::kBlock; // cel kamery gry (z = 14 bloków)
+		}
 	}
 
 	glm::mat4 viewProj(int w, int h) const {
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
+		if (gameCam && activeTab == 2) {
+			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
+			const auto& g = gameCamView;
+			float R = std::max(0.5f, g.zoom * 16.f - 10.f) * MapView::kBlock;
+			float cdx = std::cos(g.dx), sdx = std::sin(g.dx), cdy = std::cos(g.dy), sdy = -std::sin(g.dy);
+			glm::vec3 eye(R * cdx * sdy, R * sdx, R * cdx * cdy);  // względem celu, układ gry
+			glm::vec3 up(sdx * sdy, -cdx, sdx * cdy);
+			eye.y = -eye.y;
+			up.y = -up.y;
+			float tanV = std::tan(0.3f * aspect) / aspect;     // poziomy pół-kąt = 0,3·proporcje
+			glm::mat4 proj = glm::perspective(2.f * std::atan(tanV), aspect, 10.f, 200000.f);
+			return proj * glm::lookAt(eye + pan, pan, up);
+		}
 		glm::mat4 proj = glm::perspective(glm::radians(40.f), aspect, radius * 0.01f, radius * 50.f + dist);
 		glm::vec3 eye = glm::vec3(std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw)),
 		                          std::sin(glm::radians(pitch)),
@@ -930,6 +953,9 @@ int main(int argc, char** argv) {
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
 			if (!io.WantCaptureMouse) {
+				if ((e.type == SDL_MOUSEMOTION && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK))) ||
+				    e.type == SDL_MOUSEWHEEL)
+					v.gameCam = false; // przejście na kamerę orbitalną
 				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK)) {
 					v.yaw -= float(e.motion.xrel) * 0.4f;
 					v.pitch = std::clamp(v.pitch + float(e.motion.yrel) * 0.4f, -89.f, 89.f);

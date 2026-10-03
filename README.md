@@ -45,6 +45,7 @@ build/release/wigview --game /ścieżka/do/Wiggles --model MANN --anim gehen_loo
 build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
 build/release/wigview --template unq_menue                    # zakładka Mapy z szablonem menu gry
 build/release/wigview --scenario single_Knockersdorf          # cała mapa złożona z 46 szablonów
+build/release/wigview --scenario systeminit                   # menu gry z kamerą jak w oryginale
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
 

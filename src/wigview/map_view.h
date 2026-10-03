@@ -59,6 +59,8 @@ public:
 	            const glm::vec3& focus = glm::vec3(0.f));
 	// Strefa horyzontu szablonu (obiekt Info_Fog_* najbliższy środka), jeśli jest: kolor tła otworów.
 	const ow::HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
+	// Kamera startowa scenariusza (set_view), we współrzędnych przyciętego świata.
+	const std::optional<ow::GameView>& gameView() const { return gameView_; }
 
 	// Obszar sceny do ustawienia kamery (w jednostkach modelu, Y w dół).
 	glm::vec3 center() const { return center_; }
@@ -101,6 +103,7 @@ private:
 	bool listScenarios_ = false, scenarioMode_ = false;
 	std::vector<std::string> scenarios_;
 	std::string scenarioInfo_;
+	std::optional<ow::GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
 	std::optional<ow::HorizonZone> zone_;
 	std::string zoneClass_;
