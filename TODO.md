@@ -57,6 +57,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
+- [x] Wyszukiwarka Ctrl+F: modele, obiekty w modelach, tekstury, szablony
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 

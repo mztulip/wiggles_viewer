@@ -52,7 +52,7 @@ build/release/export_gltf "/ścieżka/do/Wiggles" BABY                  # wszyst
 build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kristall/   # 303 pliki
 ```
 
-Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, ←/→ zmiana klatki, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, `Esc` wyjście.
+Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, ←/→ zmiana klatki, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, **Ctrl+F wyszukiwarka** (modele, obiekty w modelach, tekstury, szablony; kilka słów = wszystkie muszą pasować), `Esc` wyjście.
 
 ### Programy
 | Program | Do czego służy |

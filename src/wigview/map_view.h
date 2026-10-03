@@ -34,6 +34,11 @@ public:
 	void init(const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
+	void select(const std::string& file) {      // wczytaj i przewiń listę do szablonu
+		loadTemplate(file);
+		scrollToSel_ = true;
+	}
+	const std::vector<std::string>& files() const { return files_; }
 
 	// Rysuje panel UI (lista, siatka 2D, informacje). Zwraca true, gdy kamera powinna się wycentrować.
 	bool ui();

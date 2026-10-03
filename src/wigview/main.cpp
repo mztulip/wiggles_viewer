@@ -3,14 +3,15 @@
 // Użycie:
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
-//           [--template SZABLON] [--screenshot plik.png] [--ui]
+//           [--template SZABLON] [--search TEKST] [--screenshot plik.png] [--ui]
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
-// tekstura, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja, Esc wyjście.
+// tekstura, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja,
+// Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Esc wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/gfx/gl.h"
@@ -43,7 +44,7 @@ using namespace ow;
 namespace {
 
 struct Args {
-	std::string game, model, object, anim, screenshot, templ;
+	std::string game, model, object, anim, screenshot, templ, search;
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
@@ -62,6 +63,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
+		else if (k == "--search") a.search = next();
 		else if (k == "--frame") a.frame = float(std::atof(next()));
 		else if (k == "--ipol") a.ipol = std::atoi(next());
 		else if (k == "--light") a.light = std::atoi(next());
@@ -299,6 +301,25 @@ struct Viewer {
 	}
 	void exportGlb(bool allAnims);
 
+	// --- Wyszukiwarka (Ctrl+F) ---
+	enum class HitKind { Model, Object, Texture, Template };
+	struct SearchEntry {
+		HitKind kind;
+		std::string label;   // to, co widzi użytkownik
+		std::string lower;   // label małymi literami, do dopasowania
+		std::string file;    // plik modelu / szablonu / tekstury
+		int index = -1;      // obiekt w modelu albo katalog tekstury
+	};
+	std::vector<SearchEntry> searchIndex;
+	bool searchIndexed = false, searchOpen = false, searchRequest = false, objectsIndexed = false;
+	char searchText[128] = "";
+	int searchSel = 0;
+	std::vector<int> searchHits;
+	void buildSearchIndex(bool withObjects);
+	void updateSearchHits();
+	void openHit(const SearchEntry& e);
+	void uiSearch();
+
 	void ui();
 	void uiModel();
 	void uiTextures();
@@ -461,11 +482,171 @@ void Viewer::uiTextures() {
 	ImGui::EndChild();
 }
 
+void Viewer::buildSearchIndex(bool withObjects) {
+	auto add = [&](HitKind k, std::string label, std::string file, int index) {
+		SearchEntry e{k, label, Vfs::lower(label), std::move(file), index};
+		searchIndex.push_back(std::move(e));
+	};
+	if (!searchIndexed) {
+		for (auto& f : modelFiles) add(HitKind::Model, f, f, -1);
+		for (int d = 0; d < int(texDirs.size()); ++d)
+			for (auto& f : vfs.list("Data/Texture/" + texDirs[size_t(d)]))
+				if (endsWithI(f, ".tga")) add(HitKind::Texture, texDirs[size_t(d)] + "/" + f, f, d);
+		for (auto& f : maps.files()) add(HitKind::Template, f, f, -1);
+		searchIndexed = true;
+	}
+	if (withObjects && !objectsIndexed) {
+		// Obiekty wymagają wczytania wszystkich modeli (jednorazowo, ok. 1 s w wersji release).
+		for (auto& f : modelFiles) {
+			auto data = vfs.read("Data/3db/" + f);
+			if (!data) continue;
+			try {
+				Model3db m = parseModel3db(*data);
+				for (size_t i = 0; i < m.objects.size(); ++i)
+					add(HitKind::Object, m.objects[i].name + "  (" + f + ")", f, int(i));
+			} catch (...) {}
+		}
+		objectsIndexed = true;
+	}
+}
+
+void Viewer::updateSearchHits() {
+	searchHits.clear();
+	std::vector<std::string> terms;
+	{
+		std::string t = Vfs::lower(searchText), cur;
+		for (char c : t + " ") {
+			if (c == ' ') {
+				if (!cur.empty()) terms.push_back(cur);
+				cur.clear();
+			} else cur += c;
+		}
+	}
+	if (terms.empty()) return;
+	for (int i = 0; i < int(searchIndex.size()); ++i) {
+		bool ok = true;
+		for (auto& t : terms)
+			if (searchIndex[size_t(i)].lower.find(t) == std::string::npos) {
+				ok = false;
+				break;
+			}
+		if (ok) searchHits.push_back(i);
+	}
+	// Kolejność: modele, szablony, obiekty, tekstury (tekstur jest najwięcej, często w kilku rozdzielczościach).
+	auto rank = [&](int i) {
+		switch (searchIndex[size_t(i)].kind) {
+		case HitKind::Model: return 0;
+		case HitKind::Template: return 1;
+		case HitKind::Object: return 2;
+		default: return 3;
+		}
+	};
+	std::stable_sort(searchHits.begin(), searchHits.end(), [&](int a, int b) { return rank(a) < rank(b); });
+	if (searchHits.size() > 500) searchHits.resize(500);
+	searchSel = std::clamp(searchSel, 0, std::max(0, int(searchHits.size()) - 1));
+}
+
+void Viewer::openHit(const SearchEntry& e) {
+	switch (e.kind) {
+	case HitKind::Model:
+	case HitKind::Object:
+		forceTab = 0;
+		activeTab = 0;
+		if (modelFile != e.file) loadModel(e.file);
+		if (e.kind == HitKind::Object && model && e.index < int(model->objects.size())) selectObject(e.index);
+		break;
+	case HitKind::Texture:
+		forceTab = 1;
+		activeTab = 1;
+		texDir = e.index;
+		refreshTexFiles();
+		for (int i = 0; i < int(texFiles.size()); ++i)
+			if (texFiles[size_t(i)] == e.file) texSel = i;
+		break;
+	case HitKind::Template:
+		forceTab = 2;
+		activeTab = 2;
+		maps.select(e.file);
+		frameMap();
+		break;
+	}
+	scrollToSel = true;
+}
+
+void Viewer::uiSearch() {
+	if (searchRequest) {
+		ImGui::OpenPopup("Szukaj");
+		searchRequest = false;
+		searchOpen = true;
+	}
+	ImGuiViewport* vp = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f, vp->WorkPos.y + 60), ImGuiCond_Always, ImVec2(0.5f, 0.f));
+	ImGui::SetNextWindowSize(ImVec2(std::min(720.f, vp->WorkSize.x - 40), 480), ImGuiCond_Always);
+	if (!ImGui::BeginPopupModal("Szukaj", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) {
+		searchOpen = false;
+		return;
+	}
+	static const char* kKind[] = {"model", "obiekt", "tekstura", "szablon"};
+	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}};
+
+	if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+	ImGui::SetNextItemWidth(-1);
+	if (ImGui::InputTextWithHint("##q", "szukaj: modele, obiekty w modelach, tekstury, szablony (kilka słów = wszystkie muszą pasować)",
+	                             searchText, sizeof searchText)) {
+		searchSel = 0;
+		buildSearchIndex(std::string(searchText).size() >= 2);
+		updateSearchHits();
+	}
+	bool close = ImGui::IsKeyPressed(ImGuiKey_Escape);
+	if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) searchSel = std::min(searchSel + 1, int(searchHits.size()) - 1);
+	if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) searchSel = std::max(searchSel - 1, 0);
+	if (ImGui::IsKeyPressed(ImGuiKey_PageDown)) searchSel = std::min(searchSel + 15, int(searchHits.size()) - 1);
+	if (ImGui::IsKeyPressed(ImGuiKey_PageUp)) searchSel = std::max(searchSel - 15, 0);
+	bool open = ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter);
+
+	if (!objectsIndexed && std::string(searchText).size() < 2)
+		ImGui::TextDisabled("Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków.");
+	else
+		ImGui::TextDisabled("%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)", searchHits.size(),
+		                    searchHits.size() >= 500 ? "+" : "");
+	ImGui::BeginChild("wyniki", ImVec2(0, 0), ImGuiChildFlags_Borders);
+	for (int i = 0; i < int(searchHits.size()); ++i) {
+		const auto& e = searchIndex[size_t(searchHits[size_t(i)])];
+		ImGui::PushID(i);
+		bool sel = i == searchSel;
+		if (ImGui::Selectable("##hit", sel, ImGuiSelectableFlags_AllowDoubleClick)) {
+			searchSel = i;
+			if (ImGui::IsMouseDoubleClicked(0)) open = true;
+		}
+		if (sel && (ImGui::IsKeyPressed(ImGuiKey_DownArrow) || ImGui::IsKeyPressed(ImGuiKey_UpArrow) ||
+		            ImGui::IsKeyPressed(ImGuiKey_PageDown) || ImGui::IsKeyPressed(ImGuiKey_PageUp)))
+			ImGui::SetScrollHereY(0.5f);
+		ImGui::SameLine(8);
+		ImGui::TextColored(kColor[int(e.kind)], "%-8s", kKind[int(e.kind)]);
+		ImGui::SameLine(90);
+		ImGui::TextUnformatted(e.label.c_str());
+		ImGui::PopID();
+	}
+	ImGui::EndChild();
+	if (open && searchSel >= 0 && searchSel < int(searchHits.size())) {
+		openHit(searchIndex[size_t(searchHits[size_t(searchSel)])]);
+		close = true;
+	}
+	if (close) {
+		ImGui::CloseCurrentPopup();
+		searchOpen = false;
+	}
+	ImGui::EndPopup();
+}
+
 void Viewer::ui() {
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
 	ImGui::Begin("wigview");
+	if (ImGui::Button("Szukaj (Ctrl+F)")) searchRequest = true;
+	ImGui::SameLine();
+	ImGui::TextDisabled("modele, obiekty, tekstury, szablony");
 	if (ImGui::BeginTabBar("tabs")) {
 		auto tabFlags = [&](int k) { return forceTab == k ? ImGuiTabItemFlags_SetSelected : 0; };
 		if (ImGui::BeginTabItem("Modele", nullptr, tabFlags(0))) {
@@ -488,6 +669,7 @@ void Viewer::ui() {
 		forceTab = -1;
 	}
 	uiRight = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
+	uiSearch();
 	scrollToSel = false;
 	ImGui::End();
 }
@@ -671,6 +853,13 @@ int main(int argc, char** argv) {
 		if (withUi) ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	};
 
+	if (!args.search.empty()) {
+		std::snprintf(v.searchText, sizeof v.searchText, "%s", args.search.c_str());
+		v.buildSearchIndex(true);
+		v.updateSearchHits();
+		v.searchRequest = true;
+	}
+
 	if (!args.screenshot.empty()) {
 		int w, h;
 		// Kilka klatek, żeby okno zdążyło się zmapować (inaczej zawartość bufora jest niezdefiniowana).
@@ -727,6 +916,10 @@ int main(int argc, char** argv) {
 				}
 				if (e.type == SDL_MOUSEWHEEL) v.dist *= std::pow(0.88f, float(e.wheel.y));
 			}
+			if (e.type == SDL_KEYDOWN && (e.key.keysym.mod & KMOD_CTRL) &&
+			    (e.key.keysym.sym == SDLK_f || e.key.keysym.sym == SDLK_p))
+				v.searchRequest = true;
+			if (v.searchOpen || v.searchRequest) continue; // klawisze obsługuje okno wyszukiwania
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE && !io.WantTextInput) running = false;
 			if (!io.WantTextInput && e.type == SDL_KEYDOWN) {
 				int n = v.frameCount();
