@@ -24,7 +24,9 @@ WAIT=60
 case "$MODE" in
 	menu) WAIT="${1:-45}" ;;
 	template)
-		T="${1:?nazwa szablonu}"; X="${2:-}"; Y="${3:-}"; Z="${4:-1.5}"; A1="${5:--0.355}"; A2="${6:-0.165}"; WAIT="${7:-60}"
+		T="${1:?nazwa szablonu}"
+		case "${T%%_*}" in kris) FOG=Info_Fog_Kris_d ;; lava) FOG=Info_Fog_Lava_c ;; swf) FOG=Info_Fog_Swf_a ;; *) FOG=Info_Fog_Urw_d ;; esac
+		X="${2:-}"; Y="${3:-}"; Z="${4:-1.38}"; A1="${5:--0.355}"; A2="${6:-0.165}"; WAIT="${7:-60}"
 		cat > "$US" <<TCL
 # wygenerowane przez tools/lab/capture.sh
 set f [open "owcapture.txt" w]
@@ -33,11 +35,22 @@ puts \$f "szablon $T code=\$code \$r"
 catch {
 	sel /obj
 	set FR [new FogRemover]
-	set_pos \$FR {32 32 10}
-	call_method \$FR fog_remove 0 64 64
-	call_method \$FR timer_delete -1
+	set_pos \$FR {${X:-18} ${Y:-18} 10}
+	call_method \$FR fog_remove 0 50 50
+	;# bez timer_delete: usunięty FogRemover przywraca mgłę wojny (czarny obraz)
 } r
 puts \$f "fog: \$r"
+# Bez świateł jaskinie w grze są czarne: dokładamy źródła światła (klasy z Scripts/classes/items/emitter.tcl)
+foreach {dx dy} {0 0 -3 -1 3 -1 -3 2 3 2} {
+	catch {
+		sel /obj
+		set L [new Misc_LightSrc_a "" "[expr {${X:-18} + \$dx}] [expr {${Y:-18} + \$dy}] 14" "0 0 0"]
+	} r
+}
+puts \$f "światła: \$r"
+# Mgła i otoczenie świata (bez tego obraz jest czarny); klasa Info_Fog_<Świat>_<wariant>
+catch { sel /obj ; new $FOG "" "${X:-18} ${Y:-18} 0.02" "0 0 0" } r
+puts \$f "mgła $FOG: \$r"
 close \$f
 TCL
 		# Środek kamery: podany albo środek szablonu (z rozmiaru .PMP liczonego w grze nie znamy -> domyślnie 18,18)
