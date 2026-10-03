@@ -31,6 +31,23 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 | Build | Własne skrypty bash (`build.sh`) | Bez CMake: prosty skrypt wywołujący kompilator bezpośrednio |
 | Platformy | Linux (główna), Windows | |
 
+## Budowanie i uruchamianie
+
+Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, sterownik z OpenGL 3.3. Dear ImGui jest w `third_party/`.
+
+```bash
+./build.sh                 # debug: wigview i test3db do build/debug/
+./build.sh release         # zoptymalizowane, build/release/
+./build.sh clean
+
+build/release/wigview                          # przeglądarka (gra w ~/.wine/... albo OW_GAME=...)
+build/release/wigview --game /ścieżka/do/Wiggles --model MANN --anim gehen_loop
+build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
+build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
+```
+
+Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, strzałki zmiana klatki.
+
 ## Plan pracy
 
 Szczegółowy plan z odhaczaniem jest w [`TODO.md`](TODO.md). Poniżej tylko zarys.

@@ -32,3 +32,10 @@ Wszelkie prawa do gry *Wiggles / Diggles – The Myth of Fenris* należą do jej
 ## Warte sprawdzenia
 - [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity)
 - [4BooM04/DigglesSteamdeckModes](https://github.com/4BooM04/DigglesSteamdeckModes)
+
+## Biblioteki zewnętrzne
+| Biblioteka | Licencja | Użycie |
+|---|---|---|
+| [Dear ImGui](https://github.com/ocornut/imgui) v1.92.9 (`third_party/imgui`) | MIT | interfejs wigview |
+| [SDL2](https://www.libsdl.org/) (systemowa) | zlib | okno, wejście, kontekst OpenGL |
+| [GLM](https://github.com/g-truc/glm) (systemowa) | MIT | matematyka 3D |

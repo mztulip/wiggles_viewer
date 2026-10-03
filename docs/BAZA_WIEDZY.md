@@ -87,7 +87,7 @@ dane pul, kolejno:
   trójkąty:  u16 indeksy (po 3 na trójkąt)
   UV:        f32 u, f32 v
   pozycje:   3 × u16, dekwantyzacja: (v - 32768) / 4.0   ✅ (zgadza się z bbox, współczynnik 3.99)
-  jasność:   u8 na wierzchołek (prekalkulowane oświetlenie, 0–255)
+  normalne:  u8 na wierzchołek = indeks do SPHERE.DAT (256 normalnych)   ✅ (wcześniej mylnie „brightness”)
 ```
 
 Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wszystkich 43 plikach gry: wszystkie mają wersję `3DDB 1.0` i wszystkie parsują się do końca.
@@ -96,7 +96,10 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 - **Animacja jest wierzchołkowa (vertex animation)**, bez kości. Każda klatka to osobny mesh. Odtwarzanie polega na wybieraniu `mesh_index` dla danej klatki. Opcjonalnie można interpolować pozycje między klatkami, bo topologia (pula trójkątów) jest zwykle współdzielona.
 - Pule są **współdzielone** między klatkami: UV i trójkąty mają ten sam indeks, a zmieniają się tylko `points` i `brightness`. Wystarczy wysłać UV i indeksy do GPU raz, a pozycje per klatka.
 - **Dekwantyzacja pozycji:** ✅ `(u16 - 32768) / 4.0`, czyli stały punkt z krokiem 0,25 jednostki. Wspólny układ dla wszystkich klatek, więc animacja nie „pływa”. Hipoteza z bbox była błędna. Baby ma około 100 jednostek wysokości, a oś Y jest prawdopodobnie skierowana w dół (zakres y: −97…5). 🔶 Relacja jednostek modelu do jednostek świata jest do ustalenia.
-- **Oświetlenie** pochodzi z `brightness` (u8 per wierzchołek), mnożonego przez teksturę. To prosty shader i nie potrzebujemy normalnych do pierwszej wersji.
+- **Normalne:** ✅ bajt per wierzchołek (w narzędziach społeczności nazywany „brightness”) to **indeks normalnej w `SPHERE.DAT`**. Wartości rozkładają się równomiernie na 0–255, a podgląd normalnych w wigview daje gładkie, spójne gradienty zgodne z geometrią. Oświetlenie liczymy więc sami (Lambert z normalną `sphere[idx]`).
+- **Orientacja:** ✅ oś Y modelu jest skierowana w dół (góra postaci ma ujemne y). W wigview obracamy model o 180° wokół osi X, co prostuje go bez lustrzanego odbicia.
+- **UV:** ✅ konwencja Direct3D (v=0 u góry tekstury). Tekstury ładujemy od góry, więc bez odwracania v.
+- **Pule UV i normalnych mają zawsze tyle elementów co pula punktów** (✅ 191 448 linków we wszystkich modelach), więc wierzchołek = indeks wspólny dla pozycji, UV i normalnej.
 - Teksturę materiału szuka się po nazwie w katalogach w kolejności: `Texture/m256`, `m128`, `m064`, `m032`, `Gray`, `Misc`, `ClassIcons` (`.tga`). Ta kolejność pochodzi z wersji py2.7.
 - Istniejący eksport do glTF obsługuje **tylko mesh 0** i nie ma animacji. Nasza przeglądarka będzie pierwsza z pełnym odtwarzaniem.
 
@@ -104,7 +107,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 
 Źródło: [ZarfaZ/DigglesHDmod](https://github.com/ZarfaZ/DigglesHDmod), czyli `../ref/DigglesHDmod-master/Documentation.txt`, `ReadMe.txt` oraz same pliki.
 
-- Wszystkie tekstury to **TGA 32-bit RGBA**, kwadratowe, o boku będącym potęgą 2. Oryginał ma do 256 px, HD mod do 1024 px, a superHD do 2048 px.
+- Wszystkie tekstury to **TGA 32-bit RGBA**, kwadratowe, o boku będącym potęgą 2. Oryginał ma do 256 px, HD mod do 1024 px, a superHD do 2048 px. ✅ W grze wszystkie 2052 pliki to typ 2 (bez RLE), 32 bit (`test3db`).
 - Układ katalogów:
   - `Data/Texture/m256`, `m128`, `m064`, `m032`: tekstury modeli według oryginalnej rozdzielczości. Ta sama tekstura może występować w kilku katalogach, czyli działa to jak ręczne LOD-y.
   - `Data/Texture/Misc`: GUI, efekty (`fx_licht_b`), ikony (`energy`, `events`).
@@ -124,7 +127,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 - Ograniczenie silnika: maski przejść działają tylko do 64×64.
 
 ### `sphere.dat` ✅
-256 × `vec3 f32 LE`, czyli tablica znormalizowanych wektorów. To kwantyzacja normalnych: normalna zapisana jest jako 1 bajt indeksu do tej tablicy. Oryginalne źródło: `plik_dat` i wątek na forum.
+256 × `vec3 f32 LE`, czyli tablica znormalizowanych wektorów. To kwantyzacja normalnych: normalna zapisana jest jako 1 bajt indeksu do tej tablicy. ✅ Używa jej pula normalnych w `.3db`. Źródło: [Wiggles Forum](https://wiggles.ruka.at/forum/), wątek „Game internal information”.
 
 ## 3. Skrypty: Tcl 8.3 z rozszerzeniami ✅
 

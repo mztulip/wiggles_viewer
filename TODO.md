@@ -18,32 +18,40 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
 ## Faza 1: szkielet projektu i build
-- [ ] Struktura katalogów: `src/lib` (libwiggles), `src/wigview`, `src/openwiggles`, `third_party/`
-- [ ] `build.sh` (bez CMake): kompilacja przyrostowa, tryb debug i release, osobne cele `lib`, `wigview`, `openwiggles`, `clean`
-- [ ] Zależności: SDL2 i Tcl z systemu (pkg-config), glad, glm i Dear ImGui w `third_party/`
-- [ ] Konfiguracja ścieżki do gry (zmienna środowiskowa lub plik konfiguracyjny i parametr `--data`)
+- [x] Struktura katalogów: `src/lib` (libwiggles), `src/wigview`, `src/tools`, `third_party/` (`src/openwiggles` później)
+- [x] `build.sh` (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
+- [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad (Tcl później)
+- [x] Ścieżka do gry: `--game`, zmienna `OW_GAME`, domyślnie instalacja w `~/.wine`
 - [x] `git init` (repo `openwiggles_git`; `ref/` i zipy zostają poza repo)
-- [ ] `.gitignore` (`build/`, pliki wynikowe)
+- [x] `.gitignore` (`build/`, pliki wynikowe)
 
 ## Faza 2: libwiggles, czyli formaty plików
-- [ ] Wirtualny system plików: wyszukiwanie bez rozróżniania wielkości liter (`BABY.3DB` vs `baby.3db`), nakładanie `Data_HD`, wariantów językowych i modów
-- [ ] Loader TGA (RGBA 32-bit, ewentualnie 24-bit i RLE: 🔬 sprawdzić, czy gra ich używa)
-- [ ] Wyszukiwanie tekstury po nazwie materiału (`m256` → `m128` → `m064` → `m032` → `Gray` → `Misc` → `ClassIcons`)
-- [ ] Parser `.3db` w C++: materiały, meshe, obiekty, animacje, pule, test „do końca pliku” na wszystkich 43 plikach
+- [x] Wirtualny system plików: wyszukiwanie bez rozróżniania wielkości liter, wiele korzeni
+- [ ] VFS: nakładanie `Data_HD`, wariantów językowych i modów
+- [x] Loader TGA (typy 2/3/10/11, 8–32 bit); gra używa wyłącznie typu 2, 32 bit
+- [x] Wyszukiwanie tekstury po nazwie materiału (`m256` → `m128` → `m064` → `m032` → `Gray` → `Misc` → `ClassIcons`)
+- [x] Parser `.3db` w C++ z walidacją odwołań; `test3db` przechodzi wszystkie 43 modele i 2052 tekstury
 - [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, rekordy 20 B, `cmap`, pola animacji (ruch korzenia, flagi)
-- [ ] `SPHERE.DAT`
+- [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [ ] Dekoder tekstów: CP1250 i CP1252 → UTF-8, `MESSAGES.TXT` (`lmsg`), `QUOTES.TXT`
 - [ ] 🔬 `texlevels.txt`, `TEXMAPS.BIN` (prawdopodobnie do pominięcia)
 
 ## Faza 3: wigview, czyli przeglądarka assetów
-- [ ] Okno SDL2 + OpenGL 3.3 + ImGui, drzewo plików `Data/`
-- [ ] Podgląd tekstur TGA (zoom, kanał alfa, informacje o pliku)
-- [ ] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji
-- [ ] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
-- [ ] Shader: tekstura × `brightness` wierzchołka, przezroczystość alfa
-- [ ] 🔬 Orientacja osi i skala modeli (oś Y w dół?)
+- [x] Okno SDL2 + OpenGL 3.3 + ImGui, lista modeli `Data/3db`, polski font
+- [ ] Drzewo całego `Data/` (inne typy plików)
+- [x] Podgląd tekstur TGA (lista katalogów i plików, filtr, rozmiar)
+- [ ] Tekstury: zoom, podgląd samego kanału alfa, tło szachownicy
+- [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
+- [x] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
+- [ ] 🔬 Prawdziwa prędkość animacji w grze (fps) i znaczenie pól animacji (flagi, f32, ruch/obrót korzenia)
+- [ ] Interpolacja między klatkami (gra ma opcję `AnimInterpolation`)
+- [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
+- [x] Orientacja osi: Y w dół ✅
+- [ ] 🔬 Skala modeli względem świata gry (jednostki mapy)
 - [ ] Podgląd cieni 32×32 i `cmap` z `.3db`
-- [ ] Eksport do glTF (z animacją jako morph targets) i PNG
+- [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
+- [ ] Eksport do glTF (z animacją jako morph targets)
+- [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 
 ## Faza 4: mapy i teren

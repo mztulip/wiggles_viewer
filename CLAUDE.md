@@ -34,6 +34,12 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `../ref/DigglesModManager-master/Service/ModdingService.cs`: logika łatek `change_*.tcl`
 - `../ref/DigglesHDmod-master` ma 2,6 GB, więc nie przeszukuj go rekurencyjnie bez filtra
 
+## Budowanie i weryfikacja
+- `./build.sh [debug|release] [lib|imgui|wigview|test3db|all|clean]` (bash, bez CMake)
+- `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
+- `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI. Tak można samemu obejrzeć wynik (Read na PNG)
+- Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
+
 ## Zasady
 - Kod i dokumentacja są w tym repozytorium (`openwiggles_git/`). Materiały referencyjne (`../ref/`, zipy) leżą w katalogu nadrzędnym i nie trafiają do repo.
 - **Commity i PR-y bez żadnej wzmianki o AI** (żadnych `Co-Authored-By` ani „Generated with…”).
