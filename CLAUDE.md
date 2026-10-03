@@ -14,6 +14,8 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
   - §6 parametry i rejestr oryginalnego exe
   - §7 zainstalowana gra: struktura `Data/`, `systeminit.tcl`, mapy z szablonów (`.PMP`, `.l2m`, `BlockDB`), zapisy, wyniki skanera komend
   - Otwarte pytania: kolejność dalszych badań
+- [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
+- [LICENSE](LICENSE): GPL v3
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik `tools/scan_tcl_natives.py`)
 
 ## Gra (dane oryginalne)
@@ -36,4 +38,5 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - **Bez CMake.** Budowanie odbywa się własnymi skryptami bash (`build.sh`).
 - Repo nie może zawierać danych z oryginalnej gry.
 - Po każdym kroku zaktualizuj `TODO.md`.
+- **Uznawaj pracę autorów.** Każda wiedza wzięta z cudzego repo (dokumentacja, komentarze w kodzie, opisy commitów) ma odnośnik do repozytorium na GitHubie (lista w `CREDITS.md`). Nie kopiujemy cudzego kodu, tylko wiedzę o formatach.
 - Nowe ustalenia o formatach dopisuj do `docs/BAZA_WIEDZY.md` (oznaczenia ✅ potwierdzone, 🔶 hipoteza).

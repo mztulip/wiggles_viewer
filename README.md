@@ -62,9 +62,14 @@ W katalogu nadrzędnym leżą zipy z repozytoriami społeczności i zapisane str
 | `DigglesModActions-main.zip` | GitHub Actions do publikacji modów |
 | `Game internal information - Wiggles Forum.html`, `plik_dat` | Notatki z forum: format `sphere.dat` (256 × vec3 float32 LE, normalne), klucze rejestru (`HKCU\Software\SekOst\Diggles`), parametry linii poleceń oryginalnej gry (`-mapedit`, `-console`, `-nofow`, `-safetcl`, `-logerrors`…) |
 
-Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na GitHubie](https://github.com/DigglesMods).
+Repozytoria z linkami i autorami: [`CREDITS.md`](CREDITS.md). Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na GitHubie](https://github.com/DigglesMods).
 
 ## Licencja
 
-Do ustalenia (proponowana GPLv3, zgodna z większością repozytoriów DigglesMods).
-Projekt **nie zawiera** żadnych danych z oryginalnej gry. Do uruchomienia potrzebna jest legalna kopia Wiggles/Diggles.
+Kod OpenWiggles jest udostępniony na licencji **GNU GPL v3** (plik [`LICENSE`](LICENSE)), tak jak większość repozytoriów społeczności [DigglesMods](https://github.com/DigglesMods).
+
+Projekt **nie zawiera** żadnych danych z oryginalnej gry. Do uruchomienia potrzebna jest legalna kopia Wiggles/Diggles. Prawa do gry należą do jej twórców (SEK-Ost, Innonics).
+
+## Podziękowania
+
+Projekt korzysta z wiedzy zebranej przez społeczność Wiggles/Diggles. Lista autorów i repozytoriów jest w [`CREDITS.md`](CREDITS.md).

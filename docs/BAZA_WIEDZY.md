@@ -2,16 +2,18 @@
 
 Analiza zipów rozpakowanych do `../ref/` oraz zainstalowanej gry (`~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles`, sekcja 7). Status: ✅ potwierdzone w kodzie lub danych, 🔶 hipoteza do weryfikacji.
 
+**Źródła:** każda sekcja podaje repozytorium, z którego pochodzi wiedza. Pełna lista autorów z linkami jest w [`CREDITS.md`](../CREDITS.md). Zasada: przy każdej nowej informacji z cudzego repo dopisujemy link do niego.
+
 ## Podsumowanie: co realnie wykorzystamy
 
 | Źródło | Wartość | Co bierzemy |
 |---|---|---|
-| `Diggles3db-main` | ⭐⭐⭐ | Pełny opis formatu `.3db` (modele i animacje) oraz przykładowy plik `baby.3db` z teksturą do testów |
-| `DigglesHDmod-master` | ⭐⭐⭐ | 1171 tekstur TGA, czyli komplet przeskalowanych tekstur gry. Opis układu katalogów `Texture/` i `Ground/` oraz logiki tekstur terenu |
-| `barnacle-main` | ⭐⭐ | Wersja Tcl gry (**8.3.2**), nazwy wewnętrznych funkcji silnika, mechanizm ładowania skryptów (`call`, preprocesor, cache), punkt wejścia `systeminit.tcl` |
-| `WigSound-master` | ⭐⭐ | **Pełne oryginalne skrypty** `sequencer.tcl`, `Trigger_Tutorial.tcl`, `Trigger_Tournament.tcl` oraz położenie dialogów mówionych (`Data/Sound/Sequenzen/*.mp3`) |
-| `ProductionStatistics-master` | ⭐⭐ | Pełne skrypty `productionmanager.tcl` i `prodman_*.tcl` |
-| `DigglesModManager-master` | ⭐⭐ | Format modów (`config.json`, łatki `change_*.tcl`), informacja o `Texture/texmaps.bin` |
+| [`Diggles3db`](https://github.com/djunkles/Diggles3db) | ⭐⭐⭐ | Pełny opis formatu `.3db` (modele i animacje) oraz przykładowy plik `baby.3db` z teksturą do testów |
+| [`DigglesHDmod`](https://github.com/ZarfaZ/DigglesHDmod) | ⭐⭐⭐ | 1171 tekstur TGA, czyli komplet przeskalowanych tekstur gry. Opis układu katalogów `Texture/` i `Ground/` oraz logiki tekstur terenu |
+| `barnacle` (autor do ustalenia) | ⭐⭐ | Wersja Tcl gry (**8.3.2**), nazwy wewnętrznych funkcji silnika, mechanizm ładowania skryptów (`call`, preprocesor, cache), punkt wejścia `systeminit.tcl` |
+| [`WigSound`](https://github.com/DigglesMods/WigSound) | ⭐⭐ | **Pełne oryginalne skrypty** `sequencer.tcl`, `Trigger_Tutorial.tcl`, `Trigger_Tournament.tcl` oraz położenie dialogów mówionych (`Data/Sound/Sequenzen/*.mp3`) |
+| [`ProductionStatistics`](https://github.com/DigglesMods/ProductionStatistics) | ⭐⭐ | Pełne skrypty `productionmanager.tcl` i `prodman_*.tcl` |
+| [`DigglesModManager`](https://github.com/DigglesMods/DigglesModManager) | ⭐⭐ | Format modów (`config.json`, łatki `change_*.tcl`), informacja o `Texture/texmaps.bin` |
 | Pozostałe mody (`BugFix`, `BetterStorage`, `Barrow`, `StoneDoor`, `RareResources`, `DroppingResources`, `ElfPatch`) | ⭐ | Fragmenty oryginalnych skryptów zawarte w łatkach i słownictwo komend Tcl |
 | Forum (`.html`, `plik_dat`) | ⭐ | Format `sphere.dat`, parametry linii poleceń, klucze rejestru |
 | `Translations-master`, `DigglesModActions-main` | – | Nieprzydatne dla silnika |
@@ -23,7 +25,7 @@ Analiza zipów rozpakowanych do `../ref/` oraz zainstalowanej gry (`~/.wine/driv
 
 ## 1. Format modeli `.3db` ✅
 
-Źródło: `../ref/Diggles3db-main/python3/lib/parse_3db.py` (najczystszy kod), `python2.7/3dbScript.py` (ma asercje), `c-sharp/` (przeglądarka WPF z odtwarzaniem animacji).
+Źródło: [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db), czyli `../ref/Diggles3db-main/python3/lib/parse_3db.py` (najczystszy kod), `python2.7/3dbScript.py` (ma asercje), `c-sharp/` (przeglądarka WPF z odtwarzaniem animacji).
 
 Wszystkie liczby są little-endian. `str` oznacza `u32` z długością, a po nim bajty bez znaku `\0`.
 
@@ -100,7 +102,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 
 ## 2. Tekstury i katalogi ✅
 
-Źródło: `../ref/DigglesHDmod-master/Documentation.txt`, `ReadMe.txt` oraz same pliki.
+Źródło: [ZarfaZ/DigglesHDmod](https://github.com/ZarfaZ/DigglesHDmod), czyli `../ref/DigglesHDmod-master/Documentation.txt`, `ReadMe.txt` oraz same pliki.
 
 - Wszystkie tekstury to **TGA 32-bit RGBA**, kwadratowe, o boku będącym potęgą 2. Oryginał ma do 256 px, HD mod do 1024 px, a superHD do 2048 px.
 - Układ katalogów:
@@ -126,7 +128,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 
 ## 3. Skrypty: Tcl 8.3 z rozszerzeniami ✅
 
-Źródła: `barnacle-main`, pełne skrypty w `WigSound-master/Files/Data/Scripts/classes/story/` i `ProductionStatistics-master/Data/Scripts/classes/work/`.
+Źródła: `barnacle` (`../ref/barnacle-main`, MIT, autor do ustalenia), pełne skrypty z [DigglesMods/WigSound](https://github.com/DigglesMods/WigSound) (`Files/Data/Scripts/classes/story/`) i [DigglesMods/ProductionStatistics](https://github.com/DigglesMods/ProductionStatistics) (`Data/Scripts/classes/work/`).
 
 ### Interpreter
 - Gra linkuje **Tcl 8.3.2** (`tcl83d.dll`). Barnacle buduje dokładnie tę wersję z `libs/tcl8.3.2`. W oryginale jest też **zlib 1.1.3**. ✅ Zapisy gry (`.sav`) to gzip.
@@ -189,10 +191,12 @@ text/doc/<lang>/  tt_<Klasa>.tcl (tooltipy), info_*.tcl, diary_*.tcl
 Nazwy są niemieckie: *Zwerg* to krasnal (wiggle), *Lager* to magazyn, *Sägewerk* to tartak, *Hochofen* to wielki piec.
 
 ## 4. Dźwięk ✅
+Źródło: [DigglesMods/WigSound](https://github.com/DigglesMods/WigSound).
 - Dialogi sekwencji: `Data/Sound/Sequenzen/<nazwa>.mp3`, odtwarzane przez `seq_audiostream open/play <start> <stop>`.
 - Opcja `-soundlog` w oryginale zapisuje `log_asnd.txt`.
 
 ## 5. Mody: format DigglesModManager ✅
+Źródło: [DigglesMods/DigglesModManager](https://github.com/DigglesMods/DigglesModManager) (`Service/ModdingService.cs`).
 Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez nadpisywania plików gry.
 
 - Mod to katalog `Mods/<Nazwa>/` z `config.json` (`version`, `author`, `name{lang}`, `description{lang}`, `settings[]` z `id/type/default/possibleValues`, `messages[]`, warunki katalogów) i drzewem `Data/…`.
@@ -211,6 +215,7 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 - Pliki gry są w kodowaniu **Windows-1252** (ModManager czyta `Encoding.Default`). ✅ Teksty polskie (`Scripts/text/doc/pl`) są w **CP1250**. Pliki mają końce linii CRLF.
 
 ## 6. Oryginalny exe: parametry i rejestr ✅
+Źródło: [Wiggles Forum](https://wiggles.ruka.at/forum/), wątek „Game internal information” (cech12, 2021).
 - Exe: `Diggles.exe` lub `Wiggles.exe`.
 - Parametry: `-network -server -mapedit -nosound -nomusic -soundlog -console -oldskirmish -nofow -minimal -resetoptions -safetcl -logerrors -version -infofile -novmem -vmem`. Warto zachować podobne flagi w naszym silniku, zwłaszcza `-mapedit`, `-console`, `-nofow` i `-logerrors`.
 - Rejestr: `HKCU\Software\SekOst\Diggles\Misc\PerfStats=1` zapisuje `perfstats.xls`, a `AnimStats=1` zapisuje `animstats.txt`.
