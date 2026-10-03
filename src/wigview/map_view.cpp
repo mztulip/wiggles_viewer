@@ -50,6 +50,13 @@ void MapView::init(const Vfs* vfs, TextureCache* textures, const std::vector<Vec
 	textures_ = textures;
 	sphere_ = sphere;
 	classes_.load(*vfs);
+	std::string err;
+	if (!terrain_.init(err)) blocksError_ = "shader terenu: " + err;
+	try {
+		blocks_.load(*vfs);
+	} catch (const std::exception& e) {
+		blocksError_ = e.what();
+	}
 	files_.clear();
 	for (auto& f : vfs->list("Data/Templates"))
 		if (endsWithI(f, ".tcl")) files_.push_back(f);
@@ -124,6 +131,8 @@ bool MapView::loadTemplate(const std::string& file) {
 	pmp_.reset();
 	l2m_.reset();
 	objects_.clear();
+	heights_.reset();
+	terrain_.clear();
 	try {
 		auto text = vfs_->read("Data/Templates/" + file);
 		if (!text) throw std::runtime_error("nie można odczytać skryptu");
@@ -136,6 +145,10 @@ bool MapView::loadTemplate(const std::string& file) {
 			if (auto d = readTemplateFile(*vfs_, script_->l2mFile)) l2m_ = parseL2m(*d);
 	} catch (const std::exception& e) {
 		error_ = e.what();
+	}
+	if (pmp_ && blocks_.loaded()) {
+		heights_ = buildHeightfield(*pmp_, blocks_);
+		terrain_.build(*heights_, *textures_);
 	}
 	if (script_) {
 		for (const auto& o : script_->objects) {
@@ -173,6 +186,8 @@ void MapView::step(int d) {
 }
 
 void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& opt) {
+	if (showTerrain_) terrain_.draw(viewProj, world, opt.lightDir, opt.ambient, opt.wireframe);
+	if (!showObjects_) return;
 	const float fps = 20.f;
 	for (const auto& o : objects_) {
 		if (!o.slot || o.animation < 0) continue;
@@ -195,9 +210,9 @@ void MapView::uiGrid() {
 		ImGui::TextDisabled("Brak siatki .PMP");
 		return;
 	}
-	const char* layers[] = {"Typ pola", "ID bloku", "Warstwa 2 (PMP)", "Warstwa .l2m"};
+	const char* layers[] = {"Typ pola", "ID bloku", "Warstwa 2 (PMP)", "Warstwa .l2m", "Głębokość (BlockDB)"};
 	ImGui::SetNextItemWidth(170);
-	ImGui::Combo("Warstwa", &gridLayer_, layers, 4);
+	ImGui::Combo("Warstwa", &gridLayer_, layers, 5);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
 	ImGui::SliderFloat("Zoom", &cellPx_, 6.f, 48.f, "%.0f px");
@@ -224,10 +239,20 @@ void MapView::uiGrid() {
 				c = (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) ? valueColor(l2m_->values[i], maxL2m)
 				                                                                     : IM_COL32(20, 20, 24, 255);
 				break;
+			case 4: c = 0; break; // rysowane niżej w rozdzielczości próbek
 			default: c = typeColor(pmp_->types[i]);
 			}
 			ImVec2 a(origin.x + x * cellPx_, origin.y + y * cellPx_);
-			dl->AddRectFilled(a, ImVec2(a.x + cellPx_ - 1, a.y + cellPx_ - 1), c);
+			if (gridLayer_ == 4 && heights_) {
+				float s = cellPx_ / Heightfield::kSamplesPerBlock;
+				for (int sy = 0; sy < Heightfield::kSamplesPerBlock; ++sy)
+					for (int sx = 0; sx < Heightfield::kSamplesPerBlock; ++sx) {
+						int v = heights_->at(x * 8 + sx, y * 8 + sy) * 17;
+						ImVec2 p(a.x + sx * s, a.y + sy * s);
+						dl->AddRectFilled(p, ImVec2(p.x + s, p.y + s), IM_COL32(v, v, v, 255));
+					}
+			} else
+				dl->AddRectFilled(a, ImVec2(a.x + cellPx_ - 1, a.y + cellPx_ - 1), c);
 		}
 	// Obiekty jako kropki (pozycja w blokach).
 	for (const auto& o : objects_) {
@@ -288,7 +313,12 @@ bool MapView::ui() {
 	ImGui::Text("PMP: %s  %ux%u bloków   l2m: %s", script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
 	            pmp_ ? pmp_->height : 0, script_->l2mFile.empty() ? "-" : script_->l2mFile.c_str());
 	ImGui::Text("obiekty: %zu, z modelem: %zu", objects_.size(), resolved);
-	ImGui::TextDisabled("Teren (maska PMP + BlockDB) nie jest jeszcze dekodowany.");
+	if (!blocksError_.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "Teren niedostępny: %s", blocksError_.c_str());
+	ImGui::Checkbox("Teren", &showTerrain_);
+	ImGui::SameLine();
+	ImGui::Checkbox("Obiekty", &showObjects_);
+	ImGui::SameLine();
+	ImGui::TextDisabled("(rodzaj gruntu tymczasowy: skała/ziemia)");
 
 	if (ImGui::CollapsingHeader("Siatka 2D", ImGuiTreeNodeFlags_DefaultOpen)) uiGrid();
 	if (ImGui::CollapsingHeader("Filtr obiektów", ImGuiTreeNodeFlags_DefaultOpen)) {

@@ -63,11 +63,15 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] `.PMP`: struktura (typ, ID bloku, maska RLE, warstwa2)
 - [ ] 🔬 `.PMP`: dekodowanie maski RLE i znaczenie typów oraz warstwy2 (wzorzec: OBJ z `save_map`)
 - [x] `BlockDB`: nagłówek i tabela ILT (3 odwołania na blok do puli elementów)
-- [ ] 🔬 `BlockDB`: rekordy danych (siatki 8×8, siatki 3D) i dopasowanie do puli
+- [x] `BlockDB`: rekordy bloków (głębokość 8×8) ✅
+- [ ] 🔬 `BlockDB`: sekcja szczegółowych siatek 3D
 - [ ] 🔬 `.l2m` (warstwa 2) i `.ENT`
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
 - [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
-- [ ] Teren w przeglądarce map (po zdekodowaniu maski PMP / BlockDB)
+- [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu (triplanar)
+- [ ] 🔬 Rodzaj gruntu (A/B/C) na blok, maski przejść, nakładki `detail/`
+- [ ] 🔬 Szczegółowe siatki 3D bloków z BlockDB (ILT + sekcja siatek) zamiast prostej mapy wysokości
+- [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [ ] Złożenie całej mapy z `Gamesave/*.tcl`
 

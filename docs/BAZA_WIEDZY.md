@@ -400,4 +400,4 @@ ILT: 3 × 118688 rekordów (u16 a, u32 b)                  b = indeks w puli (0.
 dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartości 0x02..0x0F, 16 B dodatków / FF)
       przeplatane dłuższymi blokami (🔶 siatki 3D)
 ```
-Wartość 0x0F w siatce 8×8 prawdopodobnie oznacza litą skałę, a niższe wartości wydrążenie. Dopasowanie elementów puli do rekordów jest jeszcze nieznane.
+✅ **Rozpracowane:** 118 688 rekordów po 89 B leży zaraz za ILT (po jednym na blok), a siatka 8×8 to głębokość (15 = skała). Pełny opis i weryfikacja z OBJ gry: [`formaty/mapy.md`](formaty/mapy.md).

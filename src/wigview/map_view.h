@@ -1,15 +1,16 @@
 // Zakładka "Mapy" w wigview: przeglądarka szablonów map (Data/Templates).
 //
-// Etap 1: siatka .PMP w 2D (typ pola, ID bloku, warstwa 2, .l2m) oraz obiekty z
-// MapTemplateSet w 3D z modelami .3db. Teren (maska RLE w .PMP + BlockDB) nie jest
-// jeszcze zdekodowany (docs/BAZA_WIEDZY.md §9), więc w 3D widać tylko obiekty,
-// a dla szablonów jaskiń także ich "skórę" (obiekty Dummy_*_caves_*).
+// Siatka .PMP w 2D (typ pola, ID bloku, warstwy), teren z mapy wysokości (bloki .PMP ->
+// siatki 8×8 z BlockDB) oraz obiekty z MapTemplateSet w 3D z modelami .3db.
 //
 // Układ współrzędnych: pozycje obiektów w szablonie są w blokach; 1 blok = 200 jednostek
 // modelu (wzorzec: OBJ z save_map gry). Oś Y w dół, jak w modelach.
 #pragma once
 
+#include "lib/blockdb.h"
 #include "lib/class_db.h"
+#include "lib/gfx/terrain_renderer.h"
+#include "lib/heightfield.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/map_template.h"
 #include "lib/model3db.h"
@@ -68,6 +69,11 @@ private:
 	ow::TextureCache* textures_ = nullptr;
 	const std::vector<ow::Vec3f>* sphere_ = nullptr;
 	ow::ClassDb classes_;
+	ow::BlockDb blocks_;
+	std::string blocksError_;
+	ow::TerrainRenderer terrain_;
+	std::optional<ow::Heightfield> heights_;
+	bool showTerrain_ = true, showObjects_ = true;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::map<std::string, ModelSlot> models_;
 	std::map<std::string, std::pair<std::string, int>> objectIndex_; // obiekt -> (plik, indeks), wypełniane leniwie
