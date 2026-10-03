@@ -61,6 +61,31 @@ dane podsiatek, kolejno: vertCount × u16 indeks palety, potem vertCount × u8 i
 ### Tekstury gruntu (`Data/Ground`)
 `Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>[2]_<TL TR BL BR>` to tekstury detali wybierane przez `.l2m` (patrz niżej). Rodzaj gruntu bloku wynika z typu pola `.PMP` (patrz wyżej).
 
+## Typ pola `.PMP` ✅
+Ustalony eksperymentem: ten sam korytarz `GNG_021` z różnymi typami pól i zrzuty z gry (`tools/lab/capture.sh`, zestawienie w `../lab/zrzuty/porownania/typy_pol.png`).
+
+| młodszy półbajt | znaczenie |
+|---|---|
+| 0 | blok **niewykopany**: gra pokazuje litą skałę, choć `BlockDB` ma kształt wydrążenia (tunel do odkopania). Przeglądarka rysuje wtedy blok 0 |
+| 2 | grunt **C** (piasek) |
+| 3 | grunt **B** (ziemia) |
+| 4 | grunt **A** (szara skała) |
+| 5 | **otwór do tła** w tylnej ścianie (niżej) |
+
+- Grunt dotyczy całego bloku, także przedniej powierzchni skały. Bit 0x80 nie zmieniał wyglądu (0x04 i 0x84, 0x02 i 0x82 wyglądają tak samo) 🔶. Przejścia między gruntami sąsiednich bloków gra robi maskami `Msk_*` 🔶. Przeglądarka tymczasowo interpoluje wagi gruntów dwuliniowo między środkami bloków.
+- Diggles-Unity opisuje typ jako „klasę kamienia” (twardość przy kopaniu): plik 4 → granit (niekopalny), 3 → klasa 1, 2 → klasa 2, 5 → dziura do tła. Ich mapowanie na tekstury było zgadywane, a nasze pochodzi ze zrzutów gry.
+- **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść 🔶 (Diggles-Unity nazywa ją „zone”).
+- Przykład wysokości z korytarza `GNG_001`: bloki 76–79 to sufit (f, f, e/d/c, b…), blok 80 jest cały b (głębokość 400), blok 81 ma b u góry i f na dole.
+
+### Otwory do tła (typ 5) ✅
+Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT), `Docs/RIM_CUTOUT_RENDER_RE.md` i `BACKDROP_PARALLAX_RE.md`. Wynik zgodny ze zrzutem menu gry (`../lab/zrzuty/porownania/typ5_menu_blisko.png`).
+- Węzeł mapy (= blok) jest **otwarty**, gdy pierwszy niezerowy typ (7 młodszych bitów) spośród [węzeł, sąsiad S, sąsiad E, sąsiad SE] to 5.
+- Blok (bx, by) ma narożniki w węzłach (bx, by), (bx+1, by), (bx, by+1), (bx+1, by+1). **Alfa wierzchołka** to dwuliniowa interpolacja wartości narożników (0 dla otwartego, 255 dla pozostałych) we współrzędnych palety (x, y). Teren rysowany jest z **alpha testem > 126** (bez mieszania), więc krawędź otworu jest ostra i przebiega w połowie bloku. Bloki z 4 otwartymi narożnikami nie są rysowane.
+- **Wypełnienie otworu** to kolor najbliższej strefy horyzontu: obiekty `Info_Fog_*` w szablonie, klasa wywołuje `horizon_set [get_pos this] r g b głębokość zasięg` (np. `Info_Fog_Urw_d`: 0,305 0,375 0,429, głębokość 32, zasięg 15). Gra czyści tym kolorem ekran.
+- **Modele tła** za skałą (z < 0 bloków, czyli ponad 7 bloków za najgłębszym dnem) przechodzą w kolor strefy proporcjonalnie do |z| / głębokość. Tak powstaje widok w głąb (jezioro w menu).
+- Panorama powierzchni z paralaksą (`Texture/Misc/Panorama_layer_0..6`) działa tylko na powierzchni i nie jest jeszcze zaimplementowana.
+- Klasy pokazujące model tylko w edytorze map (`if {[get_mapedit]} {class_defaultanim …}`: światła `Misc_LightSrc_*`, część `Info_*`) są w przeglądarce domyślnie ukryte.
+
 ## `.l2m`: warstwa detali terenu ✅
 ```
 char[4] "M2L\0"

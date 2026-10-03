@@ -74,7 +74,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu (triplanar)
 - [x] Nakładki detali z `.l2m` (narożniki po 2 bity, tekstury `detail/<świat>[2]_<kod>`, modulate×2)
 - [x] Grunt podkładu z typu pola `.PMP` (2 = C, 3 = B, 4 = A) i bloki niewykopane (typ 0) ✅ z eksperymentu na zrzutach gry
-- [ ] Przejścia gruntów maskami `Msk_*` (teraz uśrednianie); typ 5 = tło prześwitujące przez tylną ścianę; bit 0x80; młodszy bajt `.l2m`
+- [x] Typ 5: otwory do tła (węzły otwarte, alpha test, kolor strefy `Info_Fog_*`, zanikanie modeli za skałą)
+- [ ] Panorama powierzchni z paralaksą (`Panorama_layer_0..6`, BACKDROP_PARALLAX_RE §2)
+- [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
 - [ ] Oświetlenie terenu jak w grze (lampy `Misc_LightSrc_*`, `class_light`, mgła `Info_Fog_*`)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
