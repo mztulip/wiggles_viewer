@@ -14,6 +14,7 @@ static const char* kVS = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 3) in vec3 aGround; // wagi gruntów A, B, C
+layout(location = 4) in float aAlpha;  // alfa wycięcia (otwory do tła)
 uniform mat4 uViewProj;
 uniform mat4 uWorld;
 out vec3 vNormal;
@@ -21,8 +22,10 @@ out vec3 vLocalNormal;
 out vec3 vLocalPos;
 out float vDepth;
 out vec3 vGround;
+out float vAlpha;
 void main() {
 	vGround = aGround;
+	vAlpha = aAlpha;
 	vNormal = mat3(uWorld) * aNormal;
 	vLocalNormal = aNormal;
 	vLocalPos = aPos;
@@ -37,6 +40,7 @@ in vec3 vLocalNormal;
 in vec3 vLocalPos;
 in float vDepth;
 in vec3 vGround;
+in float vAlpha;
 uniform sampler2D uTex;
 uniform sampler2D uTexB;
 uniform sampler2D uTexC;
@@ -46,6 +50,8 @@ uniform vec4 uTint;
 uniform int uDetail; // 1 = nakładka detalu: UV w obrębie bloku, alfa z tekstury
 out vec4 oColor;
 void main() {
+	// Alpha test jak w grze (scape_solid: GREATER 126): ostre wycięcie otworów do tła.
+	if (vAlpha * 255.0 <= 126.0) discard;
 	if (uDetail == 1) {
 		// Tekstura detalu w trybie modulate x2 (szary 128 = bez zmian, por. detail/50PGray.tga).
 		vec4 d = texture(uTex, fract(vLocalPos.xy / 200.0));
@@ -95,7 +101,9 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, ground));
 	gl::EnableVertexAttribArray(0);
 	gl::EnableVertexAttribArray(1);
+	gl::VertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, alpha));
 	gl::EnableVertexAttribArray(3);
+	gl::EnableVertexAttribArray(4);
 
 	auto blockIndices = [&](int bx, int by, std::vector<uint32_t>& out) {
 		auto [first, count] = mesh.blockRanges[size_t(by) * mesh.width + bx];

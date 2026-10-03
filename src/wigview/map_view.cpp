@@ -153,7 +153,21 @@ bool MapView::loadTemplate(const std::string& file) {
 		if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_, showUndug_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
+	zone_.reset();
+	zoneClass_.clear();
 	if (script_) {
+		// Strefa horyzontu: obiekt Info_Fog_* najbliższy środkowi szablonu.
+		float best = 1e30f;
+		float cx = (pmp_ ? float(pmp_->width) : 4.f) * 0.5f, cy = (pmp_ ? float(pmp_->height) : 4.f) * 0.5f;
+		for (const auto& o : script_->objects)
+			if (const HorizonZone* z = classes_.horizon(o.className)) {
+				float d = (o.pos[0] - cx) * (o.pos[0] - cx) + (o.pos[1] - cy) * (o.pos[1] - cy);
+				if (d < best) {
+					best = d;
+					zone_ = *z;
+					zoneClass_ = o.className;
+				}
+			}
 		for (const auto& o : script_->objects) {
 			PlacedObject p;
 			p.src = o;
@@ -183,13 +197,20 @@ void MapView::step(int d) {
 	scrollToSel_ = true;
 }
 
-void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& opt) {
-	if (showTerrain_) terrain_.draw(viewProj, world, opt.lightDir, opt.ambient, opt.wireframe);
+void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& baseOpt,
+                     float gameZOffset) {
+	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe);
 	if (!showObjects_) return;
+	ModelDrawOptions opt = baseOpt;
+	if (const HorizonZone* z = zone()) {
+		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
+		opt.horizonZOffset = gameZOffset;
+	}
 	const float fps = 20.f;
 	for (const auto& o : objects_) {
 		if (!o.slot || o.animation < 0) continue;
 		if (!showDetail_[detailIndex(o.src.detail)]) continue;
+		if (o.cls && o.cls->editorOnly && !showEditorOnly_) continue;
 		const auto& an = o.slot->model->animations[size_t(o.animation)];
 		if (an.frames.empty()) continue;
 		float f = time_ * fps;
@@ -318,6 +339,11 @@ bool MapView::ui() {
 	ImGui::SameLine();
 	ImGui::Checkbox("Detale (.l2m)", &terrain_.showDetail);
 	ImGui::SameLine();
+	ImGui::Checkbox("Strefa horyzontu", &showZone_);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s",
+		                  zone_ ? zoneClass_.c_str() : "Szablon nie ma obiektu Info_Fog_*.");
+	ImGui::SameLine();
 	if (ImGui::Checkbox("Niewykopane", &showUndug_)) loadTemplate(file_);
 	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bloki typu 0: gra pokazuje je jako litą skałę (do odkopania).\nZaznacz, aby zobaczyć ich zaplanowany kształt z BlockDB.");
 
@@ -330,6 +356,7 @@ bool MapView::ui() {
 			ImGui::Checkbox(names[i], &showDetail_[i]);
 		}
 		ImGui::Checkbox("Pokaż obiekty bez modelu (czerwone na siatce)", &showUnresolved_);
+		ImGui::Checkbox("Znaczniki edytora (światła, obiekty Info)", &showEditorOnly_);
 	}
 	if (ImGui::CollapsingHeader("Lista obiektów")) {
 		ImGui::BeginChild("obj_list", ImVec2(0, 220), ImGuiChildFlags_Borders);

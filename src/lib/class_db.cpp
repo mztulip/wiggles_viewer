@@ -24,6 +24,11 @@ const ClassModel* ClassDb::find(const std::string& className) const {
 	return it == classes_.end() ? nullptr : &it->second;
 }
 
+const HorizonZone* ClassDb::horizon(const std::string& className) const {
+	auto it = horizons_.find(Vfs::lower(className));
+	return it == horizons_.end() ? nullptr : &it->second;
+}
+
 void ClassDb::parseScript(const std::string& text, const std::string& modelHint) {
 	std::istringstream in(text);
 	std::string line, currentClass, listPrefix;
@@ -69,6 +74,13 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			ws >> currentClass;
 			continue;
 		}
+		// horizon_set [get_pos this] r g b głębokość zasięg (tylko wartości liczbowe)
+		size_t hp = t.find("horizon_set [get_pos this]");
+		if (hp != std::string::npos && t.rfind("log", 0) != 0 && !currentClass.empty()) {
+			std::istringstream ws(t.substr(hp + 26));
+			HorizonZone z;
+			if (ws >> z.r >> z.g >> z.b >> z.depth >> z.size) horizons_.emplace(Vfs::lower(currentClass), z);
+		}
 		size_t p = t.find("class_defaultanim ");
 		if (p != std::string::npos && !currentClass.empty()) {
 			std::string anim = trim(t.substr(p + 18));
@@ -80,6 +92,7 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			cm.object = dot == std::string::npos ? anim : anim.substr(0, dot);
 			cm.animation = dot == std::string::npos ? "standard" : anim.substr(dot + 1);
 			cm.modelHint = modelHint;
+			cm.editorOnly = t.find("get_mapedit") != std::string::npos;
 			if (!cm.object.empty() && cm.object[0] != '$') {
 				auto key = Vfs::lower(currentClass);
 				if (!classes_.count(key)) classes_[key] = cm;
@@ -90,6 +103,7 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 
 void ClassDb::load(const Vfs& vfs) {
 	classes_.clear();
+	horizons_.clear();
 	// Najpierw dekoracje: tu nazwa pliku wskazuje model.
 	for (const auto& f : vfs.list("Data/Scripts/classes/deco")) {
 		auto low = Vfs::lower(f);

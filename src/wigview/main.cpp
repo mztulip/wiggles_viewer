@@ -3,7 +3,9 @@
 // Użycie:
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
-//           [--template SZABLON] [--search TEKST] [--screenshot plik.png] [--ui]
+//           [--template SZABLON] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
+//           [--screenshot plik.png] [--ui]
+// --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
@@ -51,6 +53,7 @@ struct Args {
 	float yaw = 20.f, pitch = 15.f;
 	int flip = 1;
 	bool ui = false, viewSet = false;
+	float camX = -1, camY = -1, camZ = -1, camDist = -1; // kamera map w blokach (lokalnie w szablonie)
 	int width = 1400, height = 900;
 };
 
@@ -64,6 +67,11 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
 		else if (k == "--search") a.search = next();
+		else if (k == "--center") {
+			a.camX = float(std::atof(next()));
+			a.camY = float(std::atof(next()));
+		} else if (k == "--center-z") a.camZ = float(std::atof(next()));
+		else if (k == "--dist") a.camDist = float(std::atof(next()));
 		else if (k == "--frame") a.frame = float(std::atof(next()));
 		else if (k == "--ipol") a.ipol = std::atoi(next());
 		else if (k == "--light") a.light = std::atoi(next());
@@ -245,12 +253,15 @@ struct Viewer {
 
 	void renderScene(int w, int h, int x0 = 0) {
 		gl::Viewport(0, 0, w, h);
-		gl::ClearColor(bg.r, bg.g, bg.b, 1.f);
+		glm::vec3 clear = bg;
+		if (activeTab == 2)
+			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b); // jak w grze: kolor strefy
+		gl::ClearColor(clear.r, clear.g, clear.b, 1.f);
 		gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		x0 = std::clamp(x0, 0, w - 1);
 		gl::Viewport(x0, 0, w - x0, h);
 		if (activeTab == 2) {
-			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw);
+			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z);
 		} else {
 			uint32_t a, b;
 			float t;
@@ -824,6 +835,9 @@ int main(int argc, char** argv) {
 			v.yaw = args.yaw;
 			v.pitch = args.pitch;
 		}
+		if (args.camX >= 0) v.center.x = args.camX * MapView::kBlock, v.center.y = args.camY * MapView::kBlock;
+		if (args.camZ >= 0) v.center.z = args.camZ * MapView::kBlock;
+		if (args.camDist > 0) v.dist = args.camDist * MapView::kBlock;
 	}
 
 	IMGUI_CHECKVERSION();

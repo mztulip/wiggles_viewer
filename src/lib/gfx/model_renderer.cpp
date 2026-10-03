@@ -20,12 +20,16 @@ uniform vec3 uSphere[256];
 out vec2 vUV;
 out float vByte;
 out vec3 vNormal;
+out float vGameZ;
+uniform float uHorizonZOffset;
 void main() {
 	vUV = aUV;
 	vByte = mix(aByte, aByte2, uLerp) / 255.0;
 	vec3 n = mix(uSphere[int(aByte + 0.5)], uSphere[int(aByte2 + 0.5)], uLerp);
 	vNormal = mat3(uModel) * n;
-	gl_Position = uViewProj * uModel * vec4(mix(aPos, aPos2, uLerp), 1.0);
+	vec4 wp = uModel * vec4(mix(aPos, aPos2, uLerp), 1.0);
+	vGameZ = wp.z + uHorizonZOffset;
+	gl_Position = uViewProj * wp;
 }
 )";
 
@@ -33,6 +37,8 @@ static const char* kFS = R"(#version 330 core
 in vec2 vUV;
 in float vByte;
 in vec3 vNormal;
+in float vGameZ;
+uniform vec4 uHorizon;
 uniform sampler2D uTex;
 uniform int uMode;
 uniform int uAlphaTest;
@@ -49,6 +55,8 @@ void main() {
 		vec3 n = normalize(vNormal);
 		c *= uAmbient + (1.0 - uAmbient) * max(dot(n, uLightDir), 0.0);
 	} else if (uMode == 3) c = normalize(vNormal) * 0.5 + 0.5;
+	float zb = vGameZ / 200.0; // bloki
+	if (uHorizon.a > 0.0 && zb < 0.0) c = mix(c, uHorizon.rgb, clamp(-zb / uHorizon.a, 0.0, 1.0));
 	oColor = vec4(c, t.a) * uTint;
 }
 )";
@@ -154,6 +162,8 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 
 	prog_.use();
 	gl::Uniform1f(prog_.uniform("uLerp"), t);
+	gl::Uniform4f(prog_.uniform("uHorizon"), opt.horizon.r, opt.horizon.g, opt.horizon.b, opt.horizon.a);
+	gl::Uniform1f(prog_.uniform("uHorizonZOffset"), opt.horizonZOffset);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
 	gl::UniformMatrix4fv(prog_.uniform("uModel"), 1, GL_FALSE, glm::value_ptr(model));
 	if (sphere_.size() == 256)

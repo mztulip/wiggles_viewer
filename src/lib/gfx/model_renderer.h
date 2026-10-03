@@ -35,6 +35,11 @@ struct ModelDrawOptions {
 	bool alphaTest = true;
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-0.4f, 0.8f, 0.5f)); // w przestrzeni modelu po transformacji
 	float ambient = 0.45f;
+	// Strefa horyzontu: model za skałą (z gry < 0 bloków) przechodzi w kolor rgb ∝ |z|/głębokość.
+	// horizon.a = głębokość w blokach (0 = wyłączone); horizonZOffset dodaje się do z po uModel,
+	// żeby otrzymać z gry w jednostkach modelu (przesunięcie kamery w macierzy świata).
+	glm::vec4 horizon{0.f};
+	float horizonZOffset = 0.f;
 };
 
 class ModelRenderer {

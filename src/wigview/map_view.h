@@ -44,7 +44,10 @@ public:
 	// Rysuje panel UI (lista, siatka 2D, informacje). Zwraca true, gdy kamera powinna się wycentrować.
 	bool ui();
 	void update(float dt) { time_ += dt; }
-	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt);
+	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
+	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset);
+	// Strefa horyzontu szablonu (obiekt Info_Fog_* najbliższy środka), jeśli jest: kolor tła otworów.
+	const ow::HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
 
 	// Obszar sceny do ustawienia kamery (w jednostkach modelu, Y w dół).
 	glm::vec3 center() const { return center_; }
@@ -79,7 +82,9 @@ private:
 	std::string blocksError_;
 	ow::TerrainRenderer terrain_;
 	std::optional<ow::Heightfield> heights_;
-	bool showTerrain_ = true, showObjects_ = true, showUndug_ = false;
+	bool showTerrain_ = true, showObjects_ = true, showUndug_ = false, showZone_ = true, showEditorOnly_ = false;
+	std::optional<ow::HorizonZone> zone_;
+	std::string zoneClass_;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::map<std::string, ModelSlot> models_;
 	std::map<std::string, std::pair<std::string, int>> objectIndex_; // obiekt -> (plik, indeks), wypełniane leniwie
