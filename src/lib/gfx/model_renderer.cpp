@@ -37,7 +37,15 @@ void main() {
 	vec3 mp = mix(aPos, aPos2, uLerp);
 	if (uGameLight == 1) {
 		vec3 gp = (uGameModel * vec4(mp, 1.0)).xyz / 200.0;
-		gameLighting(gp, normalize(mat3(uGameModel) * n), uBase, vGameDiffuse, vGameSpec);
+		// 🔶 Oświetlenie dwustronne, ustalone porównaniem ze zrzutami gry (OBERWELT): część modeli
+		// (np. drzewa Obw_baum) ma normalne skierowane do środka i w grze jest jasna, a namioty
+		// z normalnymi na zewnątrz też. Bierzemy jaśniejszy wynik dla N i −N.
+		vec3 gn = normalize(mat3(uGameModel) * n), d1, s1, d2, s2;
+		gameLighting(gp, gn, uBase, d1, s1);
+		gameLighting(gp, -gn, uBase, d2, s2);
+		bool first = dot(d1 + s1, vec3(1.0)) >= dot(d2 + s2, vec3(1.0));
+		vGameDiffuse = first ? d1 : d2;
+		vGameSpec = first ? s1 : s2;
 	}
 	vec4 wp = uModel * vec4(mp, 1.0);
 	vGameZ = wp.z + uHorizonZOffset;

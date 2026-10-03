@@ -145,7 +145,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 - `call <plik>`: natywna komenda ładująca skrypt. Ścieżki zaczynające się od `scripts/` lub `templates/` dostają prefiks `data/`. Wielkość liter nie ma znaczenia (lowercase). Pliki z `data/templates` nie idą przez cache. Jest też `callnc` (🔶 call no-cache).
 - `TclCache`: cache skompilowanych lub przetworzonych skryptów (`g_tclCache`).
 - `findFileLocation`: wyszukiwanie pliku w wirtualnym systemie plików (`Data`, `Data_HD`, warianty językowe).
-- Wersje exe z ABI: **1.0 build 844** i **2.1.1.10**. Barnacle zawiera adresy funkcji silnika (`scripts/abi.py`), które przydadzą się, gdyby trzeba było coś podejrzeć w deasemblerze.
+- Wersje exe z ABI: **1.0 build 844** i **2.1.1.10**.
 
 ### Model obiektowy (natywny, w C++)
 Skrypty klas działają w dwóch fazach: `if {[in_class_def]} { … }` to faza definicji, reszta wykonuje się przy tworzeniu obiektu.
@@ -364,8 +364,8 @@ Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla
 ### 8.4 Komendy debugowe do zbadania
 `tclhelp` (zwraca pusty wynik, 🔶 pisze do konsoli), `web_shell`, `dump_var`, `proddump`, `output_3ddbstats`, `meminfo`, `perfwin`, `peek`/`poke`, `waterdbg`, `toggle_wf` (wireframe?), `render_gray`, `show_maped`, `save_map`, `save_scene`, `xtest`, `test`/`testd`, `vtune`.
 
-### 8.5 barnacle (SDK) jako następny krok
-Barnacle hookuje `Wiggles.exe` 1.0.844, czyli **dokładnie naszą wersję**, i daje Pythona wewnątrz gry. Przyda się, gdy czysty Tcl nie wystarczy: śledzenie interpreterów obiektów albo odczyt pamięci i struktur C++. Wymaga zbudowania pod Windows (Python 3.6 32-bit, scons), czyli wejścia pod Wine.
+### 8.5 Metoda: obserwacja, nie deasemblacja
+Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując działającą grę: sonda Tcl (`get_*`, `save_map`, `save_scene`, `tclerrors.txt`), zrzuty ekranu z `tools/lab/capture.sh` przy zmienianych parametrach (np. różne `set_view`, `set_ground_begin`) i porównania z naszym renderem. Wiedzę o wnętrzu exe bierzemy wyłącznie z cudzych opracowań (głównie Diggles-Unity) i zawsze sprawdzamy ją takim eksperymentem.
 
 ---
 
@@ -401,6 +401,15 @@ dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartośc
       przeplatane dłuższymi blokami (🔶 siatki 3D)
 ```
 ✅ **Rozpracowane:** 118 688 rekordów po 89 B leży zaraz za ILT (po jednym na blok), a siatka 8×8 to głębokość (15 = skała). Pełny opis i weryfikacja z OBJ gry: [`formaty/mapy.md`](formaty/mapy.md).
+
+### 9.4 Powierzchnia (OBERWELT): ustalenia z laboratorium ✅
+Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, porównana z renderem wigview (`--view x y zoom dx dy`, przeszukiwanie parametrów po RMSE pomniejszonych obrazów). Szczegóły w [`formaty/mapy.md`](formaty/mapy.md):
+- `set_light_begin -10000` gasi panoramę i ok. 4× przyciemnia obiekty powierzchni, więc niebo daje światło bazowe i włącza panoramę.
+- `set_ground_begin` przesuwa dywan łąki. W danych gry nie występuje, domyślnie zachowanie odpowiada `set_light_begin`.
+- Gra przycina kąty `set_view` przy dużym zoomie (2,5 → ±0,15). `get_view 1` zwraca wartości zadane, a `get_view` bez argumentu zaraz po starcie zwraca śmieci (kamera jeszcze niezainicjowana).
+- Strefa horyzontu działa tylko w zasięgu `size` obiektu `Info_Fog_*` od ogniska kamery.
+- Modele wyglądają na oświetlane dwustronnie (drzewa z normalnymi do środka są jasne).
+- 🔶 Własna klasa zdefiniowana w `userstartup.tcl` (`def_class` + `timer_event`) tworzy się (`new` zwraca uchwyt), ale jej zdarzenie timera się nie wywołało. Do zbadania, jeśli będą potrzebne odczyty w trakcie gry.
 
 ---
 

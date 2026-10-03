@@ -18,6 +18,7 @@
 namespace ow {
 
 class Vfs;
+class BlockDb;
 
 bool isTransparentTile(const Pmp& tpl, int x, int y);
 Pmp makeWorldGrid(int width, int height);
@@ -44,6 +45,9 @@ struct Scenario {
 	std::optional<GameView> view;
 	std::vector<ScenarioPlacement> placements;
 	bool usesGenerator = false; // StoryMgr load_level/load_sandbox: świat proceduralny (nieobsługiwany)
+	int lightBegin = kNoSky;    // set_light_begin: wiersz świata, od którego w dół nie ma nieba
+	static constexpr int kNoSky = -10000; // domyślnie: cały świat jest „pod ziemią”
+	std::optional<int> groundBegin;       // set_ground_begin: wiersz gruntu panoramy (dywan łąki)
 };
 
 // Czyta skrypt scenariusza (np. "Data/Gamesave/single_Knockersdorf.tcl") i skrypty wołane przez
@@ -56,11 +60,23 @@ struct BuiltWorld {
 	std::vector<TemplateObject> objects; // pozycje względem przyciętego świata
 	int originX = 0, originY = 0;        // lewy górny róg przycięcia w blokach świata
 	std::optional<GameView> view;        // set_view przeliczone na współrzędne przyciętego świata
+	int skyTiles = 0;                    // ile pól dostało światło dzienne (reguła set_light_begin)
 	std::vector<std::string> placedScripts;
 	std::vector<std::string> errors;
 };
 
+// Światło nieba (FUN_005906a0, kanał „MapValidator:BASELIGHT”), za Zimennik/Diggles-Unity (MIT,
+// Docs/TUNNEL_TORCH_LIGHTING_RE.md §6): pole w wierszu y < lightBegin dostaje bazowe światło 20
+// (pełny dzień), gdy w jego kolumnie, w nim samym albo do 6 pól wyżej, jest otwarte powietrze
+// (drobne pole bloku o wysokości < 13, z BlockDB; bez BlockDB tylko blok 59) albo skan wychodzi
+// ponad górną krawędź świata. Pozostałe pola zachowują warstwę 2 szablonu. 🔶 Gra skanuje drobną
+// siatkę 8×8 kolumna po kolumnie i liczy też ciemnienie w kątach tuneli; tu tylko gałąź nieba
+// w skali pól.
+constexpr int kDaylight = 20;
+void applySkyLight(Pmp& grid, int originY, int lightBegin, const BlockDb* db = nullptr, int* litCount = nullptr);
+
 // margin: ile bloków domyślnego świata zostawić wokół szablonów.
-BuiltWorld buildWorld(const Vfs& vfs, const Scenario& scenario, int margin = 2);
+// db (opcjonalnie) dokładniej wyznacza otwarte pola dla reguły nieba.
+BuiltWorld buildWorld(const Vfs& vfs, const Scenario& scenario, int margin = 2, const BlockDb* db = nullptr);
 
 } // namespace ow

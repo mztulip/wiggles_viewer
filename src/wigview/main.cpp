@@ -4,8 +4,9 @@
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
 //           [--template SZABLON | --scenario SCENARIUSZ] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
-//           [--screenshot plik.png] [--ui]
+//           [--view X Y ZOOM DX DY] [--screenshot plik.png] [--ui]
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
+// --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
@@ -38,6 +39,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -54,8 +56,17 @@ struct Args {
 	int flip = 1;
 	bool ui = false, viewSet = false;
 	float camX = -1, camY = -1, camZ = -1, camDist = -1; // kamera map w blokach (lokalnie w szablonie)
+	std::optional<GameView> gameView;                    // --view
 	int width = 1400, height = 900;
 };
+
+// Przycięcie kątów set_view przy dużym oddaleniu, ustalone obserwacją gry (docs/formaty/mapy.md,
+// „Kamera gry”): gra pokazuje kąty |dx|, |dy| ≤ 2,23 / (R − 15,6), R = 16·zoom − 10 bloków.
+// Pomiary: zoom 2,5 → 0,15; 2,25 → 0,23; 2,0 → 0,35; 1,7 i mniej bez przycięcia. 🔶 dopasowanie empiryczne.
+float gameViewAngleLimit(float R) {
+	constexpr float kA = 2.23f, kB = 15.6f;
+	return R > kB + 1e-3f ? kA / (R - kB) : 1e9f;
+}
 
 bool parseArgs(int argc, char** argv, Args& a) {
 	for (int i = 1; i < argc; ++i) {
@@ -73,6 +84,15 @@ bool parseArgs(int argc, char** argv, Args& a) {
 			a.camY = float(std::atof(next()));
 		} else if (k == "--center-z") a.camZ = float(std::atof(next()));
 		else if (k == "--dist") a.camDist = float(std::atof(next()));
+		else if (k == "--view") {
+			GameView g;
+			g.x = float(std::atof(next()));
+			g.y = float(std::atof(next()));
+			g.zoom = float(std::atof(next()));
+			g.dx = float(std::atof(next()));
+			g.dy = float(std::atof(next()));
+			a.gameView = g;
+		}
 		else if (k == "--frame") a.frame = float(std::atof(next()));
 		else if (k == "--ipol") a.ipol = std::atoi(next());
 		else if (k == "--light") a.light = std::atoi(next());
@@ -243,8 +263,10 @@ struct Viewer {
 		if (gameCam && activeTab == 2) {
 			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
 			const auto& g = gameCamView;
-			float R = std::max(0.5f, g.zoom * 16.f - 10.f) * MapView::kBlock;
-			float cdx = std::cos(g.dx), sdx = std::sin(g.dx), cdy = std::cos(g.dy), sdy = -std::sin(g.dy);
+			float Rb = g.zoom * 16.f - 10.f;
+			float R = std::max(0.5f, Rb) * MapView::kBlock;
+			float lim = gameViewAngleLimit(Rb), dx = std::clamp(g.dx, -lim, lim), dy = std::clamp(g.dy, -lim, lim);
+			float cdx = std::cos(dx), sdx = std::sin(dx), cdy = std::cos(dy), sdy = -std::sin(dy);
 			glm::vec3 eye(R * cdx * sdy, R * sdx, R * cdx * cdy);  // względem celu, układ gry
 			glm::vec3 up(sdx * sdy, -cdx, sdx * cdy);
 			eye.y = -eye.y;
@@ -278,6 +300,7 @@ struct Viewer {
 	void renderScene(int w, int h, int x0 = 0) {
 		gl::Viewport(0, 0, w, h);
 		glm::vec3 clear = bg;
+		if (activeTab == 2) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
 		if (activeTab == 2)
 			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b); // jak w grze: kolor strefy
 		gl::ClearColor(clear.r, clear.g, clear.b, 1.f);
@@ -855,7 +878,8 @@ int main(int argc, char** argv) {
 	if (!args.templ.empty() || !args.scenario.empty()) {
 		if (!args.scenario.empty()) {
 			std::string t = args.scenario;
-			if (!v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
+			bool hasExt = t.size() > 4 && Vfs::lower(t.substr(t.size() - 4)) == ".tcl";
+			if (!hasExt && !v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
 			if (!v.maps.loadScenario(t)) std::fprintf(stderr, "scenariusz %s: %s\n", t.c_str(), v.maps.error().c_str());
 		} else {
 			std::string t = args.templ;
@@ -872,6 +896,14 @@ int main(int argc, char** argv) {
 		if (args.camX >= 0) v.center.x = args.camX * MapView::kBlock, v.center.y = args.camY * MapView::kBlock;
 		if (args.camZ >= 0) v.center.z = args.camZ * MapView::kBlock;
 		if (args.camDist > 0) v.dist = args.camDist * MapView::kBlock;
+		if (args.gameView) {
+			GameView g = *args.gameView;
+			g.x -= float(v.maps.origin()[0]);
+			g.y -= float(v.maps.origin()[1]);
+			v.gameCam = true;
+			v.gameCamView = g;
+			v.center = glm::vec3(g.x, g.y, 14.f) * MapView::kBlock;
+		}
 	}
 
 	IMGUI_CHECKVERSION();

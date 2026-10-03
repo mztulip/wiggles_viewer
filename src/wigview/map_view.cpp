@@ -53,6 +53,7 @@ void MapView::init(const Vfs* vfs, TextureCache* textures, const std::vector<Vec
 	classes_.load(*vfs);
 	std::string err;
 	if (!terrain_.init(err)) blocksError_ = "shader terenu: " + err;
+	panoramaReady_ = panorama_.init(err, *textures);
 	try {
 		blocks_.load(*vfs);
 	} catch (const std::exception& e) {
@@ -156,14 +157,17 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	heights_.reset();
 	terrain_.clear();
 	placed_ = 0;
+	skyTiles_ = 0;
+	lightBegin_ = sc.lightBegin;
 	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
-	BuiltWorld bw = buildWorld(*vfs_, sc, margin);
+	BuiltWorld bw = buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
 	for (auto& e : bw.errors) error_ += (error_.empty() ? "" : "; ") + e;
 	if (!bw.placedScripts.empty()) {
 		placed_ = int(bw.placedScripts.size());
 		gameView_ = bw.view;
+		skyTiles_ = bw.skyTiles;
 		worldOrigin_[0] = bw.originX;
 		worldOrigin_[1] = bw.originY;
 		pmp_ = std::move(bw.grid);
@@ -181,25 +185,27 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	} else if (error_.empty() && scenarioInfo_.empty())
 		error_ = "brak szablonów do złożenia";
 
+	// Panorama (panorama_renderer.h): wiersz gruntu z set_ground_begin, a bez niego z set_light_begin.
+	// Bez nieba (set_light_begin nie podane) gra panoramy nie rysuje (obserwacja w laboratorium).
+	hasOpenAir_ = false;
+	if (pmp_) {
+		int row = sc.groundBegin ? *sc.groundBegin : sc.lightBegin;
+		if (sc.groundBegin || sc.lightBegin != Scenario::kNoSky) {
+			hasOpenAir_ = true;
+			groundRow_ = float(row - worldOrigin_[1]);
+		}
+	}
 	if (pmp_ && blocks_.loaded()) {
 		heights_ = buildHeightfield(*pmp_, blocks_);
 		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	zone_.reset();
 	zoneClass_.clear();
+	zoneObjects_.clear();
 	if (script_) {
-		// Strefa horyzontu: obiekt Info_Fog_* najbliższy środkowi (w scenariuszu: środka kadru).
-		float best = 1e30f;
-		float cx = (pmp_ ? float(pmp_->width) : 4.f) * 0.5f, cy = (pmp_ ? float(pmp_->height) : 4.f) * 0.5f;
 		for (const auto& o : script_->objects)
-			if (const HorizonZone* z = classes_.horizon(o.className)) {
-				float d = (o.pos[0] - cx) * (o.pos[0] - cx) + (o.pos[1] - cy) * (o.pos[1] - cy);
-				if (d < best) {
-					best = d;
-					zone_ = *z;
-					zoneClass_ = o.className;
-				}
-			}
+			if (const HorizonZone* z = classes_.horizon(o.className))
+				zoneObjects_.push_back({o.pos[0], o.pos[1], *z, o.className});
 		for (const auto& o : script_->objects) {
 			PlacedObject p;
 			p.src = o;
@@ -256,6 +262,20 @@ glm::mat4 MapView::objectMatrix(const TemplateObject& o) {
 	return m;
 }
 
+void MapView::updateZone(const glm::vec3& focus) {
+	float fx = focus.x / kBlock, fy = focus.y / kBlock, best = 1e30f;
+	zone_.reset();
+	zoneClass_.clear();
+	for (const auto& z : zoneObjects_) {
+		float d = std::hypot(z.x - fx, z.y - fy);
+		if (d < z.zone.size && d < best) {
+			best = d;
+			zone_ = z.zone;
+			zoneClass_ = z.className;
+		}
+	}
+}
+
 float MapView::baseLight(float x, float y) const {
 	if (!pmp_) return 128.f;
 	int W = int(pmp_->width), H = int(pmp_->height);
@@ -288,6 +308,11 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		}
 	}
 	const std::vector<GameLight>* gl = gameLighting_ ? &lights : nullptr;
+	if (showPanorama_ && hasOpenAir_ && panoramaReady_ && PanoramaRenderer::gateOpen(focus.y / kBlock, groundRow_)) {
+		panorama_.draw(glm::scale(glm::mat4(1.f), glm::vec3(1.f / kBlock)) * glm::inverse(viewProj * world));
+		if (showCarpet_)
+			panorama_.drawCarpet(viewProj * world * glm::scale(glm::mat4(1.f), glm::vec3(kBlock)), focus.x / kBlock, groundRow_);
+	}
 	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl);
 	if (!showObjects_) return;
 	ModelDrawOptions opt = baseOpt;
@@ -424,10 +449,12 @@ bool MapView::ui() {
 	size_t resolved = 0;
 	for (auto& o : objects_) resolved += o.slot != nullptr;
 	ImGui::Text("%s", file_.c_str());
-	if (scenarioMode_)
+	if (scenarioMode_) {
 		ImGui::Text("Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)", placed_, pmp_ ? pmp_->width : 0,
 		            pmp_ ? pmp_->height : 0, worldOrigin_[0], worldOrigin_[1]);
-	else
+		if (lightBegin_ != Scenario::kNoSky)
+			ImGui::Text("Niebo do wiersza %d (set_light_begin): %d pól w świetle dziennym", lightBegin_, skyTiles_);
+	} else
 		ImGui::Text("PMP: %s  %ux%u bloków   l2m: %s", script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
 		            pmp_ ? pmp_->height : 0, script_->l2mFile.empty() ? "-" : script_->l2mFile.c_str());
 	ImGui::Text("obiekty: %zu, z modelem: %zu", objects_.size(), resolved);
@@ -440,12 +467,23 @@ bool MapView::ui() {
 	ImGui::SameLine();
 	ImGui::Checkbox("Strefa horyzontu", &showZone_);
 	ImGui::Checkbox("Oświetlenie jak w grze", &gameLighting_);
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!hasOpenAir_);
+	ImGui::Checkbox("Panorama nieba", &showPanorama_);
+	ImGui::SameLine();
+	ImGui::Checkbox("Dywan łąki", &showCarpet_);
+	ImGui::EndDisabled();
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\n"
+		                  "Tylko gdy scenariusz ustawia niebo (set_light_begin) albo set_ground_begin.");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Prawo z Wiggles.exe: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\n"
 		                  "lampy class_light (%zu w scenie, rysowane do %d najbliższych).", allLights_.size(), kMaxGameLights);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s",
-		                  zone_ ? zoneClass_.c_str() : "Szablon nie ma obiektu Info_Fog_*.");
+		                  zone_ ? zoneClass_.c_str()
+		                        : zoneObjects_.empty() ? "Szablon nie ma obiektu Info_Fog_*."
+		                                               : "Kamera poza zasięgiem (size) wszystkich obiektów Info_Fog_*.");
 
 
 

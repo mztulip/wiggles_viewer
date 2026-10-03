@@ -31,7 +31,19 @@ góra = (sin dx·sin(−dy), −cos dx, sin dx·cos dy)
 perspektywa: poziomy pół-kąt = 0,3·(szer./wys.) rad  (4:3 → 45,8° w poziomie)
 zoom: gra 1,0–2,5, skrypty i przerywniki 0,5–6,0
 ```
-✅ wigview (`--scenario systeminit` w 1024×768) daje kadr menu zgodny ze zrzutem gry.
+✅ wigview (`--scenario systeminit.tcl` w 1024×768) daje kadr menu zgodny ze zrzutem gry.
+
+**Przycinanie kątów przy dużym oddaleniu** (🔶 ustalone obserwacją, dopasowanie empiryczne). Zrzuty OBERWELT z różnymi `set_view` (`tools/lab/capture.sh scene`) porównane z naszym renderem przy przeszukiwaniu kątów pokazują, że gra ogranicza |dx| i |dy| zależnie od oddalenia (`get_view 1` zwraca przy tym wartości niezmienione, `set_view_begin` nie ma wpływu, a obraz po 60 i 160 s jest taki sam):
+
+| zoom | R (bloki) | zadany kąt → widoczny |
+|---|---|---|
+| 1,38 | 12,1 | dy 0,57 → 0,57, dx 0,5 → 0,5 (bez przycięcia) |
+| 1,7 | 17,2 | dy 0,57 → 0,57 |
+| 2,0 | 22 | dy 0,57 → ≈0,35 |
+| 2,25 | 26 | dy 0,57 → ≈0,23 |
+| 2,5 | 30 | dy 0,3 i 0,57 → ≈0,155; dx 0,22 → ≈0,15; dx −0,4 → ≈−0,15 |
+
+Dopasowanie: `|dx|, |dy| ≤ 2,23 / (R − 15,6)` dla R > 15,6, poniżej bez limitu (`gameViewAngleLimit` w `src/wigview/main.cpp`). Kształt prawa (hiperbola) to hipoteza zgodna z pomiarami, nie stała z gry.
 
 ## Układ współrzędnych ✅
 - Pozycja obiektu `x y z`: x i y w **blokach** (x w prawo, y w dół). **z ze skryptu przelicza się na głębokość świata wzorem z·0,5 + 7** bloków (stałe `DAT_0073708c` = 0,5 i `DAT_00737520` = 7,0 w exe, za Diggles-Unity `COORDINATE_SYSTEM.md` §3.3). Skóra jaskini z z = 15,01 trafia więc na przednią płaszczyznę 14,5, a mech z z = 13,54 na 13,77. ✅ Po tej poprawce scena menu zgadza się ze zrzutem gry (jezioro i drzewa w otworze, skrzynki, mech).
@@ -99,10 +111,21 @@ Ustalony eksperymentem: ten sam korytarz `GNG_021` z różnymi typami pól i zrz
 Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT), `Docs/RIM_CUTOUT_RENDER_RE.md` i `BACKDROP_PARALLAX_RE.md`. Wynik zgodny ze zrzutem menu gry (`../lab/zrzuty/porownania/typ5_menu_blisko.png`).
 - Węzeł mapy (= blok) jest **otwarty**, gdy pierwszy niezerowy typ (7 młodszych bitów) spośród [węzeł, sąsiad S, sąsiad E, sąsiad SE] to 5.
 - Blok (bx, by) ma narożniki w węzłach (bx, by), (bx+1, by), (bx, by+1), (bx+1, by+1). **Alfa wierzchołka** to dwuliniowa interpolacja wartości narożników (0 dla otwartego, 255 dla pozostałych) we współrzędnych palety (x, y). Teren rysowany jest z **alpha testem > 126** (bez mieszania), więc krawędź otworu jest ostra i przebiega w połowie bloku. Bloki z 4 otwartymi narożnikami nie są rysowane.
-- **Wypełnienie otworu** to kolor najbliższej strefy horyzontu: obiekty `Info_Fog_*` w szablonie, klasa wywołuje `horizon_set [get_pos this] r g b głębokość zasięg` (np. `Info_Fog_Urw_d`: 0,305 0,375 0,429, głębokość 32, zasięg 15). Gra czyści tym kolorem ekran.
+- **Wypełnienie otworu** to kolor strefy horyzontu: obiekty `Info_Fog_*` w szablonie, klasa wywołuje `horizon_set [get_pos this] r g b głębokość zasięg` (np. `Info_Fog_Urw_d`: 0,305 0,375 0,429, głębokość 32, zasięg 15). Gra czyści tym kolorem ekran. Strefa jest wybierana co klatkę: najbliższy obiekt `Info_Fog_*`, którego odległość 2D od ogniska kamery jest **mniejsza niż zasięg**. Bez takiego obiektu strefy nie ma (✅ zrzut OBERWELT: przy kamerze daleko od stref drzewa w tle nie przechodzą w niebieskoszary).
 - **Modele tła** za skałą (z < 0 bloków, czyli ponad 7 bloków za najgłębszym dnem) przechodzą w kolor strefy proporcjonalnie do |z| / głębokość. Tak powstaje widok w głąb (jezioro w menu).
-- Panorama powierzchni z paralaksą (`Texture/Misc/Panorama_layer_0..6`) działa tylko na powierzchni i nie jest jeszcze zaimplementowana.
+- Panorama powierzchni: osobna sekcja niżej.
 - Klasy pokazujące model tylko w edytorze map (`if {[get_mapedit]} {class_defaultanim …}`: światła `Misc_LightSrc_*`, część `Info_*`) są w przeglądarce domyślnie ukryte.
+
+### Panorama powierzchni ✅
+Prawo paralaksy za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT, `Docs/BACKDROP_PARALLAX_RE.md` §2), opis i stałe w `src/lib/gfx/panorama_renderer.h`: 6 warstw `Texture/Misc/Panorama_layer_0..5` na siatce 9×9 punktów ekranu, rysowanych przed terenem bez bufora głębi, potem dywan łąki `Panorama_layer_6` w przestrzeni świata (kawałki po 20 pól, z = −60…+7,5, y = wiersz gruntu − 2,5). Kadr na wprost (`set_view 131.78 23.95 2.5 0 0` w OBERWELT) zgadza się ze zrzutem gry.
+
+Ustalone obserwacją (`../lab/zrzuty/gra/oberwelt_*.png`):
+- **Bez nieba nie ma panoramy.** Ten sam kadr z `set_light_begin -10000` daje w grze czarne tło (a obiekty są ok. 4× ciemniejsze).
+- **`set_ground_begin N`** („Y-beginning of the ground”, w danych gry nieużywane) przesuwa dywan łąki i linię przycięcia panoramy: przy 15 tło jest czarne, przy 24 częściowo czarne, przy 30 dywan widać nad terenem, a 36 i 45 dają obraz jak bez tej komendy. Bez niej przyjmujemy więc wiersz gruntu = `set_light_begin` (33 w OBERWELT, dywan schowany za terenem).
+- 🔶 Linia przycięcia panoramy (rysowane tylko komórki nad rzutem płaszczyzny dywanu) nie jest odtworzona. Widać ją tylko przy wierszu gruntu nad kamerą.
+
+### Światło nieba (`set_light_begin`) ✅
+`set_light_begin N` (OBERWELT, `single_Minimal`: 33) wyznacza wiersz, powyżej którego jest niebo. Za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT, `Docs/TUNNEL_TORCH_LIGHTING_RE.md` §6): pole w wierszu < N dostaje bazowe światło **20** (zamiast warstwy 2), gdy w jego kolumnie, w nim albo do 6 pól wyżej, jest otwarte drobne pole (wysokość BlockDB < 13) albo skan wychodzi ponad świat. Bez komendy cały świat jest „pod ziemią”. Implementacja: `applySkyLight` w `src/lib/map_world.cpp`. ✅ Zrzut OBERWELT: namioty i drzewa mają jasność jak w grze. 🔶 Gra liczy też ciemnienie w kątach tuneli (tu warstwa 2 szablonu).
 
 ## Oświetlenie ✅
 Prawo z exe (teren `FUN_004cc040`, modele `FUN_004856e0`), za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT), `Docs/RENDERING_LIGHTING_RESEARCH.md` §2a. Implementacja: `src/lib/gfx/game_lighting.cpp`.
@@ -114,7 +137,9 @@ S = 255 dla odkrytego pola (mgła wojny zmniejsza)
 lampa: class_light {ox oy oz} R {r g b}: pozycja = obiekt + przesunięcie, z·0,5 + 7; c = int(kolor·31)·0,5
 kolor = tekstura · min(I, 255)/255 + clamp(I − 255, 0, 64)/255
 ```
-Bez lamp zwykła skała ma I ≈ 46/255, czyli jest ciemna jak w grze. Jedna lampa nasyca swoje otoczenie (obcięcie do 255), więc nakładające się lampy nie prześwietlają obrazu. Mgła wysokościowa (ciepły szary 170, 170, 155) nie jest jeszcze zaimplementowana.
+Bez lamp zwykła skała ma I ≈ 46/255, czyli jest ciemna jak w grze. Jedna lampa nasyca swoje otoczenie (obcięcie do 255), więc nakładające się lampy nie prześwietlają obrazu. Ciepła szara „mgła” z zrzutów (170, 170, 155) to mgła wojny pól odkrytych, ale niewidocznych (silnik, TODO).
+
+🔶 **Modele: oświetlenie dwustronne.** Drzewa `Obw_baum_*` mają normalne skierowane do środka. Z wzorem wprost wychodzą ciemne, a w grze są jasne. Namioty mają normalne na zewnątrz i są jasne w obu przypadkach. Wybór jaśniejszego wyniku z N i −N daje obraz zgodny ze zrzutami OBERWELT i menu.
 
 ## `.l2m`: warstwa detali terenu ✅
 ```

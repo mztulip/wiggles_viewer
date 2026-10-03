@@ -76,12 +76,22 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Nakładki detali z `.l2m` (narożniki po 2 bity, tekstury `detail/<świat>[2]_<kod>`, modulate×2)
 - [x] Grunt podkładu z typu pola `.PMP` (2 = C, 3 = B, 4 = A) i bloki niewykopane (typ 0) ✅ z eksperymentu na zrzutach gry
 - [x] Typ 5: otwory do tła (węzły otwarte, alpha test, kolor strefy `Info_Fog_*`, zanikanie modeli za skałą)
-- [ ] Panorama powierzchni z paralaksą (`Panorama_layer_0..6`, BACKDROP_PARALLAX_RE §2)
+- [x] Panorama powierzchni z paralaksą (`Panorama_layer_0..5`) i dywan łąki (`Panorama_layer_6`); kadr na wprost zgodny z grą
+- [x] 🔬 Bramka panoramy i wiersz gruntu ustalone obserwacją: bez `set_light_begin` brak panoramy; `set_ground_begin` przesuwa dywan, domyślnie wiersz = `set_light_begin`
+- [ ] Linia przycięcia panoramy (komórki tylko nad rzutem płaszczyzny dywanu), widoczna przy wierszu gruntu nad kamerą
+- [x] Światło nieba `set_light_begin` (bazowe 20 nad linią nieba, skan 6 pól w górę po drobnych polach BlockDB)
+- [x] Wybór strefy horyzontu jak w grze: najbliższy `Info_Fog_*` w zasięgu `size` od ogniska kamery, inaczej brak strefy
+- [x] 🔬 Przycinanie kątów `set_view` przy dużym zoomie (pomiary 1,38–2,5; dopasowanie |kąt| ≤ 2,23/(R − 15,6))
+- [ ] 🔬 Dokładniejsze prawo przycięcia kątów: więcej pomiarów (zoom 1,8, 2,1, 2,4; osobno dx przy 2,0 i 2,25), sprawdzić, czy limit dx i dy jest wspólny
+- [x] 🔬 Oświetlenie modeli dwustronne (jaśniejsze z N i −N): drzewa OBERWELT jasne jak w grze
+- [ ] OBERWELT, różnice z grą: panorama trochę niżej, brak ciemnego pasa lasu w tle, skała `Felsen` ciemna (w grze jasnoszara)
+- [ ] Ciemnienie w kątach tuneli (BASELIGHT pod ziemią, splot różnic wypełnienia); teraz warstwa 2 szablonu
+- [x] Tekstury: rozlanie koloru w przezroczyste teksele (bez szarych obwódek przy mipmapach)
 - [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
 - [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to mgła wojny dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
 - [ ] Mgła wojny w silniku: szara mgła z gradientem głębokości, czarne pola nieodkryte (prawo w FOG_OF_WAR_RE §80)
-- [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); wymaga analizy exe
+- [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)

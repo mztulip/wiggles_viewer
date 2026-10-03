@@ -2,14 +2,60 @@
 
 #include "lib/vfs.h"
 
+#include <vector>
+
 namespace ow {
 
+namespace {
+
+// Przezroczyste teksele (alfa < 128, np. tło liści) mają w plikach dowolny kolor, często szaroniebieski.
+// Filtrowanie i mipmapy mieszają go z sąsiednimi nieprzezroczystymi, co daje ciemne, szare obwódki.
+// Rozlewamy więc kolor sąsiednich nieprzezroczystych tekseli w przezroczyste (alfa bez zmian).
+std::vector<uint8_t> bleedTransparent(const Image& img) {
+	std::vector<uint8_t> px = img.rgba;
+	const int W = img.width, H = img.height;
+	std::vector<uint8_t> solid(size_t(W) * H);
+	bool any = false;
+	for (size_t i = 0; i < solid.size(); ++i) {
+		solid[i] = px[i * 4 + 3] >= 128;
+		any |= !solid[i];
+	}
+	if (!any) return px;
+	std::vector<uint8_t> next = solid;
+	for (int pass = 0; pass < 16; ++pass) {
+		bool changed = false;
+		for (int y = 0; y < H; ++y)
+			for (int x = 0; x < W; ++x) {
+				size_t i = size_t(y) * W + x;
+				if (solid[i]) continue;
+				int r = 0, g = 0, b = 0, n = 0;
+				for (int dy = -1; dy <= 1; ++dy)
+					for (int dx = -1; dx <= 1; ++dx) {
+						int xx = (x + dx + W) % W, yy = (y + dy + H) % H; // tekstury się powtarzają
+						size_t j = size_t(yy) * W + xx;
+						if (!solid[j]) continue;
+						r += px[j * 4], g += px[j * 4 + 1], b += px[j * 4 + 2], ++n;
+					}
+				if (!n) continue;
+				px[i * 4] = uint8_t(r / n), px[i * 4 + 1] = uint8_t(g / n), px[i * 4 + 2] = uint8_t(b / n);
+				next[i] = 1;
+				changed = true;
+			}
+		solid = next;
+		if (!changed) break;
+	}
+	return px;
+}
+
+} // namespace
+
 GLuint uploadTexture(const Image& img, bool mipmaps) {
+	std::vector<uint8_t> px = bleedTransparent(img);
 	GLuint id = 0;
 	gl::GenTextures(1, &id);
 	gl::BindTexture(GL_TEXTURE_2D, id);
 	gl::PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.rgba.data());
+	gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
 	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

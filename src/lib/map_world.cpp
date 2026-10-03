@@ -1,5 +1,6 @@
 #include "lib/map_world.h"
 
+#include "lib/blockdb.h"
 #include "lib/vfs.h"
 
 #include <algorithm>
@@ -90,6 +91,12 @@ void parseInto(const Vfs& vfs, const std::string& gamePath, Scenario& sc, int de
 		} else if (cmd == "set_view" && !sc.view) {
 			GameView v;
 			if (ws >> v.x >> v.y >> v.zoom >> v.dx >> v.dy) sc.view = v;
+		} else if (cmd == "set_light_begin") {
+			int v;
+			if (ws >> v) sc.lightBegin = v;
+		} else if (cmd == "set_ground_begin") {
+			int v;
+			if (ws >> v) sc.groundBegin = v;
 		} else if (cmd == "MapTemplateSet" && !pending.empty()) {
 			ScenarioPlacement p;
 			p.script = pending;
@@ -101,13 +108,44 @@ void parseInto(const Vfs& vfs, const std::string& gamePath, Scenario& sc, int de
 
 } // namespace
 
+void applySkyLight(Pmp& grid, int originY, int lightBegin, const BlockDb* db, int* litCount) {
+	const int W = int(grid.width), H = int(grid.height);
+	constexpr int kScan = 6;      // 24 kroki po 2 drobne pola
+	constexpr uint32_t kAir = 59; // blok otwartego powietrza
+	constexpr int kOpenFill = 13; // drobne pole o wysokości < 0xD jest otwarte
+	auto open = [&](uint32_t block) {
+		if (block == kAir) return true;
+		const BlockRecord* r = db ? db->record(block) : nullptr;
+		if (!r) return false;
+		for (uint8_t d : r->depth)
+			if (d < kOpenFill) return true;
+		return false;
+	};
+	int lit = 0;
+	for (int y = 0; y < H && originY + y < lightBegin; ++y)
+		for (int x = 0; x < W; ++x) {
+			bool sky = false;
+			for (int k = 0; k <= kScan && !sky; ++k) {
+				int wy = originY + y - k; // wiersz w świecie
+				if (wy < 0) sky = true;   // skan wyszedł ponad świat
+				else if (y - k >= 0) sky = open(grid.blocks[size_t(y - k) * W + x]);
+				// poza przycięciem (nad nim) jest domyślny świat: lita skała
+			}
+			if (sky) {
+				grid.layer2[size_t(y) * W + x] = uint8_t(kDaylight);
+				++lit;
+			}
+		}
+	if (litCount) *litCount = lit;
+}
+
 Scenario parseScenario(const Vfs& vfs, const std::string& gamePath) {
 	Scenario sc;
 	parseInto(vfs, gamePath, sc, 0);
 	return sc;
 }
 
-BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin) {
+BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const BlockDb* db) {
 	BuiltWorld out;
 	struct Loaded {
 		ScenarioPlacement place;
@@ -165,6 +203,7 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin) {
 			out.objects.push_back(o);
 		}
 	}
+	applySkyLight(out.grid, y0, sc.lightBegin, db, &out.skyTiles);
 	return out;
 }
 

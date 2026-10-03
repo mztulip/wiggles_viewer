@@ -51,6 +51,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - **Bez CMake.** Budowanie odbywa się własnymi skryptami bash (`build.sh`).
 - Repo nie może zawierać danych z oryginalnej gry (także wyników sondy z treścią skryptów; te zostają w `../lab/`).
 - Eksperymenty na grze tylko na kopii w `../lab/` (osobny prefiks Wine), nigdy na instalacji w `~/.wine`.
+- **Nie deasemblujemy ani nie analizujemy kodu exe.** Zachowanie gry ustalamy obserwacją (laboratorium, sonda Tcl, zrzuty przy zmienianych parametrach) i odtwarzamy. Ustalenia z cudzych opracowań (adresy `FUN_…` z Diggles-Unity) to tylko cytowane źródło, które sprawdzamy eksperymentem.
 - Po każdym kroku zaktualizuj `TODO.md`.
 - **Uznawaj pracę autorów.** Każda wiedza wzięta z cudzego repo (dokumentacja, komentarze w kodzie, opisy commitów) ma odnośnik do repozytorium na GitHubie (lista w `CREDITS.md`). Nie kopiujemy cudzego kodu, tylko wiedzę o formatach.
 - Nowe ustalenia o formatach dopisuj do `docs/BAZA_WIEDZY.md` (oznaczenia ✅ potwierdzone, 🔶 hipoteza).

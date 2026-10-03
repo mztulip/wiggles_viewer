@@ -9,6 +9,7 @@
 
 #include "lib/blockdb.h"
 #include "lib/class_db.h"
+#include "lib/gfx/panorama_renderer.h"
 #include "lib/gfx/terrain_renderer.h"
 #include "lib/heightfield.h"
 #include "lib/terrain_mesh.h"
@@ -57,10 +58,14 @@ public:
 	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).
 	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset,
 	            const glm::vec3& focus = glm::vec3(0.f));
-	// Strefa horyzontu szablonu (obiekt Info_Fog_* najbliższy środka), jeśli jest: kolor tła otworów.
+	// Strefa horyzontu (kolor tła otworów i zanikanie modeli za skałą). Prawo gry (FUN_004750b0):
+	// co klatkę najbliższy obiekt Info_Fog_*, którego odległość 2D od ogniska kamery < size;
+	// bez takiego obiektu strefy nie ma. focus w jednostkach modelu (układ gry).
+	void updateZone(const glm::vec3& focus);
 	const ow::HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
 	// Kamera startowa scenariusza (set_view), we współrzędnych przyciętego świata.
 	const std::optional<ow::GameView>& gameView() const { return gameView_; }
+	const int* origin() const { return worldOrigin_; } // lewy górny róg przyciętego świata (bloki)
 
 	// Obszar sceny do ustawienia kamery (w jednostkach modelu, Y w dół).
 	glm::vec3 center() const { return center_; }
@@ -98,6 +103,11 @@ private:
 	ow::TerrainRenderer terrain_;
 	std::optional<ow::Heightfield> heights_;
 	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false, gameLighting_ = true;
+	bool showPanorama_ = true, hasOpenAir_ = false; // panorama tylko, gdy scenariusz ma niebo (set_light_begin)
+	bool showCarpet_ = true;
+	float groundRow_ = 0.f; // wiersz gruntu panoramy (bloki)
+	ow::PanoramaRenderer panorama_;
+	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
 	bool listScenarios_ = false, scenarioMode_ = false;
@@ -105,6 +115,13 @@ private:
 	std::string scenarioInfo_;
 	std::optional<ow::GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
+	int skyTiles_ = 0, lightBegin_ = ow::Scenario::kNoSky;
+	struct ZoneObject {
+		float x, y;
+		ow::HorizonZone zone;
+		std::string className;
+	};
+	std::vector<ZoneObject> zoneObjects_;
 	std::optional<ow::HorizonZone> zone_;
 	std::string zoneClass_;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
