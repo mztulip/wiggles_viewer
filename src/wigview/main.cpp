@@ -47,7 +47,7 @@ struct Args {
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
-	float yaw = 200.f, pitch = 15.f;
+	float yaw = 20.f, pitch = 15.f;
 	int flip = 1;
 	bool ui = false, viewSet = false;
 	int width = 1400, height = 900;
@@ -113,8 +113,10 @@ struct Viewer {
 	bool interpolate = true; // jak oryginał (AnimIpol, domyślnie włączone)
 
 	ModelDrawOptions draw;
-	bool flipY = true; // modele mają oś Y skierowaną w dół (zakres y ujemny = góra)
-	float yaw = 200.f, pitch = 15.f, dist = 300.f;
+	// Gra (Direct3D) ma układ lewoskrętny: x w prawo, y w dół, z w stronę widza. Odbicie osi Y daje
+	// prawoskrętny układ OpenGL z Y w górę bez lustrzanego obrazu (obrót o 180° wokół X odwracał napisy).
+	bool flipY = true;
+	float yaw = 20.f, pitch = 15.f, dist = 300.f;
 	glm::vec3 pan{0.f};
 	glm::vec3 center{0.f};
 	float radius = 100.f;
@@ -199,15 +201,14 @@ struct Viewer {
 
 	glm::mat4 modelMatrix() const {
 		glm::mat4 m(1.f);
-		// Obrót o 180° wokół X: y w dół -> y w górę, bez lustrzanego odbicia.
-		if (flipY) m = glm::rotate(m, glm::radians(180.f), glm::vec3(1, 0, 0));
+		if (flipY) m = glm::scale(m, glm::vec3(1.f, -1.f, 1.f)); // (x, y, z) gry -> (x, -y, z) OpenGL
 		return glm::translate(m, -center);
 	}
 
 	// Widok mapy jak w grze: kamera z przodu (+z w układzie gry), lekko z góry.
 	void frameMap(bool resetAngles = true) {
 		if (resetAngles) {
-			yaw = 180.f;
+			yaw = 0.f; // kamera z przodu (+z), jak w grze
 			pitch = 10.f;
 		}
 		center = maps.center();

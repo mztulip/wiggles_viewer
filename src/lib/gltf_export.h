@@ -8,7 +8,9 @@
 // Przy kilku animacjach węzły innych animacji są ukryte (skala 0). Klip pokazuje swój węzeł
 // (skala 1) i ukrywa węzeł pierwszej animacji, która jest domyślnie widoczna.
 //
-// Układ współrzędnych: glTF ma oś Y w górę, a modele gry Y w dół, więc obracamy o 180° wokół X.
+// Układ współrzędnych: gra ma układ lewoskrętny (Y w dół, Z do widza), glTF prawoskrętny z Y w górę,
+// więc odbijamy oś Y: (x, y, z) -> (x, -y, z). Siatki są dwustronne, więc zmiana kolejności
+// wierzchołków trójkątów nie ma znaczenia.
 // UV nie wymaga zmian (oba formaty mają v=0 u góry tekstury).
 #pragma once
 

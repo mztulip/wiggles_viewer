@@ -142,7 +142,7 @@ x = (u16_x - 32768) / 4.0      // tak samo y i z
 ```
 Wynik to stały przecinek z krokiem 0,25 jednostki. Wszystkie klatki używają tego samego układu, więc animacja nie „pływa”. Weryfikacja: rozpiętość zdekwantyzowanych punktów zgadza się z `bboxMin/bboxMax` (stosunek 3,99 przed podziałem przez 4).
 
-**Orientacja ✅:** oś **Y jest skierowana w dół**. Głowa postaci ma ujemne y; `BABY` mieści się w y ∈ (−97, 5). Aby postawić model w układzie z Y w górę, obróć go o 180° wokół osi X (y → −y, z → −z). Zwykłe odwrócenie samego y dałoby lustrzane odbicie.
+**Orientacja ✅:** układ gry (Direct3D) jest **lewoskrętny**: x w prawo, **y w dół**, z w stronę widza (przód modelu patrzy w +z). Głowa postaci ma ujemne y; `BABY` mieści się w y ∈ (−97, 5). Do prawoskrętnego układu z Y w górę (OpenGL, glTF) **odbij samą oś Y**: (x, y, z) → (x, −y, z), normalne tak samo. Sprawdzone na teksturze z napisem (`brainposter` w `KRISTALL.3DB`): napis czyta się poprawnie z kamery w +z. Wcześniejsza wersja tej dokumentacji zalecała obrót o 180° wokół X i to było **błędne**, bo dawało lustrzany obraz.
 
 Skala: postać krasnala ma około 200 jednostek wysokości. 🔶 Relacja do jednostek świata gry nie jest jeszcze znana.
 
@@ -197,7 +197,7 @@ Nazewnictwo animacji postaci: `*_start`, `*_loop`, `*_end` (np. `gehen_start` �
 3. Dla wybranego obiektu weź animację, a z niej klatkę → mesh.
 4. Dla każdego linku zbuduj bufor wierzchołków (pos po dekwantyzacji, uv, indeks normalnej) i bufor indeksów `u16`.
 5. Teksturę wyszukaj wg §6 i wczytaj TGA. Filtrowanie liniowe, zawijanie REPEAT.
-6. Macierz modelu: obrót 180° wokół X (§4), przesunięcie środka bbox do zera.
+6. Macierz modelu: odbicie osi Y (§4), przesunięcie środka bbox do zera. Kamera w +z patrzy w −z.
 7. Shader: `kolor = tekstura(uv) * (ambient + (1-ambient) * max(dot(N, L), 0))`, gdzie `N = sphere[indeks]` obrócone macierzą modelu. Odrzuć piksele z alfą < 0,5 (liście, włosy, kraty).
 8. Bez cullingu (modele mają cienkie, dwustronne elementy), z buforem głębi.
 
@@ -215,7 +215,7 @@ Tak eksportujemy modele (`src/lib/gltf_export.cpp`, wynik przechodzi walidator K
 | odtwarzanie | klip: w chwili i/fps waga celu i = 1, interpolacja LINEAR (dokładnie jak liniowa interpolacja klatek) |
 | tekstura TGA | obraz PNG osadzony w `.glb`; alfa < 255 → `alphaMode: MASK` (próg 0,5); `doubleSided: true` |
 
-Konwersja współrzędnych: `(x, y, z) → (x, −y, −z) · 0,01` (Y w górę, metry; krasnal ma ok. 2 m). UV bez zmian, bo glTF też ma v = 0 u góry. Przy wielu animacjach węzły są domyślnie ukryte skalą 0, a każdy klip pokazuje swój węzeł. Klatki o innej topologii niż klatka 0 (np. 84 z 11 573 w MANN) zastępujemy poprzednią zgodną.
+Konwersja współrzędnych: `(x, y, z) → (x, −y, z) · 0,01` (Y w górę, metry; krasnal ma ok. 2 m). UV bez zmian, bo glTF też ma v = 0 u góry. Przy wielu animacjach węzły są domyślnie ukryte skalą 0, a każdy klip pokazuje swój węzeł. Klatki o innej topologii niż klatka 0 (np. 84 z 11 573 w MANN) zastępujemy poprzednią zgodną.
 
 ## 11. Przykład: `BABY.3DB`
 

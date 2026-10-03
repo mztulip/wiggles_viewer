@@ -5,8 +5,8 @@
 // Druga warstwa (.l2m) dokłada nakładki detali Data/Ground/detail/<świat>[2]_<TL TR BL BR>.tga
 // (mech, kryształy…) mieszane w trybie modulate×2 (szary 128 = bez zmian), drugim przebiegiem.
 //
-// 🔶 Wybór rodzaju gruntu jest tymczasowy: A (skała) dla przedniej płaszczyzny, B (ziemia)
-// dla wydrążeń. Prawdziwe przypisanie (pola BlockDB / warstwy PMP) nie jest jeszcze znane.
+// 🔶 Podkład: zawsze grunt A (szara skała), co zgadza się ze zrzutem z gry dla świata urw.
+// Kiedy gra używa B (ziemia) i C (piasek) oraz masek Msk_*, jeszcze nie wiadomo.
 #pragma once
 
 #include "lib/gfx/shader.h"

@@ -162,15 +162,10 @@ bool MapView::loadTemplate(const std::string& file) {
 			objects_.push_back(p);
 		}
 	}
+	// Kadr na cały teren szablonu (x, y w blokach; z między dnem a przednią płaszczyzną).
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
-	float zMid = 14.f;
-	if (!objects_.empty()) {
-		float zs = 0;
-		for (auto& o : objects_) zs += o.src.pos[2];
-		zMid = zs / float(objects_.size());
-	}
-	center_ = glm::vec3(w * 0.5f, h * 0.5f, zMid) * kBlock;
-	radius_ = std::max(w, h) * kBlock * 0.6f;
+	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
+	radius_ = std::max(w, h) * kBlock * 0.55f;
 	return error_.empty();
 }
 

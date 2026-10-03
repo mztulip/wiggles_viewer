@@ -19,6 +19,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
 - [LICENSE](LICENSE): GPL v3
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
+- `tools/lab/capture.sh` robi zrzut obrazu z oryginalnej gry w niewidocznym Xvfb (`menu`, `template <szablon>`, `scene <plik.tcl>`). Używaj go jako wzorca wizualnego
 - §8 bazy wiedzy: laboratorium (gra pod Wine z sondą Tcl). Narzędzia w `tools/lab/`, wyniki w `../lab/Wiggles/owprobe_*.txt` i `tclerrors.txt`
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik `tools/scan_tcl_natives.py`)
 

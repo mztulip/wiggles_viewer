@@ -19,7 +19,8 @@ Stan: struktura plików ✅, **teren (mapa wysokości z BlockDB) ✅**, znaczeni
 - Pozycja obiektu `x y z` jest w **blokach**. x rośnie w prawo, y w dół, z w stronę widza. Przednia płaszczyzna skały leży przy z ≈ 15, a obiekty w korytarzach mają z ≈ 13–15.
 - 1 blok = **200 jednostek modelu `.3db`** (wzorzec: OBJ z `save_map`). Krasnal ma ok. 1 blok wysokości.
 - Rotacja `rx ry rz` w radianach. W praktyce używana jest tylko `ry`.
-- Kamera gry patrzy z +z w stronę −z (VRML z `save_scene`: kamera w z = 4000).
+- Kamera gry patrzy z +z w stronę −z (VRML z `save_scene`: kamera w z = 4000). Układ jest lewoskrętny jak w modelach. W OpenGL odbijamy oś Y (patrz `3db.md` §4).
+- ⚠ Błąd w danych gry: `kris_caves_2_a.tcl` stawia skórę jaskini w x ≈ 0, a warianty `_b`, `_c` i inne światy w x ≈ 8, czyli w środku wydrążenia. Szablony `kris_caves_*` gra odrzuca zresztą jako „unknown class”, więc pewnie nie są używane.
 
 ## `.PMP` ✅ struktura
 ```
@@ -89,4 +90,6 @@ Zwykle puste (0 B). 🔶
 - Szablony jaskiń (`*_caves_*`) mają „skórę” w postaci dużych obiektów `Dummy_<świat>_caves_*`, czyli gotowych siatek ścian jaskini w trzech poziomach szczegółów.
 
 ## Wzorce z oryginału (laboratorium)
-`save_map {x y w h} plik` (OBJ z mapą wysokości szablonów), `save_scene` (VRML), `data/userstartup.tcl` (własny układ szablonów). Patrz `tools/lab/`.
+`save_map {x y w h} plik` (OBJ z mapą wysokości szablonów), `save_scene` (VRML), `data/userstartup.tcl` (własny układ szablonów), **zrzuty obrazu**: `tools/lab/capture.sh` (gra w niewidocznym Xvfb). Patrz `tools/lab/`.
+
+Ze zrzutu sceny menu (świat urw): podkład to szary grunt A na dnie i na ścianach, a mech pochodzi z nakładek `.l2m`.

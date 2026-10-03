@@ -92,10 +92,9 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 	std::map<std::string, std::vector<uint32_t>> byTex;
 	for (int y = 0; y + 1 < h.height; ++y)
 		for (int x = 0; x + 1 < h.width; ++x) {
-			uint8_t v = h.at(x, y);
 			uint32_t id = h.blockId[size_t(y) * h.width + x];
 			char name[64];
-			std::snprintf(name, sizeof name, "Data/Ground/Gnd_%c%02u.tga", v == 15 ? 'A' : 'B', unsigned(id * 2654435761u % 15 + 1));
+			std::snprintf(name, sizeof name, "Data/Ground/Gnd_A%02u.tga", unsigned(id * 2654435761u % 15 + 1));
 			auto& idx = byTex[name];
 			uint32_t a = uint32_t(y * h.width + x), b = a + 1, c = a + uint32_t(h.width), d = c + 1;
 			idx.insert(idx.end(), {a, c, b, b, c, d});

@@ -179,11 +179,11 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	const float s = opt.scale;
 	auto pos = [&](const std::array<uint16_t, 3>& q) {
 		Vec3f p = Model3db::dequant(q);
-		return Vec3f{p.x * s, -p.y * s, -p.z * s}; // obrót 180° wokół X
+		return Vec3f{p.x * s, -p.y * s, p.z * s}; // układ gry (lewoskrętny, Y w dół) -> glTF (Y w górę)
 	};
 	auto nrm = [&](uint8_t i) {
 		Vec3f n = sphere.size() == 256 ? sphere[i] : Vec3f{0, -1, 0};
-		return Vec3f{n.x, -n.y, -n.z};
+		return Vec3f{n.x, -n.y, n.z};
 	};
 
 	GltfBuilder g;

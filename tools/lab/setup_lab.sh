@@ -25,7 +25,7 @@ if [ ! -f "$WINEPREFIX/system.reg" ]; then
 fi
 ln -sfn "$LAB/Wiggles" "$WINEPREFIX/drive_c/Wiggles"
 
-echo ">> rejestr gry (okno 1024x768, bez filmów, WorkingDir=C:\\Wiggles)"
+echo ">> rejestr gry (pełny ekran 1024x768 w wirtualnym pulpicie, bez filmów, WorkingDir=C:\\Wiggles)"
 cat > "$LAB/wiggles_lab.reg" <<'REG'
 Windows Registry Editor Version 5.00
 
@@ -38,7 +38,7 @@ Windows Registry Editor Version 5.00
 "INSTDIR"="C:\\Wiggles"
 
 [HKEY_CURRENT_USER\Software\SekOst\Wiggles\Screen]
-"Fullscreen"="0"
+"Fullscreen"="1"
 "Width"="1024"
 "Height"="768"
 

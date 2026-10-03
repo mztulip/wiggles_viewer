@@ -15,7 +15,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Sonda: zrzut `ClassInfo`/`ClassList` dla wszystkich klas (hierarchia, metody, atrybuty)
 - [ ] Sonda: zrzut wyników `db_*` dla wszystkich modeli (nazwy animacji, długości): wzorzec do testów naszego parsera `.3db`
 - [ ] Opcjonalnie: zbudować barnacle (SDK) pod Wine, gdy czysty Tcl nie wystarczy
-- [ ] Zrzuty obrazu z działającej gry jako wzorzec wizualny. Gra działa w Xvfb (`Xvfb :77` + `wine explorer /desktop=…`), ale zrzut wychodzi czarny (🔬 GLX w Xvfb?). Na zwykłym pulpicie okno trafia na inny obszar roboczy
+- [x] Zrzuty obrazu z gry: `tools/lab/capture.sh menu|template|scene` (Xvfb, wirtualny pulpit Wine, pełny ekran 1024×768, pełna ścieżka C:\\Wiggles\\Wiggles.exe)
+- [ ] Kamera wigview odpowiadająca `set_view x y zoom kąt kąt` z gry (porównania 1:1)
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
 ## Faza 1: szkielet projektu i build
@@ -50,7 +51,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
 - [x] Esc zamyka wigview
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
-- [x] Orientacja osi: Y w dół ✅
+- [x] Orientacja osi: Y w dół, układ lewoskrętny; w OpenGL odbicie osi Y (poprawione: obrót odwracał napisy) ✅
 - [ ] 🔬 Skala modeli względem świata gry (jednostki mapy)
 - [ ] Podgląd cieni 32×32 i `cmap` z `.3db`
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
@@ -71,7 +72,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
 - [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu (triplanar)
 - [x] Nakładki detali z `.l2m` (narożniki po 2 bity, tekstury `detail/<świat>[2]_<kod>`, modulate×2)
-- [ ] 🔬 Rodzaj gruntu podkładu (A/B/C) na blok i maski przejść `Msk_*`; młodszy bajt `.l2m`
+- [x] Podkład A (szara skała), zgodny ze zrzutem gry dla urw
+- [ ] 🔬 Kiedy gra używa gruntów B/C i masek `Msk_*` (porównać zrzuty innych światów); młodszy bajt `.l2m`
 - [ ] 🔬 Szczegółowe siatki 3D bloków z BlockDB (ILT + sekcja siatek) zamiast prostej mapy wysokości
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
