@@ -5,8 +5,8 @@
 // Druga warstwa (.l2m) dokłada nakładki detali Data/Ground/detail/<świat>[2]_<TL TR BL BR>.tga
 // (mech, kryształy…) mieszane w trybie modulate×2 (szary 128 = bez zmian), drugim przebiegiem.
 //
-// 🔶 Podkład: zawsze grunt A (szara skała), co zgadza się ze zrzutem z gry dla świata urw.
-// Kiedy gra używa B (ziemia) i C (piasek) oraz masek Msk_*, jeszcze nie wiadomo.
+// Podkład: grunt A/B/C z typu pola .PMP (Heightfield::ground, ✅ ze zrzutów gry), mieszany płynnie
+// na granicach bloków. 🔶 Gra robi przejścia maskami Data/Ground/Msk_*; tu proste uśrednienie.
 #pragma once
 
 #include "lib/gfx/shader.h"
@@ -36,7 +36,8 @@ public:
 
 private:
 	struct Group {
-		GLuint texture = 0;
+		GLuint texture = 0;          // dla nakładek detali: tekstura detalu; dla podkładu: Gnd_A
+		GLuint textureB = 0, textureC = 0;
 		GLuint ebo = 0;
 		GLsizei count = 0;
 	};

@@ -2,6 +2,7 @@
 
 #include "lib/gfx/texture_cache.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,13 +14,16 @@ static const char* kVS = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aUV;
+layout(location = 3) in vec3 aGround; // wagi gruntów A, B, C
 uniform mat4 uViewProj;
 uniform mat4 uWorld;
 out vec3 vNormal;
 out vec3 vLocalNormal;
 out vec3 vLocalPos;
 out float vDepth;
+out vec3 vGround;
 void main() {
+	vGround = aGround;
 	vNormal = mat3(uWorld) * aNormal;
 	vLocalNormal = aNormal;
 	vLocalPos = aPos;
@@ -33,7 +37,10 @@ in vec3 vNormal;
 in vec3 vLocalNormal;
 in vec3 vLocalPos;
 in float vDepth;
+in vec3 vGround;
 uniform sampler2D uTex;
+uniform sampler2D uTexB;
+uniform sampler2D uTexC;
 uniform vec3 uLightDir;
 uniform float uAmbient;
 uniform vec4 uTint;
@@ -51,7 +58,11 @@ void main() {
 	vec3 w = pow(abs(normalize(vLocalNormal)), vec3(4.0));
 	w /= (w.x + w.y + w.z);
 	vec3 p = vLocalPos / 200.0;
-	vec3 t = texture(uTex, p.xy).rgb * w.z + texture(uTex, p.xz).rgb * w.y + texture(uTex, p.yz).rgb * w.x;
+	vec3 tA = texture(uTex, p.xy).rgb * w.z + texture(uTex, p.xz).rgb * w.y + texture(uTex, p.yz).rgb * w.x;
+	vec3 tB = texture(uTexB, p.xy).rgb * w.z + texture(uTexB, p.xz).rgb * w.y + texture(uTexB, p.yz).rgb * w.x;
+	vec3 tC = texture(uTexC, p.xy).rgb * w.z + texture(uTexC, p.xz).rgb * w.y + texture(uTexC, p.yz).rgb * w.x;
+	vec3 g = vGround / max(vGround.x + vGround.y + vGround.z, 1e-4);
+	vec3 t = tA * g.x + tB * g.y + tC * g.z;
 	float l = uAmbient + (1.0 - uAmbient) * max(dot(normalize(vNormal), uLightDir), 0.0);
 	l *= mix(1.0, 0.55, clamp(vDepth, 0.0, 1.0)); // głębiej ciemniej
 	oColor = vec4(t * l, 1.0) * uTint;
@@ -75,7 +86,7 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 	if (h.width < 2 || h.height < 2) return;
 	const float S = Heightfield::kSampleUnits;
 	struct V {
-		float pos[3], nrm[3], uv[2];
+		float pos[3], nrm[3], uv[2], ground[3];
 	};
 	std::vector<V> verts(size_t(h.width) * h.height);
 	for (int y = 0; y < h.height; ++y)
@@ -85,7 +96,18 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 			float dzdy = (Heightfield::depthZ(h.at(x, y + 1)) - Heightfield::depthZ(h.at(x, y - 1))) / (2 * S);
 			glm::vec3 n = glm::normalize(glm::vec3(-dzdx, -dzdy, 1.f));
 			float px = (float(x) + 0.5f) * S, py = (float(y) + 0.5f) * S;
-			verts[size_t(y) * h.width + x] = {{px, py, z}, {n.x, n.y, n.z}, {px / 200.f, py / 200.f}};
+			// Wagi gruntów: średnia z otoczenia 5×5 próbek, żeby granice bloków przechodziły płynnie
+			// (gra używa do tego masek Data/Ground/Msk_*; tu uproszczenie).
+			float gw[3] = {0, 0, 0};
+			if (!h.ground.empty())
+				for (int dy = -2; dy <= 2; ++dy)
+					for (int dx = -2; dx <= 2; ++dx) {
+						int sx = std::clamp(x + dx, 0, h.width - 1), sy = std::clamp(y + dy, 0, h.height - 1);
+						gw[h.ground[size_t(sy) * h.width + sx]] += 1.f;
+					}
+			else
+				gw[0] = 1.f;
+			verts[size_t(y) * h.width + x] = {{px, py, z}, {n.x, n.y, n.z}, {px / 200.f, py / 200.f}, {gw[0], gw[1], gw[2]}};
 		}
 
 	// Trójkąty pogrupowane według tekstury (rodzaj gruntu + wariant zależny od bloku).
@@ -94,7 +116,8 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 		for (int x = 0; x + 1 < h.width; ++x) {
 			uint32_t id = h.blockId[size_t(y) * h.width + x];
 			char name[64];
-			std::snprintf(name, sizeof name, "Data/Ground/Gnd_A%02u.tga", unsigned(id * 2654435761u % 15 + 1));
+			// Grupa = wariant tekstury (1..15, zależny od bloku); w grupie wiązane są Gnd_A/B/C tego wariantu.
+			std::snprintf(name, sizeof name, "%02u", unsigned(id * 2654435761u % 15 + 1));
 			auto& idx = byTex[name];
 			uint32_t a = uint32_t(y * h.width + x), b = a + 1, c = a + uint32_t(h.width), d = c + 1;
 			idx.insert(idx.end(), {a, c, b, b, c, d});
@@ -108,7 +131,8 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, pos));
 	gl::VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, nrm));
 	gl::VertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, uv));
-	for (GLuint i = 0; i < 3; ++i) gl::EnableVertexAttribArray(i);
+	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, ground));
+	for (GLuint i = 0; i < 4; ++i) gl::EnableVertexAttribArray(i);
 	auto upload = [&](const std::map<std::string, std::vector<uint32_t>>& m, std::vector<Group>& out) {
 		for (auto& [name, idx] : m) {
 			Group g;
@@ -120,7 +144,17 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 			out.push_back(g);
 		}
 	};
-	upload(byTex, groups_);
+	for (auto& [variant, idx] : byTex) {
+		Group g;
+		g.texture = textures.getPath("Data/Ground/Gnd_A" + variant + ".tga").id;
+		g.textureB = textures.getPath("Data/Ground/Gnd_B" + variant + ".tga").id;
+		g.textureC = textures.getPath("Data/Ground/Gnd_C" + variant + ".tga").id;
+		g.count = GLsizei(idx.size());
+		gl::GenBuffers(1, &g.ebo);
+		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
+		gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
+		groups_.push_back(g);
+	}
 
 	// Nakładki detali z .l2m: starszy bajt = 4 narożniki po 2 bity (TL, TR, BL, BR; 0 brak, 1 zestaw
 	// <świat>, 2 zestaw <świat>2). Plik: detail/<świat>[2]_<bity narożników>.tga, pełne pokrycie
@@ -163,6 +197,8 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 	gl::Uniform3f(prog_.uniform("uLightDir"), lightDir.x, lightDir.y, lightDir.z);
 	gl::Uniform1f(prog_.uniform("uAmbient"), ambient);
 	gl::Uniform1i(prog_.uniform("uTex"), 0);
+	gl::Uniform1i(prog_.uniform("uTexB"), 1);
+	gl::Uniform1i(prog_.uniform("uTexC"), 2);
 	gl::Uniform4f(prog_.uniform("uTint"), 1, 1, 1, 1);
 	gl::Uniform1i(prog_.uniform("uDetail"), 0);
 	gl::Enable(GL_DEPTH_TEST);
@@ -171,6 +207,11 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 	gl::ActiveTexture(GL_TEXTURE0);
 	gl::BindVertexArray(vao_);
 	for (const auto& g : groups_) {
+		gl::ActiveTexture(GL_TEXTURE1);
+		gl::BindTexture(GL_TEXTURE_2D, g.textureB);
+		gl::ActiveTexture(GL_TEXTURE2);
+		gl::BindTexture(GL_TEXTURE_2D, g.textureC);
+		gl::ActiveTexture(GL_TEXTURE0);
 		gl::BindTexture(GL_TEXTURE_2D, g.texture);
 		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
 		gl::DrawElements(GL_TRIANGLES, g.count, GL_UNSIGNED_INT, nullptr);

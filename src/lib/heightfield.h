@@ -19,6 +19,7 @@ struct Heightfield {
 	int width = 0, height = 0; // w próbkach
 	std::vector<uint8_t> value;
 	std::vector<uint32_t> blockId; // ID bloku dla każdej próbki (do tekstur i podglądu)
+	std::vector<uint8_t> ground;   // rodzaj gruntu próbki: 0 = A (skała), 1 = B (ziemia), 2 = C (piasek)
 
 	uint8_t at(int x, int y) const {
 		x = x < 0 ? 0 : (x >= width ? width - 1 : x);
@@ -29,7 +30,13 @@ struct Heightfield {
 	static float depthZ(uint8_t v) { return kFrontZ - (15.f - float(v)) * kLevelUnits; }
 };
 
-// Nieznane ID bloków dają litą skałę.
-Heightfield buildHeightfield(const Pmp& pmp, const BlockDb& db);
+// Rodzaj gruntu z typu pola .PMP (młodszy półbajt; ✅ ze zrzutów gry): 2 -> C, 3 -> B, 4 -> A,
+// pozostałe (0, 5) -> A.
+int groundFromPmpType(uint8_t type);
+// Typ 0 (młodszy półbajt) = blok niewykopany: gra pokazuje litą skałę, choć BlockDB ma jego kształt.
+inline bool isUndug(uint8_t type) { return (type & 0x0F) == 0; }
+
+// Nieznane ID bloków dają litą skałę. showUndug: pokaż kształt bloków niewykopanych (typ 0).
+Heightfield buildHeightfield(const Pmp& pmp, const BlockDb& db, bool showUndug = false);
 
 } // namespace ow

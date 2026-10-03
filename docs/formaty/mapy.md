@@ -25,7 +25,7 @@ Stan: struktura plików ✅, **teren (mapa wysokości z BlockDB) ✅**, znaczeni
 ## `.PMP` ✅ struktura
 ```
 u32 w, u32 h                 rozmiar w blokach
-u8  typ[w*h]                 🔶 np. 02, 04; 0x84 we wnętrzu jaskini unq_menue (bit 0x80 = wydrążenie?)
+u8  typ[w*h]                 młodszy półbajt ✅ (patrz „Typ pola” niżej), bit 0x80 🔶 (bez widocznej różnicy)
 u32 blok[w*h]                ID bloku w BlockDB (0..118687) -> kształt terenu (patrz niżej)
 u32 n
 u16 maska[n]                 🔶 przebiegi; wiersze po 32·w+1 próbek, 8 wierszy na blok. W szybie GNG_007
@@ -46,13 +46,24 @@ rekordy bloków: 118688 × 89 B
 dalej: szczegółowe siatki 3D (listy indeksów u16, wierzchołki) 🔶
 ```
 - Rekordy bloków są **identyczne w trzech plikach**. Pliki różnią się tylko siatkami 3D, a gra wybiera plik ustawieniem `LandScapeQuality` (0–2).
-- **Typ pola w `.PMP`:** młodszy półbajt 0, 2, 3, 4 lub 5, starszy bit 0x80. 🔶 Kandydat na rodzaj gruntu podkładu: w `unq_menue` skała ma 0x84, wnętrze jaskini 0x85, a korytarze GNG mają 02. **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść.
+- **Typ pola w `.PMP`** ✅ (eksperyment: ten sam korytarz `GNG_021` z różnymi typami, zrzuty z gry `capture.sh`):
+
+  | młodszy półbajt | znaczenie |
+  |---|---|
+  | 0 | blok **niewykopany**: gra pokazuje litą skałę, choć `BlockDB` ma kształt wydrążenia (tunel do odkopania) |
+  | 2 | grunt **C** (piasek) |
+  | 3 | grunt **B** (ziemia) |
+  | 4 | grunt **A** (szara skała) |
+  | 5 | tylna ściana „przezroczysta”: prześwituje tło (logo, panorama jeziora w menu; bez tła czarno) |
+
+  Grunt dotyczy całego bloku, także przedniej powierzchni skały. Bit 0x80 nie zmieniał wyglądu (0x04 i 0x84, 0x02 i 0x82 wyglądają tak samo) 🔶. Przejścia między gruntami sąsiednich bloków gra robi maskami `Msk_*` 🔶. Przeglądarka tymczasowo uśrednia wagi gruntów na granicach.
+- **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść 🔶.
 - **Mapa wysokości szablonu:** blok (bx, by) z `.PMP` daje próbki (bx·8+sx, by·8+sy) = `głębokość[sy][sx]`. Próbka ma 25 jednostek (1/8 bloku).
 - **Głębokość wydrążenia = (15 − v) · 100 jednostek**. W układzie świata przednia płaszczyzna leży przy z = 3000 (15 bloków), a próbka v ma z = 3000 − (15 − v)·100. Przykład z korytarza `GNG_001`: bloki 76–79 (sufit: f, f, e/d/c, b…), blok 80 (cały b = głębokość 400), blok 81 (b u góry, f na dole).
 - ✅ Weryfikacja: wierzchołki OBJ z `save_map` gry dla trzech szablonów zgadzają się z naszą mapą (253 dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian).
 
 ### Tekstury gruntu (`Data/Ground`)
-`Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>[2]_<TL TR BL BR>` to tekstury detali wybierane przez `.l2m` (patrz niżej). 🔶 Który rodzaj gruntu ma blok, jeszcze nie wiemy. Przeglądarka tymczasowo używa A dla przedniej płaszczyzny i B dla wydrążeń.
+`Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>[2]_<TL TR BL BR>` to tekstury detali wybierane przez `.l2m` (patrz niżej). Rodzaj gruntu bloku wynika z typu pola `.PMP` (patrz wyżej).
 
 ## `.l2m`: warstwa detali terenu ✅
 ```
@@ -92,4 +103,4 @@ Zwykle puste (0 B). 🔶
 ## Wzorce z oryginału (laboratorium)
 `save_map {x y w h} plik` (OBJ z mapą wysokości szablonów), `save_scene` (VRML), `data/userstartup.tcl` (własny układ szablonów), **zrzuty obrazu**: `tools/lab/capture.sh` (gra w niewidocznym Xvfb). Patrz `tools/lab/`.
 
-Ze zrzutu sceny menu (świat urw): podkład to szary grunt A na dnie i na ścianach, a mech pochodzi z nakładek `.l2m`.
+Ze zrzutu sceny menu (świat urw): podkład to szary grunt A (typ pola 4) na dnie i na ścianach, a mech pochodzi z nakładek `.l2m`. Zrzuty i zestawienia: `../lab/zrzuty/` (poza repo).

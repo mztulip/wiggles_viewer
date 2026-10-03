@@ -147,7 +147,7 @@ bool MapView::loadTemplate(const std::string& file) {
 		error_ = e.what();
 	}
 	if (pmp_ && blocks_.loaded()) {
-		heights_ = buildHeightfield(*pmp_, blocks_);
+		heights_ = buildHeightfield(*pmp_, blocks_, showUndug_);
 		// Świat z prefiksu nazwy szablonu (urw, kris, lava, swf); inne (unq_, multi_…) -> urw.
 		std::string world = Vfs::lower(file.substr(0, file.find('_')));
 		if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
@@ -318,7 +318,9 @@ bool MapView::ui() {
 	ImGui::SameLine();
 	ImGui::Checkbox("Detale (.l2m)", &terrain_.showDetail);
 	ImGui::SameLine();
-	ImGui::TextDisabled("(rodzaj gruntu tymczasowy: skała/ziemia)");
+	if (ImGui::Checkbox("Niewykopane", &showUndug_)) loadTemplate(file_);
+	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bloki typu 0: gra pokazuje je jako litą skałę (do odkopania).\nZaznacz, aby zobaczyć ich zaplanowany kształt z BlockDB.");
+
 
 	if (ImGui::CollapsingHeader("Siatka 2D", ImGuiTreeNodeFlags_DefaultOpen)) uiGrid();
 	if (ImGui::CollapsingHeader("Filtr obiektów", ImGuiTreeNodeFlags_DefaultOpen)) {

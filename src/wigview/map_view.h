@@ -73,7 +73,7 @@ private:
 	std::string blocksError_;
 	ow::TerrainRenderer terrain_;
 	std::optional<ow::Heightfield> heights_;
-	bool showTerrain_ = true, showObjects_ = true;
+	bool showTerrain_ = true, showObjects_ = true, showUndug_ = false;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::map<std::string, ModelSlot> models_;
 	std::map<std::string, std::pair<std::string, int>> objectIndex_; // obiekt -> (plik, indeks), wypełniane leniwie
