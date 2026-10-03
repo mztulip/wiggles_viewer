@@ -79,7 +79,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Panorama powierzchni z paralaksą (`Panorama_layer_0..6`, BACKDROP_PARALLAX_RE §2)
 - [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
-- [ ] Mgła wysokościowa (170, 170, 155), cienie 32×32 pod obiektami, mgła wojny
+- [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to mgła wojny dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
+- [ ] Mgła wojny w silniku: szara mgła z gradientem głębokości, czarne pola nieodkryte (prawo w FOG_OF_WAR_RE §80)
+- [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); wymaga analizy exe
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
