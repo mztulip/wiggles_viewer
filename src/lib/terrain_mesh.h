@@ -28,6 +28,7 @@ struct TerrainVertex {
 	float normal[3];
 	float ground[3]; // wagi gruntów A, B, C (suma 1)
 	float alpha;     // 0..1: dwuliniowo z narożników bloku (0 = węzeł otwarty do tła); rysujemy, gdy > 126/255
+	float base;      // jasność bazowa B = 16·warstwa2 (dwuliniowo z narożników) + 64 (game_lighting.h)
 };
 
 struct TerrainMesh {

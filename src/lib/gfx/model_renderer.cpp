@@ -7,7 +7,7 @@
 
 namespace ow {
 
-static const char* kVS = R"(#version 330 core
+static const char* kVSHead = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aUV;
 layout(location = 2) in float aByte;
@@ -21,13 +21,25 @@ out vec2 vUV;
 out float vByte;
 out vec3 vNormal;
 out float vGameZ;
+out vec3 vGameDiffuse;
+out vec3 vGameSpec;
 uniform float uHorizonZOffset;
+uniform mat4 uGameModel;
+uniform float uBase;
+)";
+
+static const char* kVSBody = R"(
 void main() {
 	vUV = aUV;
 	vByte = mix(aByte, aByte2, uLerp) / 255.0;
-	vec3 n = mix(uSphere[int(aByte + 0.5)], uSphere[int(aByte2 + 0.5)], uLerp);
+	vec3 n = normalize(mix(uSphere[int(aByte + 0.5)], uSphere[int(aByte2 + 0.5)], uLerp));
 	vNormal = mat3(uModel) * n;
-	vec4 wp = uModel * vec4(mix(aPos, aPos2, uLerp), 1.0);
+	vec3 mp = mix(aPos, aPos2, uLerp);
+	if (uGameLight == 1) {
+		vec3 gp = (uGameModel * vec4(mp, 1.0)).xyz / 200.0;
+		gameLighting(gp, normalize(mat3(uGameModel) * n), uBase, vGameDiffuse, vGameSpec);
+	}
+	vec4 wp = uModel * vec4(mp, 1.0);
 	vGameZ = wp.z + uHorizonZOffset;
 	gl_Position = uViewProj * wp;
 }
@@ -38,6 +50,9 @@ in vec2 vUV;
 in float vByte;
 in vec3 vNormal;
 in float vGameZ;
+in vec3 vGameDiffuse;
+in vec3 vGameSpec;
+uniform int uGameLight;
 uniform vec4 uHorizon;
 uniform sampler2D uTex;
 uniform int uMode;
@@ -50,7 +65,8 @@ void main() {
 	vec4 t = texture(uTex, vUV);
 	if (uAlphaTest != 0 && t.a < 0.5) discard;
 	vec3 c = t.rgb;
-	if (uMode == 1) c *= vByte;
+	if (uGameLight == 1) c = c * vGameDiffuse + vGameSpec;
+	else if (uMode == 1) c *= vByte;
 	else if (uMode == 2) {
 		vec3 n = normalize(vNormal);
 		c *= uAmbient + (1.0 - uAmbient) * max(dot(n, uLightDir), 0.0);
@@ -75,7 +91,8 @@ ModelRenderer::~ModelRenderer() {
 }
 
 bool ModelRenderer::init(std::string& err) {
-	if (!prog_.build(kVS, kFS, err)) return false;
+	std::string vs = std::string(kVSHead) + kGameLightingGlsl + kVSBody;
+	if (!prog_.build(vs.c_str(), kFS, err)) return false;
 	if (!vao_) gl::GenVertexArrays(1, &vao_);
 	return true;
 }
@@ -164,6 +181,9 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	gl::Uniform1f(prog_.uniform("uLerp"), t);
 	gl::Uniform4f(prog_.uniform("uHorizon"), opt.horizon.r, opt.horizon.g, opt.horizon.b, opt.horizon.a);
 	gl::Uniform1f(prog_.uniform("uHorizonZOffset"), opt.horizonZOffset);
+	uploadGameLights(prog_, opt.gameLights != nullptr, opt.gameLights);
+	gl::UniformMatrix4fv(prog_.uniform("uGameModel"), 1, GL_FALSE, glm::value_ptr(opt.gameModel));
+	gl::Uniform1f(prog_.uniform("uBase"), opt.base);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
 	gl::UniformMatrix4fv(prog_.uniform("uModel"), 1, GL_FALSE, glm::value_ptr(model));
 	if (sphere_.size() == 256)

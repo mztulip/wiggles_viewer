@@ -77,7 +77,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Typ 5: otwory do tła (węzły otwarte, alpha test, kolor strefy `Info_Fog_*`, zanikanie modeli za skałą)
 - [ ] Panorama powierzchni z paralaksą (`Panorama_layer_0..6`, BACKDROP_PARALLAX_RE §2)
 - [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
-- [ ] Oświetlenie terenu jak w grze (lampy `Misc_LightSrc_*`, `class_light`, mgła `Info_Fog_*`)
+- [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
+- [ ] Mgła wysokościowa (170, 170, 155), cienie 32×32 pod obiektami, mgła wojny
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)

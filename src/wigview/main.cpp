@@ -262,7 +262,7 @@ struct Viewer {
 		x0 = std::clamp(x0, 0, w - 1);
 		gl::Viewport(x0, 0, w - x0, h);
 		if (activeTab == 2) {
-			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z);
+			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
 		} else {
 			uint32_t a, b;
 			float t;

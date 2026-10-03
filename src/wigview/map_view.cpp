@@ -204,6 +204,19 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 			objects_.push_back(p);
 		}
 	}
+	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
+	allLights_.clear();
+	if (script_)
+		for (const auto& o : script_->objects)
+			if (const auto* ls = classes_.lights(o.className))
+				for (const auto& l : *ls) {
+					GameLight g;
+					g.posRadius = glm::vec4(o.pos[0] + l.offset[0], o.pos[1] + l.offset[1],
+					                        (o.pos[2] + l.offset[2]) * 0.5f + 7.f, l.radius);
+					g.color = glm::vec4(std::floor(l.color[0] * 31.f) * 0.5f, std::floor(l.color[1] * 31.f) * 0.5f,
+					                    std::floor(l.color[2] * 31.f) * 0.5f, 0.f);
+					allLights_.push_back(g);
+				}
 	// Kadr na cały teren (x, y w blokach; z między dnem a przednią płaszczyzną).
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
 	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
@@ -239,11 +252,42 @@ glm::mat4 MapView::objectMatrix(const TemplateObject& o) {
 	return m;
 }
 
+float MapView::baseLight(float x, float y) const {
+	if (!pmp_) return 128.f;
+	int W = int(pmp_->width), H = int(pmp_->height);
+	auto zone = [&](int ix, int iy) {
+		ix = std::clamp(ix, 0, W - 1);
+		iy = std::clamp(iy, 0, H - 1);
+		return float(pmp_->layer2[size_t(iy) * W + ix]);
+	};
+	int x0 = int(std::floor(x)), y0 = int(std::floor(y));
+	float tx = x - float(x0), ty = y - float(y0);
+	float z = (1 - tx) * (1 - ty) * zone(x0, y0) + tx * (1 - ty) * zone(x0 + 1, y0) + (1 - tx) * ty * zone(x0, y0 + 1) +
+	          tx * ty * zone(x0 + 1, y0 + 1);
+	return 16.f * z + 64.f;
+}
+
 void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& baseOpt,
-                     float gameZOffset) {
-	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe);
+                     float gameZOffset, const glm::vec3& focus) {
+	// Lampy: do kmaxGameLights najbliższych środka kadru.
+	std::vector<GameLight> lights;
+	if (gameLighting_) {
+		lights = allLights_;
+		glm::vec3 f = focus / kBlock;
+		if (lights.size() > size_t(kMaxGameLights)) {
+			std::partial_sort(lights.begin(), lights.begin() + kMaxGameLights, lights.end(),
+			                  [&](const GameLight& a, const GameLight& b) {
+				                  glm::vec2 da = glm::vec2(a.posRadius) - glm::vec2(f), db = glm::vec2(b.posRadius) - glm::vec2(f);
+				                  return glm::dot(da, da) < glm::dot(db, db);
+			                  });
+			lights.resize(kMaxGameLights);
+		}
+	}
+	const std::vector<GameLight>* gl = gameLighting_ ? &lights : nullptr;
+	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl);
 	if (!showObjects_) return;
 	ModelDrawOptions opt = baseOpt;
+	opt.gameLights = gl;
 	if (const HorizonZone* z = zone()) {
 		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
 		opt.horizonZOffset = gameZOffset;
@@ -258,7 +302,10 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		float f = time_ * fps;
 		int n = int(an.frames.size());
 		int i = int(f) % n, j = (i + 1) % n;
-		glm::mat4 m = world * objectMatrix(o.src);
+		glm::mat4 gm = objectMatrix(o.src);
+		glm::mat4 m = world * gm;
+		opt.gameModel = gm;
+		opt.base = baseLight(o.src.pos[0], o.src.pos[1]);
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
 	}
 }
@@ -388,6 +435,10 @@ bool MapView::ui() {
 	ImGui::Checkbox("Detale (.l2m)", &terrain_.showDetail);
 	ImGui::SameLine();
 	ImGui::Checkbox("Strefa horyzontu", &showZone_);
+	ImGui::Checkbox("Oświetlenie jak w grze", &gameLighting_);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Prawo z Wiggles.exe: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\n"
+		                  "lampy class_light (%zu w scenie, rysowane do %d najbliższych).", allLights_.size(), kMaxGameLights);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s",
 		                  zone_ ? zoneClass_.c_str() : "Szablon nie ma obiektu Info_Fog_*.");

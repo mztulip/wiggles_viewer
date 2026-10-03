@@ -7,6 +7,7 @@
 // Data/Ground/Msk_*; tu uproszczenia (triplanar, płynne wagi).
 #pragma once
 
+#include "lib/gfx/game_lighting.h"
 #include "lib/gfx/shader.h"
 #include "lib/map_template.h"
 #include "lib/terrain_mesh.h"
@@ -30,8 +31,9 @@ public:
 	bool empty() const { return groups_.empty(); }
 	bool showDetail = true;
 	// world: macierz układu sceny (jak dla obiektów). lightDir w tym samym układzie co normalne po world.
+	// gameLights != nullptr: oświetlenie jak w grze (game_lighting.h) z podanymi lampami.
 	void draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-	          bool wireframe);
+	          bool wireframe, const std::vector<GameLight>* gameLights = nullptr);
 
 private:
 	struct Group {

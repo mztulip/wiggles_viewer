@@ -34,6 +34,14 @@ struct HorizonZone {
 	float depth = 32, size = 15;
 };
 
+// Źródło światła klasy: class_light {ox oy oz} R {r g b} (przesunięcie względem obiektu, promień
+// w blokach, kolor 0..1). Klasa może mieć kilka.
+struct ClassLight {
+	float offset[3] = {0, 0, 0};
+	float radius = 0;
+	float color[3] = {0, 0, 0};
+};
+
 class ClassDb {
 public:
 	void load(const Vfs& vfs);
@@ -41,11 +49,13 @@ public:
 	const ClassModel* find(const std::string& className) const;
 	size_t size() const { return classes_.size(); }
 	const HorizonZone* horizon(const std::string& className) const;
+	const std::vector<ClassLight>* lights(const std::string& className) const;
 
 private:
 	void parseScript(const std::string& text, const std::string& modelHint);
 	std::unordered_map<std::string, ClassModel> classes_;
 	std::unordered_map<std::string, HorizonZone> horizons_;
+	std::unordered_map<std::string, std::vector<ClassLight>> lights_;
 };
 
 } // namespace ow

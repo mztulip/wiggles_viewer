@@ -71,6 +71,13 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 					v.normal[2] = n.z;
 					groundAt(float(bx) + p.x, float(by) + p.y, v.ground);
 					float lx = std::clamp(p.x, 0.f, 1.f), ly = std::clamp(p.y, 0.f, 1.f);
+					auto zone = [&](int x, int y) {
+						x = std::clamp(x, 0, m.width - 1);
+						y = std::clamp(y, 0, m.height - 1);
+						return float(pmp.layer2[size_t(y) * m.width + x]);
+					};
+					v.base = 16.f * ((1 - lx) * (1 - ly) * zone(bx, by) + lx * (1 - ly) * zone(bx + 1, by) +
+					                 (1 - lx) * ly * zone(bx, by + 1) + lx * ly * zone(bx + 1, by + 1)) + 64.f;
 					v.alpha = (1 - lx) * (1 - ly) * (o00 ? 0.f : 1.f) + lx * (1 - ly) * (o10 ? 0.f : 1.f) +
 					          (1 - lx) * ly * (o01 ? 0.f : 1.f) + lx * ly * (o11 ? 0.f : 1.f);
 					m.vertices.push_back(v);

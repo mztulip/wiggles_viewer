@@ -10,6 +10,7 @@
 // jednostkowych). Tryby LightingMode pozwalają porównać różne interpretacje.
 #pragma once
 
+#include "lib/gfx/game_lighting.h"
 #include "lib/gfx/shader.h"
 #include "lib/model3db.h"
 #include "lib/sphere.h"
@@ -40,6 +41,11 @@ struct ModelDrawOptions {
 	// żeby otrzymać z gry w jednostkach modelu (przesunięcie kamery w macierzy świata).
 	glm::vec4 horizon{0.f};
 	float horizonZOffset = 0.f;
+	// Oświetlenie jak w grze (game_lighting.h): gameLights != nullptr włącza; gameModel = macierz
+	// obiektu w układzie gry (jednostki modelu), base = jasność bazowa B w miejscu obiektu.
+	const std::vector<GameLight>* gameLights = nullptr;
+	glm::mat4 gameModel{1.f};
+	float base = 128.f;
 };
 
 class ModelRenderer {

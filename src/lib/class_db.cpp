@@ -29,6 +29,11 @@ const HorizonZone* ClassDb::horizon(const std::string& className) const {
 	return it == horizons_.end() ? nullptr : &it->second;
 }
 
+const std::vector<ClassLight>* ClassDb::lights(const std::string& className) const {
+	auto it = lights_.find(Vfs::lower(className));
+	return it == lights_.end() ? nullptr : &it->second;
+}
+
 void ClassDb::parseScript(const std::string& text, const std::string& modelHint) {
 	std::istringstream in(text);
 	std::string line, currentClass, listPrefix;
@@ -74,6 +79,17 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			ws >> currentClass;
 			continue;
 		}
+		// class_light {ox oy oz} R {r g b} [...]
+		size_t lp = t.find("class_light ");
+		if (lp != std::string::npos && !currentClass.empty() && t.find('$') == std::string::npos) {
+			std::string flat;
+			for (char c : t.substr(lp + 12))
+				flat += (c == '{' || c == '}') ? ' ' : c;
+			std::istringstream ws(flat);
+			ClassLight l;
+			if (ws >> l.offset[0] >> l.offset[1] >> l.offset[2] >> l.radius >> l.color[0] >> l.color[1] >> l.color[2])
+				lights_[Vfs::lower(currentClass)].push_back(l);
+		}
 		// horizon_set [get_pos this] r g b głębokość zasięg (tylko wartości liczbowe)
 		size_t hp = t.find("horizon_set [get_pos this]");
 		if (hp != std::string::npos && t.rfind("log", 0) != 0 && !currentClass.empty()) {
@@ -104,6 +120,7 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 void ClassDb::load(const Vfs& vfs) {
 	classes_.clear();
 	horizons_.clear();
+	lights_.clear();
 	// Najpierw dekoracje: tu nazwa pliku wskazuje model.
 	for (const auto& f : vfs.list("Data/Scripts/classes/deco")) {
 		auto low = Vfs::lower(f);

@@ -81,7 +81,7 @@ Ustalony eksperymentem: ten sam korytarz `GNG_021` z różnymi typami pól i zrz
 
 - Grunt dotyczy całego bloku, także przedniej powierzchni skały. Bit 0x80 nie zmieniał wyglądu (0x04 i 0x84, 0x02 i 0x82 wyglądają tak samo) 🔶. Przejścia między gruntami sąsiednich bloków gra robi maskami `Msk_*` 🔶. Przeglądarka tymczasowo interpoluje wagi gruntów dwuliniowo między środkami bloków.
 - Diggles-Unity opisuje typ jako „klasę kamienia” (twardość przy kopaniu): plik 4 → granit (niekopalny), 3 → klasa 1, 2 → klasa 2, 5 → dziura do tła. Ich mapowanie na tekstury było zgadywane, a nasze pochodzi ze zrzutów gry.
-- **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść 🔶 (Diggles-Unity nazywa ją „zone”).
+- **Warstwa 2 `.PMP`** (0–8) to **poziom światła bazowego** pola (w exe `tile+0x07`, u Diggles-Unity „zone”/BASELIGHT): 4 to zwykła skała, 0 to ciemne wnętrze jaskini, wyższe wartości są jaśniejsze. Używa go oświetlenie (niżej).
 - Przykład wysokości z korytarza `GNG_001`: bloki 76–79 to sufit (f, f, e/d/c, b…), blok 80 jest cały b (głębokość 400), blok 81 ma b u góry i f na dole.
 
 ### Otwory do tła (typ 5) ✅
@@ -92,6 +92,18 @@ Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MI
 - **Modele tła** za skałą (z < 0 bloków, czyli ponad 7 bloków za najgłębszym dnem) przechodzą w kolor strefy proporcjonalnie do |z| / głębokość. Tak powstaje widok w głąb (jezioro w menu).
 - Panorama powierzchni z paralaksą (`Texture/Misc/Panorama_layer_0..6`) działa tylko na powierzchni i nie jest jeszcze zaimplementowana.
 - Klasy pokazujące model tylko w edytorze map (`if {[get_mapedit]} {class_defaultanim …}`: światła `Misc_LightSrc_*`, część `Info_*`) są w przeglądarce domyślnie ukryte.
+
+## Oświetlenie ✅
+Prawo z exe (teren `FUN_004cc040`, modele `FUN_004856e0`), za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT), `Docs/RENDERING_LIGHTING_RESEARCH.md` §2a. Implementacja: `src/lib/gfx/game_lighting.cpp`.
+```
+I_c = (B · słońce(N) + S · Σ c_i · exp(−2·d²/R²) · max(N·L, 0,1)) · 0,1     per wierzchołek, per kanał
+B = 16 · warstwa2 (dwuliniowo z narożników bloku albo w miejscu obiektu) + 64
+słońce(N) = 3,6 − 2,546·nx − 2,546·ny                          stałe, z lewej góry (y w dół)
+S = 255 dla odkrytego pola (mgła wojny zmniejsza)
+lampa: class_light {ox oy oz} R {r g b}: pozycja = obiekt + przesunięcie, z·0,5 + 7; c = int(kolor·31)·0,5
+kolor = tekstura · min(I, 255)/255 + clamp(I − 255, 0, 64)/255
+```
+Bez lamp zwykła skała ma I ≈ 46/255, czyli jest ciemna jak w grze. Jedna lampa nasyca swoje otoczenie (obcięcie do 255), więc nakładające się lampy nie prześwietlają obrazu. Mgła wysokościowa (ciepły szary 170, 170, 155) nie jest jeszcze zaimplementowana.
 
 ## `.l2m`: warstwa detali terenu ✅
 ```

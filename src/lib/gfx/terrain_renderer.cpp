@@ -1,5 +1,6 @@
 #include "lib/gfx/terrain_renderer.h"
 
+#include "lib/gfx/game_lighting.h"
 #include "lib/gfx/texture_cache.h"
 
 #include <algorithm>
@@ -10,11 +11,12 @@
 
 namespace ow {
 
-static const char* kVS = R"(#version 330 core
+static const char* kVSHead = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 3) in vec3 aGround; // wagi gruntów A, B, C
 layout(location = 4) in float aAlpha;  // alfa wycięcia (otwory do tła)
+layout(location = 5) in float aBase;   // jasność bazowa (oświetlenie gry)
 uniform mat4 uViewProj;
 uniform mat4 uWorld;
 out vec3 vNormal;
@@ -23,7 +25,13 @@ out vec3 vLocalPos;
 out float vDepth;
 out vec3 vGround;
 out float vAlpha;
+out vec3 vGameDiffuse;
+out vec3 vGameSpec;
+)";
+
+static const char* kVSBody = R"(
 void main() {
+	gameLighting(aPos / 200.0, aNormal, aBase, vGameDiffuse, vGameSpec);
 	vGround = aGround;
 	vAlpha = aAlpha;
 	vNormal = mat3(uWorld) * aNormal;
@@ -41,6 +49,9 @@ in vec3 vLocalPos;
 in float vDepth;
 in vec3 vGround;
 in float vAlpha;
+in vec3 vGameDiffuse;
+in vec3 vGameSpec;
+uniform int uGameLight;
 uniform sampler2D uTex;
 uniform sampler2D uTexB;
 uniform sampler2D uTexC;
@@ -68,13 +79,20 @@ void main() {
 	vec3 tC = texture(uTexC, p.xy).rgb * w.z + texture(uTexC, p.xz).rgb * w.y + texture(uTexC, p.yz).rgb * w.x;
 	vec3 g = vGround / max(vGround.x + vGround.y + vGround.z, 1e-4);
 	vec3 t = tA * g.x + tB * g.y + tC * g.z;
+	if (uGameLight == 1) {
+		oColor = vec4(t * vGameDiffuse + vGameSpec, 1.0) * uTint;
+		return;
+	}
 	float l = uAmbient + (1.0 - uAmbient) * max(dot(normalize(vNormal), uLightDir), 0.0);
 	l *= mix(1.0, 0.55, clamp(vDepth, 0.0, 1.0)); // głębiej ciemniej
 	oColor = vec4(t * l, 1.0) * uTint;
 }
 )";
 
-bool TerrainRenderer::init(std::string& err) { return prog_.build(kVS, kFS, err); }
+bool TerrainRenderer::init(std::string& err) {
+	std::string vs = std::string(kVSHead) + kGameLightingGlsl + kVSBody;
+	return prog_.build(vs.c_str(), kFS, err);
+}
 
 void TerrainRenderer::clear() {
 	for (auto& g : groups_) gl::DeleteBuffers(1, &g.ebo);
@@ -102,8 +120,10 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 	gl::EnableVertexAttribArray(0);
 	gl::EnableVertexAttribArray(1);
 	gl::VertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, alpha));
+	gl::VertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, base));
 	gl::EnableVertexAttribArray(3);
 	gl::EnableVertexAttribArray(4);
+	gl::EnableVertexAttribArray(5);
 
 	auto blockIndices = [&](int bx, int by, std::vector<uint32_t>& out) {
 		auto [first, count] = mesh.blockRanges[size_t(by) * mesh.width + bx];
@@ -162,9 +182,10 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 }
 
 void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-                           bool wireframe) {
+                           bool wireframe, const std::vector<GameLight>* gameLights) {
 	if (groups_.empty()) return;
 	prog_.use();
+	uploadGameLights(prog_, gameLights != nullptr, gameLights);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
 	gl::UniformMatrix4fv(prog_.uniform("uWorld"), 1, GL_FALSE, glm::value_ptr(world));
 	gl::Uniform3f(prog_.uniform("uLightDir"), lightDir.x, lightDir.y, lightDir.z);

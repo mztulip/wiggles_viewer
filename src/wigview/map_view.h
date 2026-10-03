@@ -54,7 +54,9 @@ public:
 	bool ui();
 	void update(float dt) { time_ += dt; }
 	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
-	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset);
+	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).
+	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset,
+	            const glm::vec3& focus = glm::vec3(0.f));
 	// Strefa horyzontu szablonu (obiekt Info_Fog_* najbliższy środka), jeśli jest: kolor tła otworów.
 	const ow::HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
 
@@ -93,7 +95,9 @@ private:
 	std::string blocksError_;
 	ow::TerrainRenderer terrain_;
 	std::optional<ow::Heightfield> heights_;
-	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false;
+	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false, gameLighting_ = true;
+	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
+	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
 	bool listScenarios_ = false, scenarioMode_ = false;
 	std::vector<std::string> scenarios_;
 	std::string scenarioInfo_;
