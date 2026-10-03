@@ -227,6 +227,18 @@ void MapView::step(int d) {
 	scrollToSel_ = true;
 }
 
+// Macierz obiektu w układzie gry (jednostki modelu). Za Zimennik/Diggles-Unity (MIT),
+// Docs/COORDINATE_SYSTEM.md §3.3–3.4, stałe z Wiggles.exe:
+//  - głębokość obiektu: z_świata = z_skryptu·0,5 + 7 bloków (DAT_0073708c, DAT_00737520),
+//  - obrót: M = Ry(−ry)·Rx(−rx)·Rz(−rz) (macierze gry są transpozycją standardowych).
+glm::mat4 MapView::objectMatrix(const TemplateObject& o) {
+	glm::mat4 m = glm::translate(glm::mat4(1.f), glm::vec3(o.pos[0], o.pos[1], o.pos[2] * 0.5f + 7.f) * kBlock);
+	m = glm::rotate(m, -o.rot[1], glm::vec3(0, 1, 0));
+	m = glm::rotate(m, -o.rot[0], glm::vec3(1, 0, 0));
+	m = glm::rotate(m, -o.rot[2], glm::vec3(0, 0, 1));
+	return m;
+}
+
 void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& baseOpt,
                      float gameZOffset) {
 	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe);
@@ -246,10 +258,7 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		float f = time_ * fps;
 		int n = int(an.frames.size());
 		int i = int(f) % n, j = (i + 1) % n;
-		glm::mat4 m = world * glm::translate(glm::mat4(1.f), glm::vec3(o.src.pos[0], o.src.pos[1], o.src.pos[2]) * kBlock);
-		m = glm::rotate(m, o.src.rot[1], glm::vec3(0, 1, 0));
-		m = glm::rotate(m, o.src.rot[0], glm::vec3(1, 0, 0));
-		m = glm::rotate(m, o.src.rot[2], glm::vec3(0, 0, 1));
+		glm::mat4 m = world * objectMatrix(o.src);
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
 	}
 }

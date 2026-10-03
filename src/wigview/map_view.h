@@ -82,6 +82,7 @@ private:
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.
 	bool resolve(const ow::ClassModel& cm, ModelSlot*& slot, int& animation);
 	void uiGrid();
+	static glm::mat4 objectMatrix(const ow::TemplateObject& o);
 	bool finishLoad(const ow::Scenario& sc, int margin, std::string world);
 
 	const ow::Vfs* vfs_ = nullptr;

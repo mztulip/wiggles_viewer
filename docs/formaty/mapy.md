@@ -23,9 +23,9 @@ Prawo nakładania szablonu (`FUN_005992b0` w exe), za [Zimennik/Diggles-Unity](h
 - **Scenariusze** (`Data/Gamesave/*.tcl`): mapy stałe to `map create` i seria `call templates/X.tcl` + `MapTemplateSet x y` (np. `single_Knockersdorf` z 46 szablonami, `oberwelt.tcl` z samouczka, `single_wassermatch`, `single_Test_Lorelei_Brains` z 159). Skrypty mogą wołać inne przez `call data/gamesave/…`. Kampania i sandbox (`StoryMgr load_level` / `load_sandbox`) generują świat proceduralnie (komendy `lg_*`, Diggles-Unity `WORLDGEN_ORIGINAL_RE.md`); tego jeszcze nie obsługujemy.
 
 ## Układ współrzędnych ✅
-- Pozycja obiektu `x y z` jest w **blokach**. x rośnie w prawo, y w dół, z w stronę widza. Przednia płaszczyzna skały leży przy z ≈ 15, a obiekty w korytarzach mają z ≈ 13–15.
+- Pozycja obiektu `x y z`: x i y w **blokach** (x w prawo, y w dół). **z ze skryptu przelicza się na głębokość świata wzorem z·0,5 + 7** bloków (stałe `DAT_0073708c` = 0,5 i `DAT_00737520` = 7,0 w exe, za Diggles-Unity `COORDINATE_SYSTEM.md` §3.3). Skóra jaskini z z = 15,01 trafia więc na przednią płaszczyznę 14,5, a mech z z = 13,54 na 13,77. ✅ Po tej poprawce scena menu zgadza się ze zrzutem gry (jezioro i drzewa w otworze, skrzynki, mech).
 - 1 blok = **200 jednostek modelu `.3db`** (wzorzec: OBJ z `save_map`). Krasnal ma ok. 1 blok wysokości.
-- Rotacja `rx ry rz` w radianach. W praktyce używana jest tylko `ry`.
+- Rotacja `rx ry rz` w radianach. Gra składa ją jako **M = Ry(−ry)·Rx(−rx)·Rz(−rz)** (macierze są transpozycją standardowych; Diggles-Unity `COORDINATE_SYSTEM.md` §3.4, `FUN_004d2420`, `FUN_005cbf70`). Najczęściej używana jest tylko `ry`.
 - Kamera gry patrzy z +z w stronę −z (VRML z `save_scene`: kamera w z = 4000). Układ jest lewoskrętny jak w modelach. W OpenGL odbijamy oś Y (patrz `3db.md` §4).
 - ⚠ Błąd w danych gry: `kris_caves_2_a.tcl` stawia skórę jaskini w x ≈ 0, a warianty `_b`, `_c` i inne światy w x ≈ 8, czyli w środku wydrążenia. Szablony `kris_caves_*` gra odrzuca zresztą jako „unknown class”, więc pewnie nie są używane.
 
