@@ -38,7 +38,7 @@ struct TerrainMesh {
 	std::vector<uint8_t> openNode;                          // [by*w+bx] -> 1, gdy węzeł otwarty do tła
 };
 
-// showUndug: bloki niewykopane (typ 0) z zaplanowanym kształtem zamiast litej skały (blok 0).
-TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vector<Vec3f>& sphere, bool showUndug = false);
+// world: świat po nałożeniu szablonów (map_world.h).
+TerrainMesh buildTerrainMesh(const Pmp& world, const BlockDb& db, const std::vector<Vec3f>& sphere);
 
 } // namespace ow

@@ -1,6 +1,7 @@
 #include "wigview/map_view.h"
 
 #include "lib/gfx/texture_cache.h"
+#include "lib/map_world.h"
 #include "lib/vfs.h"
 
 #include <imgui.h>
@@ -57,6 +58,9 @@ void MapView::init(const Vfs* vfs, TextureCache* textures, const std::vector<Vec
 	} catch (const std::exception& e) {
 		blocksError_ = e.what();
 	}
+	scenarios_.clear();
+	for (auto& f : vfs->list("Data/Gamesave"))
+		if (endsWithI(f, ".tcl")) scenarios_.push_back(f);
 	files_.clear();
 	for (auto& f : vfs->list("Data/Templates"))
 		if (endsWithI(f, ".tcl")) files_.push_back(f);
@@ -115,17 +119,33 @@ bool MapView::resolve(const ClassModel& cm, ModelSlot*& slot, int& animation) {
 	return it != objectIndex_.end() && findIn(model(it->second.first));
 }
 
-// Pliki w skryptach bywają podane jako "gng_021.pmp" albo "data/templates/gng_021.pmp".
-static std::optional<std::vector<uint8_t>> readTemplateFile(const Vfs& vfs, const std::string& name) {
-	if (auto d = vfs.read("Data/Templates/" + name)) return d;
-	if (auto d = vfs.read(name)) return d;
-	size_t slash = name.find_last_of("/\\");
-	if (slash != std::string::npos) return vfs.read("Data/Templates/" + name.substr(slash + 1));
-	return std::nullopt;
-}
-
 bool MapView::loadTemplate(const std::string& file) {
 	file_ = file;
+	scenarioMode_ = false;
+	Scenario sc;
+	sc.placements.push_back({file, 0, 0});
+	std::string world = Vfs::lower(file.substr(0, file.find('_')));
+	return finishLoad(sc, 0, world);
+}
+
+bool MapView::loadScenario(const std::string& file) {
+	file_ = file;
+	scenarioMode_ = true;
+	Scenario sc = parseScenario(*vfs_, "Data/Gamesave/" + file);
+	scenarioInfo_.clear();
+	if (sc.placements.empty() && sc.usesGenerator)
+		scenarioInfo_ = "Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.";
+	// Świat ze szablonu o największej liczbie wystąpień (urw, kris, lava, swf).
+	std::map<std::string, int> worlds;
+	for (auto& p : sc.placements) worlds[Vfs::lower(p.script.substr(0, p.script.find('_')))]++;
+	std::string world = "urw";
+	int best = 0;
+	for (auto& [k, n] : worlds)
+		if (n > best && (k == "urw" || k == "kris" || k == "lava" || k == "swf")) best = n, world = k;
+	return finishLoad(sc, 2, world);
+}
+
+bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	error_.clear();
 	script_.reset();
 	pmp_.reset();
@@ -133,30 +153,38 @@ bool MapView::loadTemplate(const std::string& file) {
 	objects_.clear();
 	heights_.reset();
 	terrain_.clear();
-	try {
-		auto text = vfs_->read("Data/Templates/" + file);
-		if (!text) throw std::runtime_error("nie można odczytać skryptu");
-		script_ = parseTemplateScript(std::string(text->begin(), text->end()));
-		if (!script_->pmpFile.empty()) {
-			if (auto d = readTemplateFile(*vfs_, script_->pmpFile)) pmp_ = parsePmp(*d);
-			else error_ = "brak " + script_->pmpFile;
+	placed_ = 0;
+	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
+
+	BuiltWorld bw = buildWorld(*vfs_, sc, margin);
+	for (auto& e : bw.errors) error_ += (error_.empty() ? "" : "; ") + e;
+	if (!bw.placedScripts.empty()) {
+		placed_ = int(bw.placedScripts.size());
+		worldOrigin_[0] = bw.originX;
+		worldOrigin_[1] = bw.originY;
+		pmp_ = std::move(bw.grid);
+		l2m_ = std::move(bw.layer);
+		script_ = TemplateScript{};
+		script_->objects = std::move(bw.objects);
+		if (!scenarioMode_) {
+			// Nazwy plików szablonu do wyświetlenia.
+			if (auto text = vfs_->read("Data/Templates/" + file_)) {
+				auto t = parseTemplateScript(std::string(text->begin(), text->end()));
+				script_->pmpFile = t.pmpFile;
+				script_->l2mFile = t.l2mFile;
+			}
 		}
-		if (!script_->l2mFile.empty())
-			if (auto d = readTemplateFile(*vfs_, script_->l2mFile)) l2m_ = parseL2m(*d);
-	} catch (const std::exception& e) {
-		error_ = e.what();
-	}
+	} else if (error_.empty() && scenarioInfo_.empty())
+		error_ = "brak szablonów do złożenia";
+
 	if (pmp_ && blocks_.loaded()) {
-		heights_ = buildHeightfield(*pmp_, blocks_, showUndug_);
-		// Świat z prefiksu nazwy szablonu (urw, kris, lava, swf); inne (unq_, multi_…) -> urw.
-		std::string world = Vfs::lower(file.substr(0, file.find('_')));
-		if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
-		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_, showUndug_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
+		heights_ = buildHeightfield(*pmp_, blocks_);
+		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	zone_.reset();
 	zoneClass_.clear();
 	if (script_) {
-		// Strefa horyzontu: obiekt Info_Fog_* najbliższy środkowi szablonu.
+		// Strefa horyzontu: obiekt Info_Fog_* najbliższy środkowi (w scenariuszu: środka kadru).
 		float best = 1e30f;
 		float cx = (pmp_ ? float(pmp_->width) : 4.f) * 0.5f, cy = (pmp_ ? float(pmp_->height) : 4.f) * 0.5f;
 		for (const auto& o : script_->objects)
@@ -176,7 +204,7 @@ bool MapView::loadTemplate(const std::string& file) {
 			objects_.push_back(p);
 		}
 	}
-	// Kadr na cały teren szablonu (x, y w blokach; z między dnem a przednią płaszczyzną).
+	// Kadr na cały teren (x, y w blokach; z między dnem a przednią płaszczyzną).
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
 	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
 	radius_ = (std::max(w, h) + 3.f) * kBlock * 0.55f; // margines: małe szablony nie wypełniają całego kadru
@@ -184,16 +212,18 @@ bool MapView::loadTemplate(const std::string& file) {
 }
 
 void MapView::step(int d) {
+	const auto& list = listScenarios_ ? scenarios_ : files_;
 	std::vector<int> vis;
-	for (int i = 0; i < int(files_.size()); ++i)
-		if (passFilter(filter_, files_[size_t(i)])) vis.push_back(i);
+	for (int i = 0; i < int(list.size()); ++i)
+		if (passFilter(filter_, list[size_t(i)])) vis.push_back(i);
 	if (vis.empty()) return;
 	int pos = -1;
 	for (size_t k = 0; k < vis.size(); ++k)
-		if (files_[size_t(vis[k])] == file_) pos = int(k);
+		if (list[size_t(vis[k])] == file_) pos = int(k);
 	if (pos < 0) pos = d > 0 ? -1 : 0;
 	pos = (pos + d + int(vis.size())) % int(vis.size());
-	loadTemplate(files_[size_t(vis[size_t(pos)])]);
+	if (listScenarios_) loadScenario(list[size_t(vis[size_t(pos)])]);
+	else loadTemplate(list[size_t(vis[size_t(pos)])]);
 	scrollToSel_ = true;
 }
 
@@ -303,12 +333,16 @@ void MapView::uiGrid() {
 bool MapView::ui() {
 	bool recenter = false;
 	ImGui::BeginChild("szablony", ImVec2(200, 0), ImGuiChildFlags_Borders);
+	if (ImGui::RadioButton("Szablony", !listScenarios_)) listScenarios_ = false;
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Scenariusze", listScenarios_)) listScenarios_ = true;
 	ImGui::SetNextItemWidth(-1);
-	ImGui::InputTextWithHint("##mf", "filtr (np. urw_gng)", filter_, sizeof filter_);
-	for (const auto& f : files_) {
+	ImGui::InputTextWithHint("##mf", listScenarios_ ? "filtr (np. single_)" : "filtr (np. urw_gng)", filter_, sizeof filter_);
+	for (const auto& f : listScenarios_ ? scenarios_ : files_) {
 		if (!passFilter(filter_, f)) continue;
 		if (ImGui::Selectable(f.c_str(), f == file_)) {
-			loadTemplate(f);
+			if (listScenarios_) loadScenario(f);
+			else loadTemplate(f);
 			recenter = true;
 		}
 		if (f == file_ && scrollToSel_) ImGui::SetScrollHereY(0.5f);
@@ -321,6 +355,7 @@ bool MapView::ui() {
 	ImGui::SameLine();
 	ImGui::BeginChild("mapa_szczegoly");
 	if (!error_.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Błąd: %s", error_.c_str());
+	if (!scenarioInfo_.empty()) ImGui::TextColored(ImVec4(1, 0.8f, 0.4f, 1), "%s", scenarioInfo_.c_str());
 	if (!script_) {
 		ImGui::TextDisabled("Wybierz szablon z listy (%zu skryptów, %zu klas z modelem).", files_.size(), classes_.size());
 		ImGui::EndChild();
@@ -329,8 +364,12 @@ bool MapView::ui() {
 	size_t resolved = 0;
 	for (auto& o : objects_) resolved += o.slot != nullptr;
 	ImGui::Text("%s", file_.c_str());
-	ImGui::Text("PMP: %s  %ux%u bloków   l2m: %s", script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
-	            pmp_ ? pmp_->height : 0, script_->l2mFile.empty() ? "-" : script_->l2mFile.c_str());
+	if (scenarioMode_)
+		ImGui::Text("Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)", placed_, pmp_ ? pmp_->width : 0,
+		            pmp_ ? pmp_->height : 0, worldOrigin_[0], worldOrigin_[1]);
+	else
+		ImGui::Text("PMP: %s  %ux%u bloków   l2m: %s", script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
+		            pmp_ ? pmp_->height : 0, script_->l2mFile.empty() ? "-" : script_->l2mFile.c_str());
 	ImGui::Text("obiekty: %zu, z modelem: %zu", objects_.size(), resolved);
 	if (!blocksError_.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "Teren niedostępny: %s", blocksError_.c_str());
 	ImGui::Checkbox("Teren", &showTerrain_);
@@ -343,9 +382,7 @@ bool MapView::ui() {
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s",
 		                  zone_ ? zoneClass_.c_str() : "Szablon nie ma obiektu Info_Fog_*.");
-	ImGui::SameLine();
-	if (ImGui::Checkbox("Niewykopane", &showUndug_)) loadTemplate(file_);
-	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bloki typu 0: gra pokazuje je jako litą skałę (do odkopania).\nZaznacz, aby zobaczyć ich zaplanowany kształt z BlockDB.");
+
 
 
 	if (ImGui::CollapsingHeader("Siatka 2D", ImGuiTreeNodeFlags_DefaultOpen)) uiGrid();

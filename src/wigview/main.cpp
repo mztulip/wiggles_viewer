@@ -3,7 +3,7 @@
 // Użycie:
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
-//           [--template SZABLON] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
+//           [--template SZABLON | --scenario SCENARIUSZ] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
 //           [--screenshot plik.png] [--ui]
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
@@ -46,7 +46,7 @@ using namespace ow;
 namespace {
 
 struct Args {
-	std::string game, model, object, anim, screenshot, templ, search;
+	std::string game, model, object, anim, screenshot, templ, search, scenario;
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
@@ -66,6 +66,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
+		else if (k == "--scenario") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center") {
 			a.camX = float(std::atof(next()));
@@ -313,7 +314,7 @@ struct Viewer {
 	void exportGlb(bool allAnims);
 
 	// --- Wyszukiwarka (Ctrl+F) ---
-	enum class HitKind { Model, Object, Texture, Template };
+	enum class HitKind { Model, Object, Texture, Template, Scenario };
 	struct SearchEntry {
 		HitKind kind;
 		std::string label;   // to, co widzi użytkownik
@@ -504,6 +505,7 @@ void Viewer::buildSearchIndex(bool withObjects) {
 			for (auto& f : vfs.list("Data/Texture/" + texDirs[size_t(d)]))
 				if (endsWithI(f, ".tga")) add(HitKind::Texture, texDirs[size_t(d)] + "/" + f, f, d);
 		for (auto& f : maps.files()) add(HitKind::Template, f, f, -1);
+		for (auto& f : maps.scenarios()) add(HitKind::Scenario, f, f, -1);
 		searchIndexed = true;
 	}
 	if (withObjects && !objectsIndexed) {
@@ -547,6 +549,7 @@ void Viewer::updateSearchHits() {
 	auto rank = [&](int i) {
 		switch (searchIndex[size_t(i)].kind) {
 		case HitKind::Model: return 0;
+		case HitKind::Scenario: return 1;
 		case HitKind::Template: return 1;
 		case HitKind::Object: return 2;
 		default: return 3;
@@ -575,9 +578,11 @@ void Viewer::openHit(const SearchEntry& e) {
 			if (texFiles[size_t(i)] == e.file) texSel = i;
 		break;
 	case HitKind::Template:
+	case HitKind::Scenario:
 		forceTab = 2;
 		activeTab = 2;
-		maps.select(e.file);
+		if (e.kind == HitKind::Scenario) maps.selectScenario(e.file);
+		else maps.select(e.file);
 		frameMap();
 		break;
 	}
@@ -597,12 +602,12 @@ void Viewer::uiSearch() {
 		searchOpen = false;
 		return;
 	}
-	static const char* kKind[] = {"model", "obiekt", "tekstura", "szablon"};
-	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}};
+	static const char* kKind[] = {"model", "obiekt", "tekstura", "szablon", "scenariusz"};
+	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}, {1, 0.5f, 0.5f, 1}};
 
 	if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
 	ImGui::SetNextItemWidth(-1);
-	if (ImGui::InputTextWithHint("##q", "szukaj: modele, obiekty w modelach, tekstury, szablony (kilka słów = wszystkie muszą pasować)",
+	if (ImGui::InputTextWithHint("##q", "szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze (kilka słów = wszystkie muszą pasować)",
 	                             searchText, sizeof searchText)) {
 		searchSel = 0;
 		buildSearchIndex(std::string(searchText).size() >= 2);
@@ -824,10 +829,16 @@ int main(int argc, char** argv) {
 		v.frame = std::clamp(args.frame, 0.f, float(std::max(0, v.frameCount() - 1)) + 0.999f);
 	}
 
-	if (!args.templ.empty()) {
-		std::string t = args.templ;
-		if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";
-		if (!v.maps.loadTemplate(t)) std::fprintf(stderr, "szablon %s: %s\n", t.c_str(), v.maps.error().c_str());
+	if (!args.templ.empty() || !args.scenario.empty()) {
+		if (!args.scenario.empty()) {
+			std::string t = args.scenario;
+			if (!v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
+			if (!v.maps.loadScenario(t)) std::fprintf(stderr, "scenariusz %s: %s\n", t.c_str(), v.maps.error().c_str());
+		} else {
+			std::string t = args.templ;
+			if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";
+			if (!v.maps.loadTemplate(t)) std::fprintf(stderr, "szablon %s: %s\n", t.c_str(), v.maps.error().c_str());
+		}
 		v.activeTab = 2;
 		v.forceTab = 2;
 		v.frameMap();

@@ -15,6 +15,13 @@ Stan: struktura plików ✅, **teren (mapa wysokości z BlockDB) ✅**, znaczeni
    ```
 3. Nazwy: `<świat>_<rodzaj>_<nr>_<wariant>`. Światy: `urw` (dżungla), `kris` (kryształy), `lava`, `swf` (siarka), `unq_*` (unikalne), `multi_*`. Rodzaje: `gng` (korytarz), `hol` (jaskinia), `gsg`, `caves`, `start`.
 
+## Składanie świata ✅
+Prawo nakładania szablonu (`FUN_005992b0` w exe), za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT, `BlitPmpIntoWorld`). Implementacja: `src/lib/map_world.cpp`.
+- `map create W H` tworzy świat W×H bloków: blok 0 (lita skała), typ 0 (klasa gruntu jak typ 2).
+- `MapTemplateSet x y` nakłada szablon w bloku (x, y). Pole szablonu jest **przezroczyste**, gdy w oknie 2×2 (pole, +x, +y, +x+y; pola poza szablonem pomijane) wszystkie typy & 0x7F == 0, i wtedy świat pod nim zostaje. W przeciwnym razie nadpisywane są ID bloku, typ i warstwa 2. W `.l2m` wartości 0 nie nadpisują świata.
+- ⚠ **Korekta wcześniejszego wniosku:** w eksperymencie z korytarzem o samych typach 0 gra pokazała litą skałę, bo **wszystkie pola były przezroczyste** (widać było domyślny świat). Typ 0 nie oznacza „niewykopanego tunelu”. Pojedyncze pola typu 0 obok niezerowych są zapisywane razem z kształtem bloku.
+- **Scenariusze** (`Data/Gamesave/*.tcl`): mapy stałe to `map create` i seria `call templates/X.tcl` + `MapTemplateSet x y` (np. `single_Knockersdorf` z 46 szablonami, `oberwelt.tcl` z samouczka, `single_wassermatch`, `single_Test_Lorelei_Brains` z 159). Skrypty mogą wołać inne przez `call data/gamesave/…`. Kampania i sandbox (`StoryMgr load_level` / `load_sandbox`) generują świat proceduralnie (komendy `lg_*`, Diggles-Unity `WORLDGEN_ORIGINAL_RE.md`); tego jeszcze nie obsługujemy.
+
 ## Układ współrzędnych ✅
 - Pozycja obiektu `x y z` jest w **blokach**. x rośnie w prawo, y w dół, z w stronę widza. Przednia płaszczyzna skały leży przy z ≈ 15, a obiekty w korytarzach mają z ≈ 13–15.
 - 1 blok = **200 jednostek modelu `.3db`** (wzorzec: OBJ z `save_map`). Krasnal ma ok. 1 blok wysokości.

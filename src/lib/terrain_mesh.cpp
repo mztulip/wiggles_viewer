@@ -9,7 +9,7 @@
 
 namespace ow {
 
-TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vector<Vec3f>& sphere, bool showUndug) {
+TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vector<Vec3f>& sphere) {
 	constexpr float B = 200.f;
 	TerrainMesh m;
 	m.width = int(pmp.width);
@@ -51,10 +51,9 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 
 	for (int by = 0; by < m.height; ++by)
 		for (int bx = 0; bx < m.width; ++bx) {
-			uint8_t type = pmp.type(bx, by);
 			bool o00 = open(bx, by), o10 = open(bx + 1, by), o01 = open(bx, by + 1), o11 = open(bx + 1, by + 1);
 			if (o00 && o10 && o01 && o11) continue; // cały blok otwarty do tła: nie rysujemy
-			uint32_t id = (isUndug(type) && !showUndug) ? 0u : pmp.block(bx, by); // blok 0 = lita skała
+			uint32_t id = pmp.block(bx, by);
 			uint32_t first = uint32_t(m.indices.size());
 			for (int sub = 0; sub < 3; ++sub) {
 				BdbSubMesh sm;

@@ -30,13 +30,11 @@ struct Heightfield {
 	static float depthZ(uint8_t v) { return kFrontZ - (15.f - float(v)) * kLevelUnits; }
 };
 
-// Rodzaj gruntu z typu pola .PMP (młodszy półbajt; ✅ ze zrzutów gry): 2 -> C, 3 -> B, 4 -> A,
-// pozostałe (0, 5) -> A.
+// Rodzaj gruntu z typu pola .PMP (młodszy półbajt; ✅ ze zrzutów gry): 2 -> C, 3 -> B, 4 -> A;
+// 0 ma tę samą klasę co 2 (domyślna klasa świata z map create) -> C; 5 (otwór do tła) -> A.
 int groundFromPmpType(uint8_t type);
-// Typ 0 (młodszy półbajt) = blok niewykopany: gra pokazuje litą skałę, choć BlockDB ma jego kształt.
-inline bool isUndug(uint8_t type) { return (type & 0x0F) == 0; }
 
-// Nieznane ID bloków dają litą skałę. showUndug: pokaż kształt bloków niewykopanych (typ 0).
-Heightfield buildHeightfield(const Pmp& pmp, const BlockDb& db, bool showUndug = false);
+// Siatka to świat po nałożeniu szablonów (map_world.h). Nieznane ID bloków dają litą skałę.
+Heightfield buildHeightfield(const Pmp& world, const BlockDb& db);
 
 } // namespace ow

@@ -14,6 +14,7 @@
 #include "lib/terrain_mesh.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/map_template.h"
+#include "lib/map_world.h"
 #include "lib/model3db.h"
 
 #include <glm/glm.hpp>
@@ -34,11 +35,19 @@ public:
 
 	void init(const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
+	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
 	void select(const std::string& file) {      // wczytaj i przewiń listę do szablonu
+		listScenarios_ = false;
 		loadTemplate(file);
 		scrollToSel_ = true;
 	}
+	void selectScenario(const std::string& file) {
+		listScenarios_ = true;
+		loadScenario(file);
+		scrollToSel_ = true;
+	}
+	const std::vector<std::string>& scenarios() const { return scenarios_; }
 	const std::vector<std::string>& files() const { return files_; }
 
 	// Rysuje panel UI (lista, siatka 2D, informacje). Zwraca true, gdy kamera powinna się wycentrować.
@@ -73,6 +82,7 @@ private:
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.
 	bool resolve(const ow::ClassModel& cm, ModelSlot*& slot, int& animation);
 	void uiGrid();
+	bool finishLoad(const ow::Scenario& sc, int margin, std::string world);
 
 	const ow::Vfs* vfs_ = nullptr;
 	ow::TextureCache* textures_ = nullptr;
@@ -82,7 +92,11 @@ private:
 	std::string blocksError_;
 	ow::TerrainRenderer terrain_;
 	std::optional<ow::Heightfield> heights_;
-	bool showTerrain_ = true, showObjects_ = true, showUndug_ = false, showZone_ = true, showEditorOnly_ = false;
+	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false;
+	bool listScenarios_ = false, scenarioMode_ = false;
+	std::vector<std::string> scenarios_;
+	std::string scenarioInfo_;
+	int placed_ = 0, worldOrigin_[2] = {0, 0};
 	std::optional<ow::HorizonZone> zone_;
 	std::string zoneClass_;
 	std::vector<std::string> files_; // skrypty .tcl szablonów

@@ -82,7 +82,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
-- [ ] Złożenie całej mapy z `Gamesave/*.tcl`
+- [x] Składanie świata z szablonów (prawo przezroczystości z exe) i scenariusze stałe z `Gamesave/*.tcl` w wigview (`--scenario`)
+- [ ] Świat generowany proceduralnie (kampania, sandbox: `StoryMgr load_level`, `lg_*`, WORLDGEN_ORIGINAL_RE)
 
 ## Faza 5: skrypty, czyli osadzony Tcl
 - [ ] Osadzenie Tcl (8.6 z systemu i sprawdzenie zgodności, albo 8.3 jak w oryginale: 🔬 decyzja po testach)
