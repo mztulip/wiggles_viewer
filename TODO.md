@@ -15,6 +15,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Sonda: zrzut `ClassInfo`/`ClassList` dla wszystkich klas (hierarchia, metody, atrybuty)
 - [ ] Sonda: zrzut wyników `db_*` dla wszystkich modeli (nazwy animacji, długości): wzorzec do testów naszego parsera `.3db`
 - [ ] Opcjonalnie: zbudować barnacle (SDK) pod Wine, gdy czysty Tcl nie wystarczy
+- [ ] Zrzuty obrazu z działającej gry jako wzorzec wizualny. Gra działa w Xvfb (`Xvfb :77` + `wine explorer /desktop=…`), ale zrzut wychodzi czarny (🔬 GLX w Xvfb?). Na zwykłym pulpicie okno trafia na inny obszar roboczy
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
 ## Faza 1: szkielet projektu i build

@@ -45,6 +45,7 @@ rekordy bloków: 118688 × 89 B
 dalej: szczegółowe siatki 3D (listy indeksów u16, wierzchołki) 🔶
 ```
 - Rekordy bloków są **identyczne w trzech plikach**. Pliki różnią się tylko siatkami 3D, a gra wybiera plik ustawieniem `LandScapeQuality` (0–2).
+- **Typ pola w `.PMP`:** młodszy półbajt 0, 2, 3, 4 lub 5, starszy bit 0x80. 🔶 Kandydat na rodzaj gruntu podkładu: w `unq_menue` skała ma 0x84, wnętrze jaskini 0x85, a korytarze GNG mają 02. **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść.
 - **Mapa wysokości szablonu:** blok (bx, by) z `.PMP` daje próbki (bx·8+sx, by·8+sy) = `głębokość[sy][sx]`. Próbka ma 25 jednostek (1/8 bloku).
 - **Głębokość wydrążenia = (15 − v) · 100 jednostek**. W układzie świata przednia płaszczyzna leży przy z = 3000 (15 bloków), a próbka v ma z = 3000 − (15 − v)·100. Przykład z korytarza `GNG_001`: bloki 76–79 (sufit: f, f, e/d/c, b…), blok 80 (cały b = głębokość 400), blok 81 (b u góry, f na dole).
 - ✅ Weryfikacja: wierzchołki OBJ z `save_map` gry dla trzech szablonów zgadzają się z naszą mapą (253 dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian).
