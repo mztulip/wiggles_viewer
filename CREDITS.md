@@ -8,6 +8,7 @@ Wszelkie prawa do gry *Wiggles / Diggles – The Myth of Fenris* należą do jej
 
 | Repozytorium | Autor | Licencja | Co z niego wiemy |
 |---|---|---|---|
+| [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) | Zimennik i współautorzy | MIT | Pełny układ BlockDB (siatki bloków, paleta, deskryptory), znaczenie pól rekordu 89 B, dokumentacja renderowania, oświetlenia, Tcl, nawigacji i zapisów (`Docs/`) |
 | [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) | djunkles; starsze przeglądarki C# i Python 2.7 pochodzą z [forum Wiggles](https://wiggles.ruka.at/forum/viewtopic.php?f=10&t=105&start=10#p1389) | brak | Format modeli `.3db` |
 | barnacle („Diggles SDK”) | *autor do ustalenia* | MIT | Tcl 8.3.2 w grze, ładowanie skryptów (`call`, preprocesor, cache), adresy funkcji exe |
 | [ZarfaZ/DigglesHDmod](https://github.com/ZarfaZ/DigglesHDmod) | ZarfaZ | brak | Układ tekstur i logika tekstur terenu (`Ground/`) |
@@ -30,7 +31,6 @@ Wszelkie prawa do gry *Wiggles / Diggles – The Myth of Fenris* należą do jej
 - [Wiggles Forum](https://wiggles.ruka.at/forum/), a w nim wątek „Game internal information” (cech12, 2021) z informacjami od zespołu Mirage (ParaWorld mod) o `sphere.dat`, parametrach exe i rejestrze.
 
 ## Warte sprawdzenia
-- [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity)
 - [4BooM04/DigglesSteamdeckModes](https://github.com/4BooM04/DigglesSteamdeckModes)
 
 ## Biblioteki zewnętrzne

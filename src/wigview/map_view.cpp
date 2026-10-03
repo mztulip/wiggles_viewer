@@ -151,7 +151,7 @@ bool MapView::loadTemplate(const std::string& file) {
 		// Świat z prefiksu nazwy szablonu (urw, kris, lava, swf); inne (unq_, multi_…) -> urw.
 		std::string world = Vfs::lower(file.substr(0, file.find('_')));
 		if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
-		terrain_.build(*heights_, *textures_, l2m_ ? &*l2m_ : nullptr, world);
+		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_, showUndug_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	if (script_) {
 		for (const auto& o : script_->objects) {

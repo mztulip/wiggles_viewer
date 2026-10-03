@@ -13,7 +13,6 @@ namespace ow {
 static const char* kVS = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
-layout(location = 2) in vec2 aUV;
 layout(location = 3) in vec3 aGround; // wagi gruntów A, B, C
 uniform mat4 uViewProj;
 uniform mat4 uWorld;
@@ -27,7 +26,7 @@ void main() {
 	vNormal = mat3(uWorld) * aNormal;
 	vLocalNormal = aNormal;
 	vLocalPos = aPos;
-	vDepth = (3000.0 - aPos.z) / 1500.0; // 0 = przednia płaszczyzna, 1 = najgłębiej
+	vDepth = (2900.0 - aPos.z) / 1500.0; // 0 = przednia płaszczyzna, 1 = najgłębiej
 	gl_Position = uViewProj * uWorld * vec4(aPos, 1.0);
 }
 )";
@@ -81,89 +80,59 @@ void TerrainRenderer::clear() {
 	vbo_ = vao_ = 0;
 }
 
-void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const L2m* layer2, const std::string& world) {
+void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, const L2m* layer2,
+                            const std::string& world) {
 	clear();
-	if (h.width < 2 || h.height < 2) return;
-	const float S = Heightfield::kSampleUnits;
-	struct V {
-		float pos[3], nrm[3], uv[2], ground[3];
-	};
-	std::vector<V> verts(size_t(h.width) * h.height);
-	for (int y = 0; y < h.height; ++y)
-		for (int x = 0; x < h.width; ++x) {
-			float z = Heightfield::depthZ(h.at(x, y));
-			float dzdx = (Heightfield::depthZ(h.at(x + 1, y)) - Heightfield::depthZ(h.at(x - 1, y))) / (2 * S);
-			float dzdy = (Heightfield::depthZ(h.at(x, y + 1)) - Heightfield::depthZ(h.at(x, y - 1))) / (2 * S);
-			glm::vec3 n = glm::normalize(glm::vec3(-dzdx, -dzdy, 1.f));
-			float px = (float(x) + 0.5f) * S, py = (float(y) + 0.5f) * S;
-			// Wagi gruntów: średnia z otoczenia 5×5 próbek, żeby granice bloków przechodziły płynnie
-			// (gra używa do tego masek Data/Ground/Msk_*; tu uproszczenie).
-			float gw[3] = {0, 0, 0};
-			if (!h.ground.empty())
-				for (int dy = -2; dy <= 2; ++dy)
-					for (int dx = -2; dx <= 2; ++dx) {
-						int sx = std::clamp(x + dx, 0, h.width - 1), sy = std::clamp(y + dy, 0, h.height - 1);
-						gw[h.ground[size_t(sy) * h.width + sx]] += 1.f;
-					}
-			else
-				gw[0] = 1.f;
-			verts[size_t(y) * h.width + x] = {{px, py, z}, {n.x, n.y, n.z}, {px / 200.f, py / 200.f}, {gw[0], gw[1], gw[2]}};
-		}
-
-	// Trójkąty pogrupowane według tekstury (rodzaj gruntu + wariant zależny od bloku).
-	std::map<std::string, std::vector<uint32_t>> byTex;
-	for (int y = 0; y + 1 < h.height; ++y)
-		for (int x = 0; x + 1 < h.width; ++x) {
-			uint32_t id = h.blockId[size_t(y) * h.width + x];
-			char name[64];
-			// Grupa = wariant tekstury (1..15, zależny od bloku); w grupie wiązane są Gnd_A/B/C tego wariantu.
-			std::snprintf(name, sizeof name, "%02u", unsigned(id * 2654435761u % 15 + 1));
-			auto& idx = byTex[name];
-			uint32_t a = uint32_t(y * h.width + x), b = a + 1, c = a + uint32_t(h.width), d = c + 1;
-			idx.insert(idx.end(), {a, c, b, b, c, d});
-		}
+	if (mesh.indices.empty()) return;
 
 	gl::GenVertexArrays(1, &vao_);
 	gl::BindVertexArray(vao_);
 	gl::GenBuffers(1, &vbo_);
 	gl::BindBuffer(GL_ARRAY_BUFFER, vbo_);
-	gl::BufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(V), verts.data(), GL_STATIC_DRAW);
-	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, pos));
-	gl::VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, nrm));
-	gl::VertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, uv));
-	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, ground));
-	for (GLuint i = 0; i < 4; ++i) gl::EnableVertexAttribArray(i);
-	auto upload = [&](const std::map<std::string, std::vector<uint32_t>>& m, std::vector<Group>& out) {
-		for (auto& [name, idx] : m) {
-			Group g;
-			g.texture = textures.getPath(name).id;
-			g.count = GLsizei(idx.size());
-			gl::GenBuffers(1, &g.ebo);
-			gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
-			gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
-			out.push_back(g);
-		}
+	gl::BufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(TerrainVertex), mesh.vertices.data(), GL_STATIC_DRAW);
+	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, pos));
+	gl::VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, normal));
+	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, ground));
+	gl::EnableVertexAttribArray(0);
+	gl::EnableVertexAttribArray(1);
+	gl::EnableVertexAttribArray(3);
+
+	auto blockIndices = [&](int bx, int by, std::vector<uint32_t>& out) {
+		auto [first, count] = mesh.blockRanges[size_t(by) * mesh.width + bx];
+		out.insert(out.end(), mesh.indices.begin() + first, mesh.indices.begin() + first + count);
 	};
-	for (auto& [variant, idx] : byTex) {
-		Group g;
-		g.texture = textures.getPath("Data/Ground/Gnd_A" + variant + ".tga").id;
-		g.textureB = textures.getPath("Data/Ground/Gnd_B" + variant + ".tga").id;
-		g.textureC = textures.getPath("Data/Ground/Gnd_C" + variant + ".tga").id;
+	auto upload = [&](const std::vector<uint32_t>& idx, Group g, std::vector<Group>& out) {
+		if (idx.empty()) return;
 		g.count = GLsizei(idx.size());
 		gl::GenBuffers(1, &g.ebo);
 		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
 		gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
-		groups_.push_back(g);
+		out.push_back(g);
+	};
+
+	// Podkład: grupy według wariantu tekstury (1..15, zależny od pozycji bloku).
+	std::map<int, std::vector<uint32_t>> byVariant;
+	for (int by = 0; by < mesh.height; ++by)
+		for (int bx = 0; bx < mesh.width; ++bx) {
+			unsigned h = unsigned(bx) * 73856093u ^ unsigned(by) * 19349663u;
+			blockIndices(bx, by, byVariant[int((h ^ (h >> 13)) % 15u) + 1]);
+		}
+	for (auto& [variant, idx] : byVariant) {
+		char n[8];
+		std::snprintf(n, sizeof n, "%02d", variant);
+		Group g;
+		g.texture = textures.getPath(std::string("Data/Ground/Gnd_A") + n + ".tga").id;
+		g.textureB = textures.getPath(std::string("Data/Ground/Gnd_B") + n + ".tga").id;
+		g.textureC = textures.getPath(std::string("Data/Ground/Gnd_C") + n + ".tga").id;
+		upload(idx, g, groups_);
 	}
 
 	// Nakładki detali z .l2m: starszy bajt = 4 narożniki po 2 bity (TL, TR, BL, BR; 0 brak, 1 zestaw
-	// <świat>, 2 zestaw <świat>2). Plik: detail/<świat>[2]_<bity narożników>.tga, pełne pokrycie
-	// 1111 ma warianty _a.._f.
-	const int SB = Heightfield::kSamplesPerBlock;
-	if (layer2 && int(layer2->width) * SB == h.width && int(layer2->height) * SB == h.height) {
+	// <świat>, 2 zestaw <świat>2). Plik detail/<świat>[2]_<kod>.tga, pełne pokrycie 1111 z wariantami _a.._f.
+	if (layer2 && int(layer2->width) == mesh.width && int(layer2->height) == mesh.height) {
 		std::map<std::string, std::vector<uint32_t>> byDetail;
-		for (int by = 0; by < int(layer2->height); ++by)
-			for (int bx = 0; bx < int(layer2->width); ++bx) {
+		for (int by = 0; by < mesh.height; ++by)
+			for (int bx = 0; bx < mesh.width; ++bx) {
 				uint16_t v = layer2->values[size_t(by) * layer2->width + bx];
 				int corner[4] = {(v >> 14) & 3, (v >> 12) & 3, (v >> 10) & 3, (v >> 8) & 3};
 				for (int set = 1; set <= 2; ++set) {
@@ -172,18 +141,14 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const 
 					if (bits == "0000") continue;
 					std::string name = "Data/Ground/detail/" + world + (set == 2 ? "2" : "") + "_" + bits;
 					if (bits == "1111") name += std::string("_") + char('a' + (bx * 7 + by * 13) % 6);
-					name += ".tga";
-					auto& idx = byDetail[name];
-					for (int sy = 0; sy < SB; ++sy)
-						for (int sx = 0; sx < SB; ++sx) {
-							int x = bx * SB + sx, y = by * SB + sy;
-							if (x + 1 >= h.width || y + 1 >= h.height) continue;
-							uint32_t a = uint32_t(y * h.width + x), b = a + 1, c = a + uint32_t(h.width), d = c + 1;
-							idx.insert(idx.end(), {a, c, b, b, c, d});
-						}
+					blockIndices(bx, by, byDetail[name + ".tga"]);
 				}
 			}
-		upload(byDetail, detail_);
+		for (auto& [name, idx] : byDetail) {
+			Group g;
+			g.texture = textures.getPath(name).id;
+			upload(idx, g, detail_);
+		}
 	}
 	gl::BindVertexArray(0);
 }

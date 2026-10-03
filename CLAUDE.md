@@ -6,6 +6,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [TODO.md](TODO.md): **żywy plan prac**. Odhaczaj wykonane punkty i dopisuj nowe, gdy coś odkryjesz
 - [README.md](README.md): cele projektu, decyzje techniczne, plan pracy, lista materiałów referencyjnych
 - [docs/formaty/](docs/formaty/): **specyfikacje formatów** do samodzielnej implementacji (`3db.md`, `tekstury.md`, `sphere_dat.md`, `mapy.md`). Aktualizuj je razem z kodem
+- **Diggles-Unity** (`../ref/Diggles-Unity-main/Docs/`, MIT): obszerna dokumentacja RE całej gry. Przed pracą nad podsystemem sprawdź indeks w `BAZA_WIEDZY.md` §10. Ich wnioski weryfikuj na danych lub zrzutach gry
 - [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): wiedza o grze wyciągnięta z `../ref/`
   - §1 format modeli `.3db` (animacja wierzchołkowa, pule danych)
   - §2 tekstury, katalogi `Data/Texture` i `Data/Ground`, `sphere.dat`

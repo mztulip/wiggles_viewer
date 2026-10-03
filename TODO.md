@@ -67,7 +67,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 `.PMP`: dekodowanie maski RLE i znaczenie typów oraz warstwy2 (wzorzec: OBJ z `save_map`)
 - [x] `BlockDB`: nagłówek i tabela ILT (3 odwołania na blok do puli elementów)
 - [x] `BlockDB`: rekordy bloków (głębokość 8×8) ✅
-- [ ] 🔬 `BlockDB`: sekcja szczegółowych siatek 3D
+- [x] `BlockDB`: sekcja szczegółowych siatek 3D
 - [ ] 🔬 `.l2m` (warstwa 2) i `.ENT`
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
 - [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
@@ -76,7 +76,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Grunt podkładu z typu pola `.PMP` (2 = C, 3 = B, 4 = A) i bloki niewykopane (typ 0) ✅ z eksperymentu na zrzutach gry
 - [ ] Przejścia gruntów maskami `Msk_*` (teraz uśrednianie); typ 5 = tło prześwitujące przez tylną ścianę; bit 0x80; młodszy bajt `.l2m`
 - [ ] Oświetlenie terenu jak w grze (lampy `Misc_LightSrc_*`, `class_light`, mgła `Info_Fog_*`)
-- [ ] 🔬 Szczegółowe siatki 3D bloków z BlockDB (ILT + sekcja siatek) zamiast prostej mapy wysokości
+- [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
+- [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [ ] Złożenie całej mapy z `Gamesave/*.tcl`

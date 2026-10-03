@@ -1,7 +1,7 @@
 // Zakładka "Mapy" w wigview: przeglądarka szablonów map (Data/Templates).
 //
-// Siatka .PMP w 2D (typ pola, ID bloku, warstwy), teren z mapy wysokości (bloki .PMP ->
-// siatki 8×8 z BlockDB) oraz obiekty z MapTemplateSet w 3D z modelami .3db.
+// Siatka .PMP w 2D (typ pola, ID bloku, warstwy, głębokość), teren ze szczegółowych siatek
+// bloków BlockDB oraz obiekty z MapTemplateSet w 3D z modelami .3db.
 //
 // Układ współrzędnych: pozycje obiektów w szablonie są w blokach; 1 blok = 200 jednostek
 // modelu (wzorzec: OBJ z save_map gry). Oś Y w dół, jak w modelach.
@@ -11,6 +11,7 @@
 #include "lib/class_db.h"
 #include "lib/gfx/terrain_renderer.h"
 #include "lib/heightfield.h"
+#include "lib/terrain_mesh.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/map_template.h"
 #include "lib/model3db.h"

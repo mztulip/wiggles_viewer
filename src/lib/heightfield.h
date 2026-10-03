@@ -14,7 +14,7 @@ struct Heightfield {
 	static constexpr int kSamplesPerBlock = 8;
 	static constexpr float kSampleUnits = 25.f;  // 200 jednostek na blok / 8
 	static constexpr float kLevelUnits = 100.f;  // jeden poziom głębokości
-	static constexpr float kFrontZ = 3000.f;     // przednia płaszczyzna (z = 15 bloków)
+	static constexpr float kFrontZ = 2900.f;     // przednia płaszczyzna (z = 14,5 bloku, jak w siatkach BlockDB i VRML gry)
 
 	int width = 0, height = 0; // w próbkach
 	std::vector<uint8_t> value;
@@ -26,7 +26,7 @@ struct Heightfield {
 		y = y < 0 ? 0 : (y >= height ? height - 1 : y);
 		return value[size_t(y) * width + x];
 	}
-	// Współrzędna z w jednostkach modelu (oś do widza): 15 -> 3000, 0 -> 1500.
+	// Współrzędna z w jednostkach modelu (oś do widza): z = (7 + 0,5·v) bloku, czyli 15 -> 2900, 0 -> 1400.
 	static float depthZ(uint8_t v) { return kFrontZ - (15.f - float(v)) * kLevelUnits; }
 };
 

@@ -35,32 +35,28 @@ u8  warstwa2[w*h]            🔶 0..8
 Brak nadmiarowych bajtów we wszystkich 220 plikach.
 
 ## Teren: `BlockDB0/1/2.BDB` ✅
+Pełny układ pliku za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT, `Docs/RENDERING_PIPELINE_COMPLETE.md` §2.1). Zweryfikowaliśmy go: suma sekcji = rozmiar pliku dla BDB0 i BDB2.
 ```
-u32 11, u32 0, u32 118688 (liczba bloków), u32 0
-u32 ×4                                   🔶 (BDB0: 561168, 17564, 1411, 4)
-ILT: 118688 × 3 × (u16 a, u32 b)         odwołania do szczegółowych siatek 3D bloku (🔶)
-rekordy bloków: 118688 × 89 B
-  u8  głębokość[8][8]                    wiersze od góry; 15 = lita skała, mniej = wydrążenie
-  u8  extra[16]                          🔶 4 × u32
-  u8  tail[9]                            🔶 4 B (w ~47% równe narożnikom siatki) + 5 B flag
-dalej: szczegółowe siatki 3D (listy indeksów u16, wierzchołki) 🔶
+u32 version = 11, u32 0, u32 nBlocks = 118688, u32 0
+u32 nIndex, u32 nDescriptors, u32 nPalette             BDB0: 561168, 17564, 1411; BDB2: 4195746, 104056, 3323
+komórki: nBlocks × 3 × (u16 vertCount, u32 descriptor) 3 podsiatki na blok (góra, środek, dół)
+rekordy bloków: nBlocks × 89 B
+  u8  wysokość[8][8]       wiersze od góry; 15 = lita skała, mniej = wydrążenie
+  u32 sąsiedzi[4]          NW, NE, SW, SE do zszywania (0xFFFFFFFF = brak)
+  u8  narożniki[4]         wysokości narożników NW, NE, SW, SE
+  u8  wariant              młodszy półbajt = wariant shadera (🔶)
+  u8  flagi[4]             🔶
+indeksy: nIndex × u16       trójkąty, indeksy wierzchołków w obrębie podsiatki
+deskryptory: nDescriptors × (u32 offset, u32 liczba)   zakres w puli indeksów
+paleta: nPalette × (f32 x, y, z, u, v)                x, y w bloku (0..1, y w dół), z = wysokość w blokach (7..14,5)
+dane podsiatek, kolejno: vertCount × u16 indeks palety, potem vertCount × u8 indeks normalnej (SPHERE.DAT)
 ```
-- Rekordy bloków są **identyczne w trzech plikach**. Pliki różnią się tylko siatkami 3D, a gra wybiera plik ustawieniem `LandScapeQuality` (0–2).
-- **Typ pola w `.PMP`** ✅ (eksperyment: ten sam korytarz `GNG_021` z różnymi typami, zrzuty z gry `capture.sh`):
-
-  | młodszy półbajt | znaczenie |
-  |---|---|
-  | 0 | blok **niewykopany**: gra pokazuje litą skałę, choć `BlockDB` ma kształt wydrążenia (tunel do odkopania) |
-  | 2 | grunt **C** (piasek) |
-  | 3 | grunt **B** (ziemia) |
-  | 4 | grunt **A** (szara skała) |
-  | 5 | tylna ściana „przezroczysta”: prześwituje tło (logo, panorama jeziora w menu; bez tła czarno) |
-
-  Grunt dotyczy całego bloku, także przedniej powierzchni skały. Bit 0x80 nie zmieniał wyglądu (0x04 i 0x84, 0x02 i 0x82 wyglądają tak samo) 🔶. Przejścia między gruntami sąsiednich bloków gra robi maskami `Msk_*` 🔶. Przeglądarka tymczasowo uśrednia wagi gruntów na granicach.
-- **Warstwa 2 `.PMP`** (0–8) to raczej struktura przejść: 4 = skała, 0 = wnętrze, 1/2/6/8 = linie przejść 🔶.
-- **Mapa wysokości szablonu:** blok (bx, by) z `.PMP` daje próbki (bx·8+sx, by·8+sy) = `głębokość[sy][sx]`. Próbka ma 25 jednostek (1/8 bloku).
-- **Głębokość wydrążenia = (15 − v) · 100 jednostek**. W układzie świata przednia płaszczyzna leży przy z = 3000 (15 bloków), a próbka v ma z = 3000 − (15 − v)·100. Przykład z korytarza `GNG_001`: bloki 76–79 (sufit: f, f, e/d/c, b…), blok 80 (cały b = głębokość 400), blok 81 (b u góry, f na dole).
-- ✅ Weryfikacja: wierzchołki OBJ z `save_map` gry dla trzech szablonów zgadzają się z naszą mapą (253 dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian).
+- **Siatka bloku (bx, by):** dla każdej podsiatki wierzchołek i ma pozycję `((bx + p.x)·200, (by + p.y)·200, p.z·200)`, gdzie p = paleta[indeks i], a normalną `sphere[normalna i]`. Trójkąty biorą indeksy z puli w zakresie deskryptora. Implementacja: `src/lib/blockdb.cpp`, `src/lib/terrain_mesh.cpp`.
+- **Pliki BDB0/1/2:** rekordy 89 B są w nich identyczne, a różnią się szczegółowością siatek (`LandScapeQuality` 0–2). Przeglądarka używa BDB2.
+- **Wysokość:** z = (7 + 0,5·v) bloku, więc przednia płaszczyzna (v = 15) leży przy **z = 14,5 bloku = 2900 jednostek** (zgodnie z VRML gry), a głębokość wydrążenia to (15 − v)·100 jednostek.
+- **Mapa wysokości szablonu (8 próbek na blok):** blok (bx, by) z `.PMP` daje próbki (bx·8+sx, by·8+sy) = `wysokość[sy][sx]`. ✅ Wierzchołki OBJ z `save_map` gry zgadzają się z nią (253 dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian). Służy do podglądu 2D.
+- Bloki niewykopane (typ pola 0) gra rysuje jako litą skałę. Przeglądarka używa wtedy bloku 0.
+- 🔶 Współrzędne u, v w palecie (zakres ok. 0..7,5) gra wykorzystuje do teksturowania. Przeglądarka na razie stosuje mapowanie trójpłaszczyznowe.
 
 ### Tekstury gruntu (`Data/Ground`)
 `Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>[2]_<TL TR BL BR>` to tekstury detali wybierane przez `.l2m` (patrz niżej). Rodzaj gruntu bloku wynika z typu pola `.PMP` (patrz wyżej).

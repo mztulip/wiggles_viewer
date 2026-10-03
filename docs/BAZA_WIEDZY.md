@@ -401,3 +401,23 @@ dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartośc
       przeplatane dłuższymi blokami (🔶 siatki 3D)
 ```
 ✅ **Rozpracowane:** 118 688 rekordów po 89 B leży zaraz za ILT (po jednym na blok), a siatka 8×8 to głębokość (15 = skała). Pełny opis i weryfikacja z OBJ gry: [`formaty/mapy.md`](formaty/mapy.md).
+
+---
+
+## 10. Diggles-Unity: indeks dokumentacji
+
+[Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT) to grywalna reimplementacja w Unity 6 z ok. 80 dokumentami RE (`../ref/Diggles-Unity-main/Docs/`, start: `Docs/README.md`). Wykorzystujemy ich **wiedzę** (z przypisaniem w kodzie i dokumentacji) i weryfikujemy ją na danych gry. Gdzie się różnimy, decyduje eksperyment na oryginale (np. ich mapowanie typu pola na grunt to według ich komentarza zgadywanie, a nasze pochodzi ze zrzutów gry).
+
+| Temat | Ich dokument | Stan u nas |
+|---|---|---|
+| Siatki BlockDB, kafel = 3 podsiatki, cliff path | `RENDERING_PIPELINE_COMPLETE.md` | ✅ wdrożone (siatki) |
+| Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | do zrobienia |
+| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | do zrobienia |
+| Układ współrzędnych | `COORDINATE_SYSTEM.md` | porównać z naszym (§1, `formaty/3db.md` §4) |
+| Interpreter Tcl, model obiektów, start skryptów | `TCL_*.md`, `ENGINE_TCL_API.txt`, `ENGINE_COMMAND_GAP.md` | faza 5 |
+| Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
+| Nawigacja, pathfinding (maska RLE w `.PMP` = płaszczyzna nawigacji 0/1/3) | `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md` | faza 6 |
+| Generator świata, składanie map | `WORLDGEN_ORIGINAL_RE.md`, `LEVEL_GENERATOR.md` | następny etap map |
+| Zapisy `.sav` | `ORIGINAL_SAVE_FORMAT_RE.md`, `save-re-reports/` | faza 6 |
+| Animacje, twarze, łączenie czapek | `ANIMATION_CONTROLLER.md`, `FACE_ANIMATION.md`, `HAT_LINK_SYSTEM.md` | przeglądarka/silnik |
+| Dźwięk, cząsteczki, płyny, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `PARTICLE_SYSTEM_REWRITE.md`, `FLUID_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |

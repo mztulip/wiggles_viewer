@@ -82,24 +82,23 @@ Szczegółowy plan z odhaczaniem jest w [`TODO.md`](TODO.md). Poniżej tylko zar
 
 ## Materiały referencyjne
 
-Szczegółowa analiza jest w [`docs/BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md). Materiały referencyjne leżą poza repozytorium, w katalogu nadrzędnym (zipy i rozpakowane `../ref/`).
+Szczegółowa analiza jest w [`docs/BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md), autorzy i licencje w [`CREDITS.md`](CREDITS.md). Lokalne kopie (zipy i rozpakowane `../ref/`) leżą poza repozytorium, w katalogu nadrzędnym.
 
-W katalogu nadrzędnym leżą zipy z repozytoriami społeczności i zapisane strony z forum, które pomagają przy pracy:
-
-| Plik | Do czego się przyda |
+| Repozytorium | Do czego się przyda |
 |---|---|
-| `Diggles3db-main.zip` | **Najważniejszy.** Parser formatu `.3db` (Python 3, Python 2.7, C#) i eksport do glTF. Opisuje strukturę: wersja, nazwa, materiały, meshe (linki do trójkątów, UV, punktów i jasności), obiekty, animacje |
-| `barnacle-main.zip` | „Diggles SDK”: hook do oryginalnego exe z mostem Tcl↔Python. Pokazuje, jak działa interpreter skryptów w grze |
-| `DigglesModManager-master.zip` | Menedżer modów (C#). Pokazuje, jak mody łatają skrypty (`change_*.tcl`) |
-| `DigglesHDmod-master.zip` | Mod HD z teksturami w wyższej rozdzielczości (`Data_HD/`). Zawiera ~1171 tekstur TGA gry (przeskalowanych) oraz opis układu `Texture/` i `Ground/` |
-| `BugFix`, `BetterStorage`, `Barrow`, `StoneDoor`, `RareResources`, `ProductionStatistics`, `DroppingResources`, `ElfPatch` | Mody gameplayowe. Przykłady skryptów Tcl i struktury `Data/Scripts` (klasy: `zwerg`, `work`, `items`, `story`, `init`…) |
-| `WigSound-master.zip` | Obejście problemów z dźwiękiem. Zawiera skrypty `sequencer.tcl` i `Trigger_*.tcl` |
-| `wng-game-master.zip`, `wng-server-master.zip` | Wiggles NextGen: porzucona próba silnika w Godot 4.3. Zawiera tylko pustą scenę testową, a pliki serwera mają 0 B. **Nic do wykorzystania** |
-| `Translations-master.zip` | Tłumaczenia tekstów modów |
-| `DigglesModActions-main.zip` | GitHub Actions do publikacji modów |
-| `Game internal information - Wiggles Forum.html`, `plik_dat` | Notatki z forum: format `sphere.dat` (256 × vec3 float32 LE, normalne), klucze rejestru (`HKCU\Software\SekOst\Diggles`), parametry linii poleceń oryginalnej gry (`-mapedit`, `-console`, `-nofow`, `-safetcl`, `-logerrors`…) |
+| [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) | **Najobszerniejsze źródło.** Reimplementacja gry w Unity 6 (MIT) z ok. 80 dokumentami inżynierii wstecznej (`Docs/`): siatki BlockDB, renderowanie i oświetlenie, interpreter Tcl, nawigacja, kopanie, generator świata, format zapisów |
+| [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) | Parser formatu `.3db` (Python 3, Python 2.7, C#) i eksport do glTF |
+| barnacle („Diggles SDK”, autor nieustalony) | Hook do oryginalnego exe z mostem Tcl↔Python. Pokazuje, jak działa interpreter skryptów w grze |
+| [DigglesMods/DigglesModManager](https://github.com/DigglesMods/DigglesModManager) | Menedżer modów (C#). Pokazuje, jak mody łatają skrypty (`change_*.tcl`) |
+| [ZarfaZ/DigglesHDmod](https://github.com/ZarfaZ/DigglesHDmod) | Mod HD: ~1171 przeskalowanych tekstur TGA oraz opis układu `Texture/` i `Ground/` |
+| [BugFix](https://github.com/DigglesMods/BugFix), [BetterStorage](https://github.com/DigglesMods/BetterStorage), [Barrow](https://github.com/DigglesMods/Barrow), [StoneDoor](https://github.com/DigglesMods/StoneDoor), [RareResources](https://github.com/DigglesMods/RareResources), [ProductionStatistics](https://github.com/DigglesMods/ProductionStatistics), [DroppingResources](https://github.com/DigglesMods/DroppingResources), [ElfPatch](https://github.com/DigglesMods/ElfPatch) | Mody gameplayowe (DigglesMods): przykłady skryptów Tcl i struktury `Data/Scripts` |
+| [DigglesMods/WigSound](https://github.com/DigglesMods/WigSound) | Obejście problemów z dźwiękiem; zawiera skrypty `sequencer.tcl` i `Trigger_*.tcl` |
+| [Wiggles-nextGen/wng-game](https://github.com/Wiggles-nextGen/wng-game), [wng-server](https://github.com/Wiggles-nextGen/wng-server) | Porzucona próba silnika w Godot 4.3: pusta scena testowa, pliki serwera mają 0 B. **Nic do wykorzystania** |
+| [DigglesMods/Translations](https://github.com/DigglesMods/Translations) | Tłumaczenia tekstów modów |
+| [DigglesMods/DigglesModActions](https://github.com/DigglesMods/DigglesModActions) | GitHub Actions do publikacji modów |
+| [Wiggles Forum](https://wiggles.ruka.at/forum/): wątek „Game internal information” | Format `sphere.dat`, klucze rejestru, parametry linii poleceń oryginalnej gry (`-mapedit`, `-console`, `-nofow`, `-safetcl`, `-logerrors`…) |
 
-Repozytoria z linkami i autorami: [`CREDITS.md`](CREDITS.md). Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na GitHubie](https://github.com/DigglesMods).
+Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na GitHubie](https://github.com/DigglesMods).
 
 ## Licencja
 
