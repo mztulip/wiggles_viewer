@@ -59,8 +59,11 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 
 ## Faza 4: mapy i teren
-- [ ] 🔬 `.PMP`: znaczenie typów pól, indeksy bloków, ogon pliku
-- [ ] 🔬 `BlockDB0/1/2.BDB`: geometria bloków terenu
+- [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
+- [x] `.PMP`: struktura (typ, ID bloku, maska RLE, warstwa2)
+- [ ] 🔬 `.PMP`: dekodowanie maski RLE i znaczenie typów oraz warstwy2 (wzorzec: OBJ z `save_map`)
+- [x] `BlockDB`: nagłówek i tabela ILT (3 odwołania na blok do puli elementów)
+- [ ] 🔬 `BlockDB`: rekordy danych (siatki 8×8, siatki 3D) i dopasowanie do puli
 - [ ] 🔬 `.l2m` (warstwa 2) i `.ENT`
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
 - [ ] Podgląd szablonu mapy w wigview (pojedynczy `Templates/*.tcl`)

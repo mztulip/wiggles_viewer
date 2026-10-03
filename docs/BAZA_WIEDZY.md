@@ -366,3 +366,38 @@ Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla
 
 ### 8.5 barnacle (SDK) jako następny krok
 Barnacle hookuje `Wiggles.exe` 1.0.844, czyli **dokładnie naszą wersję**, i daje Pythona wewnątrz gry. Przyda się, gdy czysty Tcl nie wystarczy: śledzenie interpreterów obiektów albo odczyt pamięci i struktur C++. Wymaga zbudowania pod Windows (Python 3.6 32-bit, scons), czyli wejścia pod Wine.
+
+---
+
+## 9. Mapy i teren (badania w toku)
+
+### 9.1 Ustalenia z działającej gry ✅
+- `get_map_width`/`get_map_height` dla `map create 64 64` zwracają **512**, czyli 8 jednostek mapy na blok szablonu. Przesunięcia w `MapTemplateSet x y` są w blokach.
+- **Teren to mapa wysokości** w płaszczyźnie (x, y) ekranu, a wysokość oznacza głębokość wydrążenia w głąb ekranu (0 = lita skała na przedniej płaszczyźnie). Gra 2,5D.
+- `save_map {x y w h} plik` zapisuje **Wavefront OBJ** „obj outputfile for template”: zgrubną mapę wysokości szablonów (blok = 200 jednostek, siatka co 50 lub 25, głębokości w krokach 100; korytarz `GNG_001` ma głębokość 400). To format edytora map i najlepszy wzorzec do weryfikacji dekodowania.
+- `save_scene plik` zapisuje VRML 2.0 („Wiggles VRML97 exporter”), a `hmap` zapisuje `hmap.raw` 512×512 u8 (🔶 nie jest to prosta głębokość: dominuje 240, w jaskiniach szum).
+- `data/userstartup.tcl` zastępuje menu startowe, co pozwala ustawić dowolne szablony i zrzucić wzorce (`tools/lab/userstartup_templates.tcl`).
+- Exe: `BlockDB ILT load`, `BlockDB mesh load %d Blocks`, `Scape texturizer (TM)`, shadery `scape_solid`, `scape_blend`, `scape_fow`, `scape_urw_mt0/1`, `scape_lav_mt0/1`. `LandScapeQuality [value] (2)` wybiera plik `BlockDB0/1/2`.
+
+### 9.2 `.PMP` ✅ (struktura), 🔶 (znaczenie)
+```
+u32 w, u32 h                 rozmiar w blokach
+u8  typ[w*h]                 02 korytarz, 04 jaskinia, … 🔶
+u32 blok[w*h]                ID bloku w BlockDB (0..118687), numeracja globalna
+u32 n
+u16 maska[n]                 🔶 kodowanie przebiegami. W szybie GNG_007 wiersze mają 129 próbek
+                             (4 bloki × 32 + 1), 8 wierszy na blok, przebiegi naprzemienne.
+                             W GNG_001 sumy się nie zgadzają, więc format jest bardziej złożony
+u8  warstwa2[w*h]            🔶 wartości 0–8
+```
+Rozmiar pliku zgadza się co do bajta dla wszystkich sprawdzonych szablonów.
+
+### 9.3 `BlockDB0/1/2.BDB` 🔶
+```
+u32 11, u32 0, u32 118688 (liczba bloków), u32 0
+u32 X, u32 Y (liczba elementów puli), u32 Z, u32 4      BDB0: 561168, 17564, 1411
+ILT: 3 × 118688 rekordów (u16 a, u32 b)                  b = indeks w puli (0..Y-1), a stałe dla danego b
+dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartości 0x02..0x0F, 16 B dodatków / FF)
+      przeplatane dłuższymi blokami (🔶 siatki 3D)
+```
+Wartość 0x0F w siatce 8×8 prawdopodobnie oznacza litą skałę, a niższe wartości wydrążenie. Dopasowanie elementów puli do rekordów jest jeszcze nieznane.
