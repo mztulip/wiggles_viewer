@@ -66,7 +66,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 `BlockDB`: rekordy danych (siatki 8×8, siatki 3D) i dopasowanie do puli
 - [ ] 🔬 `.l2m` (warstwa 2) i `.ENT`
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
-- [ ] Podgląd szablonu mapy w wigview (pojedynczy `Templates/*.tcl`)
+- [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
+- [ ] Teren w przeglądarce map (po zdekodowaniu maski PMP / BlockDB)
+- [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [ ] Złożenie całej mapy z `Gamesave/*.tcl`
 
 ## Faza 5: skrypty, czyli osadzony Tcl

@@ -58,6 +58,7 @@ public:
 	}
 	// Tablica elementów typu T (POD, little-endian) zapisanych jeden po drugim.
 	template <typename T> void readArray(std::vector<T>& out, size_t count) {
+		if (count > remaining() / sizeof(T)) need(count * sizeof(T)); // błąd przed alokacją
 		out.resize(count);
 		if (count) readInto(out.data(), count * sizeof(T));
 	}

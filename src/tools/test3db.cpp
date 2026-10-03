@@ -4,6 +4,8 @@
 //
 // Użycie: test3db <katalog gry>      (np. ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles)
 
+#include "lib/class_db.h"
+#include "lib/map_template.h"
 #include "lib/model3db.h"
 #include "lib/binreader.h"
 #include "lib/tga.h"
@@ -11,6 +13,7 @@
 
 #include <cstdio>
 #include <map>
+#include <set>
 
 using namespace ow;
 
@@ -72,6 +75,78 @@ static int testTextures(const Vfs& vfs) {
 	return failed;
 }
 
+// Szablony map: PMP, L2M, skrypty .tcl i przypisanie klas obiektów do modeli.
+static int testTemplates(const Vfs& vfs) {
+	int failed = 0, pmpOk = 0, l2mOk = 0, scripts = 0;
+	size_t objects = 0, resolved = 0;
+	std::map<std::string, int> unknownClasses, missingObjects;
+	ClassDb classes;
+	classes.load(vfs);
+	std::printf("klasy z modelem: %zu\n", classes.size());
+
+	// Nazwy obiektów w każdym pliku .3db (wczytywane na żądanie).
+	std::map<std::string, std::set<std::string>> modelObjects;
+	auto objectsOf = [&](const std::string& file) -> const std::set<std::string>& {
+		auto it = modelObjects.find(Vfs::lower(file));
+		if (it != modelObjects.end()) return it->second;
+		auto& set = modelObjects[Vfs::lower(file)];
+		if (auto data = vfs.read("Data/3db/" + file)) {
+			try {
+				for (auto& o : parseModel3db(*data).objects) set.insert(Vfs::lower(o.name));
+			} catch (...) {}
+		}
+		return set;
+	};
+	auto anyModelHas = [&](const std::string& obj) {
+		for (auto& f : vfs.list("Data/3db"))
+			if (objectsOf(f).count(Vfs::lower(obj))) return true;
+		return false;
+	};
+
+	for (const auto& f : vfs.list("Data/Templates")) {
+		auto low = Vfs::lower(f);
+		auto data = vfs.read("Data/Templates/" + f);
+		if (!data) continue;
+		try {
+			if (low.size() > 4 && low.substr(low.size() - 4) == ".pmp") {
+				parsePmp(*data);
+				++pmpOk;
+			} else if (low.size() > 4 && low.substr(low.size() - 4) == ".l2m") {
+				parseL2m(*data);
+				++l2mOk;
+			} else if (low.size() > 4 && low.substr(low.size() - 4) == ".tcl") {
+				auto t = parseTemplateScript(std::string(data->begin(), data->end()));
+				++scripts;
+				for (auto& o : t.objects) {
+					++objects;
+					const ClassModel* cm = classes.find(o.className);
+					if (!cm) {
+						unknownClasses[o.className]++;
+						continue;
+					}
+					bool ok = (!cm->modelHint.empty() && objectsOf(cm->modelHint).count(Vfs::lower(cm->object))) ||
+					          anyModelHas(cm->object);
+					if (ok) ++resolved;
+					else missingObjects[cm->object]++;
+				}
+			}
+		} catch (const ParseError& e) {
+			std::printf("FAIL %s: %s\n", f.c_str(), e.what());
+			++failed;
+		}
+	}
+	std::printf("szablony: PMP %d, L2M %d, skrypty %d, obiekty %zu, z modelem %zu (%.1f%%)\n", pmpOk, l2mOk, scripts,
+	            objects, resolved, objects ? 100.0 * resolved / objects : 0.0);
+	int shown = 0;
+	for (auto& [k, v] : unknownClasses)
+		if (shown++ < 10) std::printf("  nieznana klasa: %s (%d)\n", k.c_str(), v);
+	std::printf("  nieznanych klas: %zu\n", unknownClasses.size());
+	shown = 0;
+	for (auto& [k, v] : missingObjects)
+		if (shown++ < 10) std::printf("  brak obiektu w .3db: %s (%d)\n", k.c_str(), v);
+	return failed;
+}
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::fprintf(stderr, "użycie: %s <katalog gry>\n", argv[0]);
@@ -86,6 +161,8 @@ int main(int argc, char** argv) {
 	int failed = testModels(vfs);
 	std::printf("\n");
 	failed += testTextures(vfs);
+	std::printf("\n");
+	failed += testTemplates(vfs);
 	std::printf("\n%s\n", failed ? "BŁĘDY" : "WSZYSTKO OK");
 	return failed ? 1 : 0;
 }

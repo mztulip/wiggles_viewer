@@ -55,9 +55,13 @@ std::optional<fs::path> Vfs::resolve(const std::string& gamePath) const {
 std::optional<std::vector<uint8_t>> Vfs::read(const std::string& gamePath) const {
 	auto p = resolve(gamePath);
 	if (!p) return std::nullopt;
+	std::error_code ec;
+	if (!fs::is_regular_file(*p, ec)) return std::nullopt;
 	std::ifstream f(*p, std::ios::binary | std::ios::ate);
 	if (!f) return std::nullopt;
-	std::vector<uint8_t> data(size_t(f.tellg()));
+	auto size = f.tellg();
+	if (size < 0) return std::nullopt;
+	std::vector<uint8_t> data(static_cast<size_t>(size));
 	f.seekg(0);
 	if (!data.empty() && !f.read(reinterpret_cast<char*>(data.data()), std::streamsize(data.size())))
 		return std::nullopt;

@@ -3,9 +3,10 @@
 // Użycie:
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
-//           [--screenshot plik.png]
+//           [--template SZABLON] [--screenshot plik.png] [--ui]
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
-// --screenshot: renderuje jedną klatkę (bez UI), zapisuje PNG i kończy działanie.
+// --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
+// --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
@@ -19,6 +20,7 @@
 #include "lib/model3db.h"
 #include "lib/png_write.h"
 #include "lib/vfs.h"
+#include "wigview/map_view.h"
 
 #include <SDL.h>
 #include <imgui.h>
@@ -41,12 +43,13 @@ using namespace ow;
 namespace {
 
 struct Args {
-	std::string game, model, object, anim, screenshot;
+	std::string game, model, object, anim, screenshot, templ;
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
 	float yaw = 200.f, pitch = 15.f;
 	int flip = 1;
+	bool ui = false, viewSet = false;
 	int width = 1400, height = 900;
 };
 
@@ -58,11 +61,13 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--model") a.model = next();
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
+		else if (k == "--template") a.templ = next();
 		else if (k == "--frame") a.frame = float(std::atof(next()));
 		else if (k == "--ipol") a.ipol = std::atoi(next());
 		else if (k == "--light") a.light = std::atoi(next());
-		else if (k == "--yaw") a.yaw = float(std::atof(next()));
-		else if (k == "--pitch") a.pitch = float(std::atof(next()));
+		else if (k == "--yaw") a.yaw = float(std::atof(next())), a.viewSet = true;
+		else if (k == "--pitch") a.pitch = float(std::atof(next())), a.viewSet = true;
+		else if (k == "--ui") a.ui = true;
 		else if (k == "--flip") a.flip = std::atoi(next());
 		else if (k == "--screenshot") a.screenshot = next();
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
@@ -87,7 +92,9 @@ struct Viewer {
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
-	int activeTab = 0;       // 0 modele, 1 tekstury
+	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy
+	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
+	MapView maps;
 	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
 	char exportDir[512] = ".";
 	std::string exportMsg;
@@ -197,6 +204,18 @@ struct Viewer {
 		return glm::translate(m, -center);
 	}
 
+	// Widok mapy jak w grze: kamera z przodu (+z w układzie gry), lekko z góry.
+	void frameMap(bool resetAngles = true) {
+		if (resetAngles) {
+			yaw = 180.f;
+			pitch = 10.f;
+		}
+		center = maps.center();
+		radius = maps.radius();
+		dist = radius * 2.4f;
+		pan = glm::vec3(0.f);
+	}
+
 	glm::mat4 viewProj(int w, int h) const {
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
 		glm::mat4 proj = glm::perspective(glm::radians(40.f), aspect, radius * 0.01f, radius * 50.f + dist);
@@ -227,13 +246,18 @@ struct Viewer {
 		gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		x0 = std::clamp(x0, 0, w - 1);
 		gl::Viewport(x0, 0, w - x0, h);
-		uint32_t a, b;
-		float t;
-		if (currentFrames(a, b, t)) renderer.drawFrames(a, b, t, viewProj(w - x0, h), modelMatrix(), draw);
+		if (activeTab == 2) {
+			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw);
+		} else {
+			uint32_t a, b;
+			float t;
+			if (currentFrames(a, b, t)) renderer.drawFrames(a, b, t, viewProj(w - x0, h), modelMatrix(), draw);
+		}
 		gl::Viewport(0, 0, w, h);
 	}
 
 	void update(float dt) {
+		if (playing) maps.update(dt);
 		int n = frameCount();
 		if (!playing || n <= 1) return;
 		frame += dt * fps;
@@ -442,17 +466,25 @@ void Viewer::ui() {
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
 	ImGui::Begin("wigview");
 	if (ImGui::BeginTabBar("tabs")) {
-		if (ImGui::BeginTabItem("Modele")) {
+		auto tabFlags = [&](int k) { return forceTab == k ? ImGuiTabItemFlags_SetSelected : 0; };
+		if (ImGui::BeginTabItem("Modele", nullptr, tabFlags(0))) {
 			activeTab = 0;
 			uiModel();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Tekstury")) {
+		if (ImGui::BeginTabItem("Tekstury", nullptr, tabFlags(1))) {
 			activeTab = 1;
 			uiTextures();
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem("Mapy", nullptr, tabFlags(2))) {
+			if (activeTab != 2) frameMap();
+			activeTab = 2;
+			if (maps.ui()) frameMap();
+			ImGui::EndTabItem();
+		}
 		ImGui::EndTabBar();
+		forceTab = -1;
 	}
 	uiRight = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
 	scrollToSel = false;
@@ -563,6 +595,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	v.textures = std::make_unique<TextureCache>(v.vfs);
+	v.maps.init(&v.vfs, v.textures.get(), &v.sphere);
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
 		v.sphere = parseSphereDat(*sd);
 		v.renderer.setSphere(v.sphere);
@@ -597,6 +630,46 @@ int main(int argc, char** argv) {
 		v.frame = std::clamp(args.frame, 0.f, float(std::max(0, v.frameCount() - 1)) + 0.999f);
 	}
 
+	if (!args.templ.empty()) {
+		std::string t = args.templ;
+		if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";
+		if (!v.maps.loadTemplate(t)) std::fprintf(stderr, "szablon %s: %s\n", t.c_str(), v.maps.error().c_str());
+		v.activeTab = 2;
+		v.forceTab = 2;
+		v.frameMap();
+		if (args.viewSet) {
+			v.yaw = args.yaw;
+			v.pitch = args.pitch;
+		}
+	}
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::GetIO().IniFilename = args.screenshot.empty() ? "wigview.ini" : nullptr;
+	ImGui::StyleColorsDark();
+	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
+	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+	                      "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
+		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
+	ImGui_ImplSDL2_InitForOpenGL(win, ctx);
+	ImGui_ImplOpenGL3_Init("#version 330 core");
+	v.refreshTexFiles();
+
+	// Jedna klatka: scena 3D (na prawo od panelu UI) i opcjonalnie interfejs.
+	auto renderFrame = [&](int w, int h, bool withUi = true) {
+		withUi = withUi && (args.screenshot.empty() || args.ui);
+		if (withUi) {
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplSDL2_NewFrame();
+			ImGui::NewFrame();
+			v.ui();
+			ImGui::Render();
+		}
+		float scale = ImGui::GetIO().DisplayFramebufferScale.x;
+		v.renderScene(w, h, withUi ? int(v.uiRight * scale) : 0);
+		if (withUi) ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	};
+
 	if (!args.screenshot.empty()) {
 		int w, h;
 		// Kilka klatek, żeby okno zdążyło się zmapować (inaczej zawartość bufora jest niezdefiniowana).
@@ -604,11 +677,11 @@ int main(int argc, char** argv) {
 			SDL_Event e;
 			while (SDL_PollEvent(&e)) {}
 			SDL_GL_GetDrawableSize(win, &w, &h);
-			v.renderScene(w, h);
+			renderFrame(w, h);
 			SDL_GL_SwapWindow(win);
 			SDL_Delay(30);
 		}
-		v.renderScene(w, h);
+		renderFrame(w, h);
 		if (GLenum ge = gl::GetError()) std::fprintf(stderr, "GL error 0x%x\n", ge);
 		std::printf("model %s obiekt %d anim %d klatka %d mesh %d  środek (%.1f %.1f %.1f) r=%.1f dist=%.1f\n",
 		            v.modelFile.c_str(), v.object, v.anim, int(v.frame), v.currentMesh(), v.center.x, v.center.y,
@@ -622,23 +695,15 @@ int main(int argc, char** argv) {
 		std::printf("%s %s\n", ok ? "zapisano" : "BŁĄD zapisu", args.screenshot.c_str());
 		v.renderer.setModel(nullptr, nullptr);
 		v.textures.reset();
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
 		SDL_GL_DeleteContext(ctx);
 		SDL_DestroyWindow(win);
 		SDL_Quit();
 		return ok ? 0 : 1;
 	}
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGui::GetIO().IniFilename = "wigview.ini";
-	ImGui::StyleColorsDark();
-	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
-	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-	                      "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
-		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
-	ImGui_ImplSDL2_InitForOpenGL(win, ctx);
-	ImGui_ImplOpenGL3_Init("#version 330 core");
-	v.refreshTexFiles();
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
@@ -666,8 +731,16 @@ int main(int argc, char** argv) {
 				int n = v.frameCount();
 				switch (e.key.keysym.sym) {
 				case SDLK_i: v.interpolate = !v.interpolate; break;
-				case SDLK_UP: v.activeTab == 0 ? v.stepModel(-1) : v.stepTexture(-1); break;
-				case SDLK_DOWN: v.activeTab == 0 ? v.stepModel(1) : v.stepTexture(1); break;
+				case SDLK_UP:
+					if (v.activeTab == 0) v.stepModel(-1);
+					else if (v.activeTab == 1) v.stepTexture(-1);
+					else v.maps.step(-1);
+					break;
+				case SDLK_DOWN:
+					if (v.activeTab == 0) v.stepModel(1);
+					else if (v.activeTab == 1) v.stepTexture(1);
+					else v.maps.step(1);
+					break;
 				case SDLK_PAGEUP: v.stepAnim(-1); break;
 				case SDLK_PAGEDOWN: v.stepAnim(1); break;
 				case SDLK_SPACE: v.playing = !v.playing; break;
@@ -682,17 +755,9 @@ int main(int argc, char** argv) {
 		last = now;
 		v.update(dt);
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame();
-		ImGui::NewFrame();
-		v.ui();
-		ImGui::Render();
-
 		int w, h;
 		SDL_GL_GetDrawableSize(win, &w, &h);
-		float scale = ImGui::GetIO().DisplayFramebufferScale.x;
-		v.renderScene(w, h, int(v.uiRight * scale));
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		renderFrame(w, h);
 		SDL_GL_SwapWindow(win);
 	}
 

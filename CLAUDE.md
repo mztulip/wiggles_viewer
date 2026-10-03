@@ -5,7 +5,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 ## Mapa dokumentacji
 - [TODO.md](TODO.md): **żywy plan prac**. Odhaczaj wykonane punkty i dopisuj nowe, gdy coś odkryjesz
 - [README.md](README.md): cele projektu, decyzje techniczne, plan pracy, lista materiałów referencyjnych
-- [docs/formaty/](docs/formaty/): **specyfikacje formatów** do samodzielnej implementacji (`3db.md`, `tekstury.md`, `sphere_dat.md`). Aktualizuj je razem z kodem
+- [docs/formaty/](docs/formaty/): **specyfikacje formatów** do samodzielnej implementacji (`3db.md`, `tekstury.md`, `sphere_dat.md`, `mapy.md`). Aktualizuj je razem z kodem
 - [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): wiedza o grze wyciągnięta z `../ref/`
   - §1 format modeli `.3db` (animacja wierzchołkowa, pule danych)
   - §2 tekstury, katalogi `Data/Texture` i `Data/Ground`, `sphere.dat`
@@ -39,7 +39,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `./build.sh [debug|release] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake)
 - glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
-- `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI. Tak można samemu obejrzeć wynik (Read na PNG)
+- `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI, a `--template T --ui --screenshot out.png` szablon razem z interfejsem. Tak można samemu obejrzeć wynik (Read na PNG)
 - Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
 
 ## Zasady
