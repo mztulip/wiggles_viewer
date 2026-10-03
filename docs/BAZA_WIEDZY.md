@@ -134,7 +134,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 - Gra linkuje **Tcl 8.3.2** (`tcl83d.dll`). Barnacle buduje dokładnie tę wersję z `libs/tcl8.3.2`. W oryginale jest też **zlib 1.1.3**. ✅ Zapisy gry (`.sav`) to gzip.
 - Punkt wejścia: `Data/systeminit.tcl`.
 - Skrypty przechodzą przez **preprocesor** (`sTclObject_preprocessFile`) przed ewaluacją:
-  - komentarze `//` (nie są składnią Tcl, więc preprocesor musi je usuwać),
+  - komentarze `//`: w `systeminit.tcl` preprocesor je wycina (linie zostają puste). ✅ Jednocześnie `//` jest **komendą natywną** (no-op, 40 wywołań podczas startu), więc komentarze, które przejdą przez preprocesor, na przykład w ciałach procedur czy w plikach bez preprocesora, wykonują się jako pusta komenda. Nasz silnik musi zrobić jedno i drugie.
   - ✅ dyrektywy warunkowe: `//# IF FULL`, `//# ELSE`, `//# ENDIF`, `//# IFNOT FULL`, `//# IFNDEF NOSTARTSEQ`, `//# STOPIFNOT FULL` (przerwij plik, jeśli warunek jest fałszywy). Jedyne użyte symbole to `FULL` (pełna wersja zamiast dema) i `NOSTARTSEQ`.
   - Komentarze Tcl występują też w formach `#` i `;#`.
 - `call <plik>`: natywna komenda ładująca skrypt. Ścieżki zaczynające się od `scripts/` lub `templates/` dostają prefiks `data/`. Wielkość liter nie ma znaczenia (lowercase). Pliki z `data/templates` nie idą przez cache. Jest też `callnc` (🔶 call no-cache).
