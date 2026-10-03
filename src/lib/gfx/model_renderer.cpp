@@ -61,14 +61,6 @@ struct Vertex {
 };
 } // namespace
 
-std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data) {
-	std::vector<Vec3f> v;
-	if (data.size() != 256 * 12) return v;
-	v.resize(256);
-	std::memcpy(v.data(), data.data(), data.size());
-	return v;
-}
-
 ModelRenderer::~ModelRenderer() {
 	clearCache();
 	if (vao_) gl::DeleteVertexArrays(1, &vao_);
@@ -81,15 +73,7 @@ bool ModelRenderer::init(std::string& err) {
 }
 
 bool ModelRenderer::canInterpolate(uint32_t meshA, uint32_t meshB) const {
-	if (!model_ || meshA >= model_->meshes.size() || meshB >= model_->meshes.size()) return false;
-	const auto& la = model_->meshes[meshA].links;
-	const auto& lb = model_->meshes[meshB].links;
-	if (la.size() != lb.size()) return false;
-	for (size_t i = 0; i < la.size(); ++i)
-		if (la[i].material != lb[i].material || la[i].triangles != lb[i].triangles ||
-		    model_->points[la[i].points].size() != model_->points[lb[i].points].size())
-			return false;
-	return true;
+	return model_ && sameTopology(*model_, meshA, meshB);
 }
 
 void ModelRenderer::setModel(const Model3db* model, TextureCache* textures) {

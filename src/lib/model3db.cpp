@@ -23,6 +23,18 @@ static_assert(sizeof(Vec2f) == 8 && sizeof(MeshLink) == 12 && sizeof(std::array<
 
 } // namespace
 
+bool sameTopology(const Model3db& m, uint32_t meshA, uint32_t meshB) {
+	if (meshA >= m.meshes.size() || meshB >= m.meshes.size()) return false;
+	const auto& la = m.meshes[meshA].links;
+	const auto& lb = m.meshes[meshB].links;
+	if (la.size() != lb.size()) return false;
+	for (size_t i = 0; i < la.size(); ++i)
+		if (la[i].material != lb[i].material || la[i].triangles != lb[i].triangles ||
+		    m.points[la[i].points].size() != m.points[lb[i].points].size())
+			return false;
+	return true;
+}
+
 const Object3db* Model3db::findObject(const std::string& n) const {
 	for (const auto& o : objects)
 		if (o.name == n) return &o;

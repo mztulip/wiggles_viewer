@@ -8,12 +8,14 @@
 // --screenshot: renderuje jedną klatkę (bez UI), zapisuje PNG i kończy działanie.
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
-// strzałki lewo/prawo poprzednia/następna klatka, I interpolacja wł./wył., Esc wyjście.
+// strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
+// tekstura, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja, Esc wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/gfx/gl.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/gfx/texture_cache.h"
+#include "lib/gltf_export.h"
 #include "lib/model3db.h"
 #include "lib/png_write.h"
 #include "lib/vfs.h"
@@ -26,6 +28,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -83,6 +86,11 @@ bool endsWithI(const std::string& s, const std::string& suf) {
 struct Viewer {
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
+	std::vector<Vec3f> sphere;
+	int activeTab = 0;       // 0 modele, 1 tekstury
+	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
+	char exportDir[512] = ".";
+	std::string exportMsg;
 	ModelRenderer renderer;
 	std::vector<std::string> modelFiles;
 
@@ -246,6 +254,26 @@ struct Viewer {
 			if (endsWithI(f, ".tga")) texFiles.push_back(f);
 	}
 
+	void stepModel(int d) {
+		if (modelFiles.empty()) return;
+		int i = 0;
+		for (size_t k = 0; k < modelFiles.size(); ++k)
+			if (modelFiles[k] == modelFile) i = int(k) + d;
+		if (modelFile.empty()) i = d > 0 ? 0 : int(modelFiles.size()) - 1;
+		i = (i + int(modelFiles.size())) % int(modelFiles.size());
+		loadModel(modelFiles[size_t(i)]);
+		scrollToSel = true;
+	}
+	void stepTexture(int d);
+	void stepAnim(int d) {
+		if (!model || model->objects.empty()) return;
+		int n = int(model->objects[size_t(object)].animations.size());
+		if (n == 0) return;
+		selectAnim((anim + d + n) % n);
+		scrollToSel = true;
+	}
+	void exportGlb(bool allAnims);
+
 	void ui();
 	void uiModel();
 	void uiTextures();
@@ -257,8 +285,10 @@ bool passFilter(const char* filter, const std::string& s) {
 
 void Viewer::uiModel() {
 	ImGui::BeginChild("modele", ImVec2(180, 0), ImGuiChildFlags_Borders);
-	for (const auto& f : modelFiles)
+	for (const auto& f : modelFiles) {
 		if (ImGui::Selectable(f.c_str(), f == modelFile)) loadModel(f);
+		if (f == modelFile && scrollToSel) ImGui::SetScrollHereY(0.5f);
+	}
 	ImGui::EndChild();
 	ImGui::SameLine();
 
@@ -296,6 +326,7 @@ void Viewer::uiModel() {
 				char label[160];
 				std::snprintf(label, sizeof label, "%s  [%zu]##a%d", a.name.c_str(), a.frames.size(), i);
 				if (ImGui::Selectable(label, i == anim)) selectAnim(i);
+				if (i == anim && scrollToSel) ImGui::SetScrollHereY(0.5f);
 			}
 		}
 		ImGui::EndChild();
@@ -338,6 +369,16 @@ void Viewer::uiModel() {
 		if (ImGui::Button("Wyśrodkuj")) frameCamera();
 	}
 
+	if (ImGui::CollapsingHeader("Eksport glTF")) {
+		ImGui::SetNextItemWidth(-60);
+		ImGui::InputText("Katalog", exportDir, sizeof exportDir);
+		if (ImGui::Button("Bieżąca animacja")) exportGlb(false);
+		ImGui::SameLine();
+		if (ImGui::Button("Wszystkie animacje obiektu")) exportGlb(true);
+		ImGui::TextDisabled("Plik .glb z teksturami; animacje jako morph targets.\nUżywa ustawień FPS i interpolacji z odtwarzania.");
+		if (!exportMsg.empty()) ImGui::TextWrapped("%s", exportMsg.c_str());
+	}
+
 	if (ImGui::CollapsingHeader("Informacje")) {
 		if (auto a = currentAnim()) {
 			ImGui::Text("animacja: %s", a->name.c_str());
@@ -377,8 +418,10 @@ void Viewer::uiTextures() {
 	ImGui::SetNextItemWidth(-1);
 	ImGui::InputTextWithHint("##tf", "filtr", texFilter, sizeof texFilter);
 	for (int i = 0; i < int(texFiles.size()); ++i)
-		if (passFilter(texFilter, texFiles[size_t(i)]) && ImGui::Selectable(texFiles[size_t(i)].c_str(), i == texSel))
-			texSel = i;
+		if (passFilter(texFilter, texFiles[size_t(i)])) {
+			if (ImGui::Selectable(texFiles[size_t(i)].c_str(), i == texSel)) texSel = i;
+			if (i == texSel && scrollToSel) ImGui::SetScrollHereY(0.5f);
+		}
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("podglad");
@@ -400,17 +443,66 @@ void Viewer::ui() {
 	ImGui::Begin("wigview");
 	if (ImGui::BeginTabBar("tabs")) {
 		if (ImGui::BeginTabItem("Modele")) {
+			activeTab = 0;
 			uiModel();
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Tekstury")) {
+			activeTab = 1;
 			uiTextures();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
 	}
 	uiRight = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
+	scrollToSel = false;
 	ImGui::End();
+}
+
+void Viewer::stepTexture(int d) {
+	std::vector<int> visible;
+	for (int i = 0; i < int(texFiles.size()); ++i)
+		if (passFilter(texFilter, texFiles[size_t(i)])) visible.push_back(i);
+	if (visible.empty()) return;
+	int pos = -1;
+	for (size_t k = 0; k < visible.size(); ++k)
+		if (visible[k] == texSel) pos = int(k);
+	if (pos < 0) pos = d > 0 ? -1 : 0;
+	pos = (pos + d + int(visible.size())) % int(visible.size());
+	texSel = visible[size_t(pos)];
+	scrollToSel = true;
+}
+
+std::string safeFileName(std::string s) {
+	for (auto& c : s)
+		if (!(std::isalnum((unsigned char)c) || c == '_' || c == '-')) c = '_';
+	return s;
+}
+
+void Viewer::exportGlb(bool allAnims) {
+	if (!model || model->objects.empty()) return;
+	GltfExportOptions opt;
+	opt.fps = fps;
+	opt.interpolate = interpolate;
+	const auto& o = model->objects[size_t(object)];
+	std::string name = safeFileName(model->name) + "_" + safeFileName(o.name);
+	if (!allAnims) {
+		opt.animations = {anim};
+		if (auto a = currentAnim()) name += "_" + safeFileName(a->name);
+	}
+	std::string path = std::string(exportDir) + "/" + name + ".glb";
+	std::string err;
+	GltfExportStats st;
+	Uint64 t0 = SDL_GetPerformanceCounter();
+	if (exportGltf(*model, vfs, sphere, object, opt, path, err, &st)) {
+		double ms = double(SDL_GetPerformanceCounter() - t0) * 1000.0 / double(SDL_GetPerformanceFrequency());
+		char buf[512];
+		std::snprintf(buf, sizeof buf, "Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s",
+		              path.c_str(), st.animations, st.frames, st.textures, st.bytes / 1048576.0, ms,
+		              st.incompatibleFrames ? "\n(część klatek o innej topologii zastąpiona poprzednią)" : "");
+		exportMsg = buf;
+	} else exportMsg = "Błąd eksportu: " + err;
+	std::printf("%s\n", exportMsg.c_str());
 }
 
 int findIndex(const std::vector<std::string>& v, const std::string& name) {
@@ -471,7 +563,10 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	v.textures = std::make_unique<TextureCache>(v.vfs);
-	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) v.renderer.setSphere(parseSphereDat(*sd));
+	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
+		v.sphere = parseSphereDat(*sd);
+		v.renderer.setSphere(v.sphere);
+	}
 	else std::fprintf(stderr, "Uwaga: brak Data/SPHERE.DAT\n");
 
 	v.draw.lighting = LightingMode(std::clamp(args.light, 0, 3));
@@ -567,10 +662,14 @@ int main(int argc, char** argv) {
 				if (e.type == SDL_MOUSEWHEEL) v.dist *= std::pow(0.88f, float(e.wheel.y));
 			}
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE && !io.WantTextInput) running = false;
-			if (!io.WantCaptureKeyboard && e.type == SDL_KEYDOWN) {
+			if (!io.WantTextInput && e.type == SDL_KEYDOWN) {
 				int n = v.frameCount();
 				switch (e.key.keysym.sym) {
 				case SDLK_i: v.interpolate = !v.interpolate; break;
+				case SDLK_UP: v.activeTab == 0 ? v.stepModel(-1) : v.stepTexture(-1); break;
+				case SDLK_DOWN: v.activeTab == 0 ? v.stepModel(1) : v.stepTexture(1); break;
+				case SDLK_PAGEUP: v.stepAnim(-1); break;
+				case SDLK_PAGEDOWN: v.stepAnim(1); break;
 				case SDLK_SPACE: v.playing = !v.playing; break;
 				case SDLK_LEFT: v.playing = false; v.frame = std::max(0.f, float(int(v.frame) - 1)); break;
 				case SDLK_RIGHT: v.playing = false; v.frame = float(std::min(n - 1, int(v.frame) + 1)); break;

@@ -12,6 +12,7 @@
 
 #include "lib/gfx/shader.h"
 #include "lib/model3db.h"
+#include "lib/sphere.h"
 
 #include <glm/glm.hpp>
 #include <unordered_map>
@@ -75,8 +76,5 @@ private:
 	std::vector<Vec3f> sphere_;
 	std::unordered_map<uint32_t, std::vector<GpuLink>> cache_;
 };
-
-// Wczytuje SPHERE.DAT: 256 × vec3 f32. Pusty wektor przy błędzie.
-std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data);
 
 } // namespace ow

@@ -2,7 +2,7 @@
 # System budowania OpenWiggles (bez CMake).
 #
 # Użycie: ./build.sh [debug|release] [cel...]
-#   cele: lib, imgui, wigview, test3db, all (domyślnie), clean
+#   cele: lib, imgui, wigview, test3db, export_gltf, all (domyślnie), clean
 #   zmienne: CXX (domyślnie g++), JOBS (domyślnie nproc), VERBOSE=1
 #
 # Kompilacja przyrostowa: plik .o jest przebudowywany, gdy jest starszy od źródła
@@ -29,7 +29,7 @@ case "$MODE" in
 	debug)   CXXFLAGS+=(-O0 -g -DOW_DEBUG) ;;
 	release) CXXFLAGS+=(-O2 -DNDEBUG) ;;
 esac
-LIBS=($(pkg-config --libs sdl2) -ldl)
+LIBS=($(pkg-config --libs sdl2 zlib) -ldl)
 
 log() { printf '%s\n' "$*"; }
 run() { [ "${VERBOSE:-0}" = 1 ] && log "$*"; "$@"; }
@@ -111,6 +111,13 @@ build_wigview() {
 	link "$OUT/wigview" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
+build_export_gltf() {
+	build_lib
+	log "[export_gltf]"
+	compile -- src/tools/export_gltf.cpp
+	link "$OUT/export_gltf" "${OBJS[@]}" "$OUT/libwiggles.a"
+}
+
 build_test3db() {
 	build_lib
 	log "[test3db]"
@@ -125,7 +132,8 @@ for t in "${TARGETS[@]}"; do
 		imgui) build_imgui ;;
 		wigview) build_wigview ;;
 		test3db) build_test3db ;;
-		all) build_wigview; build_test3db ;;
+		export_gltf) build_export_gltf ;;
+		all) build_wigview; build_test3db; build_export_gltf ;;
 		*) log "nieznany cel: $t"; exit 1 ;;
 	esac
 done

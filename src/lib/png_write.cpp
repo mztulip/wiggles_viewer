@@ -1,26 +1,11 @@
 #include "lib/png_write.h"
 
 #include <fstream>
+#include <zlib.h>
 
 namespace ow {
 
 namespace {
-
-uint32_t crc32(const uint8_t* p, size_t n, uint32_t crc = 0) {
-	static uint32_t table[256];
-	static bool init = false;
-	if (!init) {
-		for (uint32_t i = 0; i < 256; ++i) {
-			uint32_t c = i;
-			for (int k = 0; k < 8; ++k) c = (c & 1) ? 0xEDB88320u ^ (c >> 1) : c >> 1;
-			table[i] = c;
-		}
-		init = true;
-	}
-	crc = ~crc;
-	for (size_t i = 0; i < n; ++i) crc = table[(crc ^ p[i]) & 0xff] ^ (crc >> 8);
-	return ~crc;
-}
 
 void be32(std::vector<uint8_t>& v, uint32_t x) {
 	v.push_back(uint8_t(x >> 24));
@@ -29,58 +14,47 @@ void be32(std::vector<uint8_t>& v, uint32_t x) {
 	v.push_back(uint8_t(x));
 }
 
-void chunk(std::ofstream& f, const char* type, const std::vector<uint8_t>& data) {
-	std::vector<uint8_t> buf;
-	be32(buf, uint32_t(data.size()));
-	buf.insert(buf.end(), type, type + 4);
-	buf.insert(buf.end(), data.begin(), data.end());
-	be32(buf, crc32(buf.data() + 4, buf.size() - 4));
-	f.write(reinterpret_cast<const char*>(buf.data()), std::streamsize(buf.size()));
+void chunk(std::vector<uint8_t>& out, const char* type, const std::vector<uint8_t>& data) {
+	be32(out, uint32_t(data.size()));
+	size_t start = out.size();
+	out.insert(out.end(), type, type + 4);
+	out.insert(out.end(), data.begin(), data.end());
+	uLong crc = crc32(0L, out.data() + start, uInt(out.size() - start));
+	be32(out, uint32_t(crc));
 }
 
 } // namespace
 
-bool writePng(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
-	std::ofstream f(path, std::ios::binary);
-	if (!f) return false;
-	static const uint8_t sig[8] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
-	f.write(reinterpret_cast<const char*>(sig), 8);
+std::vector<uint8_t> encodePng(int w, int h, const std::vector<uint8_t>& rgba) {
+	std::vector<uint8_t> out = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
 
 	std::vector<uint8_t> ihdr;
 	be32(ihdr, uint32_t(w));
 	be32(ihdr, uint32_t(h));
 	ihdr.insert(ihdr.end(), {8, 6, 0, 0, 0}); // 8 bit, RGBA
-	chunk(f, "IHDR", ihdr);
+	chunk(out, "IHDR", ihdr);
 
-	// Surowe dane: każdy wiersz poprzedzony filtrem 0.
+	// Każdy wiersz poprzedzony bajtem filtra 0 (brak filtra).
 	std::vector<uint8_t> raw;
-	raw.reserve(size_t(h) * (w * 4 + 1));
+	raw.reserve(size_t(h) * (size_t(w) * 4 + 1));
 	for (int y = 0; y < h; ++y) {
 		raw.push_back(0);
 		raw.insert(raw.end(), rgba.begin() + size_t(y) * w * 4, rgba.begin() + size_t(y + 1) * w * 4);
 	}
-	// zlib: nagłówek, bloki "stored" po max 65535 B, adler32.
-	std::vector<uint8_t> z = {0x78, 0x01};
-	size_t pos = 0;
-	do {
-		size_t n = std::min<size_t>(65535, raw.size() - pos);
-		bool last = pos + n == raw.size();
-		z.push_back(last ? 1 : 0);
-		z.push_back(uint8_t(n));
-		z.push_back(uint8_t(n >> 8));
-		z.push_back(uint8_t(~n));
-		z.push_back(uint8_t(~n >> 8));
-		z.insert(z.end(), raw.begin() + pos, raw.begin() + pos + n);
-		pos += n;
-	} while (pos < raw.size());
-	uint32_t a = 1, b = 0;
-	for (uint8_t c : raw) {
-		a = (a + c) % 65521;
-		b = (b + a) % 65521;
-	}
-	be32(z, (b << 16) | a);
-	chunk(f, "IDAT", z);
-	chunk(f, "IEND", {});
+	uLongf zlen = compressBound(uLong(raw.size()));
+	std::vector<uint8_t> z(zlen);
+	compress2(z.data(), &zlen, raw.data(), uLong(raw.size()), 6);
+	z.resize(zlen);
+	chunk(out, "IDAT", z);
+	chunk(out, "IEND", {});
+	return out;
+}
+
+bool writePng(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
+	auto png = encodePng(w, h, rgba);
+	std::ofstream f(path, std::ios::binary);
+	if (!f) return false;
+	f.write(reinterpret_cast<const char*>(png.data()), std::streamsize(png.size()));
 	return bool(f);
 }
 

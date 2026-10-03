@@ -36,7 +36,8 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `../ref/DigglesHDmod-master` ma 2,6 GB, więc nie przeszukuj go rekurencyjnie bez filtra
 
 ## Budowanie i weryfikacja
-- `./build.sh [debug|release] [lib|imgui|wigview|test3db|all|clean]` (bash, bez CMake)
+- `./build.sh [debug|release] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake)
+- glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
 - `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI. Tak można samemu obejrzeć wynik (Read na PNG)
 - Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`

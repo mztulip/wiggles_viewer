@@ -201,7 +201,23 @@ Nazewnictwo animacji postaci: `*_start`, `*_loop`, `*_end` (np. `gehen_start` �
 7. Shader: `kolor = tekstura(uv) * (ambient + (1-ambient) * max(dot(N, L), 0))`, gdzie `N = sphere[indeks]` obrócone macierzą modelu. Odrzuć piksele z alfą < 0,5 (liście, włosy, kraty).
 8. Bez cullingu (modele mają cienkie, dwustronne elementy), z buforem głębi.
 
-## 10. Przykład: `BABY.3DB`
+## 10. Eksport do glTF 2.0
+
+Tak eksportujemy modele (`src/lib/gltf_export.cpp`, wynik przechodzi walidator Khronos bez uwag):
+
+| `.3db` | glTF |
+|---|---|
+| obiekt | węzeł główny |
+| animacja | węzeł potomny z własną siatką |
+| klatka 0 animacji | atrybuty siatki (POSITION, NORMAL, TEXCOORD_0) |
+| klatki 1..N−1 | morph targets: różnice POSITION i NORMAL względem klatki 0 |
+| link | prymityw z materiałem |
+| odtwarzanie | klip: w chwili i/fps waga celu i = 1, interpolacja LINEAR (dokładnie jak liniowa interpolacja klatek) |
+| tekstura TGA | obraz PNG osadzony w `.glb`; alfa < 255 → `alphaMode: MASK` (próg 0,5); `doubleSided: true` |
+
+Konwersja współrzędnych: `(x, y, z) → (x, −y, −z) · 0,01` (Y w górę, metry; krasnal ma ok. 2 m). UV bez zmian, bo glTF też ma v = 0 u góry. Przy wielu animacjach węzły są domyślnie ukryte skalą 0, a każdy klip pokazuje swój węzeł. Klatki o innej topologii niż klatka 0 (np. 84 z 11 573 w MANN) zastępujemy poprzednią zgodną.
+
+## 11. Przykład: `BABY.3DB`
 
 ```
 version  "3DDB 1.0", name "baby"
@@ -216,7 +232,7 @@ animacje 48, np. "auf_po_fallen" 21 klatek (meshe 0..20), "aufwachen" 11 klatek
 cienie 2, cmapy 0
 ```
 
-## 11. Otwarte pytania
+## 12. Otwarte pytania
 - `unknown80`, `unknown30` w meshu; flagi linku; rekordy 20-bajtowe; znaczenie `cmap` (kolizje? maski zaznaczania?).
 - Pola animacji: `flags`, `unknownF`, `move`, `rotate` (ruch korzenia?).
 - Prędkość animacji i skala względem świata.

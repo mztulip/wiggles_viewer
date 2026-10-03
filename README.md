@@ -33,7 +33,7 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 
 ## Budowanie i uruchamianie
 
-Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, sterownik z OpenGL 3.3. Dear ImGui jest w `third_party/`.
+Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, `zlib`, sterownik z OpenGL 3.3. Dear ImGui jest w `third_party/`.
 
 ```bash
 ./build.sh                 # debug: wigview i test3db do build/debug/
@@ -44,14 +44,20 @@ build/release/wigview                          # przeglądarka (gra w ~/.wine/..
 build/release/wigview --game /ścieżka/do/Wiggles --model MANN --anim gehen_loop
 build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
+
+# eksport glTF: obiekt (domyślnie pierwszy) i animacja (domyślnie wszystkie)
+build/release/export_gltf "/ścieżka/do/Wiggles" MANN mann gehen_loop -o krasnal_chod.glb
+build/release/export_gltf "/ścieżka/do/Wiggles" BABY                  # wszystkie 48 animacji
+build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kristall/   # 303 pliki
 ```
 
-Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, strzałki zmiana klatki, `I` interpolacja, `Esc` wyjście.
+Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, ←/→ zmiana klatki, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, `Esc` wyjście.
 
 ### Programy
 | Program | Do czego służy |
 |---|---|
 | `wigview` | Przeglądarka: modele `.3db` z animacjami (z interpolacją klatek jak w oryginale) i tekstury. Z `--screenshot` renderuje jedną klatkę do PNG bez okna UI |
+| `export_gltf` | Eksport do glTF 2.0 (`.glb`) z teksturami i animacjami. Ten sam eksport jest w wigview (sekcja „Eksport glTF”). Pliki otworzysz w Blenderze, Godocie, three.js albo na https://gltf-viewer.donmccurdy.com |
 | `test3db` | **Test automatyczny** parserów na prawdziwych danych gry: wczytuje wszystkie modele `Data/3db` i tekstury `Data/Texture`, sprawdza spójność (zakresy indeksów, rozmiary pul, koniec pliku) i wypisuje statystyki. Kod wyjścia ≠ 0, gdy cokolwiek zawiedzie. Uruchamiamy go po każdej zmianie w parserach |
 
 ### Dokumentacja formatów

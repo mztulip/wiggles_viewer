@@ -53,7 +53,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 Skala modeli względem świata gry (jednostki mapy)
 - [ ] Podgląd cieni 32×32 i `cmap` z `.3db`
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
-- [ ] Eksport do glTF (z animacją jako morph targets)
+- [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
+- [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 

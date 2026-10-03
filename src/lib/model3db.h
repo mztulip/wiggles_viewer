@@ -91,6 +91,10 @@ struct Model3db {
 	const Object3db* findObject(const std::string& name) const;
 };
 
+// Czy dwie klatki (meshe) mają tę samą topologię: te same materiały i pule trójkątów
+// w linkach oraz tę samą liczbę wierzchołków. Tylko takie klatki można interpolować.
+bool sameTopology(const Model3db& m, uint32_t meshA, uint32_t meshB);
+
 // Rzuca ParseError przy uszkodzonych danych lub nadmiarowych bajtach na końcu.
 Model3db parseModel3db(const std::vector<uint8_t>& data);
 

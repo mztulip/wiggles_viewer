@@ -1,11 +1,8 @@
-// Tekstury GL wczytywane z Vfs i wyszukiwane po nazwie materiału.
-//
-// Kolejność katalogów (od największej rozdzielczości) pochodzi ze skryptu
-// przeglądarki w djunkles/Diggles3db (https://github.com/djunkles/Diggles3db):
-// m256, m128, m064, m032, Gray, Misc, ClassIcons.
+// Tekstury GL wczytywane z Vfs i wyszukiwane po nazwie materiału (findTexture).
 #pragma once
 
 #include "lib/gfx/gl.h"
+#include "lib/texture_find.h"
 #include "lib/tga.h"
 
 #include <optional>
@@ -15,9 +12,6 @@
 namespace ow {
 
 class Vfs;
-
-// Ścieżka w grze do tekstury o danej nazwie (bez rozszerzenia) albo nullopt.
-std::optional<std::string> findTexture(const Vfs& vfs, const std::string& name);
 
 GLuint uploadTexture(const Image& img, bool mipmaps = true);
 
