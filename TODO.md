@@ -69,7 +69,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
 - [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
 - [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu (triplanar)
-- [ ] 🔬 Rodzaj gruntu (A/B/C) na blok, maski przejść, nakładki `detail/`
+- [x] Nakładki detali z `.l2m` (narożniki po 2 bity, tekstury `detail/<świat>[2]_<kod>`, modulate×2)
+- [ ] 🔬 Rodzaj gruntu podkładu (A/B/C) na blok i maski przejść `Msk_*`; młodszy bajt `.l2m`
 - [ ] 🔬 Szczegółowe siatki 3D bloków z BlockDB (ILT + sekcja siatek) zamiast prostej mapy wysokości
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D

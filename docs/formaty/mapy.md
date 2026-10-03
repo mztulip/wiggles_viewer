@@ -50,15 +50,25 @@ dalej: szczegółowe siatki 3D (listy indeksów u16, wierzchołki) 🔶
 - ✅ Weryfikacja: wierzchołki OBJ z `save_map` gry dla trzech szablonów zgadzają się z naszą mapą (253 dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian).
 
 ### Tekstury gruntu (`Data/Ground`)
-`Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>_<bity>` to nakładki z alfą (np. mech), gdzie 4 bity oznaczają sąsiedztwo. 🔶 Który rodzaj gruntu ma blok, jeszcze nie wiemy. Przeglądarka tymczasowo używa A dla przedniej płaszczyzny i B dla wydrążeń.
+`Gnd_A01..15` (szara skała), `Gnd_B01..15` (ziemia), `Gnd_C01..15` (piasek): 64×64, alfa pusta. `Msk_<ABCD>01` to maski przejść między rodzajami. `detail/<świat>[2]_<TL TR BL BR>` to tekstury detali wybierane przez `.l2m` (patrz niżej). 🔶 Który rodzaj gruntu ma blok, jeszcze nie wiemy. Przeglądarka tymczasowo używa A dla przedniej płaszczyzny i B dla wydrążeń.
 
-## `.l2m` ✅ struktura
+## `.l2m`: warstwa detali terenu ✅
 ```
 char[4] "M2L\0"
-u32 w, u32 h
-u16 wartość[w*h]             🔶 (np. 0x0500, 0xC0xx)
+u32 w, u32 h                 jak w .PMP
+u16 wartość[w*h]
+  bity 15-14  narożnik lewy górny     0 = brak, 1 = zestaw <świat>, 2 = zestaw <świat>2
+  bity 13-12  narożnik prawy górny
+  bity 11-10  narożnik lewy dolny
+  bity  9-8   narożnik prawy dolny
+  bity  7-0   🔶 (0x00, 0x20, 0x40, 0x60, 0xC0, rzadko 1..4)
 ```
-Plik może mieć 0 B (8 przypadków), co oznacza brak warstwy.
+- Dla każdego zestawu (1 i 2) z bitów narożników powstaje kod `TL TR BL BR`, np. 0x11 → narożniki prawe → `0101`. Tekstura to `Data/Ground/detail/<świat>[2]_<kod>.tga`, np. `URW_0101.TGA` z mchem po prawej stronie. Pełne pokrycie `1111` ma warianty `_a` … `_f` (✅ pliki istnieją; który wariant wybiera gra, 🔶).
+- Światy: `urw`, `kris`, `lava`, `swf` (prefiks nazwy szablonu).
+- Plamy w danych mają gładkie krawędzie, typowe dla marching squares. Kolejność bitów ✅ odczytaliśmy z krawędzi plam w `unq_menue.l2m`.
+- Mieszanie: **modulate ×2** (wynik = podkład × detal × 2), więc szary 128 nie zmienia podkładu (`detail/50PGray.tga` to neutralna tekstura). 🔶 Wniosek z wyglądu, do potwierdzenia.
+- Tekstura detalu obejmuje jeden blok.
+- Plik może mieć 0 B (8 przypadków), co oznacza brak warstwy.
 
 ## `.ENT`
 Zwykle puste (0 B). 🔶

@@ -37,8 +37,15 @@ uniform sampler2D uTex;
 uniform vec3 uLightDir;
 uniform float uAmbient;
 uniform vec4 uTint;
+uniform int uDetail; // 1 = nakładka detalu: UV w obrębie bloku, alfa z tekstury
 out vec4 oColor;
 void main() {
+	if (uDetail == 1) {
+		// Tekstura detalu w trybie modulate x2 (szary 128 = bez zmian, por. detail/50PGray.tga).
+		vec4 d = texture(uTex, fract(vLocalPos.xy / 200.0));
+		oColor = vec4(d.rgb, 1.0);
+		return;
+	}
 	// Mapowanie trójpłaszczyznowe (tekstura co blok = 200 jednostek), żeby strome ściany się nie rozciągały.
 	// Tekstury gruntu mają pustą alfę, więc ją ignorujemy.
 	vec3 w = pow(abs(normalize(vLocalNormal)), vec3(4.0));
@@ -55,13 +62,15 @@ bool TerrainRenderer::init(std::string& err) { return prog_.build(kVS, kFS, err)
 
 void TerrainRenderer::clear() {
 	for (auto& g : groups_) gl::DeleteBuffers(1, &g.ebo);
+	for (auto& g : detail_) gl::DeleteBuffers(1, &g.ebo);
 	groups_.clear();
+	detail_.clear();
 	if (vbo_) gl::DeleteBuffers(1, &vbo_);
 	if (vao_) gl::DeleteVertexArrays(1, &vao_);
 	vbo_ = vao_ = 0;
 }
 
-void TerrainRenderer::build(const Heightfield& h, TextureCache& textures) {
+void TerrainRenderer::build(const Heightfield& h, TextureCache& textures, const L2m* layer2, const std::string& world) {
 	clear();
 	if (h.width < 2 || h.height < 2) return;
 	const float S = Heightfield::kSampleUnits;
@@ -101,14 +110,47 @@ void TerrainRenderer::build(const Heightfield& h, TextureCache& textures) {
 	gl::VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, nrm));
 	gl::VertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(V), (void*)offsetof(V, uv));
 	for (GLuint i = 0; i < 3; ++i) gl::EnableVertexAttribArray(i);
-	for (auto& [name, idx] : byTex) {
-		Group g;
-		g.texture = textures.getPath(name).id;
-		g.count = GLsizei(idx.size());
-		gl::GenBuffers(1, &g.ebo);
-		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
-		gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
-		groups_.push_back(g);
+	auto upload = [&](const std::map<std::string, std::vector<uint32_t>>& m, std::vector<Group>& out) {
+		for (auto& [name, idx] : m) {
+			Group g;
+			g.texture = textures.getPath(name).id;
+			g.count = GLsizei(idx.size());
+			gl::GenBuffers(1, &g.ebo);
+			gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
+			gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
+			out.push_back(g);
+		}
+	};
+	upload(byTex, groups_);
+
+	// Nakładki detali z .l2m: starszy bajt = 4 narożniki po 2 bity (TL, TR, BL, BR; 0 brak, 1 zestaw
+	// <świat>, 2 zestaw <świat>2). Plik: detail/<świat>[2]_<bity narożników>.tga, pełne pokrycie
+	// 1111 ma warianty _a.._f.
+	const int SB = Heightfield::kSamplesPerBlock;
+	if (layer2 && int(layer2->width) * SB == h.width && int(layer2->height) * SB == h.height) {
+		std::map<std::string, std::vector<uint32_t>> byDetail;
+		for (int by = 0; by < int(layer2->height); ++by)
+			for (int bx = 0; bx < int(layer2->width); ++bx) {
+				uint16_t v = layer2->values[size_t(by) * layer2->width + bx];
+				int corner[4] = {(v >> 14) & 3, (v >> 12) & 3, (v >> 10) & 3, (v >> 8) & 3};
+				for (int set = 1; set <= 2; ++set) {
+					std::string bits;
+					for (int c : corner) bits += c == set ? '1' : '0';
+					if (bits == "0000") continue;
+					std::string name = "Data/Ground/detail/" + world + (set == 2 ? "2" : "") + "_" + bits;
+					if (bits == "1111") name += std::string("_") + char('a' + (bx * 7 + by * 13) % 6);
+					name += ".tga";
+					auto& idx = byDetail[name];
+					for (int sy = 0; sy < SB; ++sy)
+						for (int sx = 0; sx < SB; ++sx) {
+							int x = bx * SB + sx, y = by * SB + sy;
+							if (x + 1 >= h.width || y + 1 >= h.height) continue;
+							uint32_t a = uint32_t(y * h.width + x), b = a + 1, c = a + uint32_t(h.width), d = c + 1;
+							idx.insert(idx.end(), {a, c, b, b, c, d});
+						}
+				}
+			}
+		upload(byDetail, detail_);
 	}
 	gl::BindVertexArray(0);
 }
@@ -123,6 +165,7 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 	gl::Uniform1f(prog_.uniform("uAmbient"), ambient);
 	gl::Uniform1i(prog_.uniform("uTex"), 0);
 	gl::Uniform4f(prog_.uniform("uTint"), 1, 1, 1, 1);
+	gl::Uniform1i(prog_.uniform("uDetail"), 0);
 	gl::Enable(GL_DEPTH_TEST);
 	gl::Disable(GL_CULL_FACE);
 	gl::Disable(GL_BLEND);
@@ -132,6 +175,22 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 		gl::BindTexture(GL_TEXTURE_2D, g.texture);
 		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
 		gl::DrawElements(GL_TRIANGLES, g.count, GL_UNSIGNED_INT, nullptr);
+	}
+	if (showDetail && !detail_.empty()) {
+		gl::Uniform1i(prog_.uniform("uDetail"), 1);
+		gl::Enable(GL_BLEND);
+		gl::BlendFunc(GL_DST_COLOR, GL_SRC_COLOR); // wynik = cel * źródło * 2
+		gl::DepthMask(GL_FALSE);
+		gl::DepthFunc(GL_LEQUAL);
+		for (const auto& g : detail_) {
+			gl::BindTexture(GL_TEXTURE_2D, g.texture);
+			gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
+			gl::DrawElements(GL_TRIANGLES, g.count, GL_UNSIGNED_INT, nullptr);
+		}
+		gl::DepthMask(GL_TRUE);
+		gl::DepthFunc(GL_LESS);
+		gl::Disable(GL_BLEND);
+		gl::Uniform1i(prog_.uniform("uDetail"), 0);
 	}
 	if (wireframe) {
 		gl::PolygonMode(GL_FRONT_AND_BACK, GL_LINE);

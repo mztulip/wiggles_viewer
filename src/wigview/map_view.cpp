@@ -148,7 +148,10 @@ bool MapView::loadTemplate(const std::string& file) {
 	}
 	if (pmp_ && blocks_.loaded()) {
 		heights_ = buildHeightfield(*pmp_, blocks_);
-		terrain_.build(*heights_, *textures_);
+		// Świat z prefiksu nazwy szablonu (urw, kris, lava, swf); inne (unq_, multi_…) -> urw.
+		std::string world = Vfs::lower(file.substr(0, file.find('_')));
+		if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
+		terrain_.build(*heights_, *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	if (script_) {
 		for (const auto& o : script_->objects) {
@@ -317,6 +320,8 @@ bool MapView::ui() {
 	ImGui::Checkbox("Teren", &showTerrain_);
 	ImGui::SameLine();
 	ImGui::Checkbox("Obiekty", &showObjects_);
+	ImGui::SameLine();
+	ImGui::Checkbox("Detale (.l2m)", &terrain_.showDetail);
 	ImGui::SameLine();
 	ImGui::TextDisabled("(rodzaj gruntu tymczasowy: skała/ziemia)");
 
