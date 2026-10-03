@@ -29,7 +29,7 @@ struct Material3db {
 // Fragment klatki z jednym materiałem. Pola to indeksy do pul modelu.
 struct MeshLink {
 	uint16_t material = 0;
-	uint16_t unknown = 0;
+	uint16_t flags = 0; // 🔶 zwykle 1; także 2, 3, 5, 6
 	uint16_t triangles = 0;
 	uint16_t texcoords = 0;
 	uint16_t points = 0;
@@ -40,9 +40,9 @@ struct Mesh3db {
 	std::vector<MeshLink> links;
 	Vec3f bboxMin{}, bboxMax{};
 	std::array<uint8_t, 0x80> unknown80{}; // 🔶 32 × u32
-	uint16_t unknownA = 0;
+	uint16_t shadowIndex = 0xFFFF; // ✅ indeks w Model3db::shadows albo 0xFFFF
 	std::array<uint8_t, 0x30> unknown30{}; // 🔶 12 × f32
-	uint16_t unknownB = 0;
+	uint16_t cmapIndex = 0xFFFF; // ✅ indeks w Model3db::cmaps albo 0xFFFF
 };
 
 struct Animation3db {

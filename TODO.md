@@ -31,7 +31,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Loader TGA (typy 2/3/10/11, 8–32 bit); gra używa wyłącznie typu 2, 32 bit
 - [x] Wyszukiwanie tekstury po nazwie materiału (`m256` → `m128` → `m064` → `m032` → `Gray` → `Misc` → `ClassIcons`)
 - [x] Parser `.3db` w C++ z walidacją odwołań; `test3db` przechodzi wszystkie 43 modele i 2052 tekstury
-- [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, rekordy 20 B, `cmap`, pola animacji (ruch korzenia, flagi)
+- [x] `.3db`: pola mesha `shadowIndex` i `cmapIndex` rozpoznane ✅
+- [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, flagi linku, rekordy 20 B, znaczenie `cmap`, pola animacji (ruch korzenia, flagi)
+- [x] Specyfikacje formatów do samodzielnej implementacji: `docs/formaty/` (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [ ] Dekoder tekstów: CP1250 i CP1252 → UTF-8, `MESSAGES.TXT` (`lmsg`), `QUOTES.TXT`
 - [ ] 🔬 `texlevels.txt`, `TEXMAPS.BIN` (prawdopodobnie do pominięcia)
@@ -44,7 +46,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
 - [x] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
 - [ ] 🔬 Prawdziwa prędkość animacji w grze (fps) i znaczenie pól animacji (flagi, f32, ruch/obrót korzenia)
-- [ ] Interpolacja między klatkami (gra ma opcję `AnimInterpolation`)
+- [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
+- [x] Esc zamyka wigview
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
 - [x] Orientacja osi: Y w dół ✅
 - [ ] 🔬 Skala modeli względem świata gry (jednostki mapy)

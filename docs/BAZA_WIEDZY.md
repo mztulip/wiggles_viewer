@@ -25,6 +25,8 @@ Analiza zipów rozpakowanych do `../ref/` oraz zainstalowanej gry (`~/.wine/driv
 
 ## 1. Format modeli `.3db` ✅
 
+**Pełna specyfikacja (wystarczająca do napisania loadera i przeglądarki): [`formaty/3db.md`](formaty/3db.md).** Ta sekcja to notatki z badań.
+
 Źródło: [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db), czyli `../ref/Diggles3db-main/python3/lib/parse_3db.py` (najczystszy kod), `python2.7/3dbScript.py` (ma asercje), `c-sharp/` (przeglądarka WPF z odtwarzaniem animacji).
 
 Wszystkie liczby są little-endian. `str` oznacza `u32` z długością, a po nim bajty bez znaku `\0`.
@@ -49,9 +51,9 @@ u32   mesh_count       (baby: 479; każdy mesh to JEDNA KLATKA animacji)
   vec3f bbox_min       ✅ AABB klatki w jednostkach modelu (te same co pozycje po dekwantyzacji)
   vec3f bbox_max
   u8[0x80] unknown     🔶 32 × u32 rosnących indeksów (0,1,2,3…), może odnośniki do rekordów 20-bajtowych
-  u16 unknown          (baby: 0)
+  u16 shadowIndex      ✅ indeks cienia albo 0xFFFF
   u8[0x30] unknown     🔶 12 × f32, prawdopodobnie 4 × vec3 (punkty zaczepienia lub dodatkowa geometria)
-  u16 unknown          (baby: 0xFFFF)
+  u16 cmapIndex        ✅ indeks cmapy albo 0xFFFF
 
 u16   object_count     (baby: 1, "baby")
   str name

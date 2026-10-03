@@ -46,7 +46,19 @@ build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
 ```
 
-Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, strzałki zmiana klatki.
+Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, strzałki zmiana klatki, `I` interpolacja, `Esc` wyjście.
+
+### Programy
+| Program | Do czego służy |
+|---|---|
+| `wigview` | Przeglądarka: modele `.3db` z animacjami (z interpolacją klatek jak w oryginale) i tekstury. Z `--screenshot` renderuje jedną klatkę do PNG bez okna UI |
+| `test3db` | **Test automatyczny** parserów na prawdziwych danych gry: wczytuje wszystkie modele `Data/3db` i tekstury `Data/Texture`, sprawdza spójność (zakresy indeksów, rozmiary pul, koniec pliku) i wypisuje statystyki. Kod wyjścia ≠ 0, gdy cokolwiek zawiedzie. Uruchamiamy go po każdej zmianie w parserach |
+
+### Dokumentacja formatów
+Specyfikacje w [`docs/formaty/`](docs/formaty/) są pisane tak, żeby dało się na ich podstawie napisać własny loader i przeglądarkę bez zaglądania do naszego kodu:
+- [`3db.md`](docs/formaty/3db.md): modele i animacje
+- [`tekstury.md`](docs/formaty/tekstury.md): TGA i katalogi tekstur
+- [`sphere_dat.md`](docs/formaty/sphere_dat.md): tablica normalnych
 
 ## Plan pracy
 

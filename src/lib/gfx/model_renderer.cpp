@@ -11,6 +11,9 @@ static const char* kVS = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aUV;
 layout(location = 2) in float aByte;
+layout(location = 3) in vec3 aPos2;  // pozycja w klatce B
+layout(location = 4) in float aByte2; // normalna w klatce B
+uniform float uLerp;
 uniform mat4 uViewProj;
 uniform mat4 uModel;
 uniform vec3 uSphere[256];
@@ -19,9 +22,10 @@ out float vByte;
 out vec3 vNormal;
 void main() {
 	vUV = aUV;
-	vByte = aByte / 255.0;
-	vNormal = mat3(uModel) * uSphere[int(aByte + 0.5)];
-	gl_Position = uViewProj * uModel * vec4(aPos, 1.0);
+	vByte = mix(aByte, aByte2, uLerp) / 255.0;
+	vec3 n = mix(uSphere[int(aByte + 0.5)], uSphere[int(aByte2 + 0.5)], uLerp);
+	vNormal = mat3(uModel) * n;
+	gl_Position = uViewProj * uModel * vec4(mix(aPos, aPos2, uLerp), 1.0);
 }
 )";
 
@@ -49,6 +53,14 @@ void main() {
 }
 )";
 
+namespace {
+struct Vertex {
+	float pos[3];
+	float uv[2];
+	float byte; // indeks normalnej (0..255)
+};
+} // namespace
+
 std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data) {
 	std::vector<Vec3f> v;
 	if (data.size() != 256 * 12) return v;
@@ -57,9 +69,28 @@ std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data) {
 	return v;
 }
 
-ModelRenderer::~ModelRenderer() { clearCache(); }
+ModelRenderer::~ModelRenderer() {
+	clearCache();
+	if (vao_) gl::DeleteVertexArrays(1, &vao_);
+}
 
-bool ModelRenderer::init(std::string& err) { return prog_.build(kVS, kFS, err); }
+bool ModelRenderer::init(std::string& err) {
+	if (!prog_.build(kVS, kFS, err)) return false;
+	if (!vao_) gl::GenVertexArrays(1, &vao_);
+	return true;
+}
+
+bool ModelRenderer::canInterpolate(uint32_t meshA, uint32_t meshB) const {
+	if (!model_ || meshA >= model_->meshes.size() || meshB >= model_->meshes.size()) return false;
+	const auto& la = model_->meshes[meshA].links;
+	const auto& lb = model_->meshes[meshB].links;
+	if (la.size() != lb.size()) return false;
+	for (size_t i = 0; i < la.size(); ++i)
+		if (la[i].material != lb[i].material || la[i].triangles != lb[i].triangles ||
+		    model_->points[la[i].points].size() != model_->points[lb[i].points].size())
+			return false;
+	return true;
+}
 
 void ModelRenderer::setModel(const Model3db* model, TextureCache* textures) {
 	clearCache();
@@ -72,7 +103,6 @@ void ModelRenderer::setSphere(const std::vector<Vec3f>& sphere) { sphere_ = sphe
 void ModelRenderer::clearCache() {
 	for (auto& [k, links] : cache_)
 		for (auto& l : links) {
-			gl::DeleteVertexArrays(1, &l.vao);
 			gl::DeleteBuffers(1, &l.vbo);
 			gl::DeleteBuffers(1, &l.ebo);
 		}
@@ -84,11 +114,6 @@ const std::vector<ModelRenderer::GpuLink>& ModelRenderer::frame(uint32_t meshInd
 	if (it != cache_.end()) return it->second;
 	auto& out = cache_[meshIndex];
 	const Mesh3db& mesh = model_->meshes[meshIndex];
-	struct Vertex {
-		float pos[3];
-		float uv[2];
-		float byte;
-	};
 	for (const MeshLink& l : mesh.links) {
 		const auto& pts = model_->points[l.points];
 		const auto& uvs = model_->texcoords[l.texcoords];
@@ -105,32 +130,46 @@ const std::vector<ModelRenderer::GpuLink>& ModelRenderer::frame(uint32_t meshInd
 		GpuLink g;
 		g.material = l.material;
 		g.count = GLsizei(tris.size());
-		gl::GenVertexArrays(1, &g.vao);
-		gl::BindVertexArray(g.vao);
 		gl::GenBuffers(1, &g.vbo);
 		gl::BindBuffer(GL_ARRAY_BUFFER, g.vbo);
 		gl::BufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
 		gl::GenBuffers(1, &g.ebo);
+		gl::BindVertexArray(vao_); // w core profile EBO wymaga podpiętego VAO; i tak przepinamy go w bindLink
 		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, g.ebo);
 		gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, tris.size() * sizeof(uint16_t), tris.data(), GL_STATIC_DRAW);
-		gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
-		gl::VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
-		gl::VertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, byte));
-		gl::EnableVertexAttribArray(0);
-		gl::EnableVertexAttribArray(1);
-		gl::EnableVertexAttribArray(2);
-		gl::BindVertexArray(0);
 		out.push_back(g);
 	}
 	return out;
 }
 
-void ModelRenderer::drawFrame(uint32_t meshIndex, const glm::mat4& viewProj, const glm::mat4& model,
-                              const ModelDrawOptions& opt) {
-	if (!model_ || meshIndex >= model_->meshes.size()) return;
-	const auto& links = frame(meshIndex);
+void ModelRenderer::bindLink(const GpuLink& a, const GpuLink& b) {
+	gl::BindVertexArray(vao_);
+	gl::BindBuffer(GL_ARRAY_BUFFER, a.vbo);
+	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+	gl::VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+	gl::VertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, byte));
+	gl::BindBuffer(GL_ARRAY_BUFFER, b.vbo);
+	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+	gl::VertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, byte));
+	for (GLuint i = 0; i < 5; ++i) gl::EnableVertexAttribArray(i);
+	gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, a.ebo);
+}
+
+void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const glm::mat4& viewProj,
+                               const glm::mat4& model, const ModelDrawOptions& opt) {
+	if (!model_ || meshA >= model_->meshes.size()) return;
+	if (meshB >= model_->meshes.size() || (meshB != meshA && !canInterpolate(meshA, meshB))) {
+		meshB = meshA;
+		t = 0.f;
+	}
+	const auto& linksA = frame(meshA);
+	const auto& linksB = frame(meshB);
+	// Puste linki są pomijane w frame(), więc przy zgodnej topologii listy mają tę samą długość.
+	if (linksA.size() != linksB.size()) t = 0.f;
+	auto other = [&](size_t i) -> const GpuLink& { return t > 0.f ? linksB[i] : linksA[i]; };
 
 	prog_.use();
+	gl::Uniform1f(prog_.uniform("uLerp"), t);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
 	gl::UniformMatrix4fv(prog_.uniform("uModel"), 1, GL_FALSE, glm::value_ptr(model));
 	if (sphere_.size() == 256)
@@ -152,10 +191,11 @@ void ModelRenderer::drawFrame(uint32_t meshIndex, const glm::mat4& viewProj, con
 	gl::Enable(GL_BLEND);
 	gl::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl::ActiveTexture(GL_TEXTURE0);
-	for (const auto& l : links) {
+	for (size_t i = 0; i < linksA.size(); ++i) {
+		const auto& l = linksA[i];
 		GLuint tex = textures_ ? textures_->get(model_->materials[l.material].name).id : 0;
 		gl::BindTexture(GL_TEXTURE_2D, tex);
-		gl::BindVertexArray(l.vao);
+		bindLink(l, other(i));
 		gl::DrawElements(GL_TRIANGLES, l.count, GL_UNSIGNED_SHORT, nullptr);
 	}
 	if (opt.wireframe) {
@@ -163,9 +203,9 @@ void ModelRenderer::drawFrame(uint32_t meshIndex, const glm::mat4& viewProj, con
 		gl::Uniform1i(prog_.uniform("uMode"), 0);
 		gl::Uniform4f(prog_.uniform("uTint"), 0, 0, 0, 1);
 		gl::Uniform1i(prog_.uniform("uAlphaTest"), 0);
-		for (const auto& l : links) {
-			gl::BindVertexArray(l.vao);
-			gl::DrawElements(GL_TRIANGLES, l.count, GL_UNSIGNED_SHORT, nullptr);
+		for (size_t i = 0; i < linksA.size(); ++i) {
+			bindLink(linksA[i], other(i));
+			gl::DrawElements(GL_TRIANGLES, linksA[i].count, GL_UNSIGNED_SHORT, nullptr);
 		}
 		gl::PolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}

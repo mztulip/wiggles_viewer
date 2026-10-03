@@ -47,7 +47,7 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 		mesh.links.resize(r.u16());
 		for (auto& l : mesh.links) {
 			l.material = r.u16();
-			l.unknown = r.u16();
+			l.flags = r.u16();
 			l.triangles = r.u16();
 			l.texcoords = r.u16();
 			l.points = r.u16();
@@ -56,9 +56,9 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 		mesh.bboxMin = readVec3(r);
 		mesh.bboxMax = readVec3(r);
 		readArray(r, mesh.unknown80);
-		mesh.unknownA = r.u16();
+		mesh.shadowIndex = r.u16();
 		readArray(r, mesh.unknown30);
-		mesh.unknownB = r.u16();
+		mesh.cmapIndex = r.u16();
 	}
 
 	m.objects.resize(r.u16());
@@ -140,6 +140,10 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 			for (uint16_t idx : m.triangles[l.triangles])
 				if (idx >= nv) throw ParseError("indeks trójkąta poza zakresem punktów");
 		}
+	for (const auto& mesh : m.meshes) {
+		if (mesh.shadowIndex != 0xFFFF && mesh.shadowIndex >= m.shadows.size()) throw ParseError("indeks cienia poza zakresem");
+		if (mesh.cmapIndex != 0xFFFF && mesh.cmapIndex >= m.cmaps.size()) throw ParseError("indeks cmapy poza zakresem");
+	}
 	for (const auto& a : m.animations)
 		for (uint32_t f : a.frames)
 			if (f >= m.meshes.size()) throw ParseError("klatka animacji poza zakresem meshy");

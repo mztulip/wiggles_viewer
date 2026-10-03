@@ -8,7 +8,8 @@
 // --screenshot: renderuje jedną klatkę (bez UI), zapisuje PNG i kończy działanie.
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
-// strzałki lewo/prawo poprzednia/następna klatka.
+// strzałki lewo/prawo poprzednia/następna klatka, I interpolacja wł./wył., Esc wyjście.
+// --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/gfx/gl.h"
 #include "lib/gfx/model_renderer.h"
@@ -38,7 +39,8 @@ namespace {
 
 struct Args {
 	std::string game, model, object, anim, screenshot;
-	int frame = 0;
+	float frame = 0;
+	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
 	float yaw = 200.f, pitch = 15.f;
 	int flip = 1;
@@ -53,7 +55,8 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--model") a.model = next();
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
-		else if (k == "--frame") a.frame = std::atoi(next());
+		else if (k == "--frame") a.frame = float(std::atof(next()));
+		else if (k == "--ipol") a.ipol = std::atoi(next());
 		else if (k == "--light") a.light = std::atoi(next());
 		else if (k == "--yaw") a.yaw = float(std::atof(next()));
 		else if (k == "--pitch") a.pitch = float(std::atof(next()));
@@ -91,6 +94,7 @@ struct Viewer {
 	bool playing = true;
 	float fps = 20.f;
 	bool loop = true;
+	bool interpolate = true; // jak oryginał (AnimIpol, domyślnie włączone)
 
 	ModelDrawOptions draw;
 	bool flipY = true; // modele mają oś Y skierowaną w dół (zakres y ujemny = góra)
@@ -192,14 +196,28 @@ struct Viewer {
 	}
 
 	// x0: lewa krawędź obszaru 3D w pikselach (na prawo od panelu UI).
+	// Klatki A i B oraz współczynnik t dla bieżącego czasu animacji.
+	bool currentFrames(uint32_t& a, uint32_t& b, float& t) const {
+		auto an = currentAnim();
+		if (!an || an->frames.empty()) return false;
+		int n = int(an->frames.size());
+		int i = std::clamp(int(frame), 0, n - 1);
+		int j = loop ? (i + 1) % n : std::min(i + 1, n - 1);
+		a = an->frames[size_t(i)];
+		b = an->frames[size_t(j)];
+		t = interpolate ? frame - float(int(frame)) : 0.f;
+		return true;
+	}
+
 	void renderScene(int w, int h, int x0 = 0) {
 		gl::Viewport(0, 0, w, h);
 		gl::ClearColor(bg.r, bg.g, bg.b, 1.f);
 		gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		x0 = std::clamp(x0, 0, w - 1);
 		gl::Viewport(x0, 0, w - x0, h);
-		int mesh = currentMesh();
-		if (mesh >= 0) renderer.drawFrame(uint32_t(mesh), viewProj(w - x0, h), modelMatrix(), draw);
+		uint32_t a, b;
+		float t;
+		if (currentFrames(a, b, t)) renderer.drawFrames(a, b, t, viewProj(w - x0, h), modelMatrix(), draw);
 		gl::Viewport(0, 0, w, h);
 	}
 
@@ -288,12 +306,18 @@ void Viewer::uiModel() {
 		if (ImGui::Button(">")) frame = float(std::min(n - 1, int(frame) + 1));
 		ImGui::SameLine();
 		ImGui::Checkbox("Pętla", &loop);
+		ImGui::SameLine();
+		ImGui::Checkbox("Interpolacja", &interpolate);
 		int f = int(frame);
 		if (ImGui::SliderInt("Klatka", &f, 0, std::max(0, n - 1))) {
 			frame = float(f);
 			playing = false;
 		}
 		ImGui::SliderFloat("FPS", &fps, 1.f, 60.f, "%.0f");
+		uint32_t fa, fb;
+		float ft;
+		if (currentFrames(fa, fb, ft) && fa != fb && !renderer.canInterpolate(fa, fb))
+			ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Klatki %u i %u mają inną topologię (bez interpolacji)", fa, fb);
 	}
 
 	if (ImGui::CollapsingHeader("Widok", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -450,6 +474,7 @@ int main(int argc, char** argv) {
 	v.yaw = args.yaw;
 	v.pitch = args.pitch;
 	v.flipY = args.flip != 0;
+	v.interpolate = args.ipol != 0;
 
 	if (!args.model.empty()) {
 		int i = findIndex(v.modelFiles, args.model);
@@ -470,7 +495,7 @@ int main(int argc, char** argv) {
 			for (size_t k = 0; k < o.animations.size(); ++k)
 				if (Vfs::lower(v.model->animations[o.animations[k]].name) == Vfs::lower(args.anim)) v.selectAnim(int(k));
 		}
-		v.frame = float(std::clamp(args.frame, 0, std::max(0, v.frameCount() - 1)));
+		v.frame = std::clamp(args.frame, 0.f, float(std::max(0, v.frameCount() - 1)) + 0.999f);
 	}
 
 	if (!args.screenshot.empty()) {
@@ -537,9 +562,11 @@ int main(int argc, char** argv) {
 				}
 				if (e.type == SDL_MOUSEWHEEL) v.dist *= std::pow(0.88f, float(e.wheel.y));
 			}
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE && !io.WantTextInput) running = false;
 			if (!io.WantCaptureKeyboard && e.type == SDL_KEYDOWN) {
 				int n = v.frameCount();
 				switch (e.key.keysym.sym) {
+				case SDLK_i: v.interpolate = !v.interpolate; break;
 				case SDLK_SPACE: v.playing = !v.playing; break;
 				case SDLK_LEFT: v.playing = false; v.frame = std::max(0.f, float(int(v.frame) - 1)); break;
 				case SDLK_RIGHT: v.playing = false; v.frame = float(std::min(n - 1, int(v.frame) + 1)); break;
