@@ -8,7 +8,13 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Przegląd zainstalowanej gry i struktury `Data/`
 - [x] Potwierdzenie formatu `.3db` na wszystkich 43 plikach i ustalenie dekwantyzacji pozycji
 - [x] Skaner natywnych komend Tcl (`tools/scan_tcl_natives.py`)
-- [ ] Uruchomić oryginał pod Wine (`-console -logerrors`) jako punkt odniesienia; sprawdzić, co loguje
+- [x] Uruchomić oryginał pod Wine w osobnym prefiksie (`tools/lab/setup_lab.sh`, `run_lab.sh`)
+- [x] Sonda Tcl: dokładna lista 639 komend natywnych (`docs/natywne_komendy_gry.txt`), trace startu
+- [ ] Śledzenie wewnątrz interpreterów obiektów/klas (ciała `def_class`, `method`, `obj_init`) i podczas rozgrywki, nie tylko startu
+- [ ] 🔬 `tclhelp`, `web_shell`, rejestr `WebServer=1`, `TCLDEFINES`: czy gra ma wbudowaną dokumentację lub konsolę?
+- [ ] Sonda: zrzut `ClassInfo`/`ClassList` dla wszystkich klas (hierarchia, metody, atrybuty)
+- [ ] Sonda: zrzut wyników `db_*` dla wszystkich modeli (nazwy animacji, długości): wzorzec do testów naszego parsera `.3db`
+- [ ] Opcjonalnie: zbudować barnacle (SDK) pod Wine, gdy czysty Tcl nie wystarczy
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
 ## Faza 1: szkielet projektu i build
@@ -52,7 +58,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Osadzenie Tcl (8.6 z systemu i sprawdzenie zgodności, albo 8.3 jak w oryginale: 🔬 decyzja po testach)
 - [ ] Preprocesor: komentarze `//`, `//# IF/IFNOT/IFNDEF/ELSE/ENDIF/STOPIFNOT`, symbole `FULL` i `NOSTARTSEQ`
 - [ ] `call` i `callnc` z normalizacją ścieżek (`scripts/` → `data/scripts/`, lowercase)
-- [ ] Oczyszczenie listy natywnych komend (`docs/tcl_natywne_kandydaci.txt`) i podział na moduły
+- [x] Dokładna lista natywnych komend (z gry, nie ze skanera)
+- [ ] Podział 639 komend na moduły i priorytety
 - [ ] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib`
 - [ ] Stuby dla wszystkich komend natywnych (logują wywołanie), tak by `systeminit.tcl` przeszedł do końca
 - [ ] Kolejka zadań postaci (`tasklist_*`)

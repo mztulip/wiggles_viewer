@@ -231,7 +231,7 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 5. Jak działa preprocesor Tcl poza `//`.
 6. ~~Skaner natywnych komend~~ ✅ `tools/scan_tcl_natives.py`, wynik w `docs/tcl_natywne_kandydaci.txt`. Pozostaje oczyszczenie listy i podział na moduły.
 7. Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` (scrollery).
-8. Uruchomić oryginał pod Wine z `-console -logerrors`, jako porównanie i źródło logów.
+8. ~~Uruchomić oryginał pod Wine~~ ✅ działa (sekcja 8). Dalej: śledzenie w interpreterach obiektów i podczas rozgrywki, `tclhelp`, `web_shell`, `WebServer`.
 
 ---
 
@@ -291,3 +291,73 @@ Każda linia: nazwa tekstury oraz rozdzielczość dla poziomów Minimal, Low, Hi
 `tools/scan_tcl_natives.py` przeszedł 3961 plików `.tcl` (skrypty i szablony) i znalazł 2301 procedur lub metod zdefiniowanych w skryptach oraz około 830 kandydatów na komendy natywne. Pełna lista jest w `docs/tcl_natywne_kandydaci.txt` i jest zaszumiona: zawiera też słowa ze stringów i list.
 
 Najczęstsze komendy, czyli pierwsze do zaimplementowania: `new`, `sel` (np. `sel /obj`, wybór kontekstu tworzenia), `set_physic`, `set_owner`, `set_boxed`, `set_autolight`, `loading_objdetail`, `call_method`, `sound`, `map_setlayer2`, `map_template`, `call`, `set_class_anim`, `smalltalk`, `tasklist_add`, `textwin`, `log`, `get_pos`, `set_anim`, `def_class`, `obj_query`, `set_particlesource`, `adaptive_sound`, `layout`, `obj_init`, `def_event`, `handle_event`, `timer_event`, `set_hoverable`, `vector_add`, `class_defaultanim`, `get_ref`, `state_enable/disable`, `random`, `set_pos`, `get_attrib/set_attrib`, `link_obj`, `set_visibility`, `lmsg`, `del`, `obj_valid`, `irandom`, `set_roty`, `set_textureanimation`, `set_collision`, `walk`, `start_fade`, `get_mapedit`, `tasklist_clear`.
+
+---
+
+## 8. Laboratorium: obserwacja działającej gry ✅
+
+Oryginał działa pod Wine 11 (Direct3D 7 przez wined3d). Narzędzia są w `tools/lab/`:
+- `setup_lab.sh` kopiuje grę do `../lab/Wiggles`, tworzy **osobny prefiks Wine** (`../lab/prefix`, gra widziana jako `C:\Wiggles`), ustawia rejestr na okno 1024×768 i wstrzykuje sondę do `systeminit.tcl`. Oryginalna instalacja nie jest ruszana.
+- `run_lab.sh [sekundy] [parametry]` uruchamia grę z `-logerrors` i zamyka ją po czasie.
+- `owprobe.tcl` to sonda w czystym Tcl 8.3. Nie potrzebuje barnacle: zrzuca `info commands`, procedury i zmienne globalne, przechwytuje `log` i owija komendy natywne przez `rename`.
+
+Pliki wynikowe (w `../lab/Wiggles/`, poza repo, bo zawierają treść skryptów gry):
+
+| Plik | Zawartość |
+|---|---|
+| `owprobe_start.txt`, `owprobe_end.txt` | wersja Tcl, komendy natywne, procedury, zmienne globalne na początku i na końcu `systeminit.tcl` |
+| `owprobe_log.txt` | przechwycone `log` |
+| `owprobe_trace.txt` | pierwsze 30 wywołań każdej komendy natywnej: argumenty i wynik |
+| `owprobe_counts.txt` | liczniki wywołań |
+| `tclerrors.txt` | **generowany przez grę** przy błędzie Tcl: komunikat i stos, a do tego cały skrypt **po preprocesorze** |
+
+### 8.1 Ustalenia
+- ✅ Interpreter: **Tcl 8.3.2**.
+- ✅ **639 komend natywnych** (poza rdzeniem Tcl). Dokładna lista z licznikami jest w [`natywne_komendy_gry.txt`](natywne_komendy_gry.txt) i zastępuje szacunki skanera.
+- ✅ Preprocesor działa przed Tcl: `tclerrors.txt` pokazuje skrypt bez komentarzy `//`, z rozwiązanymi `//# IF FULL` i liniami zachowanymi jako puste, więc numeracja się zgadza.
+- ✅ Klasy C++ silnika (`ClassList`): `CObj`, `CTclRootObj`, `CObjMgr`, `CObj_World`, `CObj_DigTask`, a dalej klasy ze skryptów (`Kristallbrut`, `Drache`, `Fenris`…). Do introspekcji służą też `ClassID`, `ClassInfo`, `ClassName`.
+- ✅ Kolejność startu jest potwierdzona logiem: `parse systeminit script`, `Class init`, `Adaptive Sound init`, `42 Attributkombinationen zum Erfinden nötig!` (techtree), `systeminit script succesfully parsed`.
+- ✅ Na starcie, w głównym interpreterze, wywoływanych jest tylko 61 różnych komend. Najczęstsze: `sound` (3870), `call_method_static` (2836), `def_class` (2685), `has_cmap` (1826), `smalltalk` (898), `db_load` (656), `call` (417).
+- 🔶 Ciała klas i metody obiektów (`obj_init`, `method`, `tasklist_*`) nie przechodzą przez nasze owijki. Prawdopodobnie wykonują się w **osobnych interpreterach** (per klasa lub per obiekt, `CTclRootObj`). Do zbadania.
+- ✅ Gra sama zapisuje pliki: `Data/texturelist.txt` (tekstury wczytane na starcie), `Data/msgmisses.txt` (brakujące tłumaczenia `lmsg`), `Data/Scripts/gameplay/gen_tt.tcl` i `gen_exp.lst` (wygenerowane drzewko technologii), a także `Data/Gamesave/quick_Quicksave_<data>.sav`.
+
+### 8.2 Sygnatury z trace (przykłady)
+```
+db_load mann                                   ładuje 3db/MANN.3DB po nazwie
+db_animlength urw_sumpf.standard => 21         animacje adresowane jako <obiekt>.<animacja>, długość w klatkach
+has_cmap muetze_a.standard => 0                czy obiekt ma cmap (patrz .3db)
+new Dummy_Moos_uh_e {} {34.58 42.66 2.02} {0 0.2 0} => 2     klasa, nazwa, pozycja xyz, rotacja xyz; zwraca ID (int)
+sel /obj                                       kontekst tworzenia obiektów
+map create 64 64 {  }
+map_template data/templates/gng_021.pmp 21 40  ścieżka znormalizowana do data/templates/
+map_setlayer2 21 40 data/templates/urw_gng_021_a.l2m
+set_view 32.368 40.858 1.38 -0.355 0.165       x y zoom + 2 kąty kamery
+call_method 74 Editor_Set_Info {{xrange 10} {yrange 6} {on 1}}
+call_method_static Grillpilz get_toolclasses => grillpilz
+def_attrib Pilz 0 10000 0                      nazwa min max domyślna
+def_texture ZFrau_Haare ZFrau_Haare.tga Zfrau_haar_black.tga …   nazwa bazowa i warianty
+sound bind mp_chat_1 data/sound/sprache/m_ac_neg_a1.wav
+adaptive_sound setintrostream atmooberwelt data/music/na002.mp3
+smalltalk add ooi {15 7 0.0 50.0 0.0 0.0 1.0 "…"}
+lg_set_templategroup Urwald.Std.Gng {urw_gng_001_a.tcl …}   generator poziomów: grupy szablonów
+lg_set_templateprops urw_gng_050_a.tcl -gamecount 1 -levelcount 1
+fight_action ZIdl1 Zwerg kungfu idle n n 0 kungfu_standanim 0
+fight_weapon Steinschleuder 0.3 0.0 6.0 ballist exp_F_Ballistic 2 0 katschi { 13 }
+def_hp_ratio Zwerg 0 2.0 0.15
+ai init 0 data/scripts/ai/std_ai.tcl
+init_techtree scripts/gameplay/gen_tt.tcl
+```
+
+### 8.3 Rejestr gry (pełny, z instalacji)
+Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla wersji angielskiej):
+- główny: `Language`, `TCLDEFINES` (🔶 dodatkowe symbole preprocesora!), `WorkingDir`, `KeyLocation`
+- `Misc`: `AnimStats`, `PerfStats`, `GameSaveCompression=7` (poziom gzip), `UseTclClassCache`, `ShowFMV`, `ShowQuotes`, `MaxGametimeFactor`, `AutoDigRange`, `AutoHarvestRange`…
+- `Performance`: `AnimInterpolation` (interpolacja klatek animacji!), `LandscapeQuality`, `TextureQuality`, `ObjectQuality`, `MaxFramerate`, `UseEnvMapping`, `MultiTexture`, `ScapeJitter`, `ValidateRenderJobs`, **`WebServer`** (🔶 wbudowany serwer WWW, por. komenda `web_shell`)
+- `Screen`: `Fullscreen`, `Width`, `Height`, `Gamma`, `Brightness`, `TnL`, GUID-y Direct3D/DirectDraw
+- `Control`, `Input`: mapowanie myszy i klawiszy; `Sound`: głośności
+
+### 8.4 Komendy debugowe do zbadania
+`tclhelp` (zwraca pusty wynik, 🔶 pisze do konsoli), `web_shell`, `dump_var`, `proddump`, `output_3ddbstats`, `meminfo`, `perfwin`, `peek`/`poke`, `waterdbg`, `toggle_wf` (wireframe?), `render_gray`, `show_maped`, `save_map`, `save_scene`, `xtest`, `test`/`testd`, `vtune`.
+
+### 8.5 barnacle (SDK) jako następny krok
+Barnacle hookuje `Wiggles.exe` 1.0.844, czyli **dokładnie naszą wersję**, i daje Pythona wewnątrz gry. Przyda się, gdy czysty Tcl nie wystarczy: śledzenie interpreterów obiektów albo odczyt pamięci i struktur C++. Wymaga zbudowania pod Windows (Python 3.6 32-bit, scons), czyli wejścia pod Wine.

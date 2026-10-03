@@ -13,9 +13,12 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
   - §5 format modów (DigglesModManager)
   - §6 parametry i rejestr oryginalnego exe
   - §7 zainstalowana gra: struktura `Data/`, `systeminit.tcl`, mapy z szablonów (`.PMP`, `.l2m`, `BlockDB`), zapisy, wyniki skanera komend
+  - §8 laboratorium: obserwacja działającej gry, trace komend, rejestr
   - Otwarte pytania: kolejność dalszych badań
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
 - [LICENSE](LICENSE): GPL v3
+- [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
+- §8 bazy wiedzy: laboratorium (gra pod Wine z sondą Tcl). Narzędzia w `tools/lab/`, wyniki w `../lab/Wiggles/owprobe_*.txt` i `tclerrors.txt`
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik `tools/scan_tcl_natives.py`)
 
 ## Gra (dane oryginalne)
@@ -36,7 +39,8 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - **Commity i PR-y bez żadnej wzmianki o AI** (żadnych `Co-Authored-By` ani „Generated with…”).
 - C++17, OpenGL 3.3 core, SDL2, Dear ImGui, osadzony Tcl (8.3 jak w oryginale albo 8.6; decyzja w TODO, faza 5).
 - **Bez CMake.** Budowanie odbywa się własnymi skryptami bash (`build.sh`).
-- Repo nie może zawierać danych z oryginalnej gry.
+- Repo nie może zawierać danych z oryginalnej gry (także wyników sondy z treścią skryptów; te zostają w `../lab/`).
+- Eksperymenty na grze tylko na kopii w `../lab/` (osobny prefiks Wine), nigdy na instalacji w `~/.wine`.
 - Po każdym kroku zaktualizuj `TODO.md`.
 - **Uznawaj pracę autorów.** Każda wiedza wzięta z cudzego repo (dokumentacja, komentarze w kodzie, opisy commitów) ma odnośnik do repozytorium na GitHubie (lista w `CREDITS.md`). Nie kopiujemy cudzego kodu, tylko wiedzę o formatach.
 - Nowe ustalenia o formatach dopisuj do `docs/BAZA_WIEDZY.md` (oznaczenia ✅ potwierdzone, 🔶 hipoteza).
