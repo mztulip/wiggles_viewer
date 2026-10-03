@@ -412,7 +412,7 @@ dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartośc
 |---|---|---|
 | Siatki BlockDB, kafel = 3 podsiatki, cliff path | `RENDERING_PIPELINE_COMPLETE.md` | ✅ wdrożone (siatki) |
 | Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | do zrobienia |
-| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | do zrobienia |
+| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | ✅ otwory do tła i strefy horyzontu; panorama powierzchni do zrobienia |
 | Układ współrzędnych | `COORDINATE_SYSTEM.md` | porównać z naszym (§1, `formaty/3db.md` §4) |
 | Interpreter Tcl, model obiektów, start skryptów | `TCL_*.md`, `ENGINE_TCL_API.txt`, `ENGINE_COMMAND_GAP.md` | faza 5 |
 | Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
