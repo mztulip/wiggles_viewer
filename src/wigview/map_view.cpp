@@ -165,7 +165,7 @@ bool MapView::loadTemplate(const std::string& file) {
 	// Kadr na cały teren szablonu (x, y w blokach; z między dnem a przednią płaszczyzną).
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
 	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
-	radius_ = std::max(w, h) * kBlock * 0.55f;
+	radius_ = (std::max(w, h) + 3.f) * kBlock * 0.55f; // margines: małe szablony nie wypełniają całego kadru
 	return error_.empty();
 }
 
