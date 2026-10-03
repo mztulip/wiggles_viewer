@@ -50,6 +50,17 @@ public:
 		pos_ += n;
 		return s;
 	}
+	// Kopiuje n bajtów prosto do dst (szybkie czytanie całych tablic).
+	void readInto(void* dst, size_t n) {
+		need(n);
+		std::memcpy(dst, data_ + pos_, n);
+		pos_ += n;
+	}
+	// Tablica elementów typu T (POD, little-endian) zapisanych jeden po drugim.
+	template <typename T> void readArray(std::vector<T>& out, size_t count) {
+		out.resize(count);
+		if (count) readInto(out.data(), count * sizeof(T));
+	}
 	std::vector<uint8_t> bytes(size_t n) {
 		need(n);
 		std::vector<uint8_t> v(data_ + pos_, data_ + pos_ + n);

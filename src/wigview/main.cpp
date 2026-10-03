@@ -89,6 +89,7 @@ struct Viewer {
 	std::string modelFile;
 	std::unique_ptr<Model3db> model;
 	std::string loadError;
+	double loadMs = 0; // czas odczytu + parsowania ostatniego modelu
 	int object = 0, anim = 0;
 	float frame = 0;
 	bool playing = true;
@@ -162,6 +163,7 @@ struct Viewer {
 		renderer.setModel(nullptr, nullptr);
 		model.reset();
 		modelFile = file;
+		Uint64 t0 = SDL_GetPerformanceCounter();
 		auto data = vfs.read("Data/3db/" + file);
 		if (!data) {
 			loadError = "nie można odczytać pliku";
@@ -173,6 +175,8 @@ struct Viewer {
 			loadError = e.what();
 			return false;
 		}
+		loadMs = double(SDL_GetPerformanceCounter() - t0) * 1000.0 / double(SDL_GetPerformanceFrequency());
+		std::printf("wczytano %s w %.0f ms\n", file.c_str(), loadMs);
 		renderer.setModel(model.get(), textures.get());
 		selectObject(0);
 		return true;
@@ -265,7 +269,7 @@ void Viewer::uiModel() {
 		ImGui::EndChild();
 		return;
 	}
-	ImGui::Text("%s  (%s)", model->name.c_str(), modelFile.c_str());
+	ImGui::Text("%s  (%s)  wczytano w %.0f ms", model->name.c_str(), modelFile.c_str(), loadMs);
 	ImGui::Text("materiały %zu  klatki %zu  obiekty %zu  animacje %zu", model->materials.size(),
 	            model->meshes.size(), model->objects.size(), model->animations.size());
 
