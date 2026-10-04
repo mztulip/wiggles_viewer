@@ -538,6 +538,29 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 			o->walkResult = 3;
 		}
 		dur = 0.1;
+	} else if (kind == "fly" && a.size() > 3) { // fly "-target {p} | -around {p} …": lot do punktu (🔶 prosta trasa)
+		auto p = options(listItems(in, a[3]), 0);
+		float t[3], cur[3] = {0, 0, 0};
+		if (e.host_) e.host_->getPos(o->id, cur);
+		bool ok = false;
+		if (p.count("target")) ok = parseVec(in, p["target"], t);
+		else if (p.count("around") && parseVec(in, p["around"], t)) {
+			float r = 1.5f * float(std::rand()) / float(RAND_MAX), ang = 6.283f * float(std::rand()) / float(RAND_MAX);
+			t[0] += std::cos(ang) * r, t[1] += std::sin(ang) * r * 0.5f;
+			ok = true;
+		}
+		dur = 1.0;
+		if (ok && e.host_) {
+			dur = std::max(0.5, double(std::hypot(t[0] - cur[0], t[1] - cur[1])) / 0.8);
+			e.host_->glide(o->id, t, float(dur));
+		}
+		done = a.size() > 4 ? a[4] : "";
+	} else if (kind == "move" && a.size() > 3) { // move "{x y z} prędkość": krótki ruch bez szukania drogi
+		auto v = listItems(in, a[3]);
+		float p[3];
+		if (e.host_ && !v.empty() && parseVec(in, v[0], p)) e.host_->setPos(o->id, p);
+		dur = 0.3;
+		done = a.size() > 4 ? a[4] : "";
 	} else if (kind == "rotate" && a.size() > 3) {
 		auto v = listItems(in, a[3]);
 		if (e.host_ && !v.empty()) e.host_->setRotY(o->id, std::strtof(v[0].c_str(), nullptr));
@@ -848,6 +871,47 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
 	return TCL_OK;
 }
 
+int cmdXZ(Engine& e, Tcl_Interp* in, Args& a) {
+	const std::string& c = a[0];
+	if (c == "get_vectorxz") { // get_vectorxz kąt długość -> wektor w płaszczyźnie x–z (🔶 kierunek kąta)
+		float ang = a.size() > 1 ? std::strtof(a[1].c_str(), nullptr) : 0.f, len = a.size() > 2 ? std::strtof(a[2].c_str(), nullptr) : 1.f;
+		float v[3] = {std::cos(ang) * len, 0.f, std::sin(ang) * len};
+		setResult(in, vecStr(v));
+	} else if (c == "get_anglexz") {
+		float p[3] = {0, 0, 0}, q[3] = {0, 0, 0};
+		if (a.size() > 1) parseVec(in, a[1], p);
+		if (a.size() > 2) parseVec(in, a[2], q);
+		setResult(in, fmt(std::atan2(q[2] - p[2], q[0] - p[0])));
+	} else if (c == "lcount") {
+		int n = 0;
+		if (a.size() > 2)
+			for (auto& x : listItems(in, a[1])) n += x == a[2];
+		setResult(in, std::to_string(n));
+	} else if (c == "dist_between") {
+		float p[3] = {0, 0, 0}, q[3] = {0, 0, 0};
+		if (e.host_ && a.size() > 2) e.host_->getPos(e.resolveObj(in, a[1]), p), e.host_->getPos(e.resolveObj(in, a[2]), q);
+		setResult(in, fmt(std::hypot(p[0] - q[0], p[1] - q[1])));
+	}
+	return TCL_OK;
+}
+// sparetime obj: godziny czasu wolnego; sparetime obj queryrect|queryrange typ …: miejsca czasu wolnego (🔶 brak: pusta lista)
+int cmdSparetime(Engine&, Tcl_Interp* in, Args& a) {
+	setResult(in, a.size() > 2 ? "" : "1.0");
+	return TCL_OK;
+}
+int cmdOwnerAttrib(Engine& e, Tcl_Interp* in, Args& a) {
+	if (a.size() < 3) return TCL_ERROR;
+	int owner = std::atoi(a[1].c_str());
+	auto& m = e.ownerAttribs_[owner];
+	auto d = e.attribDefs_.find(a[2]);
+	auto it = m.find(a[2]);
+	if (it == m.end()) it = m.emplace(a[2], d != e.attribDefs_.end() ? d->second.def : 0.0).first;
+	if (a[0] == "set_owner_attrib" && a.size() > 3) it->second = std::atof(a[3].c_str());
+	else if (a[0] == "add_owner_attrib" && a.size() > 3) it->second += std::atof(a[3].c_str());
+	setResult(in, fmt(it->second));
+	return TCL_OK;
+}
+
 struct Entry {
 	const char* name;
 	Fn fn;
@@ -883,7 +947,9 @@ const Entry kCommands[] = {
 	{"inv_find_obj", cmdConst}, {"inv_cnt", cmdConst}, {"inv_list", cmdConst}, {"get_bestexp", cmdConst},
 	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
 	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"vector_fix", cmdVectorFix},
-	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop},
+	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop}, {"get_vectorxz", cmdXZ}, {"get_anglexz", cmdXZ},
+	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"get_owner_attrib", cmdOwnerAttrib},
+	{"set_owner_attrib", cmdOwnerAttrib}, {"add_owner_attrib", cmdOwnerAttrib},
 	{"gnome_idle", cmdNop}, {"get_owner", cmdOwner}, {"set_owner", cmdOwner}, {"get_roty", cmdRot}, {"set_roty", cmdRot},
 	{"get_hmap", cmdHmap}, {"isunderwater", cmdUnderwater}, {"get_gnomeposition", cmdGnomePos},
 	{"get_walkresult", cmdWalkResult}, {"get_place", cmdGetPlace}, {"placelock_set", cmdPlacelock},

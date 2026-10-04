@@ -83,6 +83,8 @@ struct Host {
 		return true;
 	}
 	virtual int gnomePosition(int) { return 0; } // 0 stoi, 1 wisi na ścianie
+	// Płynny lot/przesunięcie obiektu do punktu w podanym czasie (action fly, move).
+	virtual void glide(int id, const float to[3], float /*sekundy*/) { setPos(id, to); }
 };
 
 struct ScriptObject {
@@ -166,6 +168,7 @@ public:
 		double min = 0, max = 1e9, def = 0;
 	};
 	std::map<std::string, AttribDef> attribDefs_; // def_attrib nazwa min max domyślna
+	std::map<int, std::map<std::string, double>> ownerAttribs_; // get/set_owner_attrib
 	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, promień)
 	void finishAction(ScriptObject& o, bool ok);
 	std::string cacheDir_; // pliki zapisywane przez skrypty (np. gen_tt.tcl): ~/.cache/openwiggles, nie katalog gry

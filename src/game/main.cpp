@@ -153,6 +153,7 @@ struct ScriptHost : script::Host {
 	bool underwater(const float p[3]) override;
 	bool findPlace(const float c[3], float r, float out[3]) override;
 	int gnomePosition(int id) override;
+	void glide(int id, const float to[3], float seconds) override;
 };
 
 struct Game {
@@ -160,6 +161,11 @@ struct Game {
 	std::unique_ptr<script::Engine> scripts;
 	ScriptHost host;
 	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
+	struct Glide {
+		int obj;
+		float from[3], to[3], t, dur;
+	};
+	std::vector<Glide> glides; // płynne ruchy obiektów zlecone przez skrypty
 	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
@@ -357,6 +363,14 @@ struct Game {
 			}
 		}
 		for (auto& u : units) updateUnit(u, dt);
+		for (auto it = glides.begin(); it != glides.end();) {
+			it->t = std::min(it->t + dt, it->dur);
+			float k = it->dur > 0 ? it->t / it->dur : 1.f, p[3];
+			for (int i = 0; i < 3; ++i) p[i] = it->from[i] + (it->to[i] - it->from[i]) * k;
+			float dx = it->to[0] - it->from[0];
+			maps.setObjectPose(it->obj, p[0], p[1], p[2], std::abs(dx) > 1e-3f ? (dx > 0 ? -kPi * 0.5f : kPi * 0.5f) : maps.objectRotY(it->obj));
+			it = it->t >= it->dur ? glides.erase(it) : it + 1;
+		}
 	}
 
 	// Pole pod kursorem: promień kamery przecięty z płaszczyzną głębokości krasnali.
@@ -494,6 +508,18 @@ bool ScriptHost::findPlace(const float c[3], float r, float out[3]) {
 			}
 	return false;
 }
+void ScriptHost::glide(int id, const float to[3], float seconds) {
+	if (id <= 0 || id > g->maps.objectCount() || g->unitOf(id - 1)) return;
+	const float* p = g->maps.objectPos(id - 1);
+	Game::Glide gl{id - 1, {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds};
+	for (auto& x : g->glides)
+		if (x.obj == gl.obj) {
+			x = gl;
+			return;
+		}
+	g->glides.push_back(gl);
+}
+
 int ScriptHost::gnomePosition(int id) {
 	Unit* u = g->unitOf(id - 1);
 	return u && !g->nav.standable(u->tx, u->ty) ? 1 : 0;
