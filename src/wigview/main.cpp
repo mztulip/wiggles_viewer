@@ -27,6 +27,8 @@
 #include "lib/vfs.h"
 #include "wigview/map_view.h"
 
+#include <ow_version.h> // generowany przez build.sh: OW_VERSION (commit), OW_VERSION_DATE
+
 #include <SDL.h>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -824,7 +826,7 @@ int main(int argc, char** argv) {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_Window* win = SDL_CreateWindow("wigview - OpenWiggles", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	SDL_Window* win = SDL_CreateWindow("wigview - OpenWiggles " OW_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 	                                   args.width, args.height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	if (!win) {
 		std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
@@ -935,6 +937,15 @@ int main(int argc, char** argv) {
 			ImGui_ImplSDL2_NewFrame();
 			ImGui::NewFrame();
 			v.ui();
+			{
+				// Wersja programu w prawym dolnym rogu (identyfikacja wersji na zrzutach ekranu).
+				const char* ver = "wigview " OW_VERSION " (" OW_VERSION_DATE ")";
+				ImVec2 ds = ImGui::GetIO().DisplaySize, ts = ImGui::CalcTextSize(ver);
+				ImVec2 pos(ds.x - ts.x - 8.f, ds.y - ts.y - 6.f);
+				auto* dl = ImGui::GetForegroundDrawList();
+				dl->AddRectFilled(ImVec2(pos.x - 4, pos.y - 2), ImVec2(pos.x + ts.x + 4, pos.y + ts.y + 2), IM_COL32(0, 0, 0, 150), 3.f);
+				dl->AddText(pos, IM_COL32(220, 220, 220, 255), ver);
+			}
 			ImGui::Render();
 		}
 		float scale = ImGui::GetIO().DisplayFramebufferScale.x;

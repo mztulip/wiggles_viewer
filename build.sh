@@ -24,7 +24,24 @@ CXX="${CXX:-g++}"
 JOBS="${JOBS:-$(nproc)}"
 OUT="build/$MODE"
 
-CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
+# Wersja programu (commit, z "-zmiany" przy niezacommitowanych zmianach) w nagłówku build/gen/ow_version.h.
+# Plik jest nadpisywany tylko przy zmianie treści, więc przyrostowa kompilacja przebudowuje wtedy
+# tylko pliki, które go dołączają.
+gen_version() {
+	local v d
+	v="$(git describe --always --dirty=-zmiany 2>/dev/null || echo nieznana)"
+	d="$(git log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || echo '')"
+	mkdir -p build/gen
+	local new="#pragma once
+#define OW_VERSION \"$v\"
+#define OW_VERSION_DATE \"$d\""
+	if [ ! -f build/gen/ow_version.h ] || [ "$(cat build/gen/ow_version.h)" != "$new" ]; then
+		printf '%s\n' "$new" > build/gen/ow_version.h
+	fi
+}
+gen_version
+
+CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -Ibuild/gen -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
 case "$MODE" in
 	debug)   CXXFLAGS+=(-O0 -g -DOW_DEBUG) ;;
 	release) CXXFLAGS+=(-O2 -DNDEBUG) ;;
