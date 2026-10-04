@@ -894,9 +894,49 @@ int cmdXZ(Engine& e, Tcl_Interp* in, Args& a) {
 	}
 	return TCL_OK;
 }
-// sparetime obj: godziny czasu wolnego; sparetime obj queryrect|queryrange typ …: miejsca czasu wolnego (🔶 brak: pusta lista)
-int cmdSparetime(Engine&, Tcl_Interp* in, Args& a) {
-	setResult(in, a.size() > 2 ? "" : "1.0");
+// sparetime obj: godziny czasu wolnego (🔶 zawsze 1).
+// sparetime obj announce typ | disannounce: obiekt oferuje miejsce czasu wolnego (eat, sleep, home, bath, fun, sex).
+// sparetime obj queryrect typ x0 y0 x1 y1 | queryrange typ r: oferujące obiekty w prostokącie (względem obj) / promieniu.
+int cmdSparetime(Engine& e, Tcl_Interp* in, Args& a) {
+	int self = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	std::string sub = a.size() > 2 ? a[2] : "";
+	if (sub.empty()) {
+		setResult(in, "1.0");
+		return TCL_OK;
+	}
+	if (sub == "announce" && a.size() > 3) e.sparetimeOffers_[self].insert(a[3]);
+	else if (sub == "disannounce") {
+		if (a.size() > 3) e.sparetimeOffers_[self].erase(a[3]);
+		else e.sparetimeOffers_.erase(self);
+	} else if ((sub == "queryrect" || sub == "queryrange") && a.size() > 3 && e.host_) {
+		float c[3] = {0, 0, 0};
+		e.host_->getPos(self, c);
+		std::vector<std::pair<float, int>> hits;
+		for (auto& [id, offers] : e.sparetimeOffers_) {
+			ScriptObject* o = e.object(id);
+			float p[3];
+			if (!o || !o->alive || !offers.count(a[3]) || !e.host_->getPos(id, p)) continue;
+			float dx = p[0] - c[0], dy = p[1] - c[1];
+			if (sub == "queryrect" && a.size() > 7) {
+				float x0 = std::strtof(a[4].c_str(), nullptr), y0 = std::strtof(a[5].c_str(), nullptr);
+				float x1 = std::strtof(a[6].c_str(), nullptr), y1 = std::strtof(a[7].c_str(), nullptr);
+				if (dx < x0 || dx > x1 || dy < y0 || dy > y1) continue;
+			} else if (sub == "queryrange" && a.size() > 4 && std::hypot(dx, dy) > std::strtof(a[4].c_str(), nullptr))
+				continue;
+			hits.push_back({std::hypot(dx, dy), id});
+		}
+		std::sort(hits.begin(), hits.end());
+		std::string r;
+		for (auto& h : hits) r += (r.empty() ? "" : " ") + std::to_string(h.second);
+		setResult(in, r);
+		return TCL_OK;
+	}
+	setResult(in, "");
+	return TCL_OK;
+}
+// net localid -> 0 (gra jednoosobowa: gracz lokalny 0); inne podkomendy sieci: 0.
+int cmdNet(Engine&, Tcl_Interp* in, Args&) {
+	setResult(in, "0");
 	return TCL_OK;
 }
 int cmdOwnerAttrib(Engine& e, Tcl_Interp* in, Args& a) {
@@ -948,7 +988,7 @@ const Entry kCommands[] = {
 	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
 	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"vector_fix", cmdVectorFix},
 	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop}, {"get_vectorxz", cmdXZ}, {"get_anglexz", cmdXZ},
-	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"get_owner_attrib", cmdOwnerAttrib},
+	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"get_owner_attrib", cmdOwnerAttrib},
 	{"set_owner_attrib", cmdOwnerAttrib}, {"add_owner_attrib", cmdOwnerAttrib},
 	{"gnome_idle", cmdNop}, {"get_owner", cmdOwner}, {"set_owner", cmdOwner}, {"get_roty", cmdRot}, {"set_roty", cmdRot},
 	{"get_hmap", cmdHmap}, {"isunderwater", cmdUnderwater}, {"get_gnomeposition", cmdGnomePos},
