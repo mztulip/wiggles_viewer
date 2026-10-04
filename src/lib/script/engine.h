@@ -116,6 +116,7 @@ public:
 
 	// Skrypty startowe gry (atrybuty, shader, txt, animacje, klasy, …) bez menu startowego.
 	bool boot(std::string& err);
+	bool loadedFromCache() const { return fromCache_; }
 	// Wykonanie skryptu w głównym interpreterze.
 	bool eval(const std::string& script, std::string* result = nullptr);
 	bool callFile(Tcl_Interp* interp, const std::string& path);
@@ -186,6 +187,12 @@ public:
 	std::string resolveAnim(const ScriptObject* o, const std::string& anim) const;
 	std::string cacheDir_; // pliki zapisywane przez skrypty (np. gen_tt.tcl): ~/.cache/openwiggles, nie katalog gry
 	std::string cachePath(const std::string& gamePath) const;
+	// Pamięć podręczna klas (~/.cache/openwiggles/classes.cache): start bez ponownego wykonywania skryptów.
+	std::string scriptsSignature() const;
+	bool loadClassCache(const std::string& sig);
+	void writeClassCache(const std::string& sig);
+	std::string mainProcs_;
+	bool fromCache_ = false;
 	std::set<std::string> nativeNames_;
 	double time_ = 0;
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fnmatch.h>
 #include <fstream>
@@ -1176,7 +1177,141 @@ bool Engine::eval(const std::string& script, std::string* result) {
 	return rc != TCL_ERROR;
 }
 
+namespace {
+void putStr(std::string& b, const std::string& s) {
+	uint32_t n = uint32_t(s.size());
+	b.append(reinterpret_cast<const char*>(&n), 4);
+	b += s;
+}
+struct CacheIn {
+	std::string b;
+	size_t p = 0;
+	bool ok = true;
+	uint32_t u32() {
+		uint32_t v = 0;
+		if (p + 4 > b.size()) return ok = false, 0;
+		std::memcpy(&v, b.data() + p, 4), p += 4;
+		return v;
+	}
+	std::string str() {
+		uint32_t n = u32();
+		if (!ok || p + n > b.size()) return ok = false, std::string();
+		std::string s = b.substr(p, n);
+		p += n;
+		return s;
+	}
+};
+void putMap(std::string& b, const std::map<std::string, std::string>& m) {
+	putStr(b, std::to_string(m.size()));
+	for (auto& [k, v] : m) putStr(b, k), putStr(b, v);
+}
+std::map<std::string, std::string> getMap(CacheIn& in) {
+	std::map<std::string, std::string> m;
+	size_t n = size_t(std::atoll(in.str().c_str()));
+	for (size_t i = 0; i < n && in.ok; ++i) {
+		std::string k = in.str();
+		m[k] = in.str();
+	}
+	return m;
+}
+constexpr const char* kCacheVersion = "owclasses 1";
+} // namespace
+
+std::string Engine::scriptsSignature() const {
+	auto root = vfs_.resolve("Data/Scripts");
+	if (!root) return "";
+	size_t count = 0;
+	long long newest = 0;
+	std::error_code ec;
+	for (auto it = std::filesystem::recursive_directory_iterator(*root, ec); it != std::filesystem::recursive_directory_iterator(); it.increment(ec)) {
+		if (ec || !it->is_regular_file(ec)) continue;
+		++count;
+		newest = std::max<long long>(newest, it->last_write_time(ec).time_since_epoch().count());
+	}
+	return std::string(kCacheVersion) + " " + root->string() + " " + std::to_string(count) + " " + std::to_string(newest);
+}
+
+void Engine::writeClassCache(const std::string& sig) {
+	std::string b;
+	putStr(b, sig);
+	putStr(b, mainGlobals_);
+	putStr(b, mainProcs_);
+	putStr(b, std::to_string(attribDefs_.size()));
+	for (auto& [k, d] : attribDefs_) putStr(b, k), putStr(b, fmt(d.min) + " " + fmt(d.max) + " " + fmt(d.def));
+	putStr(b, std::to_string(classes_.size()));
+	for (auto& [key, c] : classes_) {
+		putStr(b, c->name), putStr(b, c->category), putStr(b, c->type), putStr(b, c->flags), putStr(b, std::to_string(c->epoch));
+		putStr(b, c->scripting ? "1" : "0"), putStr(b, c->initBody), putStr(b, c->exitBody);
+		putStr(b, std::to_string(c->members.size()));
+		for (auto& [k, v] : c->members) putStr(b, k), putStr(b, v);
+		std::map<std::string, std::string> margs, mbody;
+		for (auto& [k, m] : c->methods) margs[k] = m.args, mbody[k] = m.body;
+		putMap(b, margs), putMap(b, mbody), putMap(b, c->events), putMap(b, c->states), putMap(b, c->stateEnter),
+			putMap(b, c->stateLeave), putMap(b, c->classAnims);
+		std::string ev;
+		for (auto& n : c->eventNames) ev += n + "\n";
+		putStr(b, ev), putStr(b, c->procScript), putStr(b, c->globalsScript), putStr(b, c->defaultAnim);
+	}
+	std::error_code ec;
+	std::filesystem::create_directories(cacheDir_, ec);
+	std::ofstream f(cacheDir_ + "/classes.cache", std::ios::binary);
+	f.write(b.data(), std::streamsize(b.size()));
+}
+
+bool Engine::loadClassCache(const std::string& sig) {
+	std::ifstream f(cacheDir_ + "/classes.cache", std::ios::binary);
+	if (!f || sig.empty()) return false;
+	CacheIn in;
+	in.b.assign(std::istreambuf_iterator<char>(f), {});
+	if (in.str() != sig) return false;
+	mainGlobals_ = in.str();
+	mainProcs_ = in.str();
+	size_t na = size_t(std::atoll(in.str().c_str()));
+	for (size_t i = 0; i < na && in.ok; ++i) {
+		std::string k = in.str();
+		std::istringstream ss(in.str());
+		AttribDef d;
+		ss >> d.min >> d.max >> d.def;
+		attribDefs_[k] = d;
+	}
+	size_t nc = size_t(std::atoll(in.str().c_str()));
+	for (size_t i = 0; i < nc && in.ok; ++i) {
+		auto c = std::make_unique<ScriptClass>();
+		c->name = in.str(), c->category = in.str(), c->type = in.str(), c->flags = in.str();
+		c->epoch = std::atoi(in.str().c_str());
+		c->scripting = in.str() == "1";
+		c->initBody = in.str(), c->exitBody = in.str();
+		size_t nm = size_t(std::atoll(in.str().c_str()));
+		for (size_t k = 0; k < nm && in.ok; ++k) {
+			std::string a = in.str();
+			c->members.push_back({a, in.str()});
+		}
+		auto margs = getMap(in), mbody = getMap(in);
+		for (auto& [k, v] : margs) c->methods[k] = {v, mbody[k]};
+		c->events = getMap(in), c->states = getMap(in), c->stateEnter = getMap(in), c->stateLeave = getMap(in);
+		c->classAnims = getMap(in);
+		std::istringstream ev(in.str());
+		for (std::string line; std::getline(ev, line);)
+			if (!line.empty()) c->eventNames.insert(line);
+		c->procScript = in.str(), c->globalsScript = in.str(), c->defaultAnim = in.str();
+		classes_[Vfs::lower(c->name)] = std::move(c);
+	}
+	if (!in.ok) {
+		classes_.clear(), attribDefs_.clear();
+		return false;
+	}
+	// Główny interpreter: procedury i zmienne ze startu (stałe, tabele, procedury pomocnicze).
+	Tcl_EvalEx(main_, mainProcs_.c_str(), -1, TCL_EVAL_GLOBAL);
+	Tcl_EvalEx(main_, mainGlobals_.c_str(), -1, TCL_EVAL_GLOBAL);
+	return true;
+}
+
 bool Engine::boot(std::string& err) {
+	std::string sig = scriptsSignature();
+	if (!std::getenv("OW_NO_CLASS_CACHE") && loadClassCache(sig)) {
+		fromCache_ = true;
+		return true;
+	}
 	// Kolejność jak w systeminit.tcl (rozdział 2.4), bez menu startowego, dźwięku i SI.
 	const char* files[] = {"scripts/misc/genattribs.tcl", "scripts/init/customcommands.tcl", "scripts/init/shader.tcl",
 	                       "scripts/init/txtinit.tcl",     "scripts/init/animinit.tcl",     "scripts/init/classinit.tcl",
@@ -1185,8 +1320,9 @@ bool Engine::boot(std::string& err) {
 		if (vfs_.exists(resolvePath(f))) callFile(main_, f);
 		// 🔶 makettree.tcl (generuje gen_tt.tcl) i init_techtree pomijamy: gra ma gotowy gen_tt.tcl (TODO)
 	}
-	std::string g;
 	if (Tcl_EvalEx(main_, kCaptureGlobals, -1, TCL_EVAL_GLOBAL) == TCL_OK) mainGlobals_ = Tcl_GetStringResult(main_);
+	if (Tcl_EvalEx(main_, kCaptureProcs, -1, TCL_EVAL_GLOBAL) == TCL_OK) mainProcs_ = Tcl_GetStringResult(main_);
+	if (!classes_.empty() && errors_.empty()) writeClassCache(sig);
 	if (classes_.empty()) {
 		err = "nie wczytano żadnej klasy";
 		return false;

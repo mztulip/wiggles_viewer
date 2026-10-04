@@ -207,6 +207,7 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 `src/lib/script/engine.cpp`, test bez okna: `build/release/owscript [KLASA [SEKUNDY]]` (dziennik zaślepek i błędów), w grze: `openwiggles` (dziennik `openwiggles_tcl.log`, wyłączenie: `--no-scripts`).
 
 - **Tcl 8.6 z systemu.** Tekst skryptów (CP1252/1250) zamieniamy na UTF-8 przed wykonaniem. Preprocesor jak w 2.2 (symbol `FULL` zdefiniowany).
+- **Pamięć podręczna klas** `~/.cache/openwiggles/classes.cache` (ok. 21 MB): klasy, atrybuty, zmienne i procedury głównego interpretera. Ważna, dopóki nie zmienią się pliki `Data/Scripts` (liczba plików i najnowsza data modyfikacji). Start z niej trwa ok. 0,1 s zamiast 5,5 s. `OW_NO_CLASS_CACHE=1` wymusza pełne wczytanie.
 - **Start**: `genattribs.tcl`, `customcommands.tcl`, `shader.tcl`, `txtinit.tcl`, `animinit.tcl`, `classinit.tcl`, `talkinit.tcl`, `claninit.tcl`, `fight.tcl` (bez menu, dźwięku, SI). Wynik: **2684 klasy w ok. 5 s, bez błędów**. `makettree.tcl` i `init_techtree` pomijamy (gra ma gotowy `gen_tt.tcl`).
 - **Katalog bieżący** `cd`/`pwd`/`glob`/`file exists` działa wirtualnie po katalogu gry (start: katalog gry, nie `Data`). `locale` zwraca `pl` (pliki `*_pl.tcl`).
 - **Zapis plików przez skrypty** (`open … w`) trafia do `~/.cache/openwiggles/<ścieżka>`; odczyt najpierw stamtąd, potem z gry. Instalacji gry nie zmieniamy.
