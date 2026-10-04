@@ -152,8 +152,8 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 		}
 	} else if (tcl != 0)
 		throw ParseError("nieprawidłowa obecność zmiennych Tcl");
-	r.skipI32(1);
-	r.str();                // napis stanu
+	r.skipI32(1);           // ID obiektu stanu
+	o.instanceName = r.str(); // nazwa instancji (krasnale: imię)
 	r.skipI32(8);
 	skipRouteVector(r);
 	if (r.i32() != 0) r.skipI32(512); // siatka 512 wartości

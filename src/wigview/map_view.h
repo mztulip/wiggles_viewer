@@ -101,6 +101,7 @@ public:
 	float objectRotY(int i) const { return objects_[size_t(i)].src.rot[1]; }
 	int objectOwner(int i) const { return objects_[size_t(i)].src.owner; }
 	const std::string& objectName(int i) const { return objects_[size_t(i)].src.name; }
+	const std::string& objectInstanceName(int i) const { return objects_[size_t(i)].src.instanceName; }
 	const std::vector<std::pair<std::string, std::string>>& objectTclVars(int i) const { return objects_[size_t(i)].src.tclVars; }
 	// Model z pliku .3db i obiektu (dla klas bez class_defaultanim, np. Zwerg = mann.3db, obiekt mann).
 	bool setObjectModel(int i, const std::string& modelFile, const std::string& object);

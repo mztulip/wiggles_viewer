@@ -259,6 +259,7 @@ BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario&
 		t.linkParent = o.linkParent;
 		t.linkPoint = o.linkPoint;
 		t.tclVars = o.tclVars;
+		t.instanceName = o.instanceName;
 		for (int k = 0; k < 3; ++k) {
 			t.pos[k] = o.pos[k]; // zapis trzyma z w skali skryptu (jak argument new)
 			t.rot[k] = o.rot[k];

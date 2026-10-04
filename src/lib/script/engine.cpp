@@ -950,6 +950,11 @@ int cmdNet(Engine&, Tcl_Interp* in, Args&) {
 	setResult(in, "0");
 	return TCL_OK;
 }
+int cmdSetObjname(Engine& e, Tcl_Interp* in, Args& a) { // set_objname obj nazwa
+	if (ScriptObject* o = a.size() > 2 ? e.object(e.resolveObj(in, a[1])) : nullptr) o->name = a[2];
+	setResult(in, "");
+	return TCL_OK;
+}
 int cmdOwnerAttrib(Engine& e, Tcl_Interp* in, Args& a) {
 	if (a.size() < 3) return TCL_ERROR;
 	int owner = std::atoi(a[1].c_str());
@@ -999,7 +1004,7 @@ const Entry kCommands[] = {
 	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
 	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"link_obj", cmdLinkObj}, {"vector_fix", cmdVectorFix},
 	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop}, {"get_vectorxz", cmdXZ}, {"get_anglexz", cmdXZ},
-	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"get_owner_attrib", cmdOwnerAttrib},
+	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"set_objname", cmdSetObjname}, {"get_owner_attrib", cmdOwnerAttrib},
 	{"set_owner_attrib", cmdOwnerAttrib}, {"add_owner_attrib", cmdOwnerAttrib},
 	{"gnome_idle", cmdNop}, {"get_owner", cmdOwner}, {"set_owner", cmdOwner}, {"get_roty", cmdRot}, {"set_roty", cmdRot},
 	{"get_hmap", cmdHmap}, {"isunderwater", cmdUnderwater}, {"get_gnomeposition", cmdGnomePos},
@@ -1227,6 +1232,14 @@ ScriptObject* Engine::createScripted(int id, ScriptClass* cls, const std::string
 	for (auto& [k, v] : cls->members) Tcl_SetVar(p->interp, k.c_str(), v.c_str(), TCL_GLOBAL_ONLY);
 	if (runInit && !cls->initBody.empty()) runIn(*p, cls->initBody, "obj_init");
 	return p;
+}
+
+double Engine::attrib(int id, const std::string& name) {
+	ScriptObject* o = object(id);
+	if (!o) return 0;
+	if (auto it = o->attribs.find(name); it != o->attribs.end()) return it->second;
+	auto d = attribDefs_.find(name);
+	return d != attribDefs_.end() ? d->second.def : 0.0;
 }
 
 void Engine::setVar(ScriptObject& o, const std::string& name, const std::string& value) {

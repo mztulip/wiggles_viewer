@@ -20,6 +20,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Zapis: kolejka timerów (rekordy pomocnicze = CEvent), atrybuty obiektów, akcje w toku
 - [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, pamięć podręczna klas (start 5 s), tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
+- [x] Interfejs gry: panel krasnali z imionami i potrzebami, znacznik zaznaczenia, pauza i tempo
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
 - [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii

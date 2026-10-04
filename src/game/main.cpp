@@ -195,6 +195,8 @@ struct Game {
 	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania (przeciągnięcie PPM)
 	int dragX0 = -1, dragY0 = -1;          // początek przeciągnięcia PPM (pole)
 	bool rightDrag = false;
+	bool paused = false;
+	float speed = 1.f; // tempo gry: 1, 2, 4 (klawisze 1–3)
 	float fogTimer = 0;
 	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
@@ -429,7 +431,7 @@ struct Game {
 		for (int i = 0; i < maps.objectCount(); ++i) {
 			bool gnome = Vfs::lower(maps.objectClass(i)) == "zwerg";
 			if (gnome && !scriptGnomes) continue;
-			auto* o = scripts->attach(idOf(i), maps.objectClass(i), "", false);
+			auto* o = scripts->attach(idOf(i), maps.objectClass(i), maps.objectInstanceName(i), false);
 			if (!o) continue;
 			o->owner = maps.objectOwner(i); // z zapisu
 			if (gnome && o->owner < 0) o->owner = 0; // krasnale ze scenariusza: gracz 0
@@ -540,6 +542,14 @@ struct Game {
 			dl->AddRect(a, b, line);
 		};
 		for (auto& [x, y] : digMarks) quad(x, y, x, y, IM_COL32(255, 200, 40, 50), IM_COL32(255, 200, 40, 160));
+		if (selected >= 0 && selected < int(units.size())) { // znacznik nad zaznaczonym krasnalem
+			const Unit& u = units[size_t(selected)];
+			glm::vec4 c = m * glm::vec4(u.x * kBlock, (u.y - 1.5f) * kBlock, (u.z * 0.5f + 7.f) * kBlock, 1.f);
+			if (c.w > 0) {
+				ImVec2 p((c.x / c.w * 0.5f + 0.5f) * float(w) * sx, (0.5f - c.y / c.w * 0.5f) * float(h) * sy);
+				dl->AddTriangleFilled(ImVec2(p.x - 8, p.y - 12), ImVec2(p.x + 8, p.y - 12), p, IM_COL32(255, 220, 60, 230));
+			}
+		}
 		if (rightDrag && hoverX >= 0)
 			quad(std::min(dragX0, hoverX), std::min(dragY0, hoverY), std::max(dragX0, hoverX), std::max(dragY0, hoverY), 0,
 			     IM_COL32(255, 255, 255, 200));
@@ -565,12 +575,50 @@ struct Game {
 		}
 		if (hoverX >= 0) ImGui::TextDisabled(tr("Pole pod kursorem: %d, %d (%s)"), hoverX, hoverY, nav.open(hoverX, hoverY) ? tr("wolne") : tr("skała"));
 		if (!status.empty()) ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "%s", status.c_str());
+		ImGui::Text(paused ? tr("PAUZA (spacja)") : tr("Tempo: ×%.0f (1–3, spacja = pauza)"), double(speed));
 		if (showHelp) {
 			ImGui::Separator();
 			ImGui::TextDisabled("%s", tr("LPM: zaznacz krasnala   PPM: idź / kop skałę"));
 			ImGui::TextDisabled("%s", tr("Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"));
 			ImGui::TextDisabled("%s", tr("WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"));
 			ImGui::TextDisabled("%s", tr("N: nowy krasnal przy kursorze   F1: pomoc   Esc: wyjście"));
+		}
+		ImGui::End();
+		gnomePanel();
+	}
+
+	// Panel krasnali: imię, zajęcie, potrzeby (atrybuty skryptów); kliknięcie = zaznaczenie i kamera.
+	void gnomePanel() {
+		ImVec2 ds = ImGui::GetIO().DisplaySize;
+		ImGui::SetNextWindowPos(ImVec2(ds.x - 8, 8), ImGuiCond_Always, ImVec2(1, 0));
+		ImGui::SetNextWindowBgAlpha(0.6f);
+		ImGui::Begin("krasnale", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
+		static const char* kNeeds[4][2] = {{"atr_Hitpoints", N_("zdrowie")}, {"atr_Nutrition", N_("jedzenie")},
+		                                   {"atr_Alertness", N_("sen")},    {"atr_Mood", N_("nastrój")}};
+		for (size_t i = 0; i < units.size(); ++i) {
+			const Unit& u = units[i];
+			ImGui::PushID(int(i));
+			std::string name;
+			const script::ScriptObject* so = scripts ? scripts->object(idOf(u.obj)) : nullptr;
+			if (so && !so->name.empty()) name = so->name;
+			if (name.empty()) name = std::string(tr("krasnal")) + " " + std::to_string(i + 1);
+			if (ImGui::Selectable(name.c_str(), int(i) == selected, 0, ImVec2(ImGui::GetFontSize() * 9, 0))) {
+				selected = int(i);
+				cam.x = u.x, cam.y = u.y - 1.f;
+			}
+			if (so) {
+				ImGui::SameLine();
+				ImGui::TextDisabled("%s", so->state.c_str());
+				for (auto& n : kNeeds) {
+					float v = float(scripts->attrib(so->id, n[0]));
+					ImGui::SameLine();
+					ImGui::PushStyleColor(ImGuiCol_PlotHistogram, v < 0.3f ? ImVec4(0.9f, 0.3f, 0.2f, 1) : ImVec4(0.3f, 0.8f, 0.3f, 1));
+					ImGui::ProgressBar(v, ImVec2(ImGui::GetFontSize() * 2.5f, ImGui::GetFontSize() * 0.6f), "");
+					ImGui::PopStyleColor();
+					ImGui::SetItemTooltip("%s: %.0f%%", tr(n[1]), double(v * 100.f));
+				}
+			}
+			ImGui::PopID();
 		}
 		ImGui::End();
 	}
@@ -851,6 +899,12 @@ int main(int argc, char** argv) {
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) running = false;
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F1) g.showHelp = !g.showHelp;
+			if (e.type == SDL_KEYDOWN && !io.WantTextInput) {
+				if (e.key.keysym.sym == SDLK_SPACE) g.paused = !g.paused;
+				if (e.key.keysym.sym == SDLK_1) g.speed = 1.f;
+				if (e.key.keysym.sym == SDLK_2) g.speed = 2.f;
+				if (e.key.keysym.sym == SDLK_3) g.speed = 4.f;
+			}
 			if (io.WantCaptureMouse) continue;
 			if (e.type == SDL_MOUSEBUTTONDOWN && (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT))
 				g.click(e.button.button, e.button.x, e.button.y, w, h);
@@ -886,7 +940,7 @@ int main(int argc, char** argv) {
 			if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) g.cam.y -= sp;
 			if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) g.cam.y += sp;
 		}
-		g.update(dt);
+		g.update(g.paused ? 0.f : dt * g.speed);
 		if (!frame(nullptr)) SDL_Delay(16);
 	}
 	shutdown();

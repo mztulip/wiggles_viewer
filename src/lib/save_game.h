@@ -27,6 +27,7 @@ struct SaveObject {
 	int linkParent = -1;      // obiekt, do którego jest przypięty (link_obj), −1 = brak
 	int linkPoint = 0;        // punkt zaczepienia rodzica (0..31)
 	std::vector<std::pair<std::string, std::string>> tclVars; // zmienne Tcl obiektu (nazwa, wartość)
+	std::string instanceName; // nazwa obiektu (krasnale: imię)
 };
 
 // Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji

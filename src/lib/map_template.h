@@ -40,6 +40,7 @@ struct TemplateObject {
 	int linkParent = -1;      // z zapisu: ID obiektu-rodzica przypięcia (nazwa obiektu = ID)
 	int linkPoint = 0;
 	std::vector<std::pair<std::string, std::string>> tclVars; // z zapisu: zmienne Tcl obiektu
+	std::string instanceName; // z zapisu: nazwa obiektu (imię krasnala)
 };
 
 struct TemplateScript {

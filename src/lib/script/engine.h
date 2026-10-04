@@ -127,6 +127,7 @@ public:
 	friend struct ScriptHostAccess;
 	ScriptObject* object(int id);
 	void setVar(ScriptObject& o, const std::string& name, const std::string& value);
+	double attrib(int id, const std::string& name); // get_attrib z wartością domyślną z def_attrib
 	void detach(int id);
 
 	double time() const { return time_; }

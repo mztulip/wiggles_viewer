@@ -94,7 +94,7 @@ wektor i32 (n + n słów)   obiekty potomne
 wektor napisów (n + n napisów)
 16 × i32
 i32 obecność zmiennych Tcl (0/1); przy 1: i32 n + n × (str nazwa, str wartość)
-1 × i32, str stan, 8 × i32
+1 × i32 ID obiektu stanu, str nazwa instancji (imię krasnala), 8 × i32
 trasa: wektor i32 + 2 × i32
 i32; jeśli ≠ 0: 512 × i32 (siatka)
 19 × i32

@@ -62,3 +62,10 @@ Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 1
 | `obj_query` | filtry `-class`, `-type`, `-range`, `-limit`, `-owner`, `-pos`, `-boundingbox`; wynik posortowany wg odległości albo 0 |
 
 🔶 `get_remaining_sparetime` zwraca zawsze 1 (krasnale mają tylko czas wolny), właściciel krasnali = gracz 0, `animLength` stałe 1,5 s. Rozkaz gracza (PPM) nadpisuje bieżący chód skryptu. `--player-gnomes` wyłącza skrypty krasnali.
+
+## 14.6 Interfejs
+
+- Lewy panel: wersja, liczba krasnali, zaznaczony krasnal, pole pod kursorem, komunikaty, tempo gry, pomoc (F1).
+- Prawy panel: krasnale z imionami (nazwa instancji z zapisu), stanem skryptu i paskami potrzeb z atrybutów (`atr_Hitpoints`, `atr_Nutrition`, `atr_Alertness`, `atr_Mood`; czerwony poniżej 30%). Kliknięcie zaznacza krasnala i przesuwa kamerę.
+- Żółty trójkąt nad zaznaczonym krasnalem.
+- Spacja: pauza, klawisze 1/2/3: tempo ×1/×2/×4.
