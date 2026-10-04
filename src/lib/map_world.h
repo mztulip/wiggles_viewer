@@ -62,6 +62,8 @@ struct BuiltWorld {
 	int originX = 0, originY = 0;        // lewy górny róg przycięcia w blokach świata
 	std::optional<GameView> view;        // set_view przeliczone na współrzędne przyciętego świata
 	int skyTiles = 0;                    // ile pól dostało światło dzienne (reguła set_light_begin)
+	std::vector<uint8_t> fluidType;      // płyn w polu (z zapisu; puste = brak)
+	std::vector<float> fluidFill;
 	std::vector<std::string> placedScripts;
 	std::vector<std::string> errors;
 };

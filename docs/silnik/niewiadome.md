@@ -17,7 +17,8 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |
 | Prędkość animacji i interpolacja; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; sprzeczne dane o interpolacji ([11.6](11_obiekty_tcl_i_petla.md)); `move` to najpewniej przesunięcie korzenia na cykl (prędkość chodu) |
 | Cząsteczki: dokładne prawa typów | 🔶 | wspólny model i porównanie ze zrzutem: [rozdział 12](12_czasteczki.md) §12.5 |
-| Woda (płyny), animacje tekstur (`txtanim`), materiały `shader.tcl` | ❓ | woda widoczna na zrzucie `kris_unq_060` (§12.6); Diggles-Unity `FLUID_SYSTEM_RE.md` |
+| Płyny: symulacja przepływu | ❓ | dane i rysowanie: [rozdział 13](13_plyny.md); prawa przepływu: Diggles-Unity `FLUID_SYSTEM_RE.md` |
+| Animacje tekstur (`txtanim`), materiały `shader.tcl` | ❓ | |
 
 ## 10.2 Świat i rozgrywka
 

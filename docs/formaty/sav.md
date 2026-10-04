@@ -60,7 +60,12 @@ ciała: powtarzaj { i32 id; jeśli id == −1 koniec; ciało obiektu }
 | 15 | u16 | wartość detali `.l2m` (jak warstwa 2 szablonu) |
 | 17 | u8 | stan terenu, młodszy bajt: `& 3` = rodzaj gruntu, bit 0x80 jak w typie pola `.pmp` |
 | 18 | u8 | stan terenu, starszy bajt (🔶 losowy wariant tekstury) |
-| 19 | 26 B | woda: typy, wypełnienie, przepływ |
+| 19 | u8 | typ płynu, bufor A: 0 brak, 1 woda, 2 siarka, 3 lawa, 4 lawa z wodą ✅ |
+| 20 | u8 | typ płynu, bufor B (gra trzyma dwa bufory symulacji) |
+| 21 | f32 | wypełnienie, bufor A: 0..1 = część pola; powyżej 1 ciśnienie słupa (0,85 przy powierzchni, każdy wiersz niżej +1) ✅ |
+| 25 | f32 | wypełnienie, bufor B (prawie równe A) |
+| 29, 33 | 2 × f32 | przepływ poziomy (A, B) 🔶 |
+| 37, 41 | 2 × f32 | przepływ pionowy (A, B) 🔶 |
 | 45 | 8 × u8 | bajt mgły wojny graczy 0..7 (rozdz. 10.1) |
 
 **Rodzaj gruntu w zapisie a typ pola `.pmp`** ✅ (porównanie pól zapisu z szablonami, z których powstała mapa):
@@ -126,6 +131,11 @@ Zapis zawiera **gotowy świat**: nie trzeba wykonywać skryptu scenariusza ani s
 3. Obiekty: klasa, pozycja, obrót jak obiekty szablonu (rozdz. 5). Strefy horyzontu `Info_Fog_*` są zwykłymi obiektami zapisu, więc tło działa samo (rozdz. 8). Motyw świata (zestaw tekstur detali `urw`/`kris`/`lava`/`swf`) bierzemy z nazw tych klas, bo zapis nie trzyma go jawnie (🔶).
 4. Kamera z sekcji 1.
 5. Mgła wojny: bajt gracza 0 z przesunięcia 45 (rozdz. 10).
+6. Płyny: typ (19) i wypełnienie (21) każdego pola, rysowane jak w [rozdziale 13](../silnik/13_plyny.md).
+
+**Układ bajtów płynu** ustaliliśmy na zapisie z wodą zrobionym w laboratorium: szablon `kris_unq_060` z obiektem `Wasser` (`{volume 1000} {vpf 5}`), po 40 s komenda Tcl `gamesave ow_woda` (gra zapisuje wtedy plik `ow_woda` w swoim katalogu, bez rozszerzenia). Basen 9 × 8 pól: w wierszu powierzchni wypełnienie 0,85, w każdym niższym o 1 więcej (1,85, 2,85…), typ 1. Pola obok basenu zachowują typ 1 przy wypełnieniu 0.
+
+**Dekoracje poza listą obiektów** ❓: w tym zapisie lista obiektów ma tylko 18 pozycji, a ściany, podłogi i lampy szablonu (`Dummy_*`) leżą dalej w pliku jako rekordy „nasion” w siatce kubełków przestrzennych (nazwa klasy, potem i32 ×3, i32 flagi, 2 bajty, pozycja 3 × f32, obrót 3 × f32) i jako lekkie obiekty zastępcze. Diggles-Unity opisuje te sekcje w `Docs/save-re-reports/B3-support-class-spatial.md` §2–3. Jeszcze ich nie czytamy, więc taki zapis pokazuje się bez dekoracji. W zapisie OBERWELT dekoracje są zwykłymi obiektami.
 
 W wigview: zakładka Zapisy obok Mapy (lista z `Data/Gamesave`, przycisk odświeżania, pole na ścieżkę do dowolnego pliku `.sav`) albo `wigview --save save_SaveGame.sav` (także `--save /ścieżka/plik.sav`). Mgła z zapisu to tryb 4 (`--fow 4`, domyślny dla zapisów); niezbadana część mapy jest czarna jak w grze. Pole „Odkryj mapę” (albo `--fow 0`) wyłącza mgłę i pokazuje cały teren i wszystkie obiekty; wybór zostaje przy przełączaniu zapisów.
 

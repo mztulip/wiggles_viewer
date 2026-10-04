@@ -325,6 +325,12 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - Parametry typów 2 i 3 z Diggles-Unity dawały płomień ok. 3,5× za szeroki i czerwony. Po zmianie skali rozmiaru (0,25 → 0,12), koloru (barwa z atlasu, alfa 1 − t²), animacji (klatka wg t²) i rozrzutu prędkości płomień kielicha zgadza się ze zrzutem. Szczegóły: [rozdział 12 §12.6](silnik/12_czasteczki.md).
 - Uwagi poboczne: gra rysuje w tym szablonie wodę (u nas brak), a płomień lamp `Dummy_Haengelicht` (typ 3) u nas nie jest widoczny.
 
+### 9.5 Płyny: zapis z wodą (2026-10-04)
+- W kopii gry w laboratorium dopisaliśmy do klasy `Wasser` (`Scripts/classes/items/WASSER.TCL`) zdarzenie, które 40 s po starcie źródła woła `gamesave ow_woda`; potem przywróciliśmy oryginał. `capture.sh template … kris_unq_060 24.5 21 1.0 0 0 75`. Gra zapisała plik `ow_woda` (bez rozszerzenia) w katalogu gry; kopia w `../lab/zapisy/ow_woda.sav`.
+- Z porównania bajtów: rekord pola zapisu ma płyn na przesunięciach 19–44 (typ ×2, wypełnienie f32 ×2, przepływ f32 ×4). Szczegóły: [formaty/sav.md](formaty/sav.md).
+- Deskryptor płynu w BlockDB (ostatnie 4 bajty rekordu 89 B) zgadza się z opisem Diggles-Unity.
+- Ten zapis ma tylko 18 obiektów na liście; dekoracje szablonu są w innych sekcjach (do rozpracowania).
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji
@@ -345,4 +351,5 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 | Zapisy `.sav` | `ORIGINAL_SAVE_FORMAT_RE.md`, `save-re-reports/` | ✅ mapa z zapisu ([formaty/sav.md](formaty/sav.md)); reszta faza 6 |
 | Animacje, twarze, łączenie czapek | `ANIMATION_CONTROLLER.md`, `FACE_ANIMATION.md`, `HAT_LINK_SYSTEM.md` | przeglądarka/silnik |
 | Cząsteczki | `PARTICLE_SYSTEM_REWRITE.md`, `ParticleTypeTable.cs`, `CpuParticleEmitter.cs` | 🔶 wspólny model, typy 2/3 skalibrowane ([rozdz. 12](silnik/12_czasteczki.md)) |
-| Dźwięk, płyny, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `FLUID_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |
+| Płyny | `FLUID_SYSTEM_RE.md`, `WATER_PHASE1_RE.md` | ✅ dane i rysowanie z zapisu ([rozdz. 13](silnik/13_plyny.md)); symulacja do zrobienia |
+| Dźwięk, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |

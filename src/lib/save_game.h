@@ -31,6 +31,8 @@ struct SaveTile {
 	uint8_t flags = 0;    // młodszy bajt stanu terenu (bit 0x80 jak w typie pola .pmp)
 	uint8_t variant = 0;  // starszy bajt stanu terenu (🔶 wariant tekstury)
 	uint16_t cell = 0;    // wartość detali .l2m
+	uint8_t fluidType = 0; // płyn: 0 brak, 1 woda, 2 siarka, 3 lawa, 4 lawa z wodą
+	float fluidFill = 0;   // wypełnienie pola (> 1 = ciśnienie od słupa płynu nad nim)
 	uint8_t fog[8] = {};  // bajt mgły wojny dla każdego gracza
 };
 

@@ -28,6 +28,17 @@ struct BlockRecord {
 };
 static_assert(sizeof(BlockRecord) == 89, "rekord BlockDB ma 89 bajtów");
 
+// Deskryptor płynu bloku: ostatnie 4 bajty rekordu (u32 LE, przesunięcie 85). Za Zimennik/Diggles-Unity
+// (MIT, Docs/FLUID_SYSTEM_RE.md); ✅ sprawdzone na danych: blok 0 = 15/15 (nieprawidłowy), blok 59 = 960, 8/0.
+struct FluidShape {
+	int capacity = 0;     // bity 0..9: pojemność w jednostkach objętości gry
+	int upper = 15;       // bity 10..13: granica (ósme części pola od góry), poniżej której stoi płyn
+	int lower = 15;       // bity 14..17: dolna granica powierzchni
+	int vertical = 0;     // bity 18..24: przepuszczalność w pionie
+	int horizontal = 0;   // bity 25..31: przepuszczalność w poziomie
+	bool valid() const { return upper <= 8 && lower <= 8 && lower <= upper; }
+};
+
 struct BdbPaletteEntry {
 	float x, y, z; // x, y w obrębie bloku (0..1, y w dół), z = wysokość w blokach (7..14,5)
 	float u, v;    // 🔶 współrzędne tekstury w jednostkach atlasu (zakres ~0..7,5)
@@ -54,6 +65,16 @@ public:
 	bool loaded() const { return !records_.empty(); }
 	size_t size() const { return records_.size(); }
 	const BlockRecord* record(uint32_t id) const { return id < records_.size() ? &records_[id] : nullptr; }
+	FluidShape fluid(uint32_t id) const {
+		FluidShape f;
+		if (id >= records_.size()) return f;
+		const auto& t = records_[id].tail;
+		uint32_t v = uint32_t(t[5]) | uint32_t(t[6]) << 8 | uint32_t(t[7]) << 16 | uint32_t(t[8]) << 24;
+		f.capacity = int(v & 1023), f.upper = int(v >> 10 & 15), f.lower = int(v >> 14 & 15);
+		f.vertical = int(v >> 18 & 127), f.horizontal = int(v >> 25 & 127);
+		return f;
+	}
+	int variant(uint32_t id) const { return id < records_.size() ? records_[id].tail[4] : 0; }
 	// sub 0..2; false, gdy podsiatka pusta albo ID poza zakresem.
 	bool subMesh(uint32_t block, int sub, BdbSubMesh& out) const;
 	const BdbPaletteEntry& palette(uint16_t i) const { return palette_[i]; }

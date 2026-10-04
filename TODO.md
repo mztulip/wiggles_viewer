@@ -69,7 +69,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Wyszukiwarka Ctrl+F: modele, obiekty w modelach, tekstury, szablony
 - [x] Cząsteczki: zakładka z 43 typami (atlas, parametry, użycie w skryptach, podgląd emitera), `--particle N`; emitery z `class_particle` na mapach; rozdział [12](docs/silnik/12_czasteczki.md)
 - [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
-- [ ] Woda (płyny): gra rysuje ją np. w `kris_unq_060`; stan w zapisie `.sav` (pola wody); Diggles-Unity `FLUID_SYSTEM_RE.md`
+- [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
+- [ ] Symulacja płynów (10 Hz, źródła `Wasser`), żeby szablony i scenariusze miały wodę; oświetlenie płynu
+- [ ] Zapis: dekoracje spoza listy obiektów (lekkie obiekty zastępcze i „nasiona” w kubełkach przestrzennych, Diggles-Unity `B3-support-class-spatial.md`); bez nich np. zapis z laboratorium `ow_woda` nie ma ścian i lamp
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)

@@ -46,7 +46,7 @@ Dane podsiatek leżą jedna za drugą: początek podsiatki to suma `3 · vertCou
 | 64 | `u32[4]` | sąsiedzi | kształty pasujące od strony NW, NE, SW, SE (do zszywania przy kopaniu); `0xFFFFFFFF` = brak 🔶 |
 | 80 | `u8[4]` | narożniki | wysokości narożników NW, NE, SW, SE 🔶 |
 | 84 | `u8` | wariant | młodszy półbajt = wariant shadera 🔶 |
-| 85 | `u8[4]` | flagi | ❓ |
+| 85 | `u32` | deskryptor płynu | bity 0–9 pojemność, 10–13 granica górna, 14–17 granica dolna (ósme części pola), 18–24 przepuszczalność pionowa, 25–31 pozioma ✅ (Diggles-Unity `FLUID_SYSTEM_RE.md`; sprawdzone: blok 0 = 15/15 nieprawidłowy, blok 59 = pojemność 960, 8/0; 110 686 bloków ma 8/0) |
 
 ✅ Mapa wysokości zgadza się z eksportem `save_map` z gry (253 wierzchołki OBJ dokładnie, 20 na krawędziach pionowych ścian, 12 to punkty pośrednie ścian).
 

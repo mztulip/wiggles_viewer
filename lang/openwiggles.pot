@@ -184,7 +184,7 @@ msgid "nie można odczytać pliku"
 msgstr ""
 
 #: src/wigview/main.cpp:449
-#: src/wigview/map_view.cpp:681
+#: src/wigview/map_view.cpp:705
 #: src/wigview/particle_view.cpp:176
 #, c-format
 msgid "Błąd: %s"
@@ -434,7 +434,7 @@ msgid "Zapisy"
 msgstr ""
 
 #: src/wigview/main.cpp:803
-#: src/wigview/map_view.cpp:709
+#: src/wigview/map_view.cpp:733
 msgid "Cząsteczki"
 msgstr ""
 
@@ -459,316 +459,325 @@ msgstr ""
 msgid "shader terenu: "
 msgstr ""
 
-#: src/wigview/map_view.cpp:153
-#: src/wigview/map_view.cpp:162
-#: src/wigview/map_view.cpp:202
+#: src/wigview/map_view.cpp:154
+#: src/wigview/map_view.cpp:163
+#: src/wigview/map_view.cpp:203
 msgid "zapis "
 msgstr ""
 
-#: src/wigview/map_view.cpp:153
+#: src/wigview/map_view.cpp:154
 msgid "brak pliku"
 msgstr ""
 
-#: src/wigview/map_view.cpp:162
+#: src/wigview/map_view.cpp:163
 msgid "nie można otworzyć pliku"
 msgstr ""
 
-#: src/wigview/map_view.cpp:171
+#: src/wigview/map_view.cpp:172
 msgid "Odśwież listę"
 msgstr ""
 
-#: src/wigview/map_view.cpp:172
+#: src/wigview/map_view.cpp:173
 msgid "Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania."
 msgstr ""
 
-#: src/wigview/map_view.cpp:173
-#: src/wigview/map_view.cpp:177
+#: src/wigview/map_view.cpp:174
+#: src/wigview/map_view.cpp:178
 msgid "Wczytaj"
 msgstr ""
 
-#: src/wigview/map_view.cpp:174
+#: src/wigview/map_view.cpp:175
 msgid "ścieżka do pliku .sav"
 msgstr ""
 
-#: src/wigview/map_view.cpp:192
+#: src/wigview/map_view.cpp:193
 msgid "Rozpakowywanie i odczyt zapisu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:194
+#: src/wigview/map_view.cpp:195
 msgid "Budowa świata z zapisu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:199
+#: src/wigview/map_view.cpp:200
 #, c-format
 msgid "Zapis %s, czas gry %.0f s, %zu obiektów."
 msgstr ""
 
-#: src/wigview/map_view.cpp:229
+#: src/wigview/map_view.cpp:230
 msgid "Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany."
 msgstr ""
 
-#: src/wigview/map_view.cpp:256
+#: src/wigview/map_view.cpp:257
 msgid "Składanie świata z szablonów"
 msgstr ""
 
-#: src/wigview/map_view.cpp:281
+#: src/wigview/map_view.cpp:286
 msgid "brak szablonów do złożenia"
 msgstr ""
 
-#: src/wigview/map_view.cpp:294
+#: src/wigview/map_view.cpp:299
 msgid "Siatka terenu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:297
+#: src/wigview/map_view.cpp:302
 msgid "Tekstury terenu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:309
+#: src/wigview/map_view.cpp:314
 msgid "Modele obiektów"
 msgstr ""
 
-#: src/wigview/map_view.cpp:336
+#: src/wigview/map_view.cpp:342
 msgid "Gotowe"
 msgstr ""
 
-#: src/wigview/map_view.cpp:576
+#: src/wigview/map_view.cpp:600
 msgid "Brak siatki .PMP"
 msgstr ""
 
-#: src/wigview/map_view.cpp:579
+#: src/wigview/map_view.cpp:603
 msgid "Typ pola"
 msgstr ""
 
-#: src/wigview/map_view.cpp:579
+#: src/wigview/map_view.cpp:603
 msgid "ID bloku"
 msgstr ""
 
-#: src/wigview/map_view.cpp:579
+#: src/wigview/map_view.cpp:603
 msgid "Warstwa 2 (PMP)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:579
+#: src/wigview/map_view.cpp:603
 msgid "Warstwa .l2m"
 msgstr ""
 
-#: src/wigview/map_view.cpp:579
+#: src/wigview/map_view.cpp:603
 msgid "Głębokość (BlockDB)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:581
+#: src/wigview/map_view.cpp:605
 msgid "Warstwa"
 msgstr ""
 
-#: src/wigview/map_view.cpp:584
+#: src/wigview/map_view.cpp:608
 msgid "Zoom"
 msgstr ""
 
-#: src/wigview/map_view.cpp:637
+#: src/wigview/map_view.cpp:661
 #, c-format
 msgid "blok (%d, %d)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:638
+#: src/wigview/map_view.cpp:662
 #, c-format
 msgid "typ %u  ID bloku %u  warstwa2 %u"
 msgstr ""
 
-#: src/wigview/map_view.cpp:639
+#: src/wigview/map_view.cpp:663
 #, c-format
 msgid "l2m 0x%04X"
 msgstr ""
 
-#: src/wigview/map_view.cpp:643
+#: src/wigview/map_view.cpp:667
 msgid "(bez modelu)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:658
+#: src/wigview/map_view.cpp:682
 msgid "Szablony"
 msgstr ""
 
-#: src/wigview/map_view.cpp:660
+#: src/wigview/map_view.cpp:684
 msgid "Scenariusze"
 msgstr ""
 
-#: src/wigview/map_view.cpp:663
+#: src/wigview/map_view.cpp:687
 msgid "filtr (np. urw_gng)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:663
+#: src/wigview/map_view.cpp:687
 msgid "filtr (np. single_)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:663
+#: src/wigview/map_view.cpp:687
 msgid "filtr (np. quick)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:665
+#: src/wigview/map_view.cpp:689
 msgid "Brak zapisów w Data/Gamesave."
 msgstr ""
 
-#: src/wigview/map_view.cpp:684
+#: src/wigview/map_view.cpp:708
 #, c-format
 msgid "Wybierz szablon z listy (%zu skryptów, %zu klas z modelem)."
 msgstr ""
 
-#: src/wigview/map_view.cpp:692
+#: src/wigview/map_view.cpp:716
 #, c-format
 msgid "Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:695
+#: src/wigview/map_view.cpp:719
 #, c-format
 msgid "Niebo do wiersza %d (set_light_begin): %d pól w świetle dziennym"
 msgstr ""
 
-#: src/wigview/map_view.cpp:697
+#: src/wigview/map_view.cpp:721
 #, c-format
 msgid "PMP: %s  %ux%u bloków   l2m: %s"
 msgstr ""
 
-#: src/wigview/map_view.cpp:699
+#: src/wigview/map_view.cpp:723
 #, c-format
 msgid "obiekty: %zu, z modelem: %zu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:700
+#: src/wigview/map_view.cpp:724
 #, c-format
 msgid "Teren niedostępny: %s"
 msgstr ""
 
-#: src/wigview/map_view.cpp:701
+#: src/wigview/map_view.cpp:725
 msgid "Teren"
 msgstr ""
 
-#: src/wigview/map_view.cpp:703
+#: src/wigview/map_view.cpp:727
 msgid "Obiekty"
 msgstr ""
 
-#: src/wigview/map_view.cpp:705
+#: src/wigview/map_view.cpp:729
 msgid "Detale (.l2m)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:707
+#: src/wigview/map_view.cpp:731
 msgid "Strefa horyzontu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:710
+#: src/wigview/map_view.cpp:734
 #, c-format
 msgid "Efekty z class_particle obiektów (%zu emiterów)."
 msgstr ""
 
-#: src/wigview/map_view.cpp:711
+#: src/wigview/map_view.cpp:736
+msgid "Płyny"
+msgstr ""
+
+#: src/wigview/map_view.cpp:737
+#, c-format
+msgid "Woda, siarka i lawa z zapisu gry (%d pól)."
+msgstr ""
+
+#: src/wigview/map_view.cpp:738
 msgid "Oświetlenie jak w grze"
 msgstr ""
 
-#: src/wigview/map_view.cpp:713
+#: src/wigview/map_view.cpp:740
 msgid "Lampa podglądu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:715
+#: src/wigview/map_view.cpp:742
 #, c-format
 msgid "Dodatkowa lampa nad środkiem kadru (nie z gry), działa z oświetleniem jak w grze.\nDomyślnie włączona dla szablonów bez własnych świateł (%zu świateł w scenie)."
 msgstr ""
 
-#: src/wigview/map_view.cpp:720
+#: src/wigview/map_view.cpp:747
 msgid "Panorama nieba"
 msgstr ""
 
-#: src/wigview/map_view.cpp:722
+#: src/wigview/map_view.cpp:749
 msgid "Dywan łąki"
 msgstr ""
 
-#: src/wigview/map_view.cpp:725
+#: src/wigview/map_view.cpp:752
 msgid "wyłączona"
 msgstr ""
 
-#: src/wigview/map_view.cpp:725
+#: src/wigview/map_view.cpp:752
 msgid "całość odkryta, niewidoczna (szara)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:725
+#: src/wigview/map_view.cpp:752
 msgid "kadr widoczny, reszta szara"
 msgstr ""
 
-#: src/wigview/map_view.cpp:726
+#: src/wigview/map_view.cpp:753
 msgid "kadr widoczny, reszta czarna"
 msgstr ""
 
-#: src/wigview/map_view.cpp:726
+#: src/wigview/map_view.cpp:753
 msgid "z zapisu gry (gracz 0)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:730
+#: src/wigview/map_view.cpp:757
 msgid "Odkryj mapę"
 msgstr ""
 
-#: src/wigview/map_view.cpp:740
+#: src/wigview/map_view.cpp:767
 msgid "Pokazuje cały teren i wszystkie obiekty bez mgły wojny."
 msgstr ""
 
-#: src/wigview/map_view.cpp:744
+#: src/wigview/map_view.cpp:771
 msgid "Mgła wojny"
 msgstr ""
 
-#: src/wigview/map_view.cpp:746
+#: src/wigview/map_view.cpp:773
 msgid "Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
 msgstr ""
 
-#: src/wigview/map_view.cpp:751
+#: src/wigview/map_view.cpp:778
 msgid "promień kadru"
 msgstr ""
 
-#: src/wigview/map_view.cpp:754
+#: src/wigview/map_view.cpp:781
 msgid "bajt w kadrze"
 msgstr ""
 
-#: src/wigview/map_view.cpp:755
+#: src/wigview/map_view.cpp:782
 msgid "255 = widoczne; 0xE2..0x80 = wygasanie; < 0x80 = szara mgła"
 msgstr ""
 
-#: src/wigview/map_view.cpp:761
+#: src/wigview/map_view.cpp:788
 msgid "6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\nTylko gdy scenariusz ustawia niebo (set_light_begin) albo set_ground_begin."
 msgstr ""
 
-#: src/wigview/map_view.cpp:764
+#: src/wigview/map_view.cpp:791
 #, c-format
 msgid "Prawo z gry: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\nlampy class_light (%zu w scenie, rysowane do %d najbliższych)."
 msgstr ""
 
-#: src/wigview/map_view.cpp:767
+#: src/wigview/map_view.cpp:794
 #, c-format
 msgid "Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s"
 msgstr ""
 
-#: src/wigview/map_view.cpp:769
+#: src/wigview/map_view.cpp:796
 msgid "Szablon nie ma obiektu Info_Fog_*."
 msgstr ""
 
-#: src/wigview/map_view.cpp:770
+#: src/wigview/map_view.cpp:797
 msgid "Kamera poza zasięgiem (size) wszystkich obiektów Info_Fog_*."
 msgstr ""
 
-#: src/wigview/map_view.cpp:774
+#: src/wigview/map_view.cpp:801
 msgid "Siatka 2D"
 msgstr ""
 
-#: src/wigview/map_view.cpp:775
+#: src/wigview/map_view.cpp:802
 msgid "Filtr obiektów"
 msgstr ""
 
-#: src/wigview/map_view.cpp:776
+#: src/wigview/map_view.cpp:803
 msgid "bez poziomu"
 msgstr ""
 
-#: src/wigview/map_view.cpp:781
+#: src/wigview/map_view.cpp:808
 msgid "Pokaż obiekty bez modelu (czerwone na siatce)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:782
+#: src/wigview/map_view.cpp:809
 msgid "Znaczniki edytora (światła, obiekty Info)"
 msgstr ""
 
-#: src/wigview/map_view.cpp:784
+#: src/wigview/map_view.cpp:811
 msgid "Lista obiektów"
 msgstr ""
 

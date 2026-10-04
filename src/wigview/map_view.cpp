@@ -60,6 +60,7 @@ void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, con
 	if (!terrain_.init(dev, err)) blocksError_ = tr("shader terenu: ") + err;
 	panoramaReady_ = panorama_.init(dev, err, *textures);
 	particlesReady_ = particles_.init(dev, err, *textures);
+	fluidsReady_ = fluids_.init(dev, err, *textures);
 	try {
 		blocks_.load(*vfs);
 	} catch (const std::exception& e) {
@@ -254,6 +255,8 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
 	if (!prebuilt) report(0.04f, N_("Składanie świata z szablonów"));
+	fluidType_.clear();
+	fluidFill_.clear();
 	BuiltWorld bw = prebuilt ? std::move(*prebuilt) : buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
 	if (!prebuilt) saveFog_.clear();
 	if (fogMode_ == FogMode::FromSave && saveFog_.empty()) fogMode_ = FogMode::Off;
@@ -266,6 +269,8 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		worldOrigin_[1] = bw.originY;
 		fowBegin_ = sc.fowBegin ? *sc.fowBegin - bw.originY : -1;
 		pmp_ = std::move(bw.grid);
+		fluidType_ = std::move(bw.fluidType);
+		fluidFill_ = std::move(bw.fluidFill);
 		l2m_ = std::move(bw.layer);
 		script_ = TemplateScript{};
 		script_->objects = std::move(bw.objects);
@@ -316,6 +321,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	}
 	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
 	buildEmitters();
+	buildFluids();
 	allLights_.clear();
 	if (script_)
 		for (const auto& o : script_->objects)
@@ -378,6 +384,22 @@ void MapView::buildEmitters() {
 			emitters_.push_back(std::move(m));
 		}
 	}
+}
+
+// Siatka płynów; pola całkiem zakryte mgłą (czarne we wszystkich 4 narożnikach) gra pomija.
+void MapView::buildFluids() {
+	fluidCells_ = 0;
+	fluids_.clear();
+	if (!fluidsReady_ || !pmp_ || !blocks_.loaded() || fluidType_.empty()) return;
+	int W = int(pmp_->width), H = int(pmp_->height);
+	std::vector<bool> vis;
+	if (fogMode_ != FogMode::Off && fog_.size() == size_t(W) * H) {
+		vis.assign(fog_.size(), false);
+		for (int y = 0; y < H; ++y)
+			for (int x = 0; x < W; ++x)
+				vis[size_t(y) * W + x] = fogAt(x, y) || fogAt(x + 1, y) || fogAt(x, y + 1) || fogAt(x + 1, y + 1);
+	}
+	fluidCells_ = fluids_.build(W, H, fluidType_, fluidFill_, pmp_->blocks, blocks_, vis.empty() ? nullptr : &vis);
 }
 
 void MapView::update(float dt) {
@@ -496,6 +518,7 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		opt.base = baseLight(o.src.pos[0], o.src.pos[1]);
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
 	}
+	if (showFluids_) fluids_.draw(viewProj * world, time_);
 	// Cząsteczki po modelach (addytywne, bez zapisu głębi). W mgle wojny tylko na polach z bajtem ≥ 0x81 (§10.5).
 	if (showParticles_) {
 		glm::mat4 gameToClip = viewProj * world;
@@ -558,6 +581,7 @@ void MapView::updateFog(const glm::vec3& focus) {
 	else dev_->updateTexture(gameFog_.texture, d, rgb.data());
 	gameFog_.width = W;
 	gameFog_.height = H;
+	buildFluids();
 }
 
 // Obiekt jest rysowany, gdy największy bajt mgły z 7 punktów wokół niego (środek, 4 narożniki,
@@ -708,6 +732,9 @@ bool MapView::ui(bool savesTab) {
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Cząsteczki"), &showParticles_);
 	ImGui::SetItemTooltip(tr("Efekty z class_particle obiektów (%zu emiterów)."), emitters_.size());
+	ImGui::SameLine();
+	ImGui::Checkbox(tr("Płyny"), &showFluids_);
+	ImGui::SetItemTooltip(tr("Woda, siarka i lawa z zapisu gry (%d pól)."), fluidCells_);
 	ImGui::Checkbox(tr("Oświetlenie jak w grze"), &gameLighting_);
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Lampa podglądu"), &previewLamp_);

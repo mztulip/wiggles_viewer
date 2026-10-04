@@ -10,6 +10,7 @@
 #include "lib/blockdb.h"
 #include "lib/class_db.h"
 #include "lib/gfx/panorama_renderer.h"
+#include "lib/gfx/fluid_renderer.h"
 #include "lib/gfx/particle_renderer.h"
 #include "lib/gfx/terrain_renderer.h"
 #include "lib/heightfield.h"
@@ -99,6 +100,7 @@ public:
 		fogRadius_ = radius;
 		fogByte_ = viewByte;
 		fogDirty_ = true;
+		if (mode == FogMode::Off) buildFluids(); // bez mgły wszystkie pola z płynem
 	}
 
 private:
@@ -155,6 +157,13 @@ private:
 	std::vector<ow::ParticleSprite> sprites_;
 	float particleAcc_ = 0.f;
 	void buildEmitters();
+	// Płyny (docs/silnik/13_plyny.md): na razie tylko stan z zapisu gry.
+	ow::FluidRenderer fluids_;
+	bool fluidsReady_ = false, showFluids_ = true;
+	std::vector<uint8_t> fluidType_;
+	std::vector<float> fluidFill_;
+	int fluidCells_ = 0;
+	void buildFluids();
 	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64

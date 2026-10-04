@@ -228,6 +228,11 @@ BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario&
 		out.grid.blocks[i] = t.block;
 		out.grid.types[i] = uint8_t(kType[t.material & 3] | (t.flags & 0x80));
 		out.layer.values[i] = t.cell;
+		if (t.fluidType && t.fluidFill > 0.001f) {
+			if (out.fluidType.empty()) out.fluidType.assign(save.tiles.size(), 0), out.fluidFill.assign(save.tiles.size(), 0.f);
+			out.fluidType[i] = t.fluidType;
+			out.fluidFill[i] = t.fluidFill;
+		}
 	}
 	for (const SaveObject& o : save.objects) {
 		TemplateObject t;

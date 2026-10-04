@@ -259,7 +259,12 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 		t.material = st0 & 3;
 		t.flags = st0;
 		t.variant = st1;
-		r.skip(2 + 4 + 4 + 16); // woda (typy, wypełnienie, przepływ)
+		// Płyn: typ w dwóch buforach (bajty 19, 20), wypełnienie (f32 21, 25), przepływ poziomy (29, 33)
+		// i pionowy (37, 41). Ustalone na zapisie z wodą z laboratorium (docs/formaty/sav.md).
+		t.fluidType = r.u8();
+		r.skip(1);
+		t.fluidFill = r.f32();
+		r.skip(4 + 16);
 		for (uint8_t& f : t.fog) f = r.u8();
 		if (r.pos() - start != 53) throw ParseError("rekord pola ma nie 53 B");
 	}
