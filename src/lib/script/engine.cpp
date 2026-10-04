@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ctime>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -547,6 +549,7 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 			o->actionDone = done;
 			o->actionUntil = -1;
 			o->walking = true;
+			o->walkResult = 2; // WS_NOTFINISHED do końca chodu
 			int id = o->id;
 			bool ok = e.host_->walkTo(id, t, [&e, id](bool reached) {
 				if (ScriptObject* x = e.object(id)) e.finishAction(*x, reached);
@@ -823,6 +826,28 @@ int cmdWalkResult(Engine& e, Tcl_Interp* in, Args& a) {
 	return TCL_OK;
 }
 // get_place -center {x y z} [-circle r | -rect x0 y0 x1 y1] …: wolne miejsce albo {0 0 0}.
+} // namespace
+
+// Wolne miejsce dla get_place: bez cudzej rezerwacji (placelock) w promieniu 1 i bez innej postaci
+// (typ gnome/monster) bliżej niż 0,8 w x–y i 1,2 w głąb. -except obiekt, -placelockidexcept id.
+bool Engine::placeFree(Tcl_Interp* in, std::map<std::string, std::string>& o, const float p[3]) {
+	int except = o.count("except") ? resolveObj(in, o["except"]) : 0;
+	int lockExcept = o.count("placelockidexcept") ? std::atoi(o["placelockidexcept"].c_str()) : -1;
+	for (auto& [id, l] : placeLocks_)
+		if (id != lockExcept && l.second >= float(time_) &&
+		    std::hypot(std::hypot(l.first[0] - p[0], l.first[1] - p[1]), 0.5f * (l.first[2] - p[2])) < 1.f)
+			return false;
+	for (auto& [id, ob] : objects_) {
+		if (id == except || !ob->alive || !ob->cls || (ob->cls->type != "gnome" && ob->cls->type != "monster")) continue;
+		float q[3];
+		if (host_ && host_->getPos(id, q) && std::fabs(q[0] - p[0]) < 0.8f && std::fabs(q[1] - p[1]) < 0.8f && std::fabs(q[2] - p[2]) < 1.2f)
+			return false;
+	}
+	return true;
+}
+
+namespace {
+
 int cmdGetPlace(Engine& e, Tcl_Interp* in, Args& a) {
 	auto o = options(a, 1);
 	float c[3] = {0, 0, 0}, r = 2.f, out[3] = {0, 0, 0};
@@ -834,7 +859,7 @@ int cmdGetPlace(Engine& e, Tcl_Interp* in, Args& a) {
 			float d = md + (std::max(rr, md) - md) * float(std::rand()) / float(RAND_MAX);
 			float t[3] = {c[0] + (std::rand() % 2 ? d : -d), c[1], c[2] + (float(std::rand()) / float(RAND_MAX) * 2.f - 1.f) * 2.f};
 			t[2] = std::clamp(t[2], 1.f, 14.f);
-			if (e.host_ && e.host_->findPlace(t, 0.5f, out) && std::fabs(out[0] - c[0]) >= md) {
+			if (e.host_ && e.host_->findPlace(t, 0.5f, out) && std::fabs(out[0] - c[0]) >= md && e.placeFree(in, o, out)) {
 				setResult(in, vecStr(out));
 				return TCL_OK;
 			}
@@ -859,7 +884,9 @@ int cmdPlacelock(Engine& e, Tcl_Interp* in, Args& a) {
 		float r = std::strtof(a[2].c_str(), nullptr);
 		int except = a.size() > 3 ? std::atoi(a[3].c_str()) : -1;
 		for (auto& [id, l] : e.placeLocks_)
-			if (id != except && l.second >= float(e.time_) && std::hypot(l.first[0] - p[0], l.first[1] - p[1]) < r) {
+			if (id != except && l.second >= float(e.time_) &&
+			    std::hypot(std::hypot(l.first[0] - p[0], l.first[1] - p[1]), 0.5f * (l.first[2] - p[2])) < r) { // z skryptu = ½ bloku
+				if (std::getenv("OW_TRACE_QUERY")) std::fprintf(stderr, "  [%.1f] placelock (%.2f %.2f) zajęte przez %d dla %d\n", e.time_, p[0], p[1], id, except);
 				setResult(in, "1");
 				return TCL_OK;
 			}
@@ -872,8 +899,8 @@ int cmdPlacelock(Engine& e, Tcl_Interp* in, Args& a) {
 // obj_query obj -class {…} -type t -range r -limit n -owner o -pos {…} -boundingbox {…}: lista ID albo 0.
 int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
 	Args args;
-	for (size_t i = 2; i < a.size(); ++i) // parametry bywają jednym napisem: "-class Pilz -range 10"
-		for (auto& x : listItems(in, a[i])) args.push_back(x);
+	if (a.size() == 3) args = listItems(in, a[2]); // parametry jednym napisem: "-class Pilz -range 10"
+	else args.assign(a.begin() + 2, a.end());       // osobne argumenty: -class {Zwerg Baby} -boundingbox {…}
 	args.insert(args.begin(), {"obj_query", "x"});
 	auto o = options(args, 2);
 	int self = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
@@ -915,6 +942,8 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
 	std::sort(hits.begin(), hits.end());
 	std::string r;
 	for (size_t i = 0; i < hits.size() && i < limit; ++i) r += (r.empty() ? "" : " ") + std::to_string(hits[i].second);
+	if (std::getenv("OW_TRACE_QUERY") && box && classes.count("zwerg"))
+		std::fprintf(stderr, "  [%.1f] %d obj_query Zwerg box -> %s (c %.2f %.2f %.2f)\n", e.time_, self, r.c_str(), c[0], c[1], c[2]);
 	setResult(in, r.empty() ? "0" : r);
 	return TCL_OK;
 }
@@ -992,6 +1021,27 @@ int cmdSetObjname(Engine& e, Tcl_Interp* in, Args& a) { // set_objname obj nazwa
 	setResult(in, "");
 	return TCL_OK;
 }
+// clock seconds | milliseconds | clicks | format t [-format fmt]: własna, bez clock.tcl i msgcat z biblioteki Tcl.
+int cmdClock(Engine&, Tcl_Interp* in, Args& a) {
+	std::string sub = a.size() > 1 ? a[1] : "";
+	auto now = std::chrono::system_clock::now();
+	if (sub == "seconds") setResult(in, std::to_string(std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count()));
+	else if (sub == "milliseconds" || sub == "clicks")
+		setResult(in, std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count()));
+	else if (sub == "format" && a.size() > 2) {
+		std::time_t t = std::time_t(std::atoll(a[2].c_str()));
+		std::string f = "%a %b %d %H:%M:%S %Y";
+		for (size_t i = 3; i + 1 < a.size(); i += 2)
+			if (a[i] == "-format") f = a[i + 1];
+		char buf[256];
+		std::tm tm{};
+		localtime_r(&t, &tm);
+		std::strftime(buf, sizeof buf, f.c_str(), &tm);
+		setResult(in, buf);
+	} else
+		setResult(in, "0");
+	return TCL_OK;
+}
 int cmdOwnerAttrib(Engine& e, Tcl_Interp* in, Args& a) {
 	if (a.size() < 3) return TCL_ERROR;
 	int owner = std::atoi(a[1].c_str());
@@ -1041,7 +1091,7 @@ const Entry kCommands[] = {
 	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
 	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"link_obj", cmdLinkObj}, {"vector_fix", cmdVectorFix},
 	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop}, {"get_vectorxz", cmdXZ}, {"get_anglexz", cmdXZ},
-	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"set_objname", cmdSetObjname}, {"get_owner_attrib", cmdOwnerAttrib},
+	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"clock", cmdClock}, {"set_objname", cmdSetObjname}, {"get_owner_attrib", cmdOwnerAttrib},
 	{"set_owner_attrib", cmdOwnerAttrib}, {"add_owner_attrib", cmdOwnerAttrib},
 	{"gnome_idle", cmdNop}, {"get_owner", cmdOwner}, {"set_owner", cmdOwner}, {"get_roty", cmdRot}, {"set_roty", cmdRot},
 	{"get_hmap", cmdHmap}, {"isunderwater", cmdUnderwater}, {"get_gnomeposition", cmdGnomePos},
@@ -1080,7 +1130,19 @@ Tcl_Interp* Engine::newInterp() {
 	Tcl_Init(in); // biblioteka Tcl (init.tcl) bywa niedostępna: wtedy działamy bez niej
 	Tcl_EvalEx(in, "rename file ::_ow_file", -1, 0);
 	registerCommands(in);
-	Tcl_EvalEx(in, "proc unknown {args} { __ow_stub [lindex $args 0]; return 0 }", -1, 0);
+	// Nieznana komenda = zaślepka gry, ale autoładowanie Tcl (auto_index, ::tcl::…: clock, msgcat, tm)
+	// idzie do oryginalnego unknown.
+	Tcl_EvalEx(in, R"TCL(
+if {[info commands ::_ow_tcl_unknown] eq "" && [info commands unknown] ne ""} { rename unknown ::_ow_tcl_unknown }
+proc unknown {args} {
+	set n [lindex $args 0]
+	if {[info commands ::_ow_tcl_unknown] ne "" && ([info exists ::auto_index($n)] || [string match ::tcl::* $n] || [string match tcl::* $n])} {
+		return [uplevel 1 [list ::_ow_tcl_unknown {*}$args]]
+	}
+	__ow_stub $n
+	return 0
+}
+)TCL", -1, 0);
 	Tcl_EvalEx(in, "rename open ::_ow_open; proc open {name args} { ::_ow_open [__ow_redirect $name [lindex $args 0]] {*}$args }", -1, 0);
 	return in;
 }

@@ -183,6 +183,7 @@ public:
 	std::map<int, std::set<std::string>> sparetimeOffers_;        // sparetime obj announce eat|sleep|… (miejsca czasu wolnego)
 	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, koniec rezerwacji)
 	void finishAction(ScriptObject& o, bool ok);
+	bool placeFree(Tcl_Interp* in, std::map<std::string, std::string>& opts, const float p[3]);
 	// Nazwa logiczna z set_class_anim (np. standloopa) -> obiekt.animacja; pełne nazwy bez zmian.
 	std::string resolveAnim(const ScriptObject* o, const std::string& anim) const;
 	std::string cacheDir_; // pliki zapisywane przez skrypty (np. gen_tt.tcl): ~/.cache/openwiggles, nie katalog gry

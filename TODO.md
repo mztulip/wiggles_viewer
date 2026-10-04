@@ -18,7 +18,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Punkty zaczepienia `.3db` i `link_obj`/`get_linkpos`; przypięcia i właściciele z zapisu (czapki na głowach)
 - [x] Zapis: zmienne Tcl obiektów i ID obiektów zgodne z zapisem (stan skryptów nakładany po obj_init)
 - [ ] Zapis: kolejka timerów (rekordy pomocnicze = CEvent), atrybuty obiektów, akcje w toku
-- [ ] 🔧 Krasnale w grze zostają w stanie `idle`: `act_when_idle` co chwilę zleca `walk_random`, więc nie dochodzą do `sparetime_dispatch` (w `owscript` bez gry przejście jest po 5 s). Sprawdzić `obj_query -boundingbox`, `placelock` (🔶 czas zamiast promienia), `get_place -random`. Śledzenie: `OW_TRACE_STATES=1`
+- [x] Krasnale przechodzą do czasu wolnego (`sparetime_dispatch`: łapanie much, spacery, animacje): poprawki `obj_query` (argumenty jako osobne słowa, bez pytającego, z w prostopadłościanie), `get_walkresult` = 2 w trakcie chodu, `get_place -random` omija rezerwacje i postacie, rezerwacje 3D
 - [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [x] Pamięć podręczna klas: start skryptów 0,1 s zamiast 5,5 s
 - [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
