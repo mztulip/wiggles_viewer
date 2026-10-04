@@ -147,7 +147,7 @@ Prawo pochodzi z [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Do
 | pozycja | (bx + p.x, by + p.y, p.z) z palety BlockDB |
 | normalna | `SPHERE.DAT[indeks]` |
 | grunty narożników TL, TR, BL, BR | typ pola w węzłach bloku (4.2), stałe na blok |
-| UV | `u, v` z palety BlockDB (4.2) |
+| UV | `u, v` z palety BlockDB (4.2); te same dla gruntu, maski przejścia i detali |
 | alfa otworu | węzły otwarte, dwuliniowo w (p.x, p.y) |
 | jasność bazowa B | warstwa 2, dwuliniowo w narożnikach bloku (rozdział 7) |
 | kolor oświetlenia | prawo z rozdziału 7, liczone per wierzchołek |

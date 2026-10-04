@@ -47,6 +47,8 @@ build/release/wigview --template unq_menue                    # zakładka Mapy z
 build/release/wigview --scenario single_Knockersdorf          # cała mapa złożona z 46 szablonów
 build/release/wigview --scenario systeminit                   # menu gry z kamerą jak w oryginale
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
+build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
+build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd mgły wojny (0 brak, 1 szara, 2/3 kadr widoczny)
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
 
 # eksport glTF: obiekt (domyślnie pierwszy) i animacja (domyślnie wszystkie)
@@ -54,6 +56,8 @@ build/release/export_gltf "/ścieżka/do/Wiggles" MANN mann gehen_loop -o krasna
 build/release/export_gltf "/ścieżka/do/Wiggles" BABY                  # wszystkie 48 animacji
 build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kristall/   # 303 pliki
 ```
+
+W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb mgły wojny i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
 
 Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, ←/→ zmiana klatki, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, **Ctrl+F wyszukiwarka** (modele, obiekty w modelach, tekstury, szablony; kilka słów = wszystkie muszą pasować), `Esc` wyjście.
 

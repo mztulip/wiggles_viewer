@@ -34,7 +34,9 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `./build.sh [debug|release] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake)
 - glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
-- `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI, a `--template T --ui --screenshot out.png` szablon razem z interfejsem. Tak można samemu obejrzeć wynik (Read na PNG)
+- `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI, a `--template T --ui --screenshot out.png` szablon razem z interfejsem. Tak można samemu obejrzeć wynik (Read na PNG). Porównania z grą: `--scenario S --view x y zoom dx dy` (kamera jak `set_view`), `--game ../lab/Wiggles` dla szablonów testowych z laboratorium, `--fow N` (mgła wojny)
+- **Użytkownik uruchamia `build/debug/wigview`**: po zmianach budować debug i release
+- Wersja programu (commit) jest w `build/gen/ow_version.h`, generowanym przez `build.sh`; wigview pokazuje ją w rogu ekranu i w tytule okna (zrzuty użytkownika da się przypisać do wersji)
 - Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
 
 ## Zasady

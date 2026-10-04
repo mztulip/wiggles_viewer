@@ -284,6 +284,15 @@ Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla
 ### 8.5 Metoda: obserwacja, nie deasemblacja
 Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując działającą grę: sonda Tcl (`get_*`, `save_map`, `save_scene`, `tclerrors.txt`), zrzuty ekranu z `tools/lab/capture.sh` przy zmienianych parametrach (np. różne `set_view`, `set_ground_begin`) i porównania z naszym renderem. Wiedzę o wnętrzu exe bierzemy wyłącznie z cudzych opracowań (głównie Diggles-Unity) i zawsze sprawdzamy ją takim eksperymentem.
 
+**Przepis na czysty eksperyment** (sprawdzony przy UV terenu, przejściach gruntów i detalach):
+1. W kopii laboratoryjnej utwórz szablon testowy (`Data/Templates/ow_*.pmp`, `.tcl`, ewentualnie `.l2m`) skryptem w Pythonie. Najczytelniejsza jest **płaska ściana z samych bloków 59** (wykopane do dna, z = 7, UV = (x, y)), na której układa się badane wartości na osobnych blokach.
+2. Dodaj scenariusz `Data/Gamesave/ow_*.tcl`: `map create 64 64`, `set_light_begin 1000` (równe światło dzienne zamiast lamp), `call` szablonu, `MapTemplateSet 16 16`, `set_view … 0 0` (kamera na wprost).
+3. Zrzut z gry: `tools/lab/capture.sh scene <plik> <scena.tcl> 60`, gdzie scena woła ten scenariusz i tworzy `FogRemover` (`fog_remove 0 50 50` to promienie, które nie odkryją litej skały wokół; `fog_remove 0 -50 -50` to prostokąt przez skałę).
+4. Nasz render: `wigview --game ../lab/Wiggles --scenario ow_* --size 1024x768 --screenshot …`, zestawienie `magick … +append`.
+5. Wnioski ilościowe: mierz kolor w regionach zrzutu (np. zieloność ćwiartek bloku). Uwaga na skalę: współrzędne bierz z pełnej rozdzielczości, nie z pomniejszonego zestawienia.
+
+**Płyta CD.** Gra wymaga płyty w napędzie (komunikat „CD not found.”). Po restarcie komputera płytę trzeba zamontować: `udisksctl mount -b /dev/sr0` (prefiks laboratorium ma `d::` → `/dev/sr0`).
+
 ---
 
 ## 9. Mapy i teren: przebieg badań
