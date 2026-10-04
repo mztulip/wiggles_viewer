@@ -105,7 +105,9 @@ public:
 uint32_t windowFlags(Backend b);
 // Przygotowanie przed utworzeniem okna (atrybuty kontekstu OpenGL).
 void prepareWindow(Backend b);
-std::unique_ptr<Device> createDevice(Backend b, SDL_Window* window, bool vsync, std::string& err);
+// offscreen: renderowanie do obrazu w pamięci bez wyświetlania (zrzuty ekranu, testy bez serwera
+// wyświetlania z obsługą Vulkana, np. Xvfb); okno służy wtedy tylko do rozmiaru i wejścia ImGui.
+std::unique_ptr<Device> createDevice(Backend b, SDL_Window* window, bool vsync, std::string& err, bool offscreen = false);
 
 // Shadery osadzone przez build.sh (build/gen/ow_shaders_*.inc).
 const char* shaderGlsl(const std::string& name, const char* stage);                           // OpenGL

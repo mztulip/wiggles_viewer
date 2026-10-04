@@ -31,7 +31,8 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `../ref/DigglesHDmod-master` ma 2,6 GB, więc nie przeszukuj go rekurencyjnie bez filtra
 
 ## Budowanie i weryfikacja
-- `./build.sh [debug|release] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake)
+- `./build.sh [debug|release] [vulkan|opengl|both] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake). Domyślnie oba backendy renderowania w `build/<tryb>/`; jeden backend w `build/<tryb>-vulkan|opengl/`
+- Renderowanie przez warstwę `src/lib/rhi/` (Vulkan `rhi_vk.cpp`, OpenGL 4.5 `rhi_gl.cpp`); shadery tylko w `src/shaders/` (GLSL 450, makra `UBO`/`TEX`/`OW_CLIP` z `common.glsl`). **Nie wołać OpenGL ani Vulkana bezpośrednio z rendererów.** Nowa funkcja renderowania = obie ścieżki; po zmianie porównać zrzuty `--renderer vulkan` i `--renderer opengl` (`magick compare -metric AE`)
 - glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
 - `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI, a `--template T --ui --screenshot out.png` szablon razem z interfejsem. Tak można samemu obejrzeć wynik (Read na PNG). Porównania z grą: `--scenario S --view x y zoom dx dy` (kamera jak `set_view`), `--game ../lab/Wiggles` dla szablonów testowych z laboratorium, `--fow N` (mgła wojny)
@@ -42,7 +43,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 ## Zasady
 - Kod i dokumentacja są w tym repozytorium (`openwiggles_git/`). Materiały referencyjne (`../ref/`, zipy) leżą w katalogu nadrzędnym i nie trafiają do repo.
 - **Commity i PR-y bez żadnej wzmianki o AI** (żadnych `Co-Authored-By` ani „Generated with…”).
-- C++17, OpenGL 3.3 core, SDL2, Dear ImGui, osadzony Tcl (8.3 jak w oryginale albo 8.6; decyzja w TODO, faza 5).
+- C++17, Vulkan 1.2 (domyślnie) i OpenGL 4.5 za warstwą `rhi`, SDL2, Dear ImGui, osadzony Tcl (8.3 jak w oryginale albo 8.6; decyzja w TODO, faza 5).
 - **Bez CMake.** Budowanie odbywa się własnymi skryptami bash (`build.sh`).
 - Repo nie może zawierać danych z oryginalnej gry (także wyników sondy z treścią skryptów; te zostają w `../lab/`).
 - Eksperymenty na grze tylko na kopii w `../lab/` (osobny prefiks Wine), nigdy na instalacji w `~/.wine`.

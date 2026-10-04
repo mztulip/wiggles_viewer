@@ -854,7 +854,8 @@ int main(int argc, char** argv) {
 				std::fprintf(stderr, "SDL_CreateWindow (%s): %s\n", rhi::backendName(b), SDL_GetError());
 				continue;
 			}
-			v.device = rhi::createDevice(b, win, true, err);
+			// Zrzut ekranu: Vulkan renderuje poza ekranem (działa też w Xvfb bez DRI3).
+			v.device = rhi::createDevice(b, win, true, err, !args.screenshot.empty());
 			if (v.device) break;
 			std::fprintf(stderr, "%s: %s\n", rhi::backendName(b), err.c_str());
 			SDL_DestroyWindow(win);

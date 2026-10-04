@@ -20,6 +20,14 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Winieta / przyciemnienie brzegów ekranu jak w grze (🔬 skąd się bierze)
 - [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
 
+## Renderowanie: Vulkan i OpenGL
+- [x] Warstwa `rhi` (tekstury, bufory, potoki, uniformy w buforze pierścieniowym, odczyt klatki, ImGui)
+- [x] Backend OpenGL 4.5 (render menu identyczny co do piksela z wersją sprzed przebudowy)
+- [x] Backend Vulkan 1.2 (swapchain, dwie klatki w locie, deskryptory z pamięcią podręczną, usuwanie zasobów z opóźnieniem, tryb pozaekranowy do zrzutów); obraz zgodny z OpenGL, warstwa walidacji bez błędów
+- [x] Shadery z jednego źródła GLSL 450 (`glslc` → SPIR-V, tekst dla OpenGL); `build.sh vulkan|opengl|both`; `--renderer`, domyślnie Vulkan z przełączeniem na OpenGL
+- [ ] Sprawdzić Vulkana w oknie na prawdziwym ekranie (zmiana rozmiaru okna, minimalizacja, siatka)
+- [ ] Ewentualnie: bufory w pamięci karty (staging) dla kart dyskretnych; dynamic rendering
+
 ## Faza 1: szkielet projektu i build
 - [x] Struktura katalogów: `src/lib` (libwiggles), `src/wigview`, `src/tools`, `third_party/` (`src/openwiggles` później)
 - [x] `build.sh` (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`

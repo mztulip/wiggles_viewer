@@ -22,9 +22,10 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 | Obszar | Wybór | Uzasadnienie |
 |---|---|---|
 | Język | C++17 | Wydajność i łatwe osadzenie interpretera Tcl (C API) |
-| Grafika | **OpenGL 3.3 core** | Prostszy od Vulkana i w zupełności wystarcza dla gry z 2001 r. Działa wszędzie, także na starszym sprzętcie |
-| Okno i wejście | SDL2 | Wieloplatformowe okno, kontekst GL, wejście i audio |
-| Ładowanie GL | glad | |
+| Grafika | **Vulkan 1.2 (domyślnie) i OpenGL 4.5** za wspólną warstwą `rhi` | Pierwotnie wybraliśmy sam OpenGL; na wczesnym etapie dodaliśmy Vulkana jako domyślny backend. Można zbudować oba albo tylko jeden (`./build.sh vulkan|opengl|both`), wybór przy starcie `--renderer` |
+| Okno i wejście | SDL2 | Wieloplatformowe okno, kontekst GL lub powierzchnia Vulkana, wejście i audio |
+| Ładowanie GL | własny mały loader (`src/lib/gfx/gl.h`) | |
+| Shadery | GLSL 450, jedno źródło | `glslc` do SPIR-V dla Vulkana, tekst dla OpenGL (`src/shaders/`) |
 | Matematyka | glm | |
 | UI przeglądarki | Dear ImGui | Szybkie budowanie narzędzi |
 | Skrypty | Tcl 8.3 (osadzony, jak w oryginale) | Oryginalna gra ma całą logikę w Tcl (`Data/Scripts/**/*.tcl`) |
@@ -33,11 +34,13 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 
 ## Budowanie i uruchamianie
 
-Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, `zlib`, sterownik z OpenGL 3.3. Dear ImGui jest w `third_party/`.
+Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, `zlib`, a do renderowania `vulkan-icd-loader`, `vulkan-headers` i `shaderc` (kompilator `glslc`) dla Vulkana albo sterownik z OpenGL 4.5. Dear ImGui (z backendami OpenGL i Vulkan) jest w `third_party/`.
 
 ```bash
-./build.sh                 # debug: wigview i test3db do build/debug/
+./build.sh                 # debug, oba backendy renderowania: build/debug/
 ./build.sh release         # zoptymalizowane, build/release/
+./build.sh release vulkan  # tylko Vulkan:  build/release-vulkan/
+./build.sh release opengl  # tylko OpenGL:  build/release-opengl/
 ./build.sh clean
 
 build/release/wigview                          # przeglądarka (gra w ~/.wine/... albo OW_GAME=...)
@@ -49,6 +52,7 @@ build/release/wigview --scenario systeminit                   # menu gry z kamer
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd mgły wojny (0 brak, 1 szara, 2/3 kadr widoczny)
+build/release/wigview --renderer opengl                         # wybór backendu (domyślnie Vulkan)
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
 
 # eksport glTF: obiekt (domyślnie pierwszy) i animacja (domyślnie wszystkie)
@@ -56,6 +60,8 @@ build/release/export_gltf "/ścieżka/do/Wiggles" MANN mann gehen_loop -o krasna
 build/release/export_gltf "/ścieżka/do/Wiggles" BABY                  # wszystkie 48 animacji
 build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kristall/   # 303 pliki
 ```
+
+**Renderowanie: Vulkan albo OpenGL.** Kod renderujący korzysta z warstwy `src/lib/rhi/` (tekstury, bufory, potoki, uniformy), za którą stoją dwa backendy: Vulkan 1.2 (`rhi_vk.cpp`) i OpenGL 4.5 (`rhi_gl.cpp`). Shadery są pisane raz (`src/shaders/*.vert|*.frag`, GLSL 450): `build.sh` kompiluje je przez `glslc` do SPIR-V dla Vulkana i osadza tekst dla OpenGL. Program wybiera Vulkana, a gdy ten nie ruszy (i OpenGL jest wkompilowany), przełącza się na OpenGL. `--renderer` wymusza backend bez przełączania. Zrzuty ekranu (`--screenshot`) Vulkan renderuje poza ekranem, więc działają też w Xvfb. Obie ścieżki dają ten sam obraz (porównanie co do piksela przy budowie backendu). Walidacja Vulkana: `OW_VK_VALIDATION=1`. Nazwa backendu jest w tytule okna i w rogu ekranu.
 
 W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb mgły wojny i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
 

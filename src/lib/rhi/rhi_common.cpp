@@ -14,7 +14,7 @@ namespace ow::rhi {
 std::unique_ptr<Device> createDeviceGL(SDL_Window* window, bool vsync, std::string& err);
 #endif
 #ifdef OW_RHI_VK
-std::unique_ptr<Device> createDeviceVK(SDL_Window* window, bool vsync, std::string& err);
+std::unique_ptr<Device> createDeviceVK(SDL_Window* window, bool vsync, bool offscreen, std::string& err);
 #endif
 
 const char* backendName(Backend b) { return b == Backend::Vulkan ? "Vulkan" : "OpenGL"; }
@@ -48,15 +48,16 @@ void prepareWindow(Backend b) {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 }
 
-std::unique_ptr<Device> createDevice(Backend b, SDL_Window* window, bool vsync, std::string& err) {
+std::unique_ptr<Device> createDevice(Backend b, SDL_Window* window, bool vsync, std::string& err, bool offscreen) {
 #ifdef OW_RHI_VK
-	if (b == Backend::Vulkan) return createDeviceVK(window, vsync, err);
+	if (b == Backend::Vulkan) return createDeviceVK(window, vsync, offscreen, err);
 #endif
 #ifdef OW_RHI_GL
 	if (b == Backend::OpenGL) return createDeviceGL(window, vsync, err);
 #endif
 	(void)window;
 	(void)vsync;
+	(void)offscreen;
 	err = std::string("backend ") + backendName(b) + " nie jest wkompilowany (./build.sh vulkan|opengl|both)";
 	return nullptr;
 }
