@@ -5,7 +5,9 @@
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
 //           [--template SZABLON | --scenario SCENARIUSZ] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
 //           [--view X Y ZOOM DX DY] [--fow TRYB [PROMIEŃ [BAJT]]] [--renderer vulkan|opengl]
-//           [--screenshot plik.png] [--ui]
+//           [--screenshot plik.png] [--ui] [--lang KOD]
+// --lang: język interfejsu (pl, en albo inny z lang/*.po); domyślnie zapamiętany w wigview.ini,
+//         a przy pierwszym uruchomieniu język systemu (LANG). Napisy na konsoli zostają po polsku.
 // --renderer: backend renderowania (domyślnie Vulkan; bez tej opcji, gdy Vulkan nie ruszy, OpenGL).
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
@@ -22,6 +24,7 @@
 // Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Esc wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
+#include "lib/i18n.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/gfx/texture_cache.h"
 #include "lib/gltf_export.h"
@@ -35,6 +38,7 @@
 #include <SDL.h>
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
+#include <imgui_internal.h> // ImGuiSettingsHandler (język w wigview.ini)
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -53,7 +57,7 @@ using namespace ow;
 namespace {
 
 struct Args {
-	std::string game, model, object, anim, screenshot, templ, search, scenario;
+	std::string game, model, object, anim, screenshot, templ, search, scenario, lang;
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
@@ -92,6 +96,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 			a.camY = float(std::atof(next()));
 		} else if (k == "--center-z") a.camZ = float(std::atof(next()));
 		else if (k == "--dist") a.camDist = float(std::atof(next()));
+		else if (k == "--lang") a.lang = next();
 		else if (k == "--renderer") {
 			std::string r = next();
 			if (!rhi::parseBackend(r, a.renderer)) {
@@ -234,7 +239,7 @@ struct Viewer {
 		Uint64 t0 = SDL_GetPerformanceCounter();
 		auto data = vfs.read("Data/3db/" + file);
 		if (!data) {
-			loadError = "nie można odczytać pliku";
+			loadError = tr("nie można odczytać pliku");
 			return false;
 		}
 		try {
@@ -421,19 +426,19 @@ void Viewer::uiModel() {
 	ImGui::SameLine();
 
 	ImGui::BeginChild("szczegoly", ImVec2(0, 0));
-	if (!loadError.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Błąd: %s", loadError.c_str());
+	if (!loadError.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), tr("Błąd: %s"), loadError.c_str());
 	if (!model) {
-		ImGui::TextDisabled("Wybierz model z listy.");
+		ImGui::TextDisabled(tr("Wybierz model z listy."));
 		ImGui::EndChild();
 		return;
 	}
-	ImGui::Text("%s  (%s)  wczytano w %.0f ms", model->name.c_str(), modelFile.c_str(), loadMs);
-	ImGui::Text("materiały %zu  klatki %zu  obiekty %zu  animacje %zu", model->materials.size(),
+	ImGui::Text(tr("%s  (%s)  wczytano w %.0f ms"), model->name.c_str(), modelFile.c_str(), loadMs);
+	ImGui::Text(tr("materiały %zu  klatki %zu  obiekty %zu  animacje %zu"), model->materials.size(),
 	            model->meshes.size(), model->objects.size(), model->animations.size());
 
-	if (ImGui::CollapsingHeader("Obiekty i animacje", ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Obiekty i animacje"), ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::SetNextItemWidth(-1);
-		ImGui::InputTextWithHint("##of", "filtr obiektów", objFilter, sizeof objFilter);
+		ImGui::InputTextWithHint("##of", tr("filtr obiektów"), objFilter, sizeof objFilter);
 		ImGui::BeginChild("obiekty", ImVec2(0, 140), ImGuiChildFlags_Borders);
 		for (int i = 0; i < int(model->objects.size()); ++i) {
 			const auto& o = model->objects[size_t(i)];
@@ -444,7 +449,7 @@ void Viewer::uiModel() {
 		}
 		ImGui::EndChild();
 		ImGui::SetNextItemWidth(-1);
-		ImGui::InputTextWithHint("##af", "filtr animacji", animFilter, sizeof animFilter);
+		ImGui::InputTextWithHint("##af", tr("filtr animacji"), animFilter, sizeof animFilter);
 		ImGui::BeginChild("animacje", ImVec2(0, 180), ImGuiChildFlags_Borders);
 		if (!model->objects.empty()) {
 			const auto& o = model->objects[size_t(object)];
@@ -460,73 +465,73 @@ void Viewer::uiModel() {
 		ImGui::EndChild();
 	}
 
-	if (ImGui::CollapsingHeader("Odtwarzanie", ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Odtwarzanie"), ImGuiTreeNodeFlags_DefaultOpen)) {
 		int n = frameCount();
-		if (ImGui::Button(playing ? "Pauza" : "Graj")) playing = !playing;
+		if (ImGui::Button(playing ? tr("Pauza###graj") : tr("Graj###graj"))) playing = !playing;
 		ImGui::SameLine();
 		if (ImGui::Button("<")) frame = std::max(0.f, float(int(frame) - 1));
 		ImGui::SameLine();
 		if (ImGui::Button(">")) frame = float(std::min(n - 1, int(frame) + 1));
 		ImGui::SameLine();
-		ImGui::Checkbox("Pętla", &loop);
+		ImGui::Checkbox(tr("Pętla"), &loop);
 		ImGui::SameLine();
-		ImGui::Checkbox("Interpolacja", &interpolate);
+		ImGui::Checkbox(tr("Interpolacja"), &interpolate);
 		int f = int(frame);
-		if (ImGui::SliderInt("Klatka", &f, 0, std::max(0, n - 1))) {
+		if (ImGui::SliderInt(tr("Klatka"), &f, 0, std::max(0, n - 1))) {
 			frame = float(f);
 			playing = false;
 		}
-		ImGui::SliderFloat("FPS", &fps, 1.f, 60.f, "%.0f");
+		ImGui::SliderFloat(tr("FPS"), &fps, 1.f, 60.f, "%.0f");
 		uint32_t fa, fb;
 		float ft;
 		if (currentFrames(fa, fb, ft) && fa != fb && !renderer.canInterpolate(fa, fb))
-			ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Klatki %u i %u mają inną topologię (bez interpolacji)", fa, fb);
+			ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), tr("Klatki %u i %u mają inną topologię (bez interpolacji)"), fa, fb);
 	}
 
-	if (ImGui::CollapsingHeader("Widok", ImGuiTreeNodeFlags_DefaultOpen)) {
-		const char* modes[] = {"Bez światła", "Bajt jako jasność (stare)", "Normalne SPHERE.DAT", "Podgląd normalnych"};
+	if (ImGui::CollapsingHeader(tr("Widok"), ImGuiTreeNodeFlags_DefaultOpen)) {
+		const char* modes[] = {tr("Bez światła"), tr("Bajt jako jasność (stare)"), tr("Normalne SPHERE.DAT"), tr("Podgląd normalnych")};
 		int m = int(draw.lighting);
-		if (ImGui::Combo("Oświetlenie", &m, modes, 4)) draw.lighting = LightingMode(m);
-		ImGui::SliderFloat("Ambient", &draw.ambient, 0.f, 1.f);
-		ImGui::Checkbox("Siatka", &draw.wireframe);
+		if (ImGui::Combo(tr("Oświetlenie"), &m, modes, 4)) draw.lighting = LightingMode(m);
+		ImGui::SliderFloat(tr("Ambient"), &draw.ambient, 0.f, 1.f);
+		ImGui::Checkbox(tr("Siatka"), &draw.wireframe);
 		ImGui::SameLine();
-		ImGui::Checkbox("Alpha test", &draw.alphaTest);
+		ImGui::Checkbox(tr("Alpha test"), &draw.alphaTest);
 		ImGui::SameLine();
-		ImGui::Checkbox("Odwróć Y", &flipY);
-		ImGui::ColorEdit3("Tło", &bg.r, ImGuiColorEditFlags_NoInputs);
-		if (ImGui::Button("Wyśrodkuj")) frameCamera();
+		ImGui::Checkbox(tr("Odwróć Y"), &flipY);
+		ImGui::ColorEdit3(tr("Tło"), &bg.r, ImGuiColorEditFlags_NoInputs);
+		if (ImGui::Button(tr("Wyśrodkuj"))) frameCamera();
 	}
 
-	if (ImGui::CollapsingHeader("Eksport glTF")) {
+	if (ImGui::CollapsingHeader(tr("Eksport glTF"))) {
 		ImGui::SetNextItemWidth(-60);
-		ImGui::InputText("Katalog", exportDir, sizeof exportDir);
-		if (ImGui::Button("Bieżąca animacja")) exportGlb(false);
+		ImGui::InputText(tr("Katalog"), exportDir, sizeof exportDir);
+		if (ImGui::Button(tr("Bieżąca animacja"))) exportGlb(false);
 		ImGui::SameLine();
-		if (ImGui::Button("Wszystkie animacje obiektu")) exportGlb(true);
-		ImGui::TextDisabled("Plik .glb z teksturami; animacje jako morph targets.\nUżywa ustawień FPS i interpolacji z odtwarzania.");
+		if (ImGui::Button(tr("Wszystkie animacje obiektu"))) exportGlb(true);
+		ImGui::TextDisabled(tr("Plik .glb z teksturami; animacje jako morph targets.\nUżywa ustawień FPS i interpolacji z odtwarzania."));
 		if (!exportMsg.empty()) ImGui::TextWrapped("%s", exportMsg.c_str());
 	}
 
-	if (ImGui::CollapsingHeader("Informacje")) {
+	if (ImGui::CollapsingHeader(tr("Informacje"))) {
 		if (auto a = currentAnim()) {
-			ImGui::Text("animacja: %s", a->name.c_str());
-			ImGui::Text("flagi %u  f %.4g", a->unknownFlags, a->unknownF);
-			ImGui::Text("ruch (%.3f %.3f %.3f)", a->move.x, a->move.y, a->move.z);
-			ImGui::Text("obrót (%.3f %.3f %.3f)", a->rotate.x, a->rotate.y, a->rotate.z);
-			ImGui::TextWrapped("źródło: %s", a->sourceFile.c_str());
+			ImGui::Text(tr("animacja: %s"), a->name.c_str());
+			ImGui::Text(tr("flagi %u  f %.4g"), a->unknownFlags, a->unknownF);
+			ImGui::Text(tr("ruch (%.3f %.3f %.3f)"), a->move.x, a->move.y, a->move.z);
+			ImGui::Text(tr("obrót (%.3f %.3f %.3f)"), a->rotate.x, a->rotate.y, a->rotate.z);
+			ImGui::TextWrapped(tr("źródło: %s"), a->sourceFile.c_str());
 		}
 		int mi = currentMesh();
 		if (mi >= 0) {
 			const auto& mesh = model->meshes[size_t(mi)];
-			ImGui::Text("mesh #%d  linki %zu", mi, mesh.links.size());
-			ImGui::Text("bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)", mesh.bboxMin.x, mesh.bboxMin.y, mesh.bboxMin.z,
+			ImGui::Text(tr("mesh #%d  linki %zu"), mi, mesh.links.size());
+			ImGui::Text(tr("bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)"), mesh.bboxMin.x, mesh.bboxMin.y, mesh.bboxMin.z,
 			            mesh.bboxMax.x, mesh.bboxMax.y, mesh.bboxMax.z);
 		}
-		ImGui::Text("klatki w GPU: %zu", renderer.cachedFrames());
-		ImGui::SeparatorText("Materiały");
+		ImGui::Text(tr("klatki w GPU: %zu"), renderer.cachedFrames());
+		ImGui::SeparatorText(tr("Materiały"));
 		for (const auto& mat : model->materials) {
 			const auto& t = textures->get(mat.name);
-			if (t.path.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "%s  (brak)", mat.name.c_str());
+			if (t.path.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), tr("%s  (brak)"), mat.name.c_str());
 			else ImGui::Text("%s  %dx%d", mat.name.c_str(), t.width, t.height);
 		}
 	}
@@ -544,7 +549,7 @@ void Viewer::uiTextures() {
 	ImGui::SameLine();
 	ImGui::BeginChild("pliki", ImVec2(220, 0), ImGuiChildFlags_Borders);
 	ImGui::SetNextItemWidth(-1);
-	ImGui::InputTextWithHint("##tf", "filtr", texFilter, sizeof texFilter);
+	ImGui::InputTextWithHint("##tf", tr("filtr"), texFilter, sizeof texFilter);
 	for (int i = 0; i < int(texFiles.size()); ++i)
 		if (passFilter(texFilter, texFiles[size_t(i)])) {
 			if (ImGui::Selectable(texFiles[size_t(i)].c_str(), i == texSel)) texSel = i;
@@ -671,12 +676,12 @@ void Viewer::uiSearch() {
 		searchOpen = false;
 		return;
 	}
-	static const char* kKind[] = {"model", "obiekt", "tekstura", "szablon", "scenariusz"};
+	const char* kKind[] = {tr("model"), tr("obiekt"), tr("tekstura"), tr("szablon"), tr("scenariusz")};
 	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}, {1, 0.5f, 0.5f, 1}};
 
 	if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
 	ImGui::SetNextItemWidth(-1);
-	if (ImGui::InputTextWithHint("##q", "szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze (kilka słów = wszystkie muszą pasować)",
+	if (ImGui::InputTextWithHint("##q", tr("szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze (kilka słów = wszystkie muszą pasować)"),
 	                             searchText, sizeof searchText)) {
 		searchSel = 0;
 		buildSearchIndex(std::string(searchText).size() >= 2);
@@ -690,9 +695,9 @@ void Viewer::uiSearch() {
 	bool open = ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter);
 
 	if (!objectsIndexed && std::string(searchText).size() < 2)
-		ImGui::TextDisabled("Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków.");
+		ImGui::TextDisabled(tr("Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków."));
 	else
-		ImGui::TextDisabled("%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)", searchHits.size(),
+		ImGui::TextDisabled(tr("%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)"), searchHits.size(),
 		                    searchHits.size() >= 500 ? "+" : "");
 	ImGui::BeginChild("wyniki", ImVec2(0, 0), ImGuiChildFlags_Borders);
 	for (int i = 0; i < int(searchHits.size()); ++i) {
@@ -729,28 +734,47 @@ void Viewer::ui() {
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
 	ImGui::Begin("wigview");
-	if (ImGui::Button("Szukaj (Ctrl+F)")) searchRequest = true;
+	if (ImGui::Button(tr("Szukaj (Ctrl+F)"))) searchRequest = true;
 	ImGui::SameLine();
-	ImGui::TextDisabled("modele, obiekty, tekstury, szablony");
+	ImGui::TextDisabled(tr("modele, obiekty, tekstury, szablony"));
+	{
+		// Wybór języka (lang/*.po); zapamiętywany w wigview.ini.
+		const auto& langs = i18n::languages();
+		const char* cur = i18n::language().c_str();
+		for (const auto& l : langs)
+			if (l.code == i18n::language()) cur = l.name.c_str();
+		float w = ImGui::GetFontSize() * 7.f;
+		ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - w));
+		ImGui::SetNextItemWidth(w);
+		if (ImGui::BeginCombo("##jezyk", cur)) {
+			for (const auto& l : langs)
+				if (ImGui::Selectable(l.name.c_str(), l.code == i18n::language())) {
+					i18n::setLanguage(l.code);
+					ImGui::MarkIniSettingsDirty();
+				}
+			ImGui::EndCombo();
+		}
+		ImGui::SetItemTooltip("Język / Language");
+	}
 	if (ImGui::BeginTabBar("tabs")) {
 		auto tabFlags = [&](int k) { return forceTab == k ? ImGuiTabItemFlags_SetSelected : 0; };
-		if (ImGui::BeginTabItem("Modele", nullptr, tabFlags(0))) {
+		if (ImGui::BeginTabItem(tr("Modele###modele"), nullptr, tabFlags(0))) {
 			activeTab = 0;
 			uiModel();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Tekstury", nullptr, tabFlags(1))) {
+		if (ImGui::BeginTabItem(tr("Tekstury###tekstury"), nullptr, tabFlags(1))) {
 			activeTab = 1;
 			uiTextures();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Mapy", nullptr, tabFlags(2))) {
+		if (ImGui::BeginTabItem(tr("Mapy###mapy"), nullptr, tabFlags(2))) {
 			if (activeTab < 2) frameMap();
 			activeTab = 2;
 			if (maps.ui(false)) frameMap();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Zapisy", nullptr, tabFlags(3))) {
+		if (ImGui::BeginTabItem(tr("Zapisy###zapisy"), nullptr, tabFlags(3))) {
 			if (activeTab < 2) frameMap();
 			activeTab = 3;
 			if (maps.ui(true)) frameMap();
@@ -803,11 +827,11 @@ void Viewer::exportGlb(bool allAnims) {
 	if (exportGltf(*model, vfs, sphere, object, opt, path, err, &st)) {
 		double ms = double(SDL_GetPerformanceCounter() - t0) * 1000.0 / double(SDL_GetPerformanceFrequency());
 		char buf[512];
-		std::snprintf(buf, sizeof buf, "Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s",
+		std::snprintf(buf, sizeof buf, tr("Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s"),
 		              path.c_str(), st.animations, st.frames, st.textures, st.bytes / 1048576.0, ms,
-		              st.incompatibleFrames ? "\n(część klatek o innej topologii zastąpiona poprzednią)" : "");
+		              st.incompatibleFrames ? tr("\n(część klatek o innej topologii zastąpiona poprzednią)") : "");
 		exportMsg = buf;
-	} else exportMsg = "Błąd eksportu: " + err;
+	} else exportMsg = tr("Błąd eksportu: ") + err;
 	std::printf("%s\n", exportMsg.c_str());
 }
 
@@ -819,9 +843,39 @@ int findIndex(const std::vector<std::string>& v, const std::string& name) {
 
 } // namespace
 
+// Język interfejsu w wigview.ini (sekcja [OpenWiggles][Ustawienia]); --lang ma pierwszeństwo.
+bool gLangFromArgs = false;
+void addSettingsHandler() {
+	ImGuiSettingsHandler h;
+	h.TypeName = "OpenWiggles";
+	h.TypeHash = ImHashStr("OpenWiggles");
+	h.ReadOpenFn = [](ImGuiContext*, ImGuiSettingsHandler*, const char*) -> void* { return (void*)1; };
+	h.ReadLineFn = [](ImGuiContext*, ImGuiSettingsHandler*, void*, const char* line) {
+		char code[32];
+		if (!gLangFromArgs && std::sscanf(line, "Language=%31s", code) == 1) i18n::setLanguage(code);
+	};
+	h.WriteAllFn = [](ImGuiContext*, ImGuiSettingsHandler* self, ImGuiTextBuffer* buf) {
+		buf->appendf("[%s][Ustawienia]\nLanguage=%s\n\n", self->TypeName, i18n::language().c_str());
+	};
+	ImGui::AddSettingsHandler(&h);
+}
+
 int main(int argc, char** argv) {
 	Args args;
 	if (!parseArgs(argc, argv, args)) return 2;
+	{
+		std::vector<std::string> warnings;
+		i18n::loadBuiltin(&warnings);
+		for (const auto& w : warnings) std::fprintf(stderr, "tłumaczenia: %s\n", w.c_str());
+		gLangFromArgs = !args.lang.empty();
+		if (gLangFromArgs && !i18n::setLanguage(args.lang)) {
+			std::fprintf(stderr, "nieznany język %s; dostępne:", args.lang.c_str());
+			for (const auto& l : i18n::languages()) std::fprintf(stderr, " %s", l.code.c_str());
+			std::fprintf(stderr, "\n");
+			return 2;
+		}
+		if (!gLangFromArgs) i18n::setLanguage(i18n::systemLanguage());
+	}
 
 	auto viewer = std::make_unique<Viewer>();
 	Viewer& v = *viewer;
@@ -952,6 +1006,7 @@ int main(int argc, char** argv) {
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	addSettingsHandler();
 	ImGui::GetIO().IniFilename = args.screenshot.empty() ? "wigview.ini" : nullptr;
 	ImGui::StyleColorsDark();
 	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
@@ -1015,10 +1070,10 @@ int main(int argc, char** argv) {
 		ImVec2 ds = ImGui::GetIO().DisplaySize;
 		ImGui::SetNextWindowPos(ImVec2(ds.x * 0.5f, ds.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(420, 0));
-		ImGui::Begin("Wczytywanie", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+		ImGui::Begin(tr("Wczytywanie###wczytywanie"), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 		                                         ImGuiWindowFlags_NoSavedSettings);
 		ImGui::TextUnformatted(v.maps.loadingName().c_str());
-		ImGui::TextDisabled("%s", stage);
+		ImGui::TextDisabled("%s", tr(stage));
 		ImGui::ProgressBar(std::clamp(f, 0.f, 1.f), ImVec2(-1, 0));
 		ImGui::End();
 		ImGui::Render();

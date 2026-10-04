@@ -114,6 +114,21 @@ gen_shaders() {
 	} | write_if_changed build/gen/ow_shaders_vk.inc
 }
 
+# Tłumaczenia: lang/*.po osadzane jako tekst w build/gen/ow_lang.inc (src/lib/i18n.cpp).
+gen_lang() {
+	local f
+	mkdir -p build/gen
+	{
+		echo "// Wygenerowane przez build.sh z lang/*.po. Nie edytować."
+		echo "static const BuiltinLanguage kBuiltinLanguages[] = {"
+		for f in lang/*.po; do
+			[ -f "$f" ] || continue
+			printf '{"%s", R"OWPO(%s\n)OWPO"},\n' "$(basename "$f")" "$(cat "$f")"
+		done
+		echo "{nullptr, nullptr}};"
+	} | write_if_changed build/gen/ow_lang.inc
+}
+
 log() { printf '%s\n' "$*"; }
 run() { [ "${VERBOSE:-0}" = 1 ] && log "$*"; "$@"; }
 
@@ -210,7 +225,7 @@ build_test3db() {
 	link "$OUT/test3db" "${OBJS[@]}" "$OUT/libwiggles.a"
 }
 
-[ "${TARGETS[*]}" = clean ] || gen_shaders
+[ "${TARGETS[*]}" = clean ] || { gen_shaders; gen_lang; }
 
 for t in "${TARGETS[@]}"; do
 	case "$t" in

@@ -1,5 +1,6 @@
 #include "wigview/map_view.h"
 
+#include "lib/i18n.h"
 #include "lib/gfx/gl.h"
 #include "lib/gfx/texture_cache.h"
 #include "lib/map_world.h"
@@ -56,7 +57,7 @@ void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, con
 	sphere_ = sphere;
 	classes_.load(*vfs);
 	std::string err;
-	if (!terrain_.init(dev, err)) blocksError_ = "shader terenu: " + err;
+	if (!terrain_.init(dev, err)) blocksError_ = tr("shader terenu: ") + err;
 	panoramaReady_ = panorama_.init(dev, err, *textures);
 	try {
 		blocks_.load(*vfs);
@@ -148,7 +149,7 @@ bool MapView::loadSave(const std::string& file) {
 	auto data = vfs_->read("Data/Gamesave/" + file);
 	if (!data) {
 		file_ = file;
-		error_ = "zapis " + file + ": brak pliku";
+		error_ = tr("zapis ") + file + ": " + tr("brak pliku");
 		return false;
 	}
 	return loadSaveData(file, *data);
@@ -157,7 +158,7 @@ bool MapView::loadSave(const std::string& file) {
 bool MapView::loadSavePath(const std::string& path) {
 	std::ifstream in(path, std::ios::binary);
 	if (!in) {
-		error_ = "zapis " + path + ": nie można otworzyć pliku";
+		error_ = tr("zapis ") + path + ": " + tr("nie można otworzyć pliku");
 		return false;
 	}
 	std::vector<uint8_t> data((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -166,13 +167,13 @@ bool MapView::loadSavePath(const std::string& path) {
 
 // Pola wyboru zapisu: odświeżenie listy i wczytanie pliku spoza katalogu gry.
 void MapView::uiSaves(bool& recenter) {
-	if (ImGui::Button("Odśwież listę")) refreshSaves();
-	ImGui::SetItemTooltip("Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania.");
-	ImGui::SetNextItemWidth(-(ImGui::CalcTextSize("Wczytaj").x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x));
-	bool enter = ImGui::InputTextWithHint("##savepath", "ścieżka do pliku .sav", savePath_, sizeof savePath_,
+	if (ImGui::Button(tr("Odśwież listę"))) refreshSaves();
+	ImGui::SetItemTooltip(tr("Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania."));
+	ImGui::SetNextItemWidth(-(ImGui::CalcTextSize(tr("Wczytaj")).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x));
+	bool enter = ImGui::InputTextWithHint("##savepath", tr("ścieżka do pliku .sav"), savePath_, sizeof savePath_,
 	                                      ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
-	if ((ImGui::Button("Wczytaj") || enter) && savePath_[0]) pending_ = [this, p = std::string(savePath_)] { return loadSavePath(p); };
+	if ((ImGui::Button(tr("Wczytaj")) || enter) && savePath_[0]) pending_ = [this, p = std::string(savePath_)] { return loadSavePath(p); };
 	(void)recenter;
 	ImGui::Separator();
 }
@@ -187,17 +188,17 @@ bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& 
 	Scenario sc;
 	BuiltWorld bw;
 	try {
-		report(0.02f, "Rozpakowywanie i odczyt zapisu");
+		report(0.02f, N_("Rozpakowywanie i odczyt zapisu"));
 		SaveGame s = parseSaveGame(data);
-		report(0.04f, "Budowa świata z zapisu");
+		report(0.04f, N_("Budowa świata z zapisu"));
 		bw = buildWorldFromSave(s, blocks_.loaded() ? &blocks_ : nullptr, sc);
 		saveFog_.resize(s.tiles.size());
 		for (size_t i = 0; i < s.tiles.size(); ++i) saveFog_[i] = s.tiles[i].fog[0];
 		char info[160];
-		std::snprintf(info, sizeof info, "Zapis %s, czas gry %.0f s, %zu obiektów.", s.header.c_str(), s.gameTime, s.objects.size());
+		std::snprintf(info, sizeof info, tr("Zapis %s, czas gry %.0f s, %zu obiektów."), s.header.c_str(), s.gameTime, s.objects.size());
 		scenarioInfo_ = info;
 	} catch (const std::exception& e) {
-		error_ = "zapis " + file + ": " + e.what();
+		error_ = tr("zapis ") + file + ": " + e.what();
 		return false;
 	}
 	// Motyw świata (zestaw detali .l2m) z klas stref horyzontu Info_Fog_<Świat>_*.
@@ -224,7 +225,7 @@ bool MapView::loadScenario(const std::string& file) {
 	Scenario sc = parseScenario(*vfs_, Vfs::lower(file) == "systeminit.tcl" ? "Data/systeminit.tcl" : "Data/Gamesave/" + file);
 	scenarioInfo_.clear();
 	if (sc.placements.empty() && sc.usesGenerator)
-		scenarioInfo_ = "Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.";
+		scenarioInfo_ = tr("Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.");
 	// Świat ze szablonu o największej liczbie wystąpień (urw, kris, lava, swf).
 	std::map<std::string, int> worlds;
 	for (auto& p : sc.placements) worlds[Vfs::lower(p.script.substr(0, p.script.find('_')))]++;
@@ -251,7 +252,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
-	if (!prebuilt) report(0.04f, "Składanie świata z szablonów");
+	if (!prebuilt) report(0.04f, N_("Składanie świata z szablonów"));
 	BuiltWorld bw = prebuilt ? std::move(*prebuilt) : buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
 	if (!prebuilt) saveFog_.clear();
 	if (fogMode_ == FogMode::FromSave && saveFog_.empty()) fogMode_ = FogMode::Off;
@@ -276,7 +277,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 			}
 		}
 	} else if (error_.empty() && scenarioInfo_.empty())
-		error_ = "brak szablonów do złożenia";
+		error_ = tr("brak szablonów do złożenia");
 
 	// Panorama (panorama_renderer.h): wiersz gruntu z set_ground_begin, a bez niego z set_light_begin.
 	// Bez nieba (set_light_begin nie podane) gra panoramy nie rysuje (obserwacja w laboratorium).
@@ -289,10 +290,10 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		}
 	}
 	if (pmp_ && blocks_.loaded()) {
-		report(0.06f, "Siatka terenu");
+		report(0.06f, N_("Siatka terenu"));
 		heights_ = buildHeightfield(*pmp_, blocks_);
 		auto mesh = buildTerrainMesh(*pmp_, blocks_, *sphere_);
-		report(0.09f, "Tekstury terenu");
+		report(0.09f, N_("Tekstury terenu"));
 		terrain_.build(std::move(mesh), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	zone_.reset();
@@ -304,7 +305,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 				zoneObjects_.push_back({o.pos[0], o.pos[1], *z, o.className});
 		size_t done = 0, total = script_->objects.size();
 		for (const auto& o : script_->objects) {
-			report(0.13f + 0.86f * float(done++) / float(std::max<size_t>(total, 1)), "Modele obiektów");
+			report(0.13f + 0.86f * float(done++) / float(std::max<size_t>(total, 1)), N_("Modele obiektów"));
 			PlacedObject p;
 			p.src = o;
 			p.cls = classes_.find(o.className);
@@ -330,7 +331,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
 	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
 	radius_ = (std::max(w, h) + 3.f) * kBlock * 0.55f; // margines: małe szablony nie wypełniają całego kadru
-	report(1.f, "Gotowe");
+	report(1.f, N_("Gotowe"));
 	return error_.empty();
 }
 
@@ -524,15 +525,15 @@ bool MapView::objectVisibleInFog(const PlacedObject& o) const {
 
 void MapView::uiGrid() {
 	if (!pmp_) {
-		ImGui::TextDisabled("Brak siatki .PMP");
+		ImGui::TextDisabled(tr("Brak siatki .PMP"));
 		return;
 	}
-	const char* layers[] = {"Typ pola", "ID bloku", "Warstwa 2 (PMP)", "Warstwa .l2m", "Głębokość (BlockDB)"};
+	const char* layers[] = {tr("Typ pola"), tr("ID bloku"), tr("Warstwa 2 (PMP)"), tr("Warstwa .l2m"), tr("Głębokość (BlockDB)")};
 	ImGui::SetNextItemWidth(170);
-	ImGui::Combo("Warstwa", &gridLayer_, layers, 5);
+	ImGui::Combo(tr("Warstwa"), &gridLayer_, layers, 5);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120);
-	ImGui::SliderFloat("Zoom", &cellPx_, 6.f, 48.f, "%.0f px");
+	ImGui::SliderFloat(tr("Zoom"), &cellPx_, 6.f, 48.f, "%.0f px");
 
 	const int W = int(pmp_->width), H = int(pmp_->height);
 	ImGui::BeginChild("siatka", ImVec2(0, std::min(420.f, H * cellPx_ + 16)), ImGuiChildFlags_Borders,
@@ -585,13 +586,13 @@ void MapView::uiGrid() {
 		if (x >= 0 && y >= 0 && x < W && y < H) {
 			size_t i = size_t(y) * W + x;
 			ImGui::BeginTooltip();
-			ImGui::Text("blok (%d, %d)", x, y);
-			ImGui::Text("typ %u  ID bloku %u  warstwa2 %u", pmp_->types[i], pmp_->blocks[i], pmp_->layer2[i]);
-			if (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) ImGui::Text("l2m 0x%04X", l2m_->values[i]);
+			ImGui::Text(tr("blok (%d, %d)"), x, y);
+			ImGui::Text(tr("typ %u  ID bloku %u  warstwa2 %u"), pmp_->types[i], pmp_->blocks[i], pmp_->layer2[i]);
+			if (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) ImGui::Text(tr("l2m 0x%04X"), l2m_->values[i]);
 			int shown = 0;
 			for (const auto& o : objects_)
 				if (int(o.src.pos[0]) == x && int(o.src.pos[1]) == y && shown++ < 8)
-					ImGui::Text("%s %s", o.src.className.c_str(), o.slot ? "" : "(bez modelu)");
+					ImGui::Text("%s %s", o.src.className.c_str(), o.slot ? "" : tr("(bez modelu)"));
 			ImGui::EndTooltip();
 		}
 	}
@@ -606,14 +607,14 @@ bool MapView::ui(bool savesTab) {
 		uiSaves(recenter);
 	} else {
 		if (list_ == ListMode::Saves) list_ = scenarioMode_ ? ListMode::Scenarios : ListMode::Templates;
-		if (ImGui::RadioButton("Szablony", list_ == ListMode::Templates)) list_ = ListMode::Templates;
+		if (ImGui::RadioButton(tr("Szablony"), list_ == ListMode::Templates)) list_ = ListMode::Templates;
 		ImGui::SameLine();
-		if (ImGui::RadioButton("Scenariusze", list_ == ListMode::Scenarios)) list_ = ListMode::Scenarios;
+		if (ImGui::RadioButton(tr("Scenariusze"), list_ == ListMode::Scenarios)) list_ = ListMode::Scenarios;
 	}
 	ImGui::SetNextItemWidth(-1);
-	const char* hint = list_ == ListMode::Templates ? "filtr (np. urw_gng)" : list_ == ListMode::Scenarios ? "filtr (np. single_)" : "filtr (np. quick)";
+	const char* hint = list_ == ListMode::Templates ? tr("filtr (np. urw_gng)") : list_ == ListMode::Scenarios ? tr("filtr (np. single_)") : tr("filtr (np. quick)");
 	ImGui::InputTextWithHint("##mf", hint, filter_, sizeof filter_);
-	if (list_ == ListMode::Saves && saves_.empty()) ImGui::TextDisabled("Brak zapisów w Data/Gamesave.");
+	if (list_ == ListMode::Saves && saves_.empty()) ImGui::TextDisabled(tr("Brak zapisów w Data/Gamesave."));
 	for (const auto& f : currentList()) {
 		if (!passFilter(filter_, f)) continue;
 		if (ImGui::Selectable(f.c_str(), f == file_)) {
@@ -629,10 +630,10 @@ bool MapView::ui(bool savesTab) {
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("mapa_szczegoly");
-	if (!error_.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Błąd: %s", error_.c_str());
+	if (!error_.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), tr("Błąd: %s"), error_.c_str());
 	if (!scenarioInfo_.empty()) ImGui::TextColored(ImVec4(1, 0.8f, 0.4f, 1), "%s", scenarioInfo_.c_str());
 	if (!script_) {
-		ImGui::TextDisabled("Wybierz szablon z listy (%zu skryptów, %zu klas z modelem).", files_.size(), classes_.size());
+		ImGui::TextDisabled(tr("Wybierz szablon z listy (%zu skryptów, %zu klas z modelem)."), files_.size(), classes_.size());
 		ImGui::EndChild();
 		return recenter;
 	}
@@ -640,42 +641,42 @@ bool MapView::ui(bool savesTab) {
 	for (auto& o : objects_) resolved += o.slot != nullptr;
 	ImGui::Text("%s", file_.c_str());
 	if (scenarioMode_) {
-		ImGui::Text("Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)", placed_, pmp_ ? pmp_->width : 0,
+		ImGui::Text(tr("Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)"), placed_, pmp_ ? pmp_->width : 0,
 		            pmp_ ? pmp_->height : 0, worldOrigin_[0], worldOrigin_[1]);
 		if (lightBegin_ != Scenario::kNoSky)
-			ImGui::Text("Niebo do wiersza %d (set_light_begin): %d pól w świetle dziennym", lightBegin_, skyTiles_);
+			ImGui::Text(tr("Niebo do wiersza %d (set_light_begin): %d pól w świetle dziennym"), lightBegin_, skyTiles_);
 	} else
-		ImGui::Text("PMP: %s  %ux%u bloków   l2m: %s", script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
+		ImGui::Text(tr("PMP: %s  %ux%u bloków   l2m: %s"), script_->pmpFile.c_str(), pmp_ ? pmp_->width : 0,
 		            pmp_ ? pmp_->height : 0, script_->l2mFile.empty() ? "-" : script_->l2mFile.c_str());
-	ImGui::Text("obiekty: %zu, z modelem: %zu", objects_.size(), resolved);
-	if (!blocksError_.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "Teren niedostępny: %s", blocksError_.c_str());
-	ImGui::Checkbox("Teren", &showTerrain_);
+	ImGui::Text(tr("obiekty: %zu, z modelem: %zu"), objects_.size(), resolved);
+	if (!blocksError_.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), tr("Teren niedostępny: %s"), blocksError_.c_str());
+	ImGui::Checkbox(tr("Teren"), &showTerrain_);
 	ImGui::SameLine();
-	ImGui::Checkbox("Obiekty", &showObjects_);
+	ImGui::Checkbox(tr("Obiekty"), &showObjects_);
 	ImGui::SameLine();
-	ImGui::Checkbox("Detale (.l2m)", &terrain_.showDetail);
+	ImGui::Checkbox(tr("Detale (.l2m)"), &terrain_.showDetail);
 	ImGui::SameLine();
-	ImGui::Checkbox("Strefa horyzontu", &showZone_);
-	ImGui::Checkbox("Oświetlenie jak w grze", &gameLighting_);
+	ImGui::Checkbox(tr("Strefa horyzontu"), &showZone_);
+	ImGui::Checkbox(tr("Oświetlenie jak w grze"), &gameLighting_);
 	ImGui::SameLine();
-	ImGui::Checkbox("Lampa podglądu", &previewLamp_);
+	ImGui::Checkbox(tr("Lampa podglądu"), &previewLamp_);
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Dodatkowa lampa nad środkiem kadru (nie z gry), działa z oświetleniem jak w grze.\n"
-		                  "Domyślnie włączona dla szablonów bez własnych świateł (%zu świateł w scenie).",
+		ImGui::SetTooltip(tr("Dodatkowa lampa nad środkiem kadru (nie z gry), działa z oświetleniem jak w grze.\n"
+		                  "Domyślnie włączona dla szablonów bez własnych świateł (%zu świateł w scenie)."),
 		                  allLights_.size());
 	ImGui::SameLine();
 	ImGui::BeginDisabled(!hasOpenAir_);
-	ImGui::Checkbox("Panorama nieba", &showPanorama_);
+	ImGui::Checkbox(tr("Panorama nieba"), &showPanorama_);
 	ImGui::SameLine();
-	ImGui::Checkbox("Dywan łąki", &showCarpet_);
+	ImGui::Checkbox(tr("Dywan łąki"), &showCarpet_);
 	{
 		// Podgląd mgły wojny (wymaga oświetlenia gry).
-		const char* modes[] = {"wyłączona", "całość odkryta, niewidoczna (szara)", "kadr widoczny, reszta szara",
-		                       "kadr widoczny, reszta czarna", "z zapisu gry (gracz 0)"};
+		const char* modes[] = {tr("wyłączona"), tr("całość odkryta, niewidoczna (szara)"), tr("kadr widoczny, reszta szara"),
+		                       tr("kadr widoczny, reszta czarna"), tr("z zapisu gry (gracz 0)")};
 		// Odkryj mapę: wyłącza mgłę, odznaczenie przywraca poprzedni tryb (dla zapisu: mgła z zapisu).
 		// Wybór zostaje przy wczytywaniu kolejnych zapisów.
 		bool reveal = fogMode_ == FogMode::Off;
-		if (ImGui::Checkbox("Odkryj mapę", &reveal)) {
+		if (ImGui::Checkbox(tr("Odkryj mapę"), &reveal)) {
 			revealMap_ = reveal;
 			if (reveal) {
 				revealPrev_ = fogMode_;
@@ -685,51 +686,51 @@ bool MapView::ui(bool savesTab) {
 				setFog(back, fogRadius_, fogByte_);
 			}
 		}
-		ImGui::SetItemTooltip("Pokazuje cały teren i wszystkie obiekty bez mgły wojny.");
+		ImGui::SetItemTooltip(tr("Pokazuje cały teren i wszystkie obiekty bez mgły wojny."));
 		ImGui::SameLine();
 		int m = int(fogMode_);
 		ImGui::SetNextItemWidth(260);
-		if (ImGui::Combo("Mgła wojny", &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
+		if (ImGui::Combo(tr("Mgła wojny"), &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\n"
-			                  "lampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają.");
+			ImGui::SetTooltip(tr("Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\n"
+			                  "lampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."));
 		if (fogMode_ == FogMode::ViewGrey || fogMode_ == FogMode::ViewBlack) {
 			int r = fogRadius_, b = fogByte_;
 			ImGui::SetNextItemWidth(120);
-			bool ch = ImGui::SliderInt("promień kadru", &r, 1, 40);
+			bool ch = ImGui::SliderInt(tr("promień kadru"), &r, 1, 40);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(120);
-			ch |= ImGui::SliderInt("bajt w kadrze", &b, 1, 255);
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("255 = widoczne; 0xE2..0x80 = wygasanie; < 0x80 = szara mgła");
+			ch |= ImGui::SliderInt(tr("bajt w kadrze"), &b, 1, 255);
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip(tr("255 = widoczne; 0xE2..0x80 = wygasanie; < 0x80 = szara mgła"));
 			if (ch) setFog(fogMode_, r, b);
 		}
 	}
 	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\n"
-		                  "Tylko gdy scenariusz ustawia niebo (set_light_begin) albo set_ground_begin.");
+		ImGui::SetTooltip(tr("6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\n"
+		                  "Tylko gdy scenariusz ustawia niebo (set_light_begin) albo set_ground_begin."));
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Prawo z Wiggles.exe: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\n"
-		                  "lampy class_light (%zu w scenie, rysowane do %d najbliższych).", allLights_.size(), kMaxGameLights);
+		ImGui::SetTooltip(tr("Prawo z gry: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\n"
+		                  "lampy class_light (%zu w scenie, rysowane do %d najbliższych)."), allLights_.size(), kMaxGameLights);
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s",
+		ImGui::SetTooltip(tr("Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s"),
 		                  zone_ ? zoneClass_.c_str()
-		                        : zoneObjects_.empty() ? "Szablon nie ma obiektu Info_Fog_*."
-		                                               : "Kamera poza zasięgiem (size) wszystkich obiektów Info_Fog_*.");
+		                        : zoneObjects_.empty() ? tr("Szablon nie ma obiektu Info_Fog_*.")
+		                                               : tr("Kamera poza zasięgiem (size) wszystkich obiektów Info_Fog_*."));
 
 
 
-	if (ImGui::CollapsingHeader("Siatka 2D", ImGuiTreeNodeFlags_DefaultOpen)) uiGrid();
-	if (ImGui::CollapsingHeader("Filtr obiektów", ImGuiTreeNodeFlags_DefaultOpen)) {
-		const char* names[] = {"high", "medium", "low", "off", "bez poziomu"};
+	if (ImGui::CollapsingHeader(tr("Siatka 2D"), ImGuiTreeNodeFlags_DefaultOpen)) uiGrid();
+	if (ImGui::CollapsingHeader(tr("Filtr obiektów"), ImGuiTreeNodeFlags_DefaultOpen)) {
+		const char* names[] = {"high", "medium", "low", "off", tr("bez poziomu")};
 		for (int i = 0; i < 5; ++i) {
 			if (i) ImGui::SameLine();
 			ImGui::Checkbox(names[i], &showDetail_[i]);
 		}
-		ImGui::Checkbox("Pokaż obiekty bez modelu (czerwone na siatce)", &showUnresolved_);
-		ImGui::Checkbox("Znaczniki edytora (światła, obiekty Info)", &showEditorOnly_);
+		ImGui::Checkbox(tr("Pokaż obiekty bez modelu (czerwone na siatce)"), &showUnresolved_);
+		ImGui::Checkbox(tr("Znaczniki edytora (światła, obiekty Info)"), &showEditorOnly_);
 	}
-	if (ImGui::CollapsingHeader("Lista obiektów")) {
+	if (ImGui::CollapsingHeader(tr("Lista obiektów"))) {
 		ImGui::BeginChild("obj_list", ImVec2(0, 220), ImGuiChildFlags_Borders);
 		for (const auto& o : objects_) {
 			std::string model = o.slot ? o.cls->object + "." + o.cls->animation : "—";

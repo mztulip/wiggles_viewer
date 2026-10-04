@@ -67,6 +67,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
 - [x] Wyszukiwarka Ctrl+F: modele, obiekty w modelach, tekstury, szablony
+- [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
+- [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 
