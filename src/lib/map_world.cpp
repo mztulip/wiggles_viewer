@@ -255,6 +255,9 @@ BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario&
 		TemplateObject t;
 		t.className = o.className;
 		t.name = std::to_string(o.id);
+		t.owner = o.owner;
+		t.linkParent = o.linkParent;
+		t.linkPoint = o.linkPoint;
 		for (int k = 0; k < 3; ++k) {
 			t.pos[k] = o.pos[k]; // zapis trzyma z w skali skryptu (jak argument new)
 			t.rot[k] = o.rot[k];

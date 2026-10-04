@@ -120,6 +120,10 @@ i32 n + n × ładunek pomocniczy
 
 **Ładunek pomocniczy:** 32 B nazwy, 4 × i32 odwołań, 9 × i32, str, str, 3 × i32, 8 B. Rekord pomocniczy z listy przed ciałami ma przed ładunkiem jeszcze 28 B nagłówka.
 
+**Odczytane pola ciała** (oprócz klasy, typu, pozycji, obrotu) ✅ na zapisie kampanii:
+- grupa 10 × i32 zaczynająca się od `+0x26C` (po `2 × i32` i `4 × i32` za siatką): element [3] = **rodzic przypięcia** (ID obiektu, `+0x278`), [4] = **punkt zaczepienia** (`+0x27C`). Przykład: 5 czapek `Dummy_Muetze_*` przypiętych do 5 krasnali w punkcie 4 (głowa);
+- trzecie i32 po napisie wyświetlania = **właściciel** (`+0x36C`): −1 świat, 0..7 gracze.
+
 **Pozycja z** jest w skali skryptu, czyli tak jak argument `new` w szablonie: świat z = z · 0,5 + 7 (rozdz. 5). Przykład z zapisu OBERWELT: obiekt 89 `Dummy_Moos_um_a` ma (23,531, 42,5, 13,54) i obrót ry = 6,123, dokładnie jak w szablonie, z którego pochodzi.
 
 ## Sekcje po obiektach

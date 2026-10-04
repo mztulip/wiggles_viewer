@@ -15,6 +15,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔧 Płyny: zatyczki, odpływy, `-height`/`-ventil`, źródła z zapisu, kolor wody bliżej gry, rzadka lista pól zamiast pełnego prostokąta
 - [x] G7a Osadzony Tcl 8.6: preprocesor, `call`, wirtualny katalog, 2684 klasy bez błędów, interpreter na obiekt, `obj_init`, timery, zdarzenia, stany, zaślepki z dziennikiem (`owscript`, rozdział 11.9)
 - [x] G7b Krasnale sterowane skryptami gry (czas wolny): atrybuty z `def_attrib`, `action walk/rotate/anim/wait` przez nawigację gry, `obj_query`, `get_place`, `placelock_*`, wektory i listy; zapis kampanii: 0 błędów skryptów w 60 s
+- [x] Punkty zaczepienia `.3db` i `link_obj`/`get_linkpos`; przypięcia i właściciele z zapisu (czapki na głowach)
+- [ ] Zapis: zmienne Tcl obiektów i ID obiektów zgodne z zapisem (kontynuacja stanu skryptów)
 - [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, pamięć podręczna klas (start 5 s), tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek

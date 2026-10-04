@@ -23,6 +23,9 @@ struct SaveObject {
 	int type = 0;            // typ obiektu silnika (−1..12; 0 = dekoracja, 1 = postać, 5 = budynek…)
 	float pos[3] = {0, 0, 0}; // pozycja w świecie: x, y w blokach, z = głębokość świata (7..14,5 = teren)
 	float rot[3] = {0, 0, 0}; // obrót w radianach
+	int owner = -1;           // gracz 0..7, −1 = świat
+	int linkParent = -1;      // obiekt, do którego jest przypięty (link_obj), −1 = brak
+	int linkPoint = 0;        // punkt zaczepienia rodzica (0..31)
 };
 
 // Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji

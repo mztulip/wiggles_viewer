@@ -151,13 +151,15 @@ struct ScriptHost : script::Host {
 	void setRotY(int id, float r) override;
 	float getRotY(int id) override;
 	void setAnim(int id, const std::string& anim, int, int mode) override;
-	double animLength(const std::string& anim) override;
+	double animLength(int id, const std::string& anim) override;
 	bool walkTo(int id, const float target[3], std::function<void(bool)> done) override;
 	float hmap(float x, float y) override;
 	bool underwater(const float p[3]) override;
 	bool findPlace(const float c[3], float r, float out[3]) override;
 	int gnomePosition(int id) override;
 	void glide(int id, const float to[3], float seconds) override;
+	void link(int child, int parent, int link) override;
+	bool linkOffset(int id, int link, float out[3]) override;
 };
 
 struct Game {
@@ -407,7 +409,8 @@ struct Game {
 			if (gnome && !scriptGnomes) continue;
 			auto* o = scripts->attach(i + 1, maps.objectClass(i), "", false);
 			if (!o) continue;
-			if (gnome) o->owner = 0; // krasnale gracza (🔶 właściciel z zapisu jeszcze nie czytany)
+			o->owner = maps.objectOwner(i); // z zapisu
+			if (gnome && o->owner < 0) o->owner = 0; // krasnale ze scenariusza: gracz 0
 			n += o->interp != nullptr;
 		}
 		// obj_init dopiero po rejestracji wszystkich obiektów (obj_query widzi cały świat)
@@ -585,7 +588,15 @@ void ScriptHost::setAnim(int id, const std::string& anim, int, int mode) {
 	size_t dot = anim.find('.');
 	g->maps.playAnim(id - 1, dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
 }
-double ScriptHost::animLength(const std::string&) { return 1.5; } // 🔶 długość animacji po nazwie (db_animlength)
+double ScriptHost::animLength(int id, const std::string& anim) { // klatki animacji modelu / 10 kl./s
+	size_t dot = anim.find('.');
+	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
+	if (id > 0 && id <= g->maps.objectCount()) {
+		double s = g->maps.animSeconds(id - 1, name);
+		if (s > 0) return s;
+	}
+	return 1.5; // 🔶 nieznana animacja albo db_animlength bez obiektu
+}
 bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done) {
 	Unit* u = g->unitOf(id - 1);
 	if (!u || u->digJob) return false; // krasnal pracuje dla gracza
@@ -628,6 +639,13 @@ void ScriptHost::glide(int id, const float to[3], float seconds) {
 			return;
 		}
 	g->glides.push_back(gl);
+}
+
+void ScriptHost::link(int child, int parent, int link) {
+	if (child > 0 && child <= g->maps.objectCount()) g->maps.linkObject(child - 1, parent > 0 ? parent - 1 : -1, link);
+}
+bool ScriptHost::linkOffset(int id, int link, float out[3]) {
+	return id > 0 && id <= g->maps.objectCount() && g->maps.linkOffset(id - 1, link, out);
 }
 
 int ScriptHost::gnomePosition(int id) {

@@ -72,7 +72,7 @@ struct Host {
 	virtual void setPos(int id, const float pos[3]) = 0;
 	virtual void setRotY(int, float) {}
 	virtual void setAnim(int, const std::string& /*obiekt.anim*/, int /*klatka*/, int /*tryb*/) {}
-	virtual double animLength(const std::string&) { return 1.0; }
+	virtual double animLength(int /*id*/, const std::string& /*obiekt.anim*/) { return 1.0; } // sekundy
 	// Akcja chodzenia: true = przyjęta; done(true) po dojściu, done(false) gdy nie ma drogi.
 	virtual bool walkTo(int, const float[3], std::function<void(bool)>) { return false; }
 	virtual float getRotY(int) { return 0.f; }
@@ -85,6 +85,8 @@ struct Host {
 	virtual int gnomePosition(int) { return 0; } // 0 stoi, 1 wisi na ścianie
 	// Płynny lot/przesunięcie obiektu do punktu w podanym czasie (action fly, move).
 	virtual void glide(int id, const float to[3], float /*sekundy*/) { setPos(id, to); }
+	virtual void link(int /*dziecko*/, int /*rodzic, 0 = odepnij*/, int /*punkt*/) {}
+	virtual bool linkOffset(int, int, float[3]) { return false; } // get_linkpos
 };
 
 struct ScriptObject {
@@ -172,6 +174,8 @@ public:
 	std::map<int, std::set<std::string>> sparetimeOffers_;        // sparetime obj announce eat|sleep|… (miejsca czasu wolnego)
 	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, promień)
 	void finishAction(ScriptObject& o, bool ok);
+	// Nazwa logiczna z set_class_anim (np. standloopa) -> obiekt.animacja; pełne nazwy bez zmian.
+	std::string resolveAnim(const ScriptObject* o, const std::string& anim) const;
 	std::string cacheDir_; // pliki zapisywane przez skrypty (np. gen_tt.tcl): ~/.cache/openwiggles, nie katalog gry
 	std::string cachePath(const std::string& gamePath) const;
 	std::set<std::string> nativeNames_;

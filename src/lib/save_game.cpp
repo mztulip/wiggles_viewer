@@ -157,11 +157,18 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	r.skipI32(8);
 	skipRouteVector(r);
 	if (r.i32() != 0) r.skipI32(512); // siatka 512 wartości
-	r.skipI32(2 + 4 + 10 + 3);
+	r.skipI32(2 + 4);
+	int32_t s26c[10];       // +0x26C..: [3] = rodzic przypięcia (+0x278), [4] = punkt (+0x27C)
+	for (int32_t& v : s26c) v = r.i32();
+	o.linkParent = s26c[3] > 0 ? s26c[3] : -1;
+	o.linkPoint = s26c[4];
+	r.skipI32(3);
 	if (r.flag("cząsteczki")) r.skipI32(160);
 	r.skip(3);
 	r.str();                // napis wyświetlania
-	r.skipI32(4 + 8 + 5);
+	r.skipI32(2);
+	o.owner = r.i32();      // właściciel (+0x36C)
+	r.skipI32(1 + 8 + 5);
 	r.skip(1);
 	r.skipI32(4 + 6 + 1);
 	if (o.type == 1 || o.type == 11) { // powiązania aktora

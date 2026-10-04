@@ -99,12 +99,18 @@ public:
 	const std::string& objectClass(int i) const { return objects_[size_t(i)].src.className; }
 	const float* objectPos(int i) const { return objects_[size_t(i)].src.pos; }
 	float objectRotY(int i) const { return objects_[size_t(i)].src.rot[1]; }
+	int objectOwner(int i) const { return objects_[size_t(i)].src.owner; }
 	// Model z pliku .3db i obiektu (dla klas bez class_defaultanim, np. Zwerg = mann.3db, obiekt mann).
 	bool setObjectModel(int i, const std::string& modelFile, const std::string& object);
 	void setObjectPose(int i, float x, float y, float zScript, float rotY);
 	// Animacja obiektu po nazwie (np. "gehen_loop"); loop = pętla, inaczej raz i stop na ostatniej klatce.
 	bool playAnim(int i, const std::string& anim, bool loop);
 	float animLength(int i) const; // długość bieżącej animacji w sekundach (10 kl./s)
+	float animSeconds(int i, const std::string& anim) const; // długość animacji obiektu po nazwie, 0 = brak
+	// Punkt zaczepienia obiektu w bieżącej klatce, obrócony jak obiekt: przesunięcie x, y (bloki), z (skala skryptu).
+	bool linkOffset(int i, int link, float out[3]) const;
+	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
+	void linkObject(int child, int parent, int link);
 	int addObject(const std::string& className, float x, float y, float zScript);
 	const ow::Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
 	const ow::BlockDb& blockDb() const { return blocks_; }
@@ -155,7 +161,10 @@ private:
 		float animStart = 0.f;
 	};
 	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
-	std::map<std::string, ow::ClassModel> gameModels_; // modele nadane przez grę (stałe adresy)
+	std::map<std::string, ow::ClassModel> gameModels_;
+	std::map<int, std::pair<int, int>> links_; // dziecko -> (rodzic, punkt)
+	int currentMesh(const PlacedObject& o) const; // indeks meshu bieżącej klatki animacji
+	void applyLinks(); // modele nadane przez grę (stałe adresy)
 
 	ModelSlot* model(const std::string& file);
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.

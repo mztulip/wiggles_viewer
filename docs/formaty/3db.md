@@ -63,7 +63,7 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | links | 12 B × linkCount | patrz niżej |
 | bboxMin | `vec3` | ✅ AABB klatki, w tych samych jednostkach co pozycje po dekwantyzacji |
 | bboxMax | `vec3` | |
-| unknown80 | 128 B | 🔶 wygląda na 32 × `u32` (małe, rosnące liczby) |
+| linkTable | 128 B | ✅ 32 × `u32`: punkty zaczepienia 0..31 tej klatki, wartość = indeks rekordu w puli 20-bajtowej (§9); indeks poza pulą = brak punktu |
 | shadowIndex | `u16` | ✅ indeks cienia (§3.6) albo `0xFFFF`, gdy klatka nie ma cienia |
 | unknown30 | 48 B | 🔶 wygląda na 12 × `f32` |
 | cmapIndex | `u16` | ✅ indeks cmapy (§3.7) albo `0xFFFF`. Każda cmapa należy do dokładnie jednego mesha |
@@ -125,7 +125,7 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | uvCount | `u16` × nUV | liczba par UV w każdej puli |
 | ptsCount | `u16` × nPts | liczba punktów w każdej puli |
 | nrmCount | `u16` × nNrm | liczba bajtów w każdej puli normalnych |
-| unk20 | 20 B × nUnk20 | 🔶 |
+| linkRecords | 20 B × n | ✅ rekordy punktów zaczepienia: 3 × `u16` skwantyzowane x, y, z + 14 B ❓ (§9) |
 
 ### 3.9 Dane pul (w tej kolejności, pula po puli)
 | Pula | Element | Opis |
@@ -236,3 +236,17 @@ cienie 2, cmapy 0
 - `unknown80`, `unknown30` w meshu; flagi linku; rekordy 20-bajtowe; znaczenie `cmap` (kolizje? maski zaznaczania?).
 - Pola animacji: `flags`, `unknownF`, `move`, `rotate` (ruch korzenia?).
 - Prędkość animacji (10 kl./s według Diggles-Unity, niepotwierdzone) i to, czy gra interpoluje.
+
+## 9. Punkty zaczepienia ✅
+
+Gra przypina obiekty do punktów modelu (`link_obj dziecko rodzic punkt`): czapki do głowy, narzędzia do rąk. Modele są animowane wierzchołkowo, więc punkty są zapisane osobno w każdej klatce (meshu):
+
+```
+rekord = linkRecords[ linkTable[punkt] ]          (linkTable: 32 × u32 w meshu bieżącej klatki)
+x = dequant(u16[0]), y = dequant(u16[1]), z = 2 · dequant(u16[2])   (jednostki modelu; z gra skaluje podwójnie)
+dequant(v) = (v − 32768) · 0,25
+```
+
+Punkt obracamy jak obiekt-rodzica (oś pionowa) i dodajemy do jego pozycji; dziecko dostaje też obrót rodzica. Punkty modelu krasnala `mann`: 0 prawa ręka, 1 lewa ręka, 4 głowa, 6 i 11 tułów, 7 ręka z narzędziem, 10 usta. Przykład: `stand_anim_a`, klatka 0, głowa ≈ (0, −1, 0,05) bloku, czyli blok nad stopami.
+
+Źródło: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/HAT_LINK_SYSTEM.md` §3–4. ✅ Sprawdzone u nas: czapki z zapisu kampanii (przypięte w zapisie do punktu 4 krasnali) siedzą na głowach i podążają za animacją. Kod: `Model3db::linkOffset`, `MapView::linkOffset`.

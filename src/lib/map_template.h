@@ -36,6 +36,9 @@ struct TemplateObject {
 	std::string detail;       // loading_objdetail: high, medium, low, off (pusty = brak)
 	bool physic = false;      // set_physic
 	std::string info;         // call_method … Editor_Set_Info {…}: parametry obiektu z edytora, np. {volume 1000} {vpf 5}
+	int owner = -1;           // z zapisu: gracz 0..7, −1 = świat
+	int linkParent = -1;      // z zapisu: ID obiektu-rodzica przypięcia (nazwa obiektu = ID)
+	int linkPoint = 0;
 };
 
 struct TemplateScript {

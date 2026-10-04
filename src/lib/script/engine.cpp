@@ -499,12 +499,13 @@ int cmdSetPos(Engine& e, Tcl_Interp* in, Args& a) {
 int cmdSetAnim(Engine& e, Tcl_Interp* in, Args& a) {
 	int id = a.size() > 2 ? e.resolveObj(in, a[1]) : 0;
 	if (e.host_ && id)
-		e.host_->setAnim(id, a[2], a.size() > 3 ? std::atoi(a[3].c_str()) : 0, a.size() > 4 ? std::atoi(a[4].c_str()) : 2);
+		e.host_->setAnim(id, e.resolveAnim(e.object(id), a[2]), a.size() > 3 ? std::atoi(a[3].c_str()) : 0,
+		                 a.size() > 4 ? std::atoi(a[4].c_str()) : 2);
 	setResult(in, "");
 	return TCL_OK;
 }
-int cmdAnimLength(Engine& e, Tcl_Interp* in, Args& a) {
-	setResult(in, fmt(e.host_ && a.size() > 1 ? e.host_->animLength(a[1]) * 10.0 : 10.0)); // w klatkach
+int cmdAnimLength(Engine& e, Tcl_Interp* in, Args& a) { // db_animlength obiekt.anim: długość w klatkach
+	setResult(in, fmt(e.host_ && a.size() > 1 ? e.host_->animLength(0, a[1]) * 10.0 : 10.0));
 	return TCL_OK;
 }
 // action <obj> wait <s> [kod] | anim <anim> [kod] | walk … : 🔶 wait i anim czekają, reszta kończy się od razu.
@@ -567,8 +568,9 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 		dur = 0.3;
 		done = a.size() > 4 ? a[4] : "";
 	} else if (kind == "anim" && a.size() > 3) {
-		if (e.host_) e.host_->setAnim(o->id, a[3], 0, 1);
-		dur = e.host_ ? e.host_->animLength(a[3]) : 1.0;
+		std::string an = e.resolveAnim(o, a[3]);
+		if (e.host_) e.host_->setAnim(o->id, an, 0, 1);
+		dur = e.host_ ? e.host_->animLength(o->id, an) : 1.0;
 		done = a.size() > 4 ? a[4] : "";
 	} else {
 		e.stub("action " + kind);
@@ -730,11 +732,20 @@ int cmdPosAxis(Engine& e, Tcl_Interp* in, Args& a) { // get_posx/y/z obj
 	setResult(in, fmt(p[a[0].back() - 'x']));
 	return TCL_OK;
 }
-int cmdLinkPos(Engine& e, Tcl_Interp* in, Args& a) { // 🔶 punkt modelu = pozycja obiektu (bez punktów zaczepienia .3db)
-	float p[3] = {0, 0, 0};
+// get_linkpos obj punkt: przesunięcie punktu zaczepienia względem pozycji obiektu (obrócone jak obiekt).
+int cmdLinkPos(Engine& e, Tcl_Interp* in, Args& a) {
+	float p[3] = {0.f, -0.5f, 0.f};
 	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
-	if (e.host_ && id) e.host_->getPos(id, p);
-	setResult(in, a[0] == "get_linkpos" ? "0 -0.5 0" : vecStr(p));
+	if (e.host_ && id && a.size() > 2 && !e.host_->linkOffset(id, std::atoi(a[2].c_str()), p)) p[0] = p[2] = 0, p[1] = -0.5f;
+	setResult(in, vecStr(p));
+	return TCL_OK;
+}
+// link_obj dziecko rodzic punkt: przypięcie; link_obj dziecko: odpięcie.
+int cmdLinkObj(Engine& e, Tcl_Interp* in, Args& a) {
+	int child = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	int parent = a.size() > 2 ? e.resolveObj(in, a[2]) : 0;
+	if (e.host_ && child) e.host_->link(child, parent, a.size() > 3 ? std::atoi(a[3].c_str()) : 0);
+	setResult(in, "");
 	return TCL_OK;
 }
 int cmdVectorFix(Engine& e, Tcl_Interp* in, Args& a) { // najbliższa osiągalna pozycja
@@ -986,7 +997,7 @@ const Entry kCommands[] = {
 	{"is_contained", cmdConst}, {"is_wearing_pannier", cmdConst}, {"get_max_fow", cmdConst}, {"inv_find", cmdConst},
 	{"inv_find_obj", cmdConst}, {"inv_cnt", cmdConst}, {"inv_list", cmdConst}, {"get_bestexp", cmdConst},
 	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
-	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"vector_fix", cmdVectorFix},
+	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"link_obj", cmdLinkObj}, {"vector_fix", cmdVectorFix},
 	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop}, {"get_vectorxz", cmdXZ}, {"get_anglexz", cmdXZ},
 	{"lcount", cmdXZ}, {"dist_between", cmdXZ}, {"sparetime", cmdSparetime}, {"net", cmdNet}, {"get_owner_attrib", cmdOwnerAttrib},
 	{"set_owner_attrib", cmdOwnerAttrib}, {"add_owner_attrib", cmdOwnerAttrib},
@@ -1296,6 +1307,12 @@ void Engine::tick(double dt) {
 		if (!o->state.empty() && o->stateCounter > 0 && o->actionUntil < 0 && !o->walking)
 			if (auto it = o->cls->states.find(o->state); it != o->cls->states.end()) runIn(*o, it->second, ("stan " + o->state).c_str());
 	}
+}
+
+std::string Engine::resolveAnim(const ScriptObject* o, const std::string& anim) const {
+	if (!o || !o->cls || anim.find('.') != std::string::npos) return anim;
+	auto it = o->cls->classAnims.find(anim);
+	return it != o->cls->classAnims.end() ? it->second : anim;
 }
 
 void Engine::finishAction(ScriptObject& o, bool ok) {

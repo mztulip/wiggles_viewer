@@ -39,7 +39,9 @@ struct MeshLink {
 struct Mesh3db {
 	std::vector<MeshLink> links;
 	Vec3f bboxMin{}, bboxMax{};
-	std::array<uint8_t, 0x80> unknown80{}; // 🔶 32 × u32
+	// ✅ Punkty zaczepienia: 32 × u32, indeks rekordu w Model3db::unknown20 dla punktu 0..31 (głowa = 4,
+	// prawa ręka = 0, lewa = 1, usta = 10); indeks poza zakresem = brak punktu (Diggles-Unity HAT_LINK_SYSTEM.md §4).
+	std::array<uint8_t, 0x80> unknown80{};
 	uint16_t shadowIndex = 0xFFFF; // ✅ indeks w Model3db::shadows albo 0xFFFF
 	std::array<uint8_t, 0x30> unknown30{}; // 🔶 12 × f32
 	uint16_t cmapIndex = 0xFFFF; // ✅ indeks w Model3db::cmaps albo 0xFFFF
@@ -74,7 +76,7 @@ struct Model3db {
 	std::vector<Animation3db> animations;
 	std::vector<std::array<uint8_t, 32 * 32>> shadows;
 	std::vector<CMap3db> cmaps;
-	std::vector<std::array<uint8_t, 20>> unknown20;
+	std::vector<std::array<uint8_t, 20>> unknown20; // rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz + 14 B ❓
 
 	// Pule danych
 	std::vector<std::vector<uint16_t>> triangles;            // indeksy, po 3 na trójkąt
@@ -89,6 +91,19 @@ struct Model3db {
 	static Vec3f dequant(const std::array<uint16_t, 3>& p) { return {dequant(p[0]), dequant(p[1]), dequant(p[2])}; }
 
 	const Object3db* findObject(const std::string& name) const;
+	// Punkt zaczepienia `link` (0..31) w klatce (meshu) `mesh`, w jednostkach modelu (jak wierzchołki).
+	// x, y = dequant(u16); z = 2·dequant(u16) (gra skaluje z punktów podwójnie). false = brak punktu.
+	bool linkOffset(uint32_t mesh, int link, Vec3f& out) const {
+		if (mesh >= meshes.size() || link < 0 || link >= 32) return false;
+		const auto& t = meshes[mesh].unknown80;
+		uint32_t slot = uint32_t(t[size_t(link) * 4]) | uint32_t(t[size_t(link) * 4 + 1]) << 8 |
+		                uint32_t(t[size_t(link) * 4 + 2]) << 16 | uint32_t(t[size_t(link) * 4 + 3]) << 24;
+		if (slot >= unknown20.size()) return false;
+		const auto& r = unknown20[slot];
+		auto u = [&](int o) { return uint16_t(r[size_t(o)] | (r[size_t(o) + 1] << 8)); };
+		out = {dequant(u(0)), dequant(u(2)), 2.f * dequant(u(4))};
+		return true;
+	}
 };
 
 // Czy dwie klatki (meshe) mają tę samą topologię: te same materiały i pule trójkątów

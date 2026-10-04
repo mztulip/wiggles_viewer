@@ -244,6 +244,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	pmp_.reset();
 	l2m_.reset();
 	objects_.clear();
+	links_.clear();
 	heights_.reset();
 	terrain_.clear();
 	placed_ = 0;
@@ -321,6 +322,15 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		}
 	}
 	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
+	// Przypięcia z zapisu (czapki, narzędzia): rodzic po ID zapisanym w nazwie obiektu.
+	{
+		std::map<std::string, int> byName;
+		for (size_t i = 0; i < objects_.size(); ++i) byName[objects_[i].src.name] = int(i);
+		for (size_t i = 0; i < objects_.size(); ++i)
+			if (objects_[i].src.linkParent >= 0)
+				if (auto it = byName.find(std::to_string(objects_[i].src.linkParent)); it != byName.end())
+					linkObject(int(i), it->second, objects_[i].src.linkPoint);
+	}
 	buildEmitters();
 	initFluidSim();
 	buildFluids();
@@ -483,6 +493,58 @@ float MapView::animLength(int i) const {
 	return float(o.slot->model->animations[size_t(o.animation)].frames.size()) / 10.f;
 }
 
+float MapView::animSeconds(int i, const std::string& anim) const {
+	const auto& o = objects_[size_t(i)];
+	if (!o.slot || !o.cls) return 0.f;
+	std::string want = Vfs::lower(anim);
+	for (const auto& ob : o.slot->model->objects) {
+		if (Vfs::lower(ob.name) != Vfs::lower(o.cls->object)) continue;
+		for (uint32_t a : ob.animations)
+			if (Vfs::lower(o.slot->model->animations[a].name) == want) return float(o.slot->model->animations[a].frames.size()) / 10.f;
+	}
+	return 0.f;
+}
+
+int MapView::currentMesh(const PlacedObject& o) const {
+	if (!o.slot || o.animation < 0) return -1;
+	const auto& an = o.slot->model->animations[size_t(o.animation)];
+	if (an.frames.empty()) return -1;
+	int n = int(an.frames.size());
+	int mode = o.animMode >= 0 ? o.animMode : o.cls ? o.cls->animMode : 2;
+	float f = mode != 0 ? (time_ - o.animStart) * 10.f : 0.f;
+	if (mode == 1) f = std::min(f, float(n - 1));
+	return int(an.frames[size_t(int(f) % n)]);
+}
+
+bool MapView::linkOffset(int i, int link, float out[3]) const {
+	const auto& o = objects_[size_t(i)];
+	int mesh = currentMesh(o);
+	Vec3f v;
+	if (mesh < 0 || !o.slot->model->linkOffset(uint32_t(mesh), link, v)) return false;
+	// Obrót jak w objectMatrix (oś pionowa, kąt −ry), potem jednostki modelu -> bloki; z świata -> skala skryptu (×2).
+	float c = std::cos(-o.src.rot[1]), s = std::sin(-o.src.rot[1]);
+	float x = c * v.x + s * v.z, z = -s * v.x + c * v.z;
+	out[0] = x / kBlock, out[1] = v.y / kBlock, out[2] = 2.f * z / kBlock;
+	return true;
+}
+
+void MapView::linkObject(int child, int parent, int link) {
+	if (parent < 0) links_.erase(child);
+	else links_[child] = {parent, link};
+}
+
+void MapView::applyLinks() {
+	for (auto& [child, pl] : links_) {
+		if (child >= int(objects_.size()) || pl.first >= int(objects_.size())) continue;
+		float off[3];
+		const auto& p = objects_[size_t(pl.first)].src;
+		auto& c = objects_[size_t(child)].src;
+		if (!linkOffset(pl.first, pl.second, off)) off[0] = off[2] = 0, off[1] = -1.f;
+		c.pos[0] = p.pos[0] + off[0], c.pos[1] = p.pos[1] + off[1], c.pos[2] = p.pos[2] + off[2];
+		c.rot[0] = p.rot[0], c.rot[1] = p.rot[1], c.rot[2] = p.rot[2];
+	}
+}
+
 int MapView::addObject(const std::string& className, float x, float y, float zScript) {
 	PlacedObject p;
 	p.src.className = className;
@@ -547,6 +609,7 @@ float MapView::baseLight(float x, float y) const {
 
 void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& baseOpt,
                      float gameZOffset, const glm::vec3& focus) {
+	applyLinks(); // przypięte obiekty (czapki, narzędzia) za punktem rodzica w tej klatce
 	// Lampy: do kmaxGameLights najbliższych środka kadru.
 	std::vector<GameLight> lights;
 	if (gameLighting_) {
