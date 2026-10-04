@@ -139,6 +139,7 @@ bool MapView::resolve(const ClassModel& cm, ModelSlot*& slot, int& animation) {
 
 bool MapView::loadTemplate(const std::string& file) {
 	file_ = file;
+	baseSave_.reset();
 	scenarioMode_ = false;
 	Scenario sc;
 	sc.placements.push_back({file, 0, 0});
@@ -199,6 +200,7 @@ bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& 
 		char info[160];
 		std::snprintf(info, sizeof info, tr("Zapis %s, czas gry %.0f s, %zu obiektów."), s.header.c_str(), s.gameTime, s.objects.size());
 		scenarioInfo_ = info;
+		baseSave_ = std::make_shared<SaveGame>(std::move(s)); // baza do zapisu łatą
 	} catch (const std::exception& e) {
 		error_ = tr("zapis ") + file + ": " + e.what();
 		return false;
@@ -223,6 +225,7 @@ bool MapView::loadScenario(const std::string& file) {
 	list_ = ListMode::Scenarios;
 	file_ = file;
 	scenarioMode_ = true;
+	baseSave_.reset();
 	// systeminit.tcl (menu gry) leży w Data/, pozostałe scenariusze w Data/Gamesave/.
 	Scenario sc = parseScenario(*vfs_, Vfs::lower(file) == "systeminit.tcl" ? "Data/systeminit.tcl" : "Data/Gamesave/" + file);
 	scenarioInfo_.clear();

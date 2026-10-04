@@ -5,17 +5,19 @@ Program `openwiggles` (`src/game/main.cpp`) łączy to, co opisują rozdziały 1
 ## 14.1 Start
 
 ```
-openwiggles                       # najnowszy zapis z Data/Gamesave (np. początek kampanii), bez zapisów: szablon kris_unq_060
+openwiggles                       # menu wyboru gry: nasze zapisy, zapisy gry z Data/Gamesave, scenariusze
 openwiggles --save save_kampania.sav
 openwiggles --scenario single_Knockersdorf
 openwiggles --template urw_gng_021_a
 ```
 
+Menu (🔶, zamiast menu oryginału) otwiera też Esc w trakcie gry; wybrana gra wczytuje się po klatce z napisem „Wczytywanie…”. Bez podanego źródła tryb zrzutu (`--screenshot`) bierze najnowszy zapis z `Data/Gamesave` (podgląd menu: `OW_TEST_MENU=1`).
+
 Krasnale to obiekty klasy `Zwerg` z zapisu albo z `set_pos [qnew Zwerg] {x y z}` w scenariuszu. Model: `mann.3db`, obiekt `mann`. Animacje mają nazwy z `Scripts/classes/zwerg/z_anims.tcl` (`set_class_anim walkloop mann.gehen_loop` itd.). Gdy mapa nie ma krasnali, gra stawia jednego przy środku kamery.
 
 ## 14.2 Kamera
 
-Prawo `set_view` z rozdziału 6: cel (x, y) w blokach, `zoom`, kąty. Gracz przesuwa cel (WASD, strzałki, środkowy przycisk myszy) i zmienia zoom (kółko, 0,9–3).
+Prawo `set_view` z rozdziału 6: cel (x, y) w blokach, `zoom`, kąty. Gracz przesuwa cel (WASD, strzałki, środkowy przycisk myszy) i zmienia zoom (kółko, 0,9–3). Jak w oryginale kamera jedzie też, gdy kursor dotknie krawędzi okna: pas szerokości `max(4, min(szer, wys)/60)` px, prędkość jak klawiszy (🔶 obie wartości na oko, do porównania z grą).
 
 Wskazywanie pola: promień z kamery przez piksel kursora przecinamy z płaszczyzną głębokości krasnali (z świata 11 bloków). Pole = `floor(x), floor(y)` punktu przecięcia.
 
@@ -69,10 +71,15 @@ Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 1
 - Prawy panel: krasnale z imionami (nazwa instancji z zapisu), stanem skryptu i paskami potrzeb z atrybutów (`atr_Hitpoints`, `atr_Nutrition`, `atr_Alertness`, `atr_Mood`; czerwony poniżej 30%). Kliknięcie zaznacza krasnala i przesuwa kamerę.
 - Żółty trójkąt nad zaznaczonym krasnalem.
 - Spacja: pauza, klawisze 1/2/3: tempo ×1/×2/×4.
+- Esc: menu wyboru gry (gra stoi); w menu „Wróć do gry” albo „Wyjście”.
 
-## 14.7 Zapis i wczytanie gry (własny format `.ows`) 🔶
+## 14.7 Zapis i wczytanie gry 🔶
 
-F5 zapisuje grę do `~/.local/share/openwiggles/saves/quick.ows`, F9 ją wczytuje (`--load plik.ows`, w testach `--save-to plik.ows` po `--warmup`). Zgodny zapis `.sav` gry jest na później (TODO); `.ows` zapisuje **źródło mapy i zmiany**:
+**Zapis jak w oryginale (`.sav`).** Oryginał zapisuje szybki zapis do `Data/Gamesave/quick_Quicksave_<data>.sav`; katalogu gry nie zmieniamy, więc nasze zapisy leżą w katalogu użytkownika. Gra wczytana z zapisu `.sav` zapisuje się do `.sav`: F5 tworzy `~/.local/share/openwiggles/saves/quick_Quicksave_<RRRRMMDD_GGMM>.sav` (nazwa jak w grze). Nie budujemy pliku od zera, tylko **łatamy** wczytany zapis: kopiujemy jego bajty i nadpisujemy czas, kamerę, pola mapy (bloki, materiał, płyny, nieodkryty teren) oraz pozycje i obroty obiektów ([formaty/sav.md, „Zapis łatą”](../formaty/sav.md)). Dlaczego tak: reszty pliku (sekcje po znaczniku 7) jeszcze nie rozumiemy, a łata zostawia ją nietkniętą, więc plik dalej wczytuje oryginalna gra. Taki zapis otwiera wigview i openwiggles (`--save plik.sav`) oraz oryginalna gra.
+
+Czego łata nie przenosi (🔶, TODO): obiektów utworzonych i usuniętych w naszej grze, timerów, zmiennych Tcl i stanów skryptów (po wczytaniu biorą się z oryginalnego zapisu). Wykopane pola się zapisują.
+
+**Format tymczasowy (`.ows`).** Gra uruchomiona ze scenariusza `.tcl` albo szablonu nie ma zapisu-bazy, więc F5 zapisuje `quick.ows`, a F9 wczytuje najnowszy zapis (`--load plik.ows`; w testach `--save-to plik.ows|plik.sav` po `--warmup`). `.ows` zapisuje **źródło mapy i zmiany**:
 
 ```
 "OWSAVE" u32 wersja=1

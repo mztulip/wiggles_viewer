@@ -134,10 +134,12 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	if (o.className != declared) throw ParseError("klasa ciała obiektu " + std::to_string(id) + " różni się od deklaracji");
 	o.type = r.i32();
 	if (o.type < -1 || o.type > 12) throw ParseError("nieprawidłowy typ obiektu " + std::to_string(o.type));
+	o.posOffset = r.pos();
 	for (float& v : o.pos) v = r.f32();
 	r.skipI32(3);           // pozycja przejściowa
 	r.skipI32(3);           // czas utworzenia, początek i długość pracy
 	int32_t core[13];
+	o.rotOffset = r.pos() + 7 * 4; // rdzeń[7..9] = obrót
 	for (int32_t& v : core) v = r.i32();
 	for (int i = 0; i < 3; ++i) std::memcpy(&o.rot[i], &core[7 + i], 4); // obrót: rdzeń[7..9]
 	r.skipIntVector();      // odwołania do obiektów potomnych
@@ -303,13 +305,16 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 	if (!data) throw ParseError("zapis nie jest strumieniem gzip: " + err);
 	SaveReader r(*data);
 	SaveGame s;
+	s.raw = *data;
 	s.version = r.i32();
 	if (s.version != 0xA5) throw ParseError("obsługujemy tylko wersję zapisu 0xA5, jest 0x" + std::to_string(s.version));
 	s.header = r.str();
+	s.timeOffset = r.pos();
 	s.gameTime = r.f64();
 	r.marker(1);
 	// Sekcja 1 (205 B): kamera na przesunięciach 45..61 (ognisko X, Y, zoom, kąty dx, dy).
 	size_t sec1 = r.pos();
+	s.viewOffset = sec1 + 45;
 	r.skip(45);
 	s.viewX = r.f32();
 	s.viewY = r.f32();
@@ -328,6 +333,7 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 	r.skipI32(4);
 	size_t n = size_t(s.width) * size_t(s.height);
 	s.tiles.resize(n);
+	s.tilesOffset = r.pos();
 	for (SaveTile& t : s.tiles) {
 		size_t start = r.pos();
 		t.block = uint32_t(r.i32());
@@ -381,6 +387,51 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 		s.decoError = true; // dekoracje są dodatkiem: zapis bez nich nadal się wyświetla
 	}
 	return s;
+}
+
+bool writeSavePatch(const SaveGame& base, const SavePatch& p, const std::string& path, std::string& err) {
+	if (base.raw.empty()) {
+		err = "brak bazowego zapisu";
+		return false;
+	}
+	std::vector<uint8_t> d = base.raw;
+	auto put = [&](size_t off, const void* v, size_t n) {
+		if (off + n <= d.size()) std::memcpy(d.data() + off, v, n);
+	};
+	put(base.timeOffset, &p.gameTime, 8);
+	put(base.viewOffset, p.view, 20);
+	if (p.tiles.size() == base.tiles.size())
+		for (size_t i = 0; i < p.tiles.size(); ++i) {
+			const auto& t = p.tiles[i];
+			size_t o = base.tilesOffset + i * 53;
+			put(o, &t.block, 4);
+			put(o + 15, &t.cell, 2);
+			// Typ .pmp -> rodzaj gruntu zapisu (4→0 A, 3→1 B, 2 i 0→2 C, 5→3 otwór), bit 0x80 bez zmian.
+			uint8_t ty = t.pmpType & 0x7F, mat = ty == 4 ? 0 : ty == 3 ? 1 : ty == 5 ? 3 : 2;
+			uint8_t st0 = d[o + 17];
+			st0 = uint8_t((st0 & ~0x83) | mat | (t.pmpType & 0x80));
+			put(o + 17, &st0, 1);
+			uint8_t ft[2] = {t.fluidType, t.fluidType};
+			put(o + 19, ft, 2);
+			put(o + 21, &t.fluidFill, 4);
+			put(o + 25, &t.fluidFill, 4);
+			put(o + 45, &t.fog, 1);
+		}
+	for (const auto& o : base.objects) {
+		auto it = p.objects.find(o.id);
+		if (it == p.objects.end()) continue;
+		put(o.posOffset, it->second.pos, 12);
+		put(o.rotOffset, it->second.rot, 12);
+	}
+	gzFile f = gzopen(path.c_str(), "wb7"); // GameSaveCompression = 7 jak w rejestrze gry
+	if (!f) {
+		err = "nie można utworzyć " + path;
+		return false;
+	}
+	bool ok = gzwrite(f, d.data(), unsigned(d.size())) == int(d.size());
+	ok = gzclose(f) == Z_OK && ok;
+	if (!ok) err = "błąd zapisu " + path;
+	return ok;
 }
 
 } // namespace ow

@@ -19,6 +19,7 @@
 #include "lib/gfx/model_renderer.h"
 #include "lib/map_template.h"
 #include "lib/map_world.h"
+#include "lib/save_game.h"
 #include "lib/model3db.h"
 
 #include <glm/glm.hpp>
@@ -132,6 +133,9 @@ public:
 			}
 		if (ch) fogDirty_ = true;
 	}
+	const ow::SaveGame* baseSave() const { return baseSave_.get(); } // wczytany zapis .sav (baza zapisu łatą)
+	const std::vector<uint8_t>& fogBytes() const { return saveFog_; } // nieodkryty teren gracza 0 (z zapisu)
+	const ow::L2m* layer() const { return l2m_ ? &*l2m_ : nullptr; }
 	const std::vector<uint8_t>& fluidTypes() const { return fluidType_; }
 	const std::vector<float>& fluidFills() const { return fluidFill_; }
 	void setFluidState(const std::vector<uint8_t>& type, const std::vector<float>& fill) {
@@ -271,6 +275,7 @@ private:
 	std::optional<ow::TemplateScript> script_;
 	std::optional<ow::Pmp> pmp_;
 	std::optional<ow::L2m> l2m_;
+	std::shared_ptr<ow::SaveGame> baseSave_;
 	std::vector<PlacedObject> objects_;
 	glm::vec3 center_{0.f};
 	float radius_ = 500.f;

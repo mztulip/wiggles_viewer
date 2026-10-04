@@ -4,7 +4,7 @@
 //   openwiggles [--game <katalog gry>] [--scenario NAZWA | --save PLIK.sav | --template SZABLON]
 //               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--screenshot plik.png]
 //               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
-// F5 / F9: szybki zapis i wczytanie (~/.local/share/openwiggles/saves/quick.ows).
+// F5 / F9: szybki zapis i wczytanie najnowszego zapisu (~/.local/share/openwiggles/saves/, .sav jak w grze albo .ows).
 // Bez mapy: najnowszy zapis z Data/Gamesave, a gdy go nie ma, szablon kris_unq_060 z jednym krasnalem.
 //
 // Sterowanie: LPM zaznacza krasnala, PPM na wolnym polu = idź, PPM na skale = kop.
@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <filesystem>
 #include <set>
@@ -261,6 +262,16 @@ struct Game {
 	std::string status;
 	int hoverX = -1, hoverY = -1;
 	bool showHelp = true;
+	bool showMenu = false;  // menu wyboru gry (start bez źródła, Esc w grze)
+	bool loaded = false;    // jest wczytany świat
+	bool quit = false;
+	Source pending;         // gra wybrana w menu, wczytywana po narysowaniu klatki „Wczytywanie…”
+	int pendingFrames = 0;
+	struct MenuEntry {
+		Source src;
+		std::string label;
+	};
+	std::vector<MenuEntry> menuOwn, menuGame, menuScen; // listy menu (odświeżane przy otwarciu)
 
 	const Pmp* grid() const { return maps.grid(); }
 
@@ -490,6 +501,7 @@ struct Game {
 		else if (s.kind == "template") ok = maps.loadTemplate(s.name);
 		else ok = maps.loadScenario(s.name); // scenariusz .tcl albo zapis .sav z Data/Gamesave
 		source = s;
+		loaded = ok;
 		digMarks.clear(), glides.clear();
 		initWorld();
 		if (scripts) {
@@ -505,6 +517,55 @@ struct Game {
 		const char* xdg = std::getenv("XDG_DATA_HOME");
 		const char* home = std::getenv("HOME");
 		return (xdg && *xdg ? std::string(xdg) : std::string(home ? home : ".") + "/.local/share") + "/openwiggles/saves";
+	}
+
+	// Zapis zgodny z grą (.sav, łata na wczytanym zapisie; rozdział 14.7). false = brak bazy (gra z szablonu).
+	bool saveSav(const std::string& path, std::string& err) {
+		const SaveGame* base = maps.baseSave();
+		const Pmp* g = grid();
+		if (!base || !g) {
+			err = tr("gra nie pochodzi z zapisu .sav");
+			return false;
+		}
+		SavePatch p;
+		p.gameTime = base->gameTime + (scripts ? scripts->time() : 0.0);
+		float v[5] = {cam.x, cam.y, cam.zoom, cam.dx, cam.dy};
+		std::copy(v, v + 5, p.view);
+		const auto& ft = maps.fluidTypes();
+		const auto& ff = maps.fluidFills();
+		const auto& fog = maps.fogBytes();
+		const L2m* l2 = maps.layer();
+		p.tiles.resize(g->blocks.size());
+		for (size_t i = 0; i < p.tiles.size(); ++i)
+			p.tiles[i] = {g->blocks[i], g->types[i], uint16_t(l2 && i < l2->values.size() ? l2->values[i] : 0),
+			              uint8_t(i < ft.size() ? ft[i] : 0), i < ff.size() ? ff[i] : 0.f,
+			              uint8_t(i < fog.size() ? fog[i] : base->tiles[i].fog[0])};
+		for (int i = 0; i < baseObjects && i < maps.objectCount(); ++i) {
+			char* end = nullptr;
+			long id = std::strtol(maps.objectName(i).c_str(), &end, 10);
+			if (maps.objectName(i).empty() || *end) continue;
+			SavePatch::Object o;
+			std::copy(maps.objectPos(i), maps.objectPos(i) + 3, o.pos);
+			std::copy(maps.objectRot(i), maps.objectRot(i) + 3, o.rot);
+			p.objects[int(id)] = o;
+		}
+		std::error_code ec;
+		std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+		return writeSavePatch(*base, p, path, err);
+	}
+
+	// Szybki zapis: .sav, gdy gra pochodzi z zapisu gry, inaczej własny .ows (🔶 do zastąpienia).
+	std::string quickSave() {
+		char name[64];
+		std::time_t t = std::time(nullptr);
+		std::strftime(name, sizeof name, "quick_Quicksave_%Y%m%d_%H%M.sav", std::localtime(&t));
+		std::string err;
+		if (maps.baseSave()) {
+			std::string path = saveDir() + "/" + name;
+			return saveSav(path, err) ? std::string(tr("Zapisano: ")) + path : std::string(tr("Błąd zapisu: ")) + err;
+		}
+		std::string path = saveDir() + "/quick.ows";
+		return saveGame(path) ? std::string(tr("Zapisano (format tymczasowy .ows): ")) + path : std::string(tr("Błąd zapisu: ")) + path;
 	}
 
 	// Zapis .ows (rozdział 14.7): źródło + zmiany (bloki, płyny, obiekty, stan skryptów, kamera, kopanie).
@@ -553,7 +614,22 @@ struct Game {
 		return bool(f);
 	}
 
+	// Najnowszy zapis (.sav albo .ows) w katalogu zapisów; pusty, gdy brak.
+	static std::string newestSave() {
+		std::string best;
+		std::filesystem::file_time_type bt{};
+		std::error_code ec;
+		for (auto& e : std::filesystem::directory_iterator(saveDir(), ec)) {
+			std::string ext = e.path().extension().string();
+			if (ext != ".sav" && ext != ".ows") continue;
+			auto t = e.last_write_time(ec);
+			if (best.empty() || t > bt) best = e.path().string(), bt = t;
+		}
+		return best;
+	}
+
 	bool loadGame(const std::string& path) {
+		if (path.size() > 4 && path.compare(path.size() - 4, 4, ".sav") == 0) return loadSource({"savepath", path});
 		OwsReader r;
 		{
 			std::ifstream f(path, std::ios::binary);
@@ -785,7 +861,69 @@ struct Game {
 		maps.render(vp, world, draw, target.z, target);
 	}
 
+	// Listy menu: nasze zapisy (najnowsze pierwsze), zapisy gry z Data/Gamesave, scenariusze.
+	void refreshMenu() {
+		menuOwn.clear(), menuGame.clear(), menuScen.clear();
+		std::vector<std::pair<std::filesystem::file_time_type, std::string>> own;
+		std::error_code ec;
+		for (auto& e : std::filesystem::directory_iterator(saveDir(), ec)) {
+			std::string ext = e.path().extension().string();
+			if (ext == ".sav" || ext == ".ows") own.push_back({e.last_write_time(ec), e.path().string()});
+		}
+		std::sort(own.begin(), own.end(), [](auto& a, auto& b) { return a.first > b.first; });
+		for (auto& [t, path] : own) menuOwn.push_back({{"file", path}, std::filesystem::path(path).filename().string()});
+		auto files = vfs.list("Data/Gamesave");
+		std::sort(files.begin(), files.end());
+		for (const auto& f : files) {
+			std::string ext = f.size() > 4 ? Vfs::lower(f.substr(f.size() - 4)) : "";
+			if (ext == ".sav") menuGame.push_back({{"scenario", f}, f});
+			else if (ext == ".tcl" && Vfs::lower(f).rfind("multi_", 0) != 0) menuScen.push_back({{"scenario", f}, f});
+		}
+	}
+
+	// Menu wyboru gry (🔶 zastępuje menu oryginału): wybór zapisu albo scenariusza.
+	void menu() {
+		ImVec2 ds = ImGui::GetIO().DisplaySize;
+		ImGui::SetNextWindowPos(ImVec2(ds.x * 0.5f, ds.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(std::min(560.f, ds.x - 32), std::min(520.f, ds.y - 32)), ImGuiCond_Always);
+		ImGui::Begin(tr("Wybierz grę"), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+		if (pendingFrames > 0) {
+			ImGui::Text(tr("Wczytywanie: %s…"), std::filesystem::path(pending.name).filename().string().c_str());
+			ImGui::End();
+			return;
+		}
+		auto list = [&](const char* title, const std::vector<MenuEntry>& v) {
+			if (v.empty() || !ImGui::CollapsingHeader(title, ImGuiTreeNodeFlags_DefaultOpen)) return;
+			ImGui::PushID(title);
+			for (size_t i = 0; i < v.size(); ++i)
+				if (ImGui::Selectable((v[i].label + "##" + std::to_string(i)).c_str()))
+					pending = v[i].src, pendingFrames = 2;
+			ImGui::PopID();
+		};
+		ImGui::BeginChild("lists", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+		list(tr("Twoje zapisy"), menuOwn);
+		list(tr("Zapisy gry (Data/Gamesave)"), menuGame);
+		list(tr("Scenariusze"), menuScen);
+		ImGui::EndChild();
+		if (loaded && ImGui::Button(tr("Wróć do gry (Esc)"))) showMenu = false;
+		if (loaded) ImGui::SameLine();
+		if (ImGui::Button(tr("Wyjście"))) quit = true;
+		ImGui::End();
+	}
+
+	// Wczytanie gry wybranej w menu: najpierw klatka z napisem „Wczytywanie…”, potem wczytanie.
+	void menuStep() {
+		if (pendingFrames <= 0 || --pendingFrames > 0) return;
+		bool ok = pending.kind == "file" ? loadGame(pending.name) : loadSource(pending);
+		status = ok ? std::string(tr("Wczytano: ")) + pending.name : std::string(tr("Nie udało się wczytać: ")) + pending.name + " " + maps.error();
+		if (ok) showMenu = false;
+	}
+
 	void hud() {
+		if (showMenu) {
+			menu();
+			return;
+		}
 		ImGui::SetNextWindowPos(ImVec2(8, 8), ImGuiCond_Always);
 		ImGui::SetNextWindowBgAlpha(0.6f);
 		ImGui::Begin("hud", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
@@ -804,7 +942,8 @@ struct Game {
 			ImGui::TextDisabled("%s", tr("LPM: zaznacz krasnala   PPM: idź / kop skałę"));
 			ImGui::TextDisabled("%s", tr("Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"));
 			ImGui::TextDisabled("%s", tr("WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"));
-			ImGui::TextDisabled("%s", tr("N: nowy krasnal przy kursorze   F1: pomoc   Esc: wyjście"));
+			ImGui::TextDisabled("%s", tr("Kursor przy krawędzi okna: przesuwanie kamery"));
+			ImGui::TextDisabled("%s", tr("N: nowy krasnal przy kursorze   F1: pomoc   Esc: menu"));
 			ImGui::TextDisabled("%s", tr("F5: szybki zapis   F9: szybkie wczytanie"));
 		}
 		ImGui::End();
@@ -1010,6 +1149,8 @@ int main(int argc, char** argv) {
 	if (!args.save.empty()) src = {args.save.find('/') != std::string::npos ? "savepath" : "scenario", args.save};
 	else if (!args.templ.empty())
 		src = {"template", args.templ.size() > 4 && args.templ.substr(args.templ.size() - 4) == ".tcl" ? args.templ : args.templ + ".tcl"};
+	else if (args.scenario.empty() && args.load.empty() && args.saveTo.empty() && (args.screenshot.empty() || std::getenv("OW_TEST_MENU")))
+		src = {}; // bez źródła: menu wyboru gry
 	else if (args.scenario.empty()) {
 		// Domyślnie najnowszy zapis gry z Data/Gamesave, a bez zapisów szablon kris_unq_060.
 		std::string newest;
@@ -1041,12 +1182,19 @@ int main(int argc, char** argv) {
 	}
 	if (!args.load.empty()) {
 		if (!g.loadGame(args.load)) std::fprintf(stderr, "nie udało się wczytać %s\n", args.load.c_str());
+	} else if (src.kind.empty()) {
+		g.refreshMenu();
+		g.showMenu = true;
 	} else if (!g.loadSource(src))
 		std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
 	if (args.reveal) g.maps.setFog(MapView::FogMode::Off);
 	if (args.view) g.cam = *args.view;
 	for (float t = 0; t < args.warmup; t += 0.1f) g.update(0.1f);
-	if (!args.saveTo.empty()) std::printf("%s %s\n", g.saveGame(args.saveTo) ? "zapisano grę" : "BŁĄD zapisu gry", args.saveTo.c_str());
+	if (!args.saveTo.empty()) {
+		std::string serr;
+		bool sok = args.saveTo.size() > 4 && args.saveTo.substr(args.saveTo.size() - 4) == ".sav" ? g.saveSav(args.saveTo, serr) : g.saveGame(args.saveTo);
+		std::printf("%s %s %s\n", sok ? "zapisano grę" : "BŁĄD zapisu gry", args.saveTo.c_str(), serr.c_str());
+	}
 
 	ImGui::CreateContext();
 	ImGui::GetIO().IniFilename = nullptr;
@@ -1073,7 +1221,7 @@ int main(int argc, char** argv) {
 		if (const HorizonZone* z = g.maps.zone()) clear = glm::vec3(z->r, z->g, z->b);
 		if (!dev.beginFrame(w, h, clear.r, clear.g, clear.b)) return false;
 		dev.setViewport(0, 0, w, h);
-		g.render(w, h);
+		if (g.loaded) g.render(w, h);
 		dev.imguiRender(ImGui::GetDrawData());
 		dev.endFrame(readback);
 		return true;
@@ -1105,7 +1253,7 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < frames; ++i) {
 			SDL_Event e;
 			while (SDL_PollEvent(&e)) {}
-			g.update(0.05f);
+			if (g.loaded) g.update(0.05f);
 			frame(nullptr);
 		}
 		std::vector<uint8_t> px;
@@ -1128,15 +1276,17 @@ int main(int argc, char** argv) {
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			ImGuiIO& io = ImGui::GetIO();
 			if (e.type == SDL_QUIT) running = false;
-			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) running = false;
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) {
+				if (!g.loaded) running = false;
+				else if ((g.showMenu = !g.showMenu)) g.refreshMenu();
+			}
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F1) g.showHelp = !g.showHelp;
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F5) {
-				std::string qp = Game::saveDir() + "/quick.ows";
-				g.status = g.saveGame(qp) ? std::string(tr("Zapisano: ")) + qp : std::string(tr("Błąd zapisu: ")) + qp;
+				g.status = g.quickSave();
 			}
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F9) {
-				std::string qp = Game::saveDir() + "/quick.ows";
-				bool okl = g.loadGame(qp);
+				std::string qp = Game::newestSave();
+				bool okl = !qp.empty() && g.loadGame(qp);
 				g.status = okl ? std::string(tr("Wczytano: ")) + qp : std::string(tr("Nie udało się wczytać: ")) + qp;
 			}
 			if (e.type == SDL_KEYDOWN && !io.WantTextInput) {
@@ -1145,7 +1295,7 @@ int main(int argc, char** argv) {
 				if (e.key.keysym.sym == SDLK_2) g.speed = 2.f;
 				if (e.key.keysym.sym == SDLK_3) g.speed = 4.f;
 			}
-			if (io.WantCaptureMouse) continue;
+			if (io.WantCaptureMouse || g.showMenu) continue;
 			if (e.type == SDL_MOUSEBUTTONDOWN && (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT))
 				g.click(e.button.button, e.button.x, e.button.y, w, h);
 			if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_MIDDLE) dragging = true;
@@ -1173,14 +1323,26 @@ int main(int argc, char** argv) {
 		float dt = float(now - last) / float(SDL_GetPerformanceFrequency());
 		last = now;
 		const Uint8* k = SDL_GetKeyboardState(nullptr);
-		if (!ImGui::GetIO().WantCaptureKeyboard) {
-			float sp = (g.cam.zoom * 16.f - 10.f) * 0.8f * dt;
+		float sp = (g.cam.zoom * 16.f - 10.f) * 0.8f * dt;
+		if (!ImGui::GetIO().WantCaptureKeyboard && !g.showMenu) {
 			if (k[SDL_SCANCODE_A] || k[SDL_SCANCODE_LEFT]) g.cam.x -= sp;
 			if (k[SDL_SCANCODE_D] || k[SDL_SCANCODE_RIGHT]) g.cam.x += sp;
 			if (k[SDL_SCANCODE_W] || k[SDL_SCANCODE_UP]) g.cam.y -= sp;
 			if (k[SDL_SCANCODE_S] || k[SDL_SCANCODE_DOWN]) g.cam.y += sp;
 		}
-		g.update(g.paused ? 0.f : dt * g.speed);
+		// Przesuwanie kamery kursorem przy krawędzi okna (jak w grze; 🔶 szerokość pasa i prędkość na oko).
+		if (g.loaded && !g.showMenu && !dragging && SDL_GetMouseFocus() == win) {
+			int mx, my;
+			SDL_GetMouseState(&mx, &my);
+			const int edge = std::max(4, std::min(w, h) / 60);
+			if (mx < edge) g.cam.x -= sp;
+			if (mx >= w - edge) g.cam.x += sp;
+			if (my < edge) g.cam.y -= sp;
+			if (my >= h - edge) g.cam.y += sp;
+		}
+		g.menuStep();
+		if (g.quit) running = false;
+		if (g.loaded) g.update(g.paused || g.showMenu ? 0.f : dt * g.speed);
 		if (!frame(nullptr)) SDL_Delay(16);
 	}
 	shutdown();

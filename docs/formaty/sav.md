@@ -166,6 +166,25 @@ Zapis zawiera **gotowy świat**: nie trzeba wykonywać skryptu scenariusza ani s
 
 W wigview: zakładka Zapisy obok Mapy (lista z `Data/Gamesave`, przycisk odświeżania, pole na ścieżkę do dowolnego pliku `.sav`) albo `wigview --save save_SaveGame.sav` (także `--save /ścieżka/plik.sav`). Mgła z zapisu to tryb 4 (`--fow 4`, domyślny dla zapisów); niezbadana część mapy jest czarna jak w grze. Pole „Odkryj mapę” (albo `--fow 0`) wyłącza mgłę i pokazuje cały teren i wszystkie obiekty; wybór zostaje przy przełączaniu zapisów.
 
+## Zapis łatą (openwiggles) ✅
+
+Nie umiemy jeszcze zbudować zapisu od zera (sekcje po znaczniku 7 są nieopisane), ale umiemy **zmienić zapis, który wczytaliśmy**. Parser pamięta rozpakowane bajty (`SaveGame::raw`) i przesunięcia pól, które zmienia gra:
+
+| Pole | Przesunięcie | Co zapisujemy |
+|---|---|---|
+| czas gry (f64) | `timeOffset` | czas z zapisu + czas skryptów od wczytania |
+| kamera (5 × f32) | `viewOffset` (sekcja 1, +45) | x y zoom dx dy |
+| rekordy pól (53 B) | `tilesOffset` + 53·i | blok (+0), komórka l2m (+15), materiał (bity 0–1 bajtu +17, pozostałe bity zostają), typ płynu (+19, +20), wypełnienie (+21, +25), nieodkryty teren gracza 0 (+45) |
+| obiekt | `posOffset`, `rotOffset` | pozycja i obrót obiektów z listy zapisu (dopasowanie po ID) |
+
+Materiał zapisujemy odwrotnym mapowaniem (typ `.pmp` 4→0, 3→1, 2→2, 5→3). Wynik pakujemy gzipem (`gzopen(…, "wb7")`), `writeSavePatch` w `src/lib/save_game.cpp`.
+
+Sprawdzenie:
+- łata bez zmian (wczytanie i zapis bez skryptów) daje po rozpakowaniu bajty identyczne z oryginałem (18 290 881 B, 0 różnic);
+- zapis po 20 s gry (krasnale przeszły w inne miejsca) wczytuje oryginalna gra w laboratorium (`gameload Data/Gamesave/<plik>.sav` w `userstartup.tcl`); krasnale stoją tam, gdzie zostawił je nasz silnik (BAZA §9.6).
+
+🔶 Nie zapisujemy: obiektów utworzonych i usuniętych w naszej grze, timerów, zmiennych Tcl, stanów i akcji, przepływów płynu (+29…+44), mapy wyrytej w szablonie (gra z szablonu nie ma bazy, więc zapisuje się jako `.ows`, [rozdział 14.7](../silnik/14_gra.md)).
+
 ## Czego nie czytamy
 
 ❓ Pozostałe pola sekcji 1 (stan silnika poza kamerą), cztery słowa po wymiarach świata, woda, zmienne Tcl i stan pracy obiektów, wszystko po ciałach obiektów (gracze, ekonomia, fabuła). Pełny opis w dokumentach Diggles-Unity wymienionych wyżej. Potrzebne będą przy wczytywaniu zapisu do działającej gry (faza 6).

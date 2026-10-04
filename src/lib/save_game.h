@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace ow {
@@ -28,6 +29,7 @@ struct SaveObject {
 	int linkPoint = 0;        // punkt zaczepienia rodzica (0..31)
 	std::vector<std::pair<std::string, std::string>> tclVars; // zmienne Tcl obiektu (nazwa, wartość)
 	std::string instanceName; // nazwa obiektu (krasnale: imię)
+	size_t posOffset = 0, rotOffset = 0; // przesunięcia pól w rozpakowanym zapisie (zapis łatą)
 };
 
 // Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji
@@ -64,7 +66,31 @@ struct SaveGame {
 	std::vector<SaveObject> objects;
 	std::vector<SaveDeco> decos;
 	bool decoError = false; // sekcje dekoracji nie dały się odczytać (reszta zapisu jest poprawna)
+	// Do zapisu łatą (writeSavePatch): rozpakowane bajty i przesunięcia pól.
+	std::vector<uint8_t> raw;
+	size_t timeOffset = 0, viewOffset = 0, tilesOffset = 0;
 };
+
+// Zmiany do naniesienia na wczytany zapis. Pola i obiekty, których nie ma w łacie, zostają jak w bazie.
+struct SavePatch {
+	double gameTime = 0;
+	float view[5] = {0, 0, 1.38f, 0, 0}; // x y zoom dx dy
+	struct Tile {
+		uint32_t block;
+		uint8_t pmpType;  // typ pola .pmp (z bitem 0x80); zamieniany na rodzaj gruntu zapisu
+		uint16_t cell;    // detal .l2m
+		uint8_t fluidType;
+		float fluidFill;
+		uint8_t fog;      // bajt nieodkrytego terenu gracza 0
+	};
+	std::vector<Tile> tiles; // width·height albo puste (teren bez zmian)
+	struct Object {
+		float pos[3], rot[3];
+	};
+	std::unordered_map<int, Object> objects; // ID obiektu z zapisu -> pozycja i obrót
+};
+// Zapis = baza z naniesioną łatą, spakowana gzip (jak zapisy gry, docs/formaty/sav.md „Zapis łatą”).
+bool writeSavePatch(const SaveGame& base, const SavePatch& patch, const std::string& path, std::string& err);
 
 // Rozpakowanie gzip (zapisy są strumieniem gzip).
 std::optional<std::vector<uint8_t>> gunzip(const std::vector<uint8_t>& data, std::string& err);

@@ -27,7 +27,11 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
 - [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
 - [x] G11 Zapis i wczytanie gry z poziomu gry: własny format `.ows` (źródło + zmiany), F5/F9 (rozdział 14.7)
-- [ ] 🔧 `.ows`: timery skryptów, akcje w toku, przypięcia utworzone w grze; zapis zgodny z `.sav` gry
+- [x] Zapis jak w grze: F5 zapisuje `.sav` łatą na wczytanym zapisie (czas, kamera, pola, płyny, pozycje obiektów); oryginalna gra go wczytuje (BAZA §9.6)
+- [x] Menu wyboru gry (ImGui, start bez źródła i Esc): nasze zapisy, zapisy gry, scenariusze; F9 wczytuje najnowszy zapis
+- [x] Przesuwanie kamery kursorem przy krawędzi okna
+- [ ] 🔧 Krawędź okna: szerokość pasa i prędkość zmierzyć w grze; menu bliżej oryginału (szablony, nowa gra, opisy scenariuszy)
+- [ ] 🔧 Zapis `.sav`: obiekty utworzone i usunięte w grze, zmienne Tcl, stany, timery, przepływy płynu; zapis gier ze scenariusza/szablonu (dziś `.ows`, potrzebny opis sekcji po znaczniku 7)
 - [ ] 🔧 Ruch: drobna siatka 8×8 i maska `.pmp` zamiast pól, drabiny, windy, spadanie z obrażeniami
 - [ ] 🔧 Kopanie przez skrypty gry (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`) zamiast C++; czas pracy i wybór kopacza
 - [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól

@@ -332,6 +332,11 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - Ten zapis ma tylko 18 obiektów na liście; dekoracje szablonu są w „nasionach” kubełków przestrzennych (odczytane, [formaty/sav.md](formaty/sav.md)).
 - ✅ Symulacja przepływu (`src/lib/fluid_sim.cpp`) po 410 taktach od startu daje w basenie te same wypełnienia co ten zapis (do setnej części; rozdział 13 §13.5). Porównanie: mały program z `buildWorld` (szablon w 16,16), `FluidSim`, `parseSaveGame`.
 
+### 9.6 Zapis łatą wczytany przez grę (2026-10-04)
+- `openwiggles --save save_kampania.sav --no-scripts --save-to x.sav`: po rozpakowaniu `x.sav` jest bajt w bajt równy oryginałowi.
+- Po `--warmup 20` (skrypty, krasnale chodzą) różni się 168 bajtami (czas, pozycje, obroty).
+- Wczytanie w grze: `capture.sh scene out.png load.tcl 120`, gdzie `load.tcl` woła `gameload Data/Gamesave/save_owtest.sav`. Sama nazwa (`gameload owtest`) zwraca 0, ale nic nie wczytuje (czarny ekran); ścieżka względem katalogu gry działa (kontrola: `save_SaveGame.sav`). ✅ Gra wczytała nasz zapis: krasnale w nowych miejscach, reszta stanu (beczki, przedmioty) bez zmian.
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji
