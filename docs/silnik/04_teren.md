@@ -112,7 +112,7 @@ Tekstury detalu mają gładkie plamy w narożnikach, więc sąsiednie bloki z pa
 Zestaw 1 działa dokładnie według opisu wyżej. Zestaw 2 nie: wszystkie pliki `urw2_*` są prawie całe pokryte mchem, a mimo to samo TL nie daje nic, a samo BR daje pełny blok. ❓ Reguła dla zestawu 2 do ustalenia pełnym eksperymentem (16 układów dla obu zestawów).
 
 Rysowanie:
-- detal pokrywa **jeden blok**: UV = (x − bx, y − by), czyli położenie wierzchołka w obrębie bloku, bez zawijania;
+- UV detalu ✅ to **te same współrzędne z palety BlockDB co grunt** (4.2), z zawijaniem: na licu i tylnej ścianie położenie w bloku (x, y), na podłogach (x, z − 7). Wcześniej braliśmy samo (x, y) w bloku i na podłogach mech rozciągał się w smugi; zrzut OBERWELT przy butelce (`../lab/zrzuty/porownania/butelka.png`) rozstrzygnął na korzyść UV z palety;
 - rysuje się go **drugim przebiegiem** po tych samych trójkątach bloku, z testem głębi `LEQUAL` i bez zapisu głębi;
 - mieszanie **modulate ×2**: `wynik = cel · detal · 2`, czyli w OpenGL `glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR)`. Szary 128 nic nie zmienia (`detail/50PGray.tga` to neutralna tekstura), jaśniejsze piksele rozjaśniają, ciemniejsze przyciemniają. 🔶 Wniosek z porównania ze zrzutami;
 - który wariant `_a`…`_f` dla `1111` wybiera gra, ❓. Wybieraj pseudolosowo z (bx, by).

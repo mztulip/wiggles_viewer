@@ -103,10 +103,12 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
 - [x] UV terenu z palety BlockDB (trzy rzuty, ✅ na wszystkich punktach) zamiast trójpłaszczyznowego
 - [x] 🔬 Przejścia gruntów maskami `Msk_*`: grunt w węźle (lewy górny narożnik pola), maska per blok z narożników (✅ eksperyment `ow_flat`)
-- [ ] 🔬 Który grunt jest „A” w masce; trzy grunty w bloku; UV detali `.l2m` na podłogach
+- [x] UV detali `.l2m` z palety BlockDB (smugi mchu na podłogach OBERWELT usunięte)
+- [ ] 🔬 Który grunt jest „A” w masce; trzy grunty w bloku
 - [ ] 🔬 Detale `.l2m`: pełny eksperyment 16 układów × 2 zestawy na płaskiej ścianie; zestaw 2 (`urw2_*`) nie pasuje do reguły narożników (tabela w 04_teren.md §4.4); mech na filarze w menu
 - [ ] 🔬 Powtórzyć zrzuty, które wyszły czarne (szachownica `ow_mix2`, OBERWELT w x = 200)
 - [x] wigview: lampa podglądu dla szablonów bez własnych świateł (nie z gry, wyłączalna)
+- [x] wigview: wersja (commit) w rogu ekranu i w tytule okna (`build/gen/ow_version.h` z `build.sh`)
 - [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku

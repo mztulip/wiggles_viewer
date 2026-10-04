@@ -8,7 +8,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 |---|---|---|
 | Wybór wariantu tekstury gruntu 01–15 i detalu `_a`…`_f` | ❓ | |
 | Przejścia gruntów: który grunt jest „A” w masce, trzy grunty w bloku | 🔶 | prawo ogólne ustalone (4.2) |
-| Detale `.l2m` zestawu 2 (`<świat>2_*`), UV detali na podłogach i stromych ścianach | ❓ | zestaw 1 potwierdzony, zestaw 2 zachowuje się inaczej (tabela w 4.4); w menu mech na filarze leży w grze tylko na części powierzchni, u nas na całej |
+| Detale `.l2m` zestawu 2 (`<świat>2_*`) | ❓ | zestaw 1 potwierdzony, zestaw 2 zachowuje się inaczej (tabela w 4.4); w menu mech na filarze leży w grze tylko na części powierzchni, u nas na całej |
 | Bit 0x80 typu pola, młodszy bajt `.l2m` | ❓ | bez widocznej różnicy na zrzutach |
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
 | Mgła wojny: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_mgla_wojny.md) za Diggles-Unity; brakuje porównania z grą |

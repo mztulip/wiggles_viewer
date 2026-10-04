@@ -71,7 +71,7 @@ void main() {
 	if (vAlpha * 255.0 <= 126.0) discard;
 	if (uDetail == 1) {
 		// Tekstura detalu w trybie modulate x2 (szary 128 = bez zmian, por. detail/50PGray.tga).
-		vec4 d = texture(uTex, fract(vLocalPos.xy / 200.0));
+		vec4 d = texture(uTex, vUV); // UV z palety jak grunt (na podłogach (x, z - 7)), zawijanie
 		oColor = vec4(d.rgb, 1.0);
 		return;
 	}
