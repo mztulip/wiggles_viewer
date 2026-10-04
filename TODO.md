@@ -25,7 +25,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
 - [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
-- [ ] G11 Zapis i wczytanie gry z poziomu gry
+- [x] G11 Zapis i wczytanie gry z poziomu gry: własny format `.ows` (źródło + zmiany), F5/F9 (rozdział 14.7)
+- [ ] 🔧 `.ows`: timery skryptów, akcje w toku, przypięcia utworzone w grze; zapis zgodny z `.sav` gry
 - [ ] 🔧 Ruch: drobna siatka 8×8 i maska `.pmp` zamiast pól, drabiny, windy, spadanie z obrażeniami
 - [ ] 🔧 Kopanie przez skrypty gry (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`) zamiast C++; czas pracy i wybór kopacza
 - [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól

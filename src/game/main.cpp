@@ -3,7 +3,8 @@
 // Użycie:
 //   openwiggles [--game <katalog gry>] [--scenario NAZWA | --save PLIK.sav | --template SZABLON]
 //               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--screenshot plik.png]
-//               [--view X Y ZOOM DX DY] [--warmup SEKUNDY]
+//               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
+// F5 / F9: szybki zapis i wczytanie (~/.local/share/openwiggles/saves/quick.ows).
 // Bez mapy: najnowszy zapis z Data/Gamesave, a gdy go nie ma, szablon kris_unq_060 z jednym krasnalem.
 //
 // Sterowanie: LPM zaznacza krasnala, PPM na wolnym polu = idź, PPM na skale = kop.
@@ -37,6 +38,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <filesystem>
 #include <set>
 #include <functional>
@@ -66,6 +69,7 @@ struct Args {
 	bool scriptGnomes = true;     // --player-gnomes: krasnale tylko na rozkaz gracza, bez skryptów
 	bool reveal = false;          // --reveal: bez mgły wojny
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
+	std::string load, saveTo;     // --load plik.ows, --save-to plik.ows (zapis po --warmup; testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
 };
 
@@ -84,6 +88,8 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--no-scripts") a.scripts = false;
 		else if (k == "--player-gnomes") a.scriptGnomes = false;
 		else if (k == "--reveal") a.reveal = true;
+		else if (k == "--load") a.load = next();
+		else if (k == "--save-to") a.saveTo = next();
 		else if (k == "--view") {
 			GameView v;
 			v.x = float(std::atof(next()));
@@ -164,8 +170,51 @@ struct ScriptHost : script::Host {
 	bool linkOffset(int id, int link, float out[3]) override;
 };
 
+// Źródło mapy gry (do ponownego wczytania przy wczytywaniu zapisu .ows).
+struct Source {
+	std::string kind; // save, savepath, template, scenario
+	std::string name;
+};
+
+// Prosty zapis binarny: liczby little-endian, napisy z długością u32.
+struct OwsWriter {
+	std::string buf;
+	void u32(uint32_t v) { buf.append(reinterpret_cast<const char*>(&v), 4); }
+	void i32(int32_t v) { u32(uint32_t(v)); }
+	void f32(float v) { buf.append(reinterpret_cast<const char*>(&v), 4); }
+	void f64(double v) { buf.append(reinterpret_cast<const char*>(&v), 8); }
+	void str(const std::string& s) { u32(uint32_t(s.size())), buf += s; }
+};
+struct OwsReader {
+	std::string buf;
+	size_t p = 0;
+	bool ok = true;
+	template <class T> T get() {
+		T v{};
+		if (p + sizeof(T) > buf.size()) { ok = false; return v; }
+		std::memcpy(&v, buf.data() + p, sizeof(T));
+		p += sizeof(T);
+		return v;
+	}
+	uint32_t u32() { return get<uint32_t>(); }
+	int32_t i32() { return get<int32_t>(); }
+	float f32() { return get<float>(); }
+	double f64() { return get<double>(); }
+	std::string str() {
+		uint32_t n = u32();
+		if (!ok || p + n > buf.size()) { ok = false; return {}; }
+		std::string s = buf.substr(p, n);
+		p += n;
+		return s;
+	}
+};
+
 struct Game {
 	Vfs vfs;
+	Source source;
+	int baseObjects = 0;              // obiekty mapy źródłowej (dalej: utworzone w grze)
+	std::vector<uint32_t> baseBlocks; // bloki i typy po wczytaniu źródła (różnice idą do zapisu)
+	std::vector<uint8_t> baseTypes;
 	std::unique_ptr<script::Engine> scripts;
 	ScriptHost host;
 	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
@@ -434,6 +483,170 @@ struct Game {
 		maps.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
 	}
 
+	// Wczytanie mapy źródłowej i start świata (krasnale, skrypty). Używane przy starcie i przy wczytaniu zapisu.
+	bool loadSource(const Source& s) {
+		bool ok = false;
+		if (s.kind == "savepath") ok = maps.loadSavePath(s.name);
+		else if (s.kind == "template") ok = maps.loadTemplate(s.name);
+		else ok = maps.loadScenario(s.name); // scenariusz .tcl albo zapis .sav z Data/Gamesave
+		source = s;
+		digMarks.clear(), glides.clear();
+		initWorld();
+		if (scripts) {
+			scripts->resetWorld();
+			attachScripts();
+		}
+		baseObjects = maps.objectCount();
+		if (const Pmp* g = grid()) baseBlocks = g->blocks, baseTypes = g->types;
+		return ok;
+	}
+
+	static std::string saveDir() {
+		const char* xdg = std::getenv("XDG_DATA_HOME");
+		const char* home = std::getenv("HOME");
+		return (xdg && *xdg ? std::string(xdg) : std::string(home ? home : ".") + "/.local/share") + "/openwiggles/saves";
+	}
+
+	// Zapis .ows (rozdział 14.7): źródło + zmiany (bloki, płyny, obiekty, stan skryptów, kamera, kopanie).
+	bool saveGame(const std::string& path) {
+		const Pmp* g = grid();
+		if (!g) return false;
+		OwsWriter w;
+		w.str("OWSAVE"), w.u32(1);
+		w.str(source.kind), w.str(source.name);
+		w.f64(scripts ? scripts->time() : 0.0);
+		w.f32(cam.x), w.f32(cam.y), w.f32(cam.zoom), w.f32(cam.dx), w.f32(cam.dy);
+		std::vector<size_t> changed;
+		for (size_t i = 0; i < g->blocks.size() && i < baseBlocks.size(); ++i)
+			if (g->blocks[i] != baseBlocks[i] || g->types[i] != baseTypes[i]) changed.push_back(i);
+		w.u32(uint32_t(changed.size()));
+		for (size_t i : changed) w.u32(uint32_t(i)), w.u32(g->blocks[i]), w.u32(g->types[i]);
+		const auto& ft = maps.fluidTypes();
+		const auto& ff = maps.fluidFills();
+		std::vector<size_t> wet;
+		for (size_t i = 0; i < ft.size() && i < ff.size(); ++i)
+			if (ft[i] || ff[i] > 0) wet.push_back(i);
+		w.u32(uint32_t(wet.size()));
+		for (size_t i : wet) w.u32(uint32_t(i)), w.u32(ft[i]), w.f32(ff[i]);
+		w.u32(uint32_t(maps.objectCount())), w.u32(uint32_t(baseObjects));
+		for (int i = 0; i < maps.objectCount(); ++i) {
+			const float* p = maps.objectPos(i);
+			const float* r = maps.objectRot(i);
+			w.str(maps.objectClass(i)), w.i32(idOf(i));
+			for (int k = 0; k < 3; ++k) w.f32(p[k]);
+			for (int k = 0; k < 3; ++k) w.f32(r[k]);
+			script::ScriptObject* o = scripts ? scripts->object(idOf(i)) : nullptr;
+			w.u32(o ? 1 : 0);
+			if (o) {
+				w.str(o->name), w.i32(o->owner), w.str(o->state), w.i32(o->stateCounter);
+				w.str(scripts->captureVars(*o));
+				w.u32(uint32_t(o->attribs.size()));
+				for (auto& [k, v] : o->attribs) w.str(k), w.f64(v);
+			}
+		}
+		w.u32(uint32_t(digMarks.size()));
+		for (auto& [x, y] : digMarks) w.i32(x), w.i32(y);
+		std::error_code ec;
+		std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+		std::ofstream f(path, std::ios::binary);
+		f.write(w.buf.data(), std::streamsize(w.buf.size()));
+		return bool(f);
+	}
+
+	bool loadGame(const std::string& path) {
+		OwsReader r;
+		{
+			std::ifstream f(path, std::ios::binary);
+			if (!f) return false;
+			r.buf.assign(std::istreambuf_iterator<char>(f), {});
+		}
+		if (r.str() != "OWSAVE" || r.u32() != 1) return false;
+		Source s;
+		s.kind = r.str(), s.name = r.str();
+		double t = r.f64();
+		GameView c;
+		c.x = r.f32(), c.y = r.f32(), c.zoom = r.f32(), c.dx = r.f32(), c.dy = r.f32();
+		if (!r.ok || !loadSource(s)) return false;
+		cam = c;
+		Pmp* g = const_cast<Pmp*>(grid());
+		for (uint32_t n = r.u32(), k = 0; k < n && r.ok; ++k) {
+			uint32_t i = r.u32(), b = r.u32(), ty = r.u32();
+			if (g && i < g->blocks.size()) maps.setBlock(int(i % g->width), int(i / g->width), b, uint8_t(ty));
+		}
+		maps.rebuildTerrain();
+		if (g) nav.build(*g, maps.blockDb());
+		{
+			std::vector<uint8_t> ft(g ? g->blocks.size() : 0, 0);
+			std::vector<float> ff(ft.size(), 0.f);
+			for (uint32_t n = r.u32(), k = 0; k < n && r.ok; ++k) {
+				uint32_t i = r.u32(), ty = r.u32();
+				float f = r.f32();
+				if (i < ft.size()) ft[i] = uint8_t(ty), ff[i] = f;
+			}
+			maps.setFluidState(ft, ff);
+		}
+		uint32_t count = r.u32(), base = r.u32();
+		(void)base;
+		struct Pending {
+			int index;
+			std::string vars, state;
+			int counter;
+		};
+		std::vector<Pending> pending;
+		for (uint32_t i = 0; i < count && r.ok; ++i) {
+			std::string cls = r.str();
+			int id = r.i32();
+			float p[3], rot[3];
+			for (float& v : p) v = r.f32();
+			for (float& v : rot) v = r.f32();
+			int idx = int(i);
+			if (idx >= maps.objectCount()) { // obiekt utworzony w grze
+				idx = maps.addObject(cls, p[0], p[1], p[2]);
+				if (idx >= int(idxToId.size())) idxToId.resize(size_t(idx) + 1, 0);
+				idxToId[size_t(idx)] = id, idToIdx[id] = idx;
+				nextScriptId = std::max(nextScriptId, id + 1);
+				if (Vfs::lower(cls) == "zwerg") addUnit(idx);
+				if (scripts) scripts->attach(id, cls, "");
+			}
+			maps.setObjectPose(idx, p[0], p[1], p[2], rot[1]);
+			if (Unit* u = unitOf(idx)) {
+				u->x = p[0], u->y = p[1], u->z = p[2], u->facing = rot[1];
+				u->path.clear(), u->state = Unit::Idle, u->onArrive = nullptr;
+				snapToFloor(*u);
+			}
+			if (r.u32()) {
+				std::string name = r.str();
+				int owner = r.i32();
+				std::string state = r.str();
+				int counter = r.i32();
+				std::string vars = r.str();
+				script::ScriptObject* o = scripts ? scripts->object(id) : nullptr;
+				for (uint32_t n = r.u32(), k = 0; k < n && r.ok; ++k) {
+					std::string an = r.str();
+					double av = r.f64();
+					if (o) o->attribs[an] = av;
+				}
+				if (o) {
+					o->name = name, o->owner = owner;
+					pending.push_back({idx, vars, state, counter});
+				}
+			}
+		}
+		// Stan skryptów na końcu (zmienne mogą wskazywać obiekty utworzone później).
+		for (auto& pnd : pending)
+			if (script::ScriptObject* o = scripts->object(idOf(pnd.index))) {
+				if (!pnd.vars.empty()) scripts->runIn(*o, pnd.vars, "wczytanie zapisu");
+				o->state = pnd.state, o->stateCounter = pnd.counter, o->walking = false, o->actionUntil = -1;
+			}
+		if (scripts) scripts->setTime(t);
+		digMarks.clear();
+		for (uint32_t n = r.u32(), k = 0; k < n && r.ok; ++k) {
+			int x = r.i32(), y = r.i32();
+			digMarks.insert({x, y});
+		}
+		return r.ok;
+	}
+
 	// Skrypty obiektów świata (obj_init). Krasnale na razie steruje gracz (C++), nie skrypty.
 	void attachScripts() {
 		if (!scripts) return;
@@ -592,6 +805,7 @@ struct Game {
 			ImGui::TextDisabled("%s", tr("Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"));
 			ImGui::TextDisabled("%s", tr("WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"));
 			ImGui::TextDisabled("%s", tr("N: nowy krasnal przy kursorze   F1: pomoc   Esc: wyjście"));
+			ImGui::TextDisabled("%s", tr("F5: szybki zapis   F9: szybkie wczytanie"));
 		}
 		ImGui::End();
 		gnomePanel();
@@ -791,11 +1005,11 @@ int main(int argc, char** argv) {
 	if (auto sd = g.vfs.read("Data/SPHERE.DAT")) g.sphere = parseSphereDat(*sd);
 	g.maps.init(dev, &g.vfs, g.textures.get(), &g.sphere);
 
-	bool ok;
-	if (!args.save.empty())
-		ok = args.save.find('/') != std::string::npos ? g.maps.loadSavePath(args.save) : g.maps.loadScenario(args.save);
+	// Źródło mapy: --save / --template / --scenario / --load (zapis .ows) albo najnowszy zapis gry.
+	Source src;
+	if (!args.save.empty()) src = {args.save.find('/') != std::string::npos ? "savepath" : "scenario", args.save};
 	else if (!args.templ.empty())
-		ok = g.maps.loadTemplate(args.templ.size() > 4 && args.templ.substr(args.templ.size() - 4) == ".tcl" ? args.templ : args.templ + ".tcl");
+		src = {"template", args.templ.size() > 4 && args.templ.substr(args.templ.size() - 4) == ".tcl" ? args.templ : args.templ + ".tcl"};
 	else if (args.scenario.empty()) {
 		// Domyślnie najnowszy zapis gry z Data/Gamesave, a bez zapisów szablon kris_unq_060.
 		std::string newest;
@@ -808,17 +1022,14 @@ int main(int argc, char** argv) {
 				if (!ec && (newest.empty() || t > best)) best = t, newest = f;
 			}
 		}
-		ok = newest.empty() ? g.maps.loadTemplate("kris_unq_060.tcl") : g.maps.loadScenario(newest);
-		std::printf("mapa: %s\n", newest.empty() ? "kris_unq_060" : newest.c_str());
+		src = newest.empty() ? Source{"template", "kris_unq_060.tcl"} : Source{"scenario", newest};
+		std::printf("mapa: %s\n", src.name.c_str());
 	} else {
-		std::string s = args.scenario;
-		if (s.size() < 4 || (s.substr(s.size() - 4) != ".tcl" && s.substr(s.size() - 4) != ".sav")) s += ".tcl";
-		ok = g.maps.loadScenario(s);
+		std::string sc = args.scenario;
+		if (sc.size() < 4 || (sc.substr(sc.size() - 4) != ".tcl" && sc.substr(sc.size() - 4) != ".sav")) sc += ".tcl";
+		src = {"scenario", sc};
 	}
-	if (!ok) std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
-	g.initWorld();
-	if (args.reveal) g.maps.setFog(MapView::FogMode::Off);
-	if (args.scripts) {
+	if (args.scripts) { // silnik skryptów przed światem: obiekty mapy dostają skrypty przy wczytaniu
 		g.scripts = std::make_unique<script::Engine>(g.vfs);
 		g.host.g = &g;
 		g.scriptGnomes = args.scriptGnomes;
@@ -827,10 +1038,15 @@ int main(int argc, char** argv) {
 		std::string serr;
 		if (!g.scripts->boot(serr)) std::fprintf(stderr, "skrypty: %s\n", serr.c_str());
 		std::printf("skrypty: %zu klas w %llu ms\n", g.scripts->classCount(), (unsigned long long)(SDL_GetTicks64() - t0));
-		g.attachScripts();
 	}
+	if (!args.load.empty()) {
+		if (!g.loadGame(args.load)) std::fprintf(stderr, "nie udało się wczytać %s\n", args.load.c_str());
+	} else if (!g.loadSource(src))
+		std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
+	if (args.reveal) g.maps.setFog(MapView::FogMode::Off);
 	if (args.view) g.cam = *args.view;
 	for (float t = 0; t < args.warmup; t += 0.1f) g.update(0.1f);
+	if (!args.saveTo.empty()) std::printf("%s %s\n", g.saveGame(args.saveTo) ? "zapisano grę" : "BŁĄD zapisu gry", args.saveTo.c_str());
 
 	ImGui::CreateContext();
 	ImGui::GetIO().IniFilename = nullptr;
@@ -914,6 +1130,15 @@ int main(int argc, char** argv) {
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) running = false;
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F1) g.showHelp = !g.showHelp;
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F5) {
+				std::string qp = Game::saveDir() + "/quick.ows";
+				g.status = g.saveGame(qp) ? std::string(tr("Zapisano: ")) + qp : std::string(tr("Błąd zapisu: ")) + qp;
+			}
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_F9) {
+				std::string qp = Game::saveDir() + "/quick.ows";
+				bool okl = g.loadGame(qp);
+				g.status = okl ? std::string(tr("Wczytano: ")) + qp : std::string(tr("Nie udało się wczytać: ")) + qp;
+			}
 			if (e.type == SDL_KEYDOWN && !io.WantTextInput) {
 				if (e.key.keysym.sym == SDLK_SPACE) g.paused = !g.paused;
 				if (e.key.keysym.sym == SDLK_1) g.speed = 1.f;

@@ -132,6 +132,14 @@ public:
 			}
 		if (ch) fogDirty_ = true;
 	}
+	const std::vector<uint8_t>& fluidTypes() const { return fluidType_; }
+	const std::vector<float>& fluidFills() const { return fluidFill_; }
+	void setFluidState(const std::vector<uint8_t>& type, const std::vector<float>& fill) {
+		fluidType_ = type, fluidFill_ = fill;
+		fluidSim_.setState(type, fill);
+		buildFluids();
+	}
+	const float* objectRot(int i) const { return objects_[size_t(i)].src.rot; }
 	float fluidFill(int x, int y) const {
 		if (!pmp_ || fluidFill_.empty() || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return 0.f;
 		return fluidFill_[size_t(y) * pmp_->width + size_t(x)];

@@ -1270,6 +1270,59 @@ ScriptObject* Engine::createScripted(int id, ScriptClass* cls, const std::string
 	return p;
 }
 
+namespace {
+// Zmienne globalne interpretera jako nazwa -> „s wartość” albo „a lista_array_get”.
+std::map<std::string, std::string> globalValues(Tcl_Interp* in) {
+	std::map<std::string, std::string> out;
+	const char* script = R"TCL(
+set __r {}
+foreach __v [info globals] {
+	if {[string match tcl_* $__v] || $__v in {env errorInfo errorCode auto_index auto_path __r __v argv argv0 argc}} continue
+	if {[array exists ::$__v]} {lappend __r $__v a [array get ::$__v]} elseif {[info exists ::$__v]} {lappend __r $__v s [set ::$__v]}
+}
+set __r
+)TCL";
+	if (Tcl_EvalEx(in, script, -1, TCL_EVAL_GLOBAL) != TCL_OK) return out;
+	auto items = listItems(in, Tcl_GetStringResult(in));
+	for (size_t i = 0; i + 2 < items.size(); i += 3) out[items[i]] = items[i + 1] + items[i + 2];
+	return out;
+}
+} // namespace
+
+std::string Engine::captureVars(ScriptObject& o) {
+	if (!o.interp) return "";
+	if (mainValues_.empty()) mainValues_ = globalValues(main_);
+	std::string out;
+	for (auto& [name, v] : globalValues(o.interp)) {
+		auto it = mainValues_.find(name);
+		if (it != mainValues_.end() && it->second == v) continue;
+		const char* argv[3] = {"set", name.c_str(), v.c_str() + 1};
+		if (v[0] == 'a') {
+			const char* av[4] = {"array", "set", name.c_str(), v.c_str() + 1};
+			char* m = Tcl_Merge(4, av);
+			out += m, out += "\n";
+			Tcl_Free(m);
+		} else {
+			char* m = Tcl_Merge(3, argv);
+			out += m, out += "\n";
+			Tcl_Free(m);
+		}
+	}
+	return out;
+}
+
+void Engine::resetWorld() {
+	for (auto& [id, o] : objects_)
+		if (o->interp) Tcl_DeleteInterp(o->interp);
+	objects_.clear();
+	byInterp_.clear();
+	timers_.clear();
+	placeLocks_.clear();
+	sparetimeOffers_.clear();
+	ownerAttribs_.clear();
+	time_ = 0;
+}
+
 double Engine::attrib(int id, const std::string& name) {
 	ScriptObject* o = object(id);
 	if (!o) return 0;

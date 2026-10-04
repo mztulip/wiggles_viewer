@@ -69,3 +69,23 @@ Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 1
 - Prawy panel: krasnale z imionami (nazwa instancji z zapisu), stanem skryptu i paskami potrzeb z atrybutów (`atr_Hitpoints`, `atr_Nutrition`, `atr_Alertness`, `atr_Mood`; czerwony poniżej 30%). Kliknięcie zaznacza krasnala i przesuwa kamerę.
 - Żółty trójkąt nad zaznaczonym krasnalem.
 - Spacja: pauza, klawisze 1/2/3: tempo ×1/×2/×4.
+
+## 14.7 Zapis i wczytanie gry (własny format `.ows`) 🔶
+
+F5 zapisuje grę do `~/.local/share/openwiggles/saves/quick.ows`, F9 ją wczytuje (`--load plik.ows`, w testach `--save-to plik.ows` po `--warmup`). Zgodny zapis `.sav` gry jest na później (TODO); `.ows` zapisuje **źródło mapy i zmiany**:
+
+```
+"OWSAVE" u32 wersja=1
+str rodzaj źródła (scenario | savepath | template), str nazwa
+f64 czas gry skryptów, 5 × f32 kamera (x y zoom dx dy)
+u32 n, n × (u32 indeks pola, u32 blok, u32 typ)          pola zmienione względem źródła (kopanie)
+u32 n, n × (u32 indeks pola, u32 typ płynu, f32 wypełnienie)
+u32 liczba obiektów, u32 liczba obiektów źródła
+każdy obiekt: str klasa, i32 ID skryptu, 3 × f32 pozycja, 3 × f32 obrót, u32 ma skrypt,
+              [str nazwa, i32 właściciel, str stan, i32 licznik stanu,
+               str skrypt Tcl zmiennych (set/array set; tylko różne od startowych),
+               u32 n, n × (str atrybut, f64 wartość)]
+u32 n, n × (i32 x, i32 y)                                 pola do kopania
+```
+
+Napisy: u32 długość i bajty, liczby little-endian. Wczytanie: źródło jak przy starcie (obiekty i ich `obj_init` w tej samej kolejności, więc te same indeksy i ID), potem bloki, płyny, pozycje obiektów, obiekty utworzone w grze (dopisywane w kolejności), atrybuty, a na końcu zmienne Tcl i stany (zmienne mogą wskazywać obiekty utworzone później). 🔶 Timery skryptów nie są zapisywane: `obj_init` ustawia je na nowo.

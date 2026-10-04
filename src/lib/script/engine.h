@@ -128,6 +128,12 @@ public:
 	ScriptObject* object(int id);
 	void setVar(ScriptObject& o, const std::string& name, const std::string& value);
 	double attrib(int id, const std::string& name); // get_attrib z wartością domyślną z def_attrib
+	// Zapis stanu gry: zmienne globalne obiektu różne od startowych (skrypt Tcl: set/array set …).
+	std::string captureVars(ScriptObject& o);
+	// Usunięcie wszystkich obiektów, timerów i rezerwacji (klasy zostają); czas gry od zera.
+	void resetWorld();
+	void setTime(double t) { time_ = t; }
+	std::map<std::string, std::string> mainValues_; // wartości zmiennych głównego interpretera po starcie
 	void detach(int id);
 
 	double time() const { return time_; }

@@ -9,105 +9,125 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/game/main.cpp:282
+#: src/game/main.cpp:332
 msgid "Brak krasnali na mapie."
 msgstr "No gnomes on the map."
 
-#: src/game/main.cpp:294
+#: src/game/main.cpp:344
 msgid "Nie ma drogi."
 msgstr "There is no way there."
 
-#: src/game/main.cpp:310
+#: src/game/main.cpp:361
 msgid "Nie da się dojść do tej skały."
 msgstr "This rock cannot be reached."
 
-#: src/game/main.cpp:336
+#: src/game/main.cpp:388
 msgid "Znalezisko: "
 msgstr "Found: "
 
-#: src/game/main.cpp:372
+#: src/game/main.cpp:425
 msgid "Do kopania: "
 msgstr "To dig: "
 
-#: src/game/main.cpp:570
+#: src/game/main.cpp:793
 #, c-format
 msgid "Krasnale: %zu"
 msgstr "Gnomes: %zu"
 
-#: src/game/main.cpp:573
+#: src/game/main.cpp:796
 msgid "idzie"
 msgstr "walking"
 
-#: src/game/main.cpp:573
+#: src/game/main.cpp:796
 msgid "kopie"
 msgstr "digging"
 
-#: src/game/main.cpp:573
+#: src/game/main.cpp:796
 msgid "czeka"
 msgstr "waiting"
 
-#: src/game/main.cpp:574
+#: src/game/main.cpp:797
 #, c-format
 msgid "Zaznaczony: krasnal %d (%s), pole %d, %d"
 msgstr "Selected: gnome %d (%s), tile %d, %d"
 
-#: src/game/main.cpp:576
+#: src/game/main.cpp:799
 #, c-format
 msgid "Pole pod kursorem: %d, %d (%s)"
 msgstr "Tile under cursor: %d, %d (%s)"
 
-#: src/game/main.cpp:576
+#: src/game/main.cpp:799
 msgid "wolne"
 msgstr "free"
 
-#: src/game/main.cpp:576
+#: src/game/main.cpp:799
 msgid "skała"
 msgstr "rock"
 
-#: src/game/main.cpp:578
+#: src/game/main.cpp:801
 msgid "PAUZA (spacja)"
 msgstr "PAUSED (space)"
 
-#: src/game/main.cpp:578
+#: src/game/main.cpp:801
 #, c-format
 msgid "Tempo: ×%.0f (1–3, spacja = pauza)"
 msgstr "Speed: ×%.0f (1–3, space = pause)"
 
-#: src/game/main.cpp:581
+#: src/game/main.cpp:804
 msgid "LPM: zaznacz krasnala   PPM: idź / kop skałę"
 msgstr "LMB: select gnome   RMB: walk / dig rock"
 
-#: src/game/main.cpp:582
+#: src/game/main.cpp:805
 msgid "Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"
 msgstr "Drag RMB: mark rock for digging (the selected gnome digs)"
 
-#: src/game/main.cpp:583
+#: src/game/main.cpp:806
 msgid "WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"
 msgstr "WASD, arrows, middle button: camera   wheel: zoom"
 
-#: src/game/main.cpp:584
+#: src/game/main.cpp:807
 msgid "N: nowy krasnal przy kursorze   F1: pomoc   Esc: wyjście"
 msgstr "N: new gnome at cursor   F1: help   Esc: quit"
 
-#: src/game/main.cpp:596
+#: src/game/main.cpp:808
+msgid "F5: szybki zapis   F9: szybkie wczytanie"
+msgstr "F5: quick save   F9: quick load"
+
+#: src/game/main.cpp:820
 msgid "zdrowie"
 msgstr "health"
 
-#: src/game/main.cpp:596
+#: src/game/main.cpp:820
 msgid "jedzenie"
 msgstr "food"
 
-#: src/game/main.cpp:597
+#: src/game/main.cpp:821
 msgid "sen"
 msgstr "sleep"
 
-#: src/game/main.cpp:597
+#: src/game/main.cpp:821
 msgid "nastrój"
 msgstr "mood"
 
-#: src/game/main.cpp:604
+#: src/game/main.cpp:828
 msgid "krasnal"
 msgstr "gnome"
+
+#: src/game/main.cpp:1135
+msgid "Zapisano: "
+msgstr "Saved: "
+
+#: src/game/main.cpp:1135
+msgid "Błąd zapisu: "
+msgstr "Save error: "
+
+#: src/game/main.cpp:1140
+msgid "Wczytano: "
+msgstr "Loaded: "
+
+#: src/game/main.cpp:1140
+msgid "Nie udało się wczytać: "
+msgstr "Could not load: "
 
 #: src/lib/particles.cpp:48
 msgid "żar kowala (kula ognia)"
