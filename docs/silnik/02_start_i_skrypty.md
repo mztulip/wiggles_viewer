@@ -121,7 +121,7 @@ MapTemplateSet 288 32
 proc s2010 {} { ... }                    ;# logika samouczka
 ```
 
-Scenariusz może wołać inne przez `call data/gamesave/…`. Kampania i tryb swobodny (`StoryMgr load_level`, `load_sandbox`) **generują świat losowo** komendami `lg_*`. Tego jeszcze nie opisujemy (rozdział 10).
+Scenariusz może wołać inne przez `call data/gamesave/…`. Kampania i tryb swobodny (`StoryMgr load_level`, `load_sandbox`) **generują świat losowo** komendami `lg_*`. Tego jeszcze nie opisujemy (rozdział 11).
 
 ## 2.7 Minimalny zestaw komend do pokazania mapy
 

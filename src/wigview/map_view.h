@@ -74,6 +74,16 @@ public:
 	const std::string& current() const { return file_; }
 	const std::string& error() const { return error_; }
 
+	// Podgląd mgły wojny (docs/silnik/10_mgla_wojny.md). Bez symulacji obiektów-odkrywców: stan pól
+	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
+	enum class FogMode { Off, Explored, ViewGrey, ViewBlack };
+	void setFog(FogMode mode, int radius = 10, int viewByte = 0xFF) {
+		fogMode_ = mode;
+		fogRadius_ = radius;
+		fogByte_ = viewByte;
+		fogDirty_ = true;
+	}
+
 private:
 	struct ModelSlot {
 		std::unique_ptr<ow::Model3db> model;
@@ -124,6 +134,16 @@ private:
 	std::vector<ZoneObject> zoneObjects_;
 	std::optional<ow::HorizonZone> zone_;
 	std::string zoneClass_;
+	// Mgła wojny: bajt na pole (gracz lokalny), tekstura narożników (szarość, czerń, skala lamp).
+	FogMode fogMode_ = FogMode::Off;
+	int fogRadius_ = 10, fogByte_ = 0xFF, fowBegin_ = -1;
+	bool fogDirty_ = true;
+	int fogFocus_[2] = {-99999, -99999};
+	std::vector<uint8_t> fog_;
+	ow::GameFog gameFog_;
+	void updateFog(const glm::vec3& focus);
+	uint8_t fogAt(int x, int y) const;
+	bool objectVisibleInFog(const PlacedObject& o) const;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::map<std::string, ModelSlot> models_;
 	std::map<std::string, std::pair<std::string, int>> objectIndex_; // obiekt -> (plik, indeks), wypełniane leniwie

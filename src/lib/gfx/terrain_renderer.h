@@ -33,7 +33,7 @@ public:
 	// world: macierz układu sceny (jak dla obiektów). lightDir w tym samym układzie co normalne po world.
 	// gameLights != nullptr: oświetlenie jak w grze (game_lighting.h) z podanymi lampami.
 	void draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-	          bool wireframe, const std::vector<GameLight>* gameLights = nullptr);
+	          bool wireframe, const std::vector<GameLight>* gameLights = nullptr, const GameFog* fog = nullptr);
 
 private:
 	struct Group {

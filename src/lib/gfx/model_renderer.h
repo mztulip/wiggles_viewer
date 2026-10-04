@@ -46,6 +46,7 @@ struct ModelDrawOptions {
 	const std::vector<GameLight>* gameLights = nullptr;
 	glm::mat4 gameModel{1.f};
 	float base = 128.f;
+	const GameFog* fog = nullptr; // mgła wojny (tylko z oświetleniem gry)
 };
 
 class ModelRenderer {

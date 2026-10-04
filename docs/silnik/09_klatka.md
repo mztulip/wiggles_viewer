@@ -20,9 +20,11 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
      dywan łąki: geometria świata, bez głębi, mieszanie alfa (8.3)
 5. teren, podkład: test i zapis głębi, bez cullingu, alpha test > 126 (otwory), bez mieszania (4)
 6. teren, detale: te same trójkąty, głębia LEQUAL bez zapisu, mieszanie DST_COLOR·SRC_COLOR (×2) (4.4)
-7. modele: dla każdego obiektu klatka animacji z interpolacją (5.4),
+7. modele: pomiń obiekty ukryte przez mgłę wojny (10.5);
+     dla pozostałych klatka animacji z interpolacją (5.4),
      test i zapis głębi, bez cullingu, alpha test ≥ 0,5,
      oświetlenie dwustronne (7.5), zanikanie w kolor strefy dla z < 0 (8.1)
+   (teren i modele: po oświetleniu szara mgła i czerń z rozdziału 10.5)
 8. interfejs
 ```
 
@@ -32,9 +34,9 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 |---|---|---|---|---|---|---|
 | panorama 0–5 | nie | nie | nie | SRC_ALPHA, 1−SRC_ALPHA | nie | nie |
 | dywan łąki | nie | nie | nie | SRC_ALPHA, 1−SRC_ALPHA | nie | nie |
-| teren podkład | LESS | tak | nie | nie | alfa otworu > 126/255 | tak (7.1) |
+| teren podkład | LESS | tak | nie | nie | alfa otworu > 126/255 | tak (7.1) + mgła wojny (10.5) |
 | teren detale | LEQUAL | nie | nie | DST_COLOR, SRC_COLOR | jak podkład | (dziedziczy z podkładu) |
-| modele | LESS | tak (poza `nozwrite`) | nie | nie | alfa tekstury ≥ 0,5 | tak, dwustronnie (7.5) |
+| modele | LESS | tak (poza `nozwrite`) | nie | nie | alfa tekstury ≥ 0,5 | tak, dwustronnie (7.5) + mgła wojny (10.5) |
 
 ## 9.4 Weryfikacja
 

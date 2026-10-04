@@ -1,5 +1,6 @@
 #include "wigview/map_view.h"
 
+#include "lib/gfx/gl.h"
 #include "lib/gfx/texture_cache.h"
 #include "lib/map_world.h"
 #include "lib/vfs.h"
@@ -159,6 +160,8 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	placed_ = 0;
 	skyTiles_ = 0;
 	lightBegin_ = sc.lightBegin;
+	fowBegin_ = -1;
+	fogDirty_ = true;
 	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
@@ -170,6 +173,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 		skyTiles_ = bw.skyTiles;
 		worldOrigin_[0] = bw.originX;
 		worldOrigin_[1] = bw.originY;
+		fowBegin_ = sc.fowBegin ? *sc.fowBegin - bw.originY : -1;
 		pmp_ = std::move(bw.grid);
 		l2m_ = std::move(bw.layer);
 		script_ = TemplateScript{};
@@ -308,15 +312,18 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		}
 	}
 	const std::vector<GameLight>* gl = gameLighting_ ? &lights : nullptr;
+	updateFog(focus);
+	const GameFog* fog = fogMode_ != FogMode::Off ? &gameFog_ : nullptr;
 	if (showPanorama_ && hasOpenAir_ && panoramaReady_ && PanoramaRenderer::gateOpen(focus.y / kBlock, groundRow_)) {
 		panorama_.draw(glm::scale(glm::mat4(1.f), glm::vec3(1.f / kBlock)) * glm::inverse(viewProj * world));
 		if (showCarpet_)
 			panorama_.drawCarpet(viewProj * world * glm::scale(glm::mat4(1.f), glm::vec3(kBlock)), focus.x / kBlock, groundRow_);
 	}
-	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl);
+	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl, fog);
 	if (!showObjects_) return;
 	ModelDrawOptions opt = baseOpt;
 	opt.gameLights = gl;
+	opt.fog = fog;
 	if (const HorizonZone* z = zone()) {
 		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
 		opt.horizonZOffset = gameZOffset;
@@ -326,17 +333,92 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		if (!o.slot || o.animation < 0) continue;
 		if (!showDetail_[detailIndex(o.src.detail)]) continue;
 		if (o.cls && o.cls->editorOnly && !showEditorOnly_) continue;
+		if (fog && !objectVisibleInFog(o)) continue;
 		const auto& an = o.slot->model->animations[size_t(o.animation)];
 		if (an.frames.empty()) continue;
-		float f = time_ * fps;
 		int n = int(an.frames.size());
-		int i = int(f) % n, j = (i + 1) % n;
+		// Tryb animacji klasy: 0 = ANIM_STILL (klatka 0), 1 = raz, 2 = pętla; animrandom = losowy start.
+		int mode = o.cls ? o.cls->animMode : 2;
+		float f = 0.f;
+		if (mode != 0) {
+			f = time_ * fps;
+			if (o.cls && o.cls->animRandom) f += float((unsigned(o.src.pos[0] * 131.f) * 2654435761u >> 8) % unsigned(n));
+			if (mode == 1) f = std::min(f, float(n - 1));
+		}
+		int i = int(f) % n, j = mode == 2 ? (i + 1) % n : std::min(i + 1, n - 1);
 		glm::mat4 gm = objectMatrix(o.src);
 		glm::mat4 m = world * gm;
 		opt.gameModel = gm;
 		opt.base = baseLight(o.src.pos[0], o.src.pos[1]);
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
 	}
+}
+
+uint8_t MapView::fogAt(int x, int y) const {
+	if (!pmp_ || fog_.empty()) return 0xFF;
+	x = std::clamp(x, 0, int(pmp_->width) - 1);
+	y = std::clamp(y, 0, int(pmp_->height) - 1);
+	return fog_[size_t(y) * pmp_->width + x];
+}
+
+// Stan mgły według trybu podglądu i tekstura narożników (docs/silnik/10_mgla_wojny.md §10.5).
+void MapView::updateFog(const glm::vec3& focus) {
+	if (fogMode_ == FogMode::Off || !pmp_) return;
+	int W = int(pmp_->width), H = int(pmp_->height);
+	int fx = int(std::floor(focus.x / kBlock)), fy = int(std::floor(focus.y / kBlock));
+	bool view = fogMode_ == FogMode::ViewGrey || fogMode_ == FogMode::ViewBlack;
+	if (!fogDirty_ && (!view || (fx == fogFocus_[0] && fy == fogFocus_[1]))) return;
+	fogDirty_ = false;
+	fogFocus_[0] = fx;
+	fogFocus_[1] = fy;
+	uint8_t rest = fogMode_ == FogMode::ViewBlack ? 0 : 1;
+	fog_.assign(size_t(W) * H, rest);
+	for (int y = 0; y < H; ++y)
+		for (int x = 0; x < W; ++x) {
+			bool inView = view && std::abs(x - fx) <= fogRadius_ && std::abs(y - fy) <= fogRadius_;
+			if (inView) fog_[size_t(y) * W + x] = uint8_t(fogByte_);
+			if (y >= 5 && y < fowBegin_) fog_[size_t(y) * W + x] = 0xFF; // set_fow_begin: niebo zawsze widoczne
+		}
+	// Dekodowanie bajtu na narożnik: szarość g, czerń k, skala lamp S (tabela w §10.5).
+	std::vector<uint8_t> rgb(size_t(W) * H * 3);
+	for (size_t i = 0; i < fog_.size(); ++i) {
+		int b = fog_[i];
+		int g = 0, k = 255, s = 255;
+		if (b == 0) g = 0, k = 0, s = 0;
+		else if (b < 0x80) g = 255, s = 0;
+		else if (b < 0xE3) {
+			int u = std::min(128, int(float(b - 0x80) * 1.3f));
+			g = std::max(0, 255 - 2 * u);
+			s = std::min(255, u * 2);
+		} else g = 0;
+		rgb[i * 3] = uint8_t(g), rgb[i * 3 + 1] = uint8_t(k), rgb[i * 3 + 2] = uint8_t(s);
+	}
+	if (!gameFog_.texture) {
+		GLuint t = 0;
+		gl::GenTextures(1, &t);
+		gameFog_.texture = t;
+	}
+	gameFog_.width = W;
+	gameFog_.height = H;
+	GLuint t = gameFog_.texture;
+	gl::BindTexture(GL_TEXTURE_2D, t);
+	gl::PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, W, H, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+// Obiekt jest rysowany, gdy największy bajt mgły z 7 punktów wokół niego (środek, 4 narożniki,
+// środki boków pionowych prostokąta ±1 pole) wynosi ≥ 0x80; klasy viewinfog wystarczy ≥ 1 (§10.5).
+bool MapView::objectVisibleInFog(const PlacedObject& o) const {
+	int x = int(std::floor(o.src.pos[0])), y = int(std::floor(o.src.pos[1]));
+	const int pts[7][2] = {{x, y}, {x - 1, y - 1}, {x + 1, y - 1}, {x - 1, y + 1}, {x + 1, y + 1}, {x - 1, y}, {x + 1, y}};
+	int best = 0;
+	for (auto& p : pts) best = std::max(best, int(fogAt(p[0], p[1])));
+	bool ghost = o.cls && o.cls->viewInFog;
+	return best >= (ghost ? 1 : 0x80);
 }
 
 void MapView::uiGrid() {
@@ -472,6 +554,27 @@ bool MapView::ui() {
 	ImGui::Checkbox("Panorama nieba", &showPanorama_);
 	ImGui::SameLine();
 	ImGui::Checkbox("Dywan łąki", &showCarpet_);
+	{
+		// Podgląd mgły wojny (wymaga oświetlenia gry).
+		const char* modes[] = {"wyłączona", "całość odkryta, niewidoczna (szara)", "kadr widoczny, reszta szara",
+		                       "kadr widoczny, reszta czarna"};
+		int m = int(fogMode_);
+		ImGui::SetNextItemWidth(260);
+		if (ImGui::Combo("Mgła wojny", &m, modes, 4)) setFog(FogMode(m), fogRadius_, fogByte_);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\n"
+			                  "lampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają.");
+		if (fogMode_ == FogMode::ViewGrey || fogMode_ == FogMode::ViewBlack) {
+			int r = fogRadius_, b = fogByte_;
+			ImGui::SetNextItemWidth(120);
+			bool ch = ImGui::SliderInt("promień kadru", &r, 1, 40);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(120);
+			ch |= ImGui::SliderInt("bajt w kadrze", &b, 1, 255);
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("255 = widoczne; 0xE2..0x80 = wygasanie; < 0x80 = szara mgła");
+			if (ch) setFog(fogMode_, r, b);
+		}
+	}
 	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\n"

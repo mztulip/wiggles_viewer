@@ -97,6 +97,9 @@ void parseInto(const Vfs& vfs, const std::string& gamePath, Scenario& sc, int de
 		} else if (cmd == "set_ground_begin") {
 			int v;
 			if (ws >> v) sc.groundBegin = v;
+		} else if (cmd == "set_fow_begin") {
+			int v;
+			if (ws >> v) sc.fowBegin = v;
 		} else if (cmd == "MapTemplateSet" && !pending.empty()) {
 			ScenarioPlacement p;
 			p.script = pending;

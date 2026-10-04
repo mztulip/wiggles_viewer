@@ -21,8 +21,14 @@ struct ClassModel {
 	std::string object;    // nazwa obiektu w .3db
 	std::string animation; // nazwa animacji (domyślnie "standard")
 	std::string modelHint; // plik .3db, w którym najpewniej leży obiekt (może być pusty)
-	std::vector<std::string> variants; // warianty wyglądu (gra losuje jeden); object = pierwszy
+	std::vector<std::string> variants; // obiekty z listy Set*Classes; gra używa pierwszego (= object), ❓ reszta
 	bool editorOnly = false;           // model tylko w edytorze map: if {[get_mapedit]} {class_defaultanim ...}
+	// Tryb animacji z class_defaultanim <obiekt>.<anim> <tryb> (ANIMINIT.TCL): 0 ANIM_STILL (klatka 0),
+	// 1 ANIM_ONCE, 2 ANIM_LOOP. Dekoracje z list Set*Classes: 2 tylko z opcją "anim", inaczej 0.
+	int animMode = 0;
+	bool animRandom = false; // opcja "animrandom": losowa klatka startowa
+	// Widoczność w szarej mgle wojny (class_viewinfog; dekoracje domyślnie 1, parametr "noviewinfog").
+	bool viewInFog = false;
 };
 
 // Strefa horyzontu (klasy Info_Fog_* w Scripts/classes/items/infoobjs.tcl):
@@ -56,6 +62,7 @@ private:
 	std::unordered_map<std::string, ClassModel> classes_;
 	std::unordered_map<std::string, HorizonZone> horizons_;
 	std::unordered_map<std::string, std::vector<ClassLight>> lights_;
+	std::unordered_map<std::string, bool> viewInFog_; // class_viewinfog z ciał def_class
 };
 
 } // namespace ow

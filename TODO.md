@@ -96,7 +96,13 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
 - [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to mgła wojny dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
-- [ ] Mgła wojny w silniku: szara mgła z gradientem głębokości, czarne pola nieodkryte (prawo w FOG_OF_WAR_RE §80)
+- [x] Mgła wojny: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
+- [x] Podgląd mgły wojny w wigview (tryby `--fow`, szarość w głąb, czerń, lampy wygaszone, obiekty bez viewinfog ukryte)
+- [ ] 🔬 Porównanie mgły ze zrzutami gry (menu z `timer_delete` FogRemover; sprzeczność: notatka „obraz czarny” vs prawo „wygasa do szarości”)
+- [ ] Mgła wojny w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
+- [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
+- [ ] 🔬 Przejścia gruntów maskami `Msk_*`: zrzuty szablonów testowych `ow_m1..3` (gotowe w `../lab`), potrzebna płyta w napędzie
+- [ ] 🔬 Cienie: zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta)
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar

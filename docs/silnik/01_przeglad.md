@@ -19,7 +19,7 @@ start programu
      └─ gametime start: start pętli gry
 
 pętla, w każdej klatce
- ├─ logika: timery, zdarzenia, zadania postaci (skrypty)            (nieopisane, rozdział 10)
+ ├─ logika: timery, zdarzenia, zadania postaci (skrypty)            (nieopisane, rozdział 11)
  └─ obraz:                                                           (rozdział 9)
      ├─ czyszczenie kolorem strefy horyzontu                         (rozdział 8)
      ├─ panorama nieba (na powierzchni)                              (rozdział 8)

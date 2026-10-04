@@ -7,12 +7,12 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Temat | Stan | Co wiadomo |
 |---|---|---|
 | Teksturowanie terenu współrzędnymi u, v palety BlockDB | ❓ | paleta ma u, v w zakresie ok. 0…7,5; reguła nieznana (zamiennik w 4.2) |
-| Przejścia gruntów maskami `Msk_*` | ❓ | 14 masek (`Msk_AABB01` itd.), splatting na granicy bloków |
+| Przejścia gruntów maskami `Msk_*` | ❓ | 14 masek 64 × 64: wszystkie układy liter A/B w narożnikach TL TR BL BR poza AAAA i BBBB; biel = grunt A, czerń = grunt B, poszarpana granica. Która para gruntów i jak gra wybiera narożniki: do ustalenia zrzutami (szablony testowe `ow_m1..3` gotowe w laboratorium). Diggles-Unity też tego nie rozpracowało (ich kod zgaduje) |
 | Wybór wariantu tekstury gruntu 01–15 i detalu `_a`…`_f` | ❓ | |
 | Bit 0x80 typu pola, młodszy bajt `.l2m` | ❓ | bez widocznej różnicy na zrzutach |
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
-| **Mgła wojny** | ❓ | pola nieodkryte są czarne, odkryte, ale niewidoczne, mają ciepłą szarą mgłę (170, 170, 155); `FogRemover` w menu ją zdejmuje. Opis: Diggles-Unity `FOG_OF_WAR_RE.md` |
-| **Cienie** pod obiektami | ❓ | `.3db` ma mapy cieni 32 × 32 przypisane do klatek; tylko w zasięgu `MaxShadowLightDist` = 8 od lampy; sposób rzutowania nieznany |
+| Mgła wojny: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_mgla_wojny.md) za Diggles-Unity; brakuje porównania z grą |
+| **Cienie** pod obiektami | ❓ | `.3db` ma mapy cieni 32 × 32 przypisane do klatek; tylko w zasięgu `MaxShadowLightDist` = 8 od lampy; sposób rzutowania nieznany (Diggles-Unity też go nie zna); do ustalenia zrzutami z lampą |
 | Winieta (przyciemnienie brzegów ekranu w menu) | ❓ | widoczna na zrzutach |
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |
 | Prędkość animacji, pola `move`/`rotate` animacji | 🔶 | 20 kl./s wygląda dobrze ([3db.md](../formaty/3db.md) §8) |

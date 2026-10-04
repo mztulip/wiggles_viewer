@@ -189,7 +189,7 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	gl::Uniform1f(prog_.uniform("uLerp"), t);
 	gl::Uniform4f(prog_.uniform("uHorizon"), opt.horizon.r, opt.horizon.g, opt.horizon.b, opt.horizon.a);
 	gl::Uniform1f(prog_.uniform("uHorizonZOffset"), opt.horizonZOffset);
-	uploadGameLights(prog_, opt.gameLights != nullptr, opt.gameLights);
+	uploadGameLights(prog_, opt.gameLights != nullptr, opt.gameLights, opt.fog);
 	gl::UniformMatrix4fv(prog_.uniform("uGameModel"), 1, GL_FALSE, glm::value_ptr(opt.gameModel));
 	gl::Uniform1f(prog_.uniform("uBase"), opt.base);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));

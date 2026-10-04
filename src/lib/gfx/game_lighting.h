@@ -8,6 +8,12 @@
 //   kolor rozproszony = min(I, 255)/255,  nadwyżka = clamp(I − 255, 0, 64)/255 (dodawana)
 //
 // Współrzędne: układ gry w blokach (x w prawo, y w dół, z do widza; teren z ∈ [7, 14,5]).
+//
+// Mgła wojny (docs/silnik/10_mgla_wojny.md, prawo za Diggles-Unity Docs/FOG_OF_WAR_RE.md §4):
+// tekstura W×H, texel (bx, by) = narożnik lewy górny pola, kanały: R = szarość g, G = czerń k,
+// B = skala lamp S/255; próbkowana dwuliniowo. Po oświetleniu:
+//   f = clamp((1 − (z − 7)·0,125·1,02)·g),  rozproszone ·= (1 − f),  dodatek += f·(170,170,155)/255,
+//   oba · k.
 #pragma once
 
 #include <glm/glm.hpp>
@@ -25,8 +31,16 @@ struct GameLight {
 // Wspólny kod GLSL (wstawiany do shaderów wierzchołków).
 extern const char* kGameLightingGlsl;
 
+// Tekstura mgły wojny (0 = brak mgły) i rozmiar w polach.
+struct GameFog {
+	unsigned texture = 0;
+	int width = 0, height = 0;
+};
+constexpr int kFogTextureUnit = 5;
+
 class ShaderProgram;
-// Ustawia uniformy uGameLight, uLightCount, uLightPos[], uLightCol[].
-void uploadGameLights(const ShaderProgram& prog, bool enabled, const std::vector<GameLight>* lights);
+// Ustawia uniformy uGameLight, uLightCount, uLightPos[], uLightCol[] i mgłę wojny (uFow, uFowInfo).
+void uploadGameLights(const ShaderProgram& prog, bool enabled, const std::vector<GameLight>* lights,
+                      const GameFog* fog = nullptr);
 
 } // namespace ow

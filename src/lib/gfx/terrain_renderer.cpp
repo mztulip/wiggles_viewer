@@ -182,10 +182,10 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 }
 
 void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-                           bool wireframe, const std::vector<GameLight>* gameLights) {
+                           bool wireframe, const std::vector<GameLight>* gameLights, const GameFog* fog) {
 	if (groups_.empty()) return;
 	prog_.use();
-	uploadGameLights(prog_, gameLights != nullptr, gameLights);
+	uploadGameLights(prog_, gameLights != nullptr, gameLights, fog);
 	gl::UniformMatrix4fv(prog_.uniform("uViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
 	gl::UniformMatrix4fv(prog_.uniform("uWorld"), 1, GL_FALSE, glm::value_ptr(world));
 	gl::Uniform3f(prog_.uniform("uLightDir"), lightDir.x, lightDir.y, lightDir.z);

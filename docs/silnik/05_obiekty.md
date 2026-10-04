@@ -68,6 +68,7 @@ Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 | głębia | test i zapis (poza klasami `nozwrite`) |
 | oświetlenie | per wierzchołek, prawo z rozdziału 7, z jasnością bazową B w punkcie (x, y) obiektu |
 | zanikanie w głąb | modele za terenem (z < 0) przechodzą w kolor strefy horyzontu (rozdział 8) |
+| mgła wojny | obiekt rysuje się tylko przy dostatecznie odkrytym otoczeniu; dekoracje (`viewinfog`) także w szarej mgle (rozdział 10.5) |
 
 **Kolor przy alpha teście.** Przezroczyste piksele tekstur mają dowolny kolor (często szaroniebieski). Przy filtrowaniu i mipmapach miesza się on z sąsiednimi liśćmi i daje szare obwódki. Przed wysłaniem tekstury do GPU warto „rozlać” kolor nieprzezroczystych sąsiadów na przezroczyste piksele (alfa bez zmian).
 

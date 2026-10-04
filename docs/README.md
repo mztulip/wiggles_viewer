@@ -21,7 +21,8 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [7. Oświetlenie](silnik/07_oswietlenie.md) | Światło bazowe, niebo, słońce, lampy, nasycenie |
 | [8. Tło: strefy horyzontu i panorama](silnik/08_tlo.md) | Kolor tła jaskiń, zanikanie w głąb, niebo z paralaksą, dywan łąki |
 | [9. Klatka obrazu](silnik/09_klatka.md) | Kolejność rysowania i stany renderu w jednym miejscu |
-| [10. Czego jeszcze nie wiemy](silnik/10_niewiadome.md) | Luki: mgła wojny, cienie, generator świata, rozgrywka |
+| [10. Mgła wojny](silnik/10_mgla_wojny.md) | Stan pól na gracza, odkrywanie promieniami, wygasanie, czarna i szara mgła w obrazie |
+| [11. Czego jeszcze nie wiemy](silnik/11_niewiadome.md) | Luki: cienie, przejścia gruntów, generator świata, rozgrywka |
 
 ## Formaty plików
 

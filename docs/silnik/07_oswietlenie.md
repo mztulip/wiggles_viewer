@@ -22,7 +22,7 @@ kolor       = tekstura · rozproszone + dodatek
 
 - **B**: jasność bazowa w miejscu wierzchołka (7.2).
 - **słońce(N)**: stała funkcja normalnej. Najjaśniej świecą powierzchnie zwrócone w lewo i w górę (N.x < 0, N.y < 0; pamiętaj, że y rośnie w dół). Składowa z nie ma wpływu.
-- **S**: współczynnik mgły wojny. 255 dla pola widocznego, mniejszy dla odkrytego, ale niewidocznego (rozdział 10). Bez mgły wojny przyjmij 255.
+- **S**: współczynnik mgły wojny, 0…255 (rozdział 10.5). 255 dla pola widocznego, 0 w szarej mgle (lampy tam nie świecą). Bez mgły wojny przyjmij 255.
 - **c, R**: kolor i promień lampy (7.4).
 - **Nasycenie**: rozproszone nie przekracza 1, a nadmiar (najwyżej 64/255) dodaje się jako jasny „połysk” niezależny od tekstury (w Direct3D 7 to kolor specular). Dzięki temu kilka lamp obok siebie nie prześwietla obrazu: pierwsza nasyca, kolejne już nic nie dodają.
 
