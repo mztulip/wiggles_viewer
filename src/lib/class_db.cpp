@@ -60,6 +60,11 @@ const std::vector<ClassLight>* ClassDb::lights(const std::string& className) con
 	return it == lights_.end() ? nullptr : &it->second;
 }
 
+const std::vector<ParticleSource>* ClassDb::particles(const std::string& className) const {
+	auto it = particles_.find(Vfs::lower(className));
+	return it == particles_.end() ? nullptr : &it->second;
+}
+
 void ClassDb::parseScript(const std::string& text, const std::string& modelHint) {
 	std::istringstream in(text);
 	std::string line, currentClass, listPrefix;
@@ -126,6 +131,12 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			if (ws >> l.offset[0] >> l.offset[1] >> l.offset[2] >> l.radius >> l.color[0] >> l.color[1] >> l.color[2])
 				lights_[Vfs::lower(currentClass)].push_back(l);
 		}
+		// class_particle typ {relpos} {dir} max naKlatkę widocznyWMgle …
+		size_t pp = t.find("class_particle ");
+		if (pp != std::string::npos && !currentClass.empty()) {
+			ParticleSource ps;
+			if (parseClassParticle(t.substr(pp + 15), ps)) particles_[Vfs::lower(currentClass)].push_back(ps);
+		}
 		// horizon_set [get_pos this] r g b głębokość zasięg (tylko wartości liczbowe)
 		size_t hp = t.find("horizon_set [get_pos this]");
 		if (hp != std::string::npos && t.rfind("log", 0) != 0 && !currentClass.empty()) {
@@ -164,6 +175,7 @@ void ClassDb::load(const Vfs& vfs) {
 	classes_.clear();
 	horizons_.clear();
 	lights_.clear();
+	particles_.clear();
 	viewInFog_.clear();
 	// Najpierw dekoracje: tu nazwa pliku wskazuje model.
 	for (const auto& f : vfs.list("Data/Scripts/classes/deco")) {

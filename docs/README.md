@@ -23,6 +23,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [9. Klatka obrazu](silnik/09_klatka.md) | Kolejność rysowania i stany renderu w jednym miejscu |
 | [10. Mgła wojny](silnik/10_mgla_wojny.md) | Stan pól na gracza, odkrywanie promieniami, wygasanie, czarna i szara mgła w obrazie |
 | [11. Obiekty Tcl i pętla gry](silnik/11_obiekty_tcl_i_petla.md) | Interpretery obiektów, klasy, metody, zdarzenia, timery, stany, takt logiki |
+| [12. Efekty cząsteczkowe](silnik/12_czasteczki.md) | Źródła z Tcl (`class_particle`), atlasy, 43 typy, symulacja emitera, rysowanie addytywne |
 | [Czego jeszcze nie wiemy](silnik/niewiadome.md) | Luki: cienie, przejścia gruntów, generator świata, rozgrywka |
 
 ## Formaty plików

@@ -45,7 +45,7 @@ struct TextureDesc {
 };
 
 enum class BufferKind { Vertex, Index16, Index32, Uniform };
-enum class Blend { None, Alpha, Modulate2x }; // Modulate2x: wynik = cel · źródło · 2
+enum class Blend { None, Alpha, Modulate2x, Additive }; // Modulate2x: cel · źródło · 2; Additive: cel + źródło
 enum class DepthTest { Off, Less, LessEqual };
 
 struct VertexAttrib {

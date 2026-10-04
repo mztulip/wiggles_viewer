@@ -9,6 +9,8 @@
 // Dla innych klas zbieramy class_defaultanim ze wszystkich skryptów w Data/Scripts/classes.
 #pragma once
 
+#include "lib/particles.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -56,12 +58,15 @@ public:
 	size_t size() const { return classes_.size(); }
 	const HorizonZone* horizon(const std::string& className) const;
 	const std::vector<ClassLight>* lights(const std::string& className) const;
+	// Źródła cząsteczek klasy: class_particle typ {relpos} {dir} max naKlatkę widocznyWMgle … (docs/silnik/12).
+	const std::vector<ParticleSource>* particles(const std::string& className) const;
 
 private:
 	void parseScript(const std::string& text, const std::string& modelHint);
 	std::unordered_map<std::string, ClassModel> classes_;
 	std::unordered_map<std::string, HorizonZone> horizons_;
 	std::unordered_map<std::string, std::vector<ClassLight>> lights_;
+	std::unordered_map<std::string, std::vector<ParticleSource>> particles_;
 	std::unordered_map<std::string, bool> viewInFog_; // class_viewinfog z ciał def_class
 };
 

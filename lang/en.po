@@ -9,271 +9,451 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/wigview/main.cpp:242
+#: src/lib/particles.cpp:48
+msgid "żar kowala (kula ognia)"
+msgstr "smith embers (fireball)"
+
+#: src/lib/particles.cpp:51
+msgid "iskry i bryzgi przy ziemi"
+msgstr "ground sparks and splashes"
+
+#: src/lib/particles.cpp:54
+msgid "ciepły żar"
+msgstr "warm embers"
+
+#: src/lib/particles.cpp:58
+msgid "ogień kowala"
+msgstr "smith fire"
+
+#: src/lib/particles.cpp:62
+msgid "litera Z nad śpiącym"
+msgstr "Z letter above a sleeper"
+
+#: src/lib/particles.cpp:65
+msgid "nieużywany (brak funkcji w grze)"
+msgstr "unused (no function in the game)"
+
+#: src/lib/particles.cpp:67
+msgid "dym z wierzchołków modelu"
+msgstr "smoke from model vertices"
+
+#: src/lib/particles.cpp:70
+msgid "spadające krople"
+msgstr "falling drops"
+
+#: src/lib/particles.cpp:73
+msgid "ciemnoczerwone krople (ziemia)"
+msgstr "dark red drops (ground)"
+
+#: src/lib/particles.cpp:76
+msgid "mała kula ognia"
+msgstr "small fireball"
+
+#: src/lib/particles.cpp:79
+msgid "szare krople (odbicie od ziemi)"
+msgstr "grey drops (bounce off the ground)"
+
+#: src/lib/particles.cpp:82
+msgid "chmura dymu"
+msgstr "smoke cloud"
+
+#: src/lib/particles.cpp:85
+msgid "mały obłok dymu"
+msgstr "small smoke puff"
+
+#: src/lib/particles.cpp:88
+msgid "magiczne iskierki w dół"
+msgstr "magic sparkles falling down"
+
+#: src/lib/particles.cpp:91
+msgid "wybuch promienisty"
+msgstr "radial burst"
+
+#: src/lib/particles.cpp:94
+msgid "żółte krople"
+msgstr "yellow drops"
+
+#: src/lib/particles.cpp:97
+msgid "ciepły stożek w górę"
+msgstr "warm rising cone"
+
+#: src/lib/particles.cpp:100
+msgid "wióry (stolarz)"
+msgstr "shavings (carpenter)"
+
+#: src/lib/particles.cpp:102
+msgid "iskry (kuźnia)"
+msgstr "sparks (forge)"
+
+#: src/lib/particles.cpp:105
+msgid "pył"
+msgstr "dust"
+
+#: src/lib/particles.cpp:108
+msgid "brązowa chmura ziemi"
+msgstr "brown dirt cloud"
+
+#: src/lib/particles.cpp:111
+msgid "mgiełka i bryzgi (kryształy)"
+msgstr "mist and spray (crystals)"
+
+#: src/lib/particles.cpp:113
+msgid "duże szare płatki"
+msgstr "large grey flakes"
+
+#: src/lib/particles.cpp:116
+msgid "bąbelki z powierzchni"
+msgstr "bubbles from a surface"
+
+#: src/lib/particles.cpp:119
+msgid "unoszące się płatki"
+msgstr "rising flakes"
+
+#: src/lib/particles.cpp:121
+msgid "promień / lina"
+msgstr "beam / rope"
+
+#: src/lib/particles.cpp:123
+msgid "wióry (kamieniarz)"
+msgstr "chips (stonemason)"
+
+#: src/lib/particles.cpp:125
+msgid "mała kula ognia (pochodnia)"
+msgstr "small fireball (torch)"
+
+#: src/lib/particles.cpp:128
+msgid "fioletowy dym"
+msgstr "purple smoke"
+
+#: src/lib/particles.cpp:131
+msgid "fioletowy dym (większy)"
+msgstr "purple smoke (larger)"
+
+#: src/lib/particles.cpp:134
+msgid "unoszący się szary dym"
+msgstr "rising grey smoke"
+
+#: src/lib/particles.cpp:137
+msgid "nuta"
+msgstr "music note"
+
+#: src/lib/particles.cpp:140
+msgid "pulsujący błysk"
+msgstr "pulsing flash"
+
+#: src/lib/particles.cpp:143
+msgid "magiczne iskierki (elfy)"
+msgstr "magic sparkles (elves)"
+
+#: src/lib/particles.cpp:146
+msgid "kula ognia"
+msgstr "fireball"
+
+#: src/lib/particles.cpp:149
+msgid "dym"
+msgstr "smoke"
+
+#: src/lib/particles.cpp:157
+msgid "obłok „puf” A"
+msgstr "\"poof\" cloud A"
+
+#: src/lib/particles.cpp:158
+msgid "obłok „puf” B"
+msgstr "\"poof\" cloud B"
+
+#: src/lib/particles.cpp:159
+msgid "obłok „puf” C"
+msgstr "\"poof\" cloud C"
+
+#: src/lib/particles.cpp:160
+msgid "turkusowy pierścień energii"
+msgstr "turquoise energy ring"
+
+#: src/lib/particles.cpp:161
+msgid "pomarańczowy wybuch energii"
+msgstr "orange energy burst"
+
+#: src/lib/particles.cpp:162
+msgid "białe błyski"
+msgstr "white flashes"
+
+#: src/lib/particles.cpp:165
+msgid "rosnąca kula pyłu"
+msgstr "growing dust ball"
+
+#: src/wigview/main.cpp:248
 msgid "nie można odczytać pliku"
 msgstr "cannot read file"
 
-#: src/wigview/main.cpp:429
-#: src/wigview/map_view.cpp:633
+#: src/wigview/main.cpp:449
+#: src/wigview/map_view.cpp:681
+#: src/wigview/particle_view.cpp:176
 #, c-format
 msgid "Błąd: %s"
 msgstr "Error: %s"
 
-#: src/wigview/main.cpp:431
+#: src/wigview/main.cpp:451
 msgid "Wybierz model z listy."
 msgstr "Select a model from the list."
 
-#: src/wigview/main.cpp:435
+#: src/wigview/main.cpp:455
 #, c-format
 msgid "%s  (%s)  wczytano w %.0f ms"
 msgstr "%s  (%s)  loaded in %.0f ms"
 
-#: src/wigview/main.cpp:436
+#: src/wigview/main.cpp:456
 #, c-format
 msgid "materiały %zu  klatki %zu  obiekty %zu  animacje %zu"
 msgstr "materials %zu  frames %zu  objects %zu  animations %zu"
 
-#: src/wigview/main.cpp:439
+#: src/wigview/main.cpp:459
 msgid "Obiekty i animacje"
 msgstr "Objects and animations"
 
-#: src/wigview/main.cpp:441
+#: src/wigview/main.cpp:461
 msgid "filtr obiektów"
 msgstr "filter objects"
 
-#: src/wigview/main.cpp:452
+#: src/wigview/main.cpp:472
 msgid "filtr animacji"
 msgstr "filter animations"
 
-#: src/wigview/main.cpp:468
+#: src/wigview/main.cpp:488
 msgid "Odtwarzanie"
 msgstr "Playback"
 
-#: src/wigview/main.cpp:470
+#: src/wigview/main.cpp:490
+#: src/wigview/particle_view.cpp:210
 msgid "Pauza"
 msgstr "Pause"
 
-#: src/wigview/main.cpp:470
+#: src/wigview/main.cpp:490
+#: src/wigview/particle_view.cpp:210
 msgid "Graj"
 msgstr "Play"
 
-#: src/wigview/main.cpp:476
+#: src/wigview/main.cpp:496
 msgid "Pętla"
 msgstr "Loop"
 
-#: src/wigview/main.cpp:478
+#: src/wigview/main.cpp:498
 msgid "Interpolacja"
 msgstr "Interpolation"
 
-#: src/wigview/main.cpp:480
+#: src/wigview/main.cpp:500
 msgid "Klatka"
 msgstr "Frame"
 
-#: src/wigview/main.cpp:484
+#: src/wigview/main.cpp:504
 msgid "FPS"
 msgstr "FPS"
 
-#: src/wigview/main.cpp:488
+#: src/wigview/main.cpp:508
 #, c-format
 msgid "Klatki %u i %u mają inną topologię (bez interpolacji)"
 msgstr "Frames %u and %u have different topology (no interpolation)"
 
-#: src/wigview/main.cpp:491
+#: src/wigview/main.cpp:511
 msgid "Widok"
 msgstr "View"
 
-#: src/wigview/main.cpp:492
+#: src/wigview/main.cpp:512
 msgid "Bez światła"
 msgstr "Unlit"
 
-#: src/wigview/main.cpp:492
+#: src/wigview/main.cpp:512
 msgid "Bajt jako jasność (stare)"
 msgstr "Byte as brightness (old)"
 
-#: src/wigview/main.cpp:492
+#: src/wigview/main.cpp:512
 msgid "Normalne SPHERE.DAT"
 msgstr "SPHERE.DAT normals"
 
-#: src/wigview/main.cpp:492
+#: src/wigview/main.cpp:512
 msgid "Podgląd normalnych"
 msgstr "Normals preview"
 
-#: src/wigview/main.cpp:494
+#: src/wigview/main.cpp:514
 msgid "Oświetlenie"
 msgstr "Lighting"
 
-#: src/wigview/main.cpp:495
+#: src/wigview/main.cpp:515
 msgid "Ambient"
 msgstr "Ambient"
 
-#: src/wigview/main.cpp:496
+#: src/wigview/main.cpp:516
 msgid "Siatka"
 msgstr "Wireframe"
 
-#: src/wigview/main.cpp:498
+#: src/wigview/main.cpp:518
 msgid "Alpha test"
 msgstr "Alpha test"
 
-#: src/wigview/main.cpp:500
+#: src/wigview/main.cpp:520
 msgid "Odwróć Y"
 msgstr "Flip Y"
 
-#: src/wigview/main.cpp:501
+#: src/wigview/main.cpp:521
 msgid "Tło"
 msgstr "Background"
 
-#: src/wigview/main.cpp:502
+#: src/wigview/main.cpp:522
 msgid "Wyśrodkuj"
 msgstr "Center"
 
-#: src/wigview/main.cpp:505
+#: src/wigview/main.cpp:525
 msgid "Eksport glTF"
 msgstr "glTF export"
 
-#: src/wigview/main.cpp:507
+#: src/wigview/main.cpp:527
 msgid "Katalog"
 msgstr "Directory"
 
-#: src/wigview/main.cpp:508
+#: src/wigview/main.cpp:528
 msgid "Bieżąca animacja"
 msgstr "Current animation"
 
-#: src/wigview/main.cpp:510
+#: src/wigview/main.cpp:530
 msgid "Wszystkie animacje obiektu"
 msgstr "All animations of the object"
 
-#: src/wigview/main.cpp:511
+#: src/wigview/main.cpp:531
 msgid "Plik .glb z teksturami; animacje jako morph targets.\nUżywa ustawień FPS i interpolacji z odtwarzania."
 msgstr ".glb file with textures; animations as morph targets.\nUses the FPS and interpolation settings from playback."
 
-#: src/wigview/main.cpp:515
+#: src/wigview/main.cpp:535
 msgid "Informacje"
 msgstr "Information"
 
-#: src/wigview/main.cpp:517
+#: src/wigview/main.cpp:537
 #, c-format
 msgid "animacja: %s"
 msgstr "animation: %s"
 
-#: src/wigview/main.cpp:518
+#: src/wigview/main.cpp:538
 #, c-format
 msgid "flagi %u  f %.4g"
 msgstr "flags %u  f %.4g"
 
-#: src/wigview/main.cpp:519
+#: src/wigview/main.cpp:539
 #, c-format
 msgid "ruch (%.3f %.3f %.3f)"
 msgstr "move (%.3f %.3f %.3f)"
 
-#: src/wigview/main.cpp:520
+#: src/wigview/main.cpp:540
 #, c-format
 msgid "obrót (%.3f %.3f %.3f)"
 msgstr "rotation (%.3f %.3f %.3f)"
 
-#: src/wigview/main.cpp:521
+#: src/wigview/main.cpp:541
 #, c-format
 msgid "źródło: %s"
 msgstr "source: %s"
 
-#: src/wigview/main.cpp:526
+#: src/wigview/main.cpp:546
 #, c-format
 msgid "mesh #%d  linki %zu"
 msgstr "mesh #%d  links %zu"
 
-#: src/wigview/main.cpp:527
+#: src/wigview/main.cpp:547
 #, c-format
 msgid "bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)"
 msgstr "bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)"
 
-#: src/wigview/main.cpp:530
+#: src/wigview/main.cpp:550
 #, c-format
 msgid "klatki w GPU: %zu"
 msgstr "frames on GPU: %zu"
 
-#: src/wigview/main.cpp:531
+#: src/wigview/main.cpp:551
 msgid "Materiały"
 msgstr "Materials"
 
-#: src/wigview/main.cpp:534
+#: src/wigview/main.cpp:554
 #, c-format
 msgid "%s  (brak)"
 msgstr "%s  (missing)"
 
-#: src/wigview/main.cpp:552
+#: src/wigview/main.cpp:572
 msgid "filtr"
 msgstr "filter"
 
-#: src/wigview/main.cpp:679
+#: src/wigview/main.cpp:699
 msgid "model"
 msgstr "model"
 
-#: src/wigview/main.cpp:679
+#: src/wigview/main.cpp:699
 msgid "obiekt"
 msgstr "object"
 
-#: src/wigview/main.cpp:679
+#: src/wigview/main.cpp:699
 msgid "tekstura"
 msgstr "texture"
 
-#: src/wigview/main.cpp:679
+#: src/wigview/main.cpp:699
 msgid "szablon"
 msgstr "template"
 
-#: src/wigview/main.cpp:679
+#: src/wigview/main.cpp:699
 msgid "scenariusz"
 msgstr "scenario"
 
-#: src/wigview/main.cpp:684
+#: src/wigview/main.cpp:704
 msgid "szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze (kilka słów = wszystkie muszą pasować)"
 msgstr "search: models, objects in models, textures, templates, scenarios (several words = all must match)"
 
-#: src/wigview/main.cpp:698
+#: src/wigview/main.cpp:718
 msgid "Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków."
 msgstr "Objects in models are indexed after typing 2 characters."
 
-#: src/wigview/main.cpp:700
+#: src/wigview/main.cpp:720
 #, c-format
 msgid "%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)"
 msgstr "%zu results%s   (arrows, Enter opens, Esc closes)"
 
-#: src/wigview/main.cpp:737
+#: src/wigview/main.cpp:757
 msgid "Szukaj (Ctrl+F)"
 msgstr "Search (Ctrl+F)"
 
-#: src/wigview/main.cpp:739
+#: src/wigview/main.cpp:759
 msgid "modele, obiekty, tekstury, szablony"
 msgstr "models, objects, textures, templates"
 
-#: src/wigview/main.cpp:761
+#: src/wigview/main.cpp:781
 msgid "Modele"
 msgstr "Models"
 
-#: src/wigview/main.cpp:766
+#: src/wigview/main.cpp:786
 msgid "Tekstury"
 msgstr "Textures"
 
-#: src/wigview/main.cpp:771
+#: src/wigview/main.cpp:791
 msgid "Mapy"
 msgstr "Maps"
 
-#: src/wigview/main.cpp:777
+#: src/wigview/main.cpp:797
 msgid "Zapisy"
 msgstr "Saves"
 
-#: src/wigview/main.cpp:830
+#: src/wigview/main.cpp:803
+#: src/wigview/map_view.cpp:709
+msgid "Cząsteczki"
+msgstr "Particles"
+
+#: src/wigview/main.cpp:856
 #, c-format
 msgid "Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s"
 msgstr "Saved %s\n%zu animations, %zu frames, %zu textures, %.1f MB, %.0f ms%s"
 
-#: src/wigview/main.cpp:832
+#: src/wigview/main.cpp:858
 msgid "\n(część klatek o innej topologii zastąpiona poprzednią)"
 msgstr "\n(some frames with different topology replaced by the previous one)"
 
-#: src/wigview/main.cpp:834
+#: src/wigview/main.cpp:860
 msgid "Błąd eksportu: "
 msgstr "Export error: "
 
-#: src/wigview/main.cpp:1073
+#: src/wigview/main.cpp:1106
 msgid "Wczytywanie"
 msgstr "Loading"
 
@@ -281,310 +461,485 @@ msgstr "Loading"
 msgid "shader terenu: "
 msgstr "terrain shader: "
 
-#: src/wigview/map_view.cpp:152
-#: src/wigview/map_view.cpp:161
-#: src/wigview/map_view.cpp:201
+#: src/wigview/map_view.cpp:153
+#: src/wigview/map_view.cpp:162
+#: src/wigview/map_view.cpp:202
 msgid "zapis "
 msgstr "save "
 
-#: src/wigview/map_view.cpp:152
+#: src/wigview/map_view.cpp:153
 msgid "brak pliku"
 msgstr "file not found"
 
-#: src/wigview/map_view.cpp:161
+#: src/wigview/map_view.cpp:162
 msgid "nie można otworzyć pliku"
 msgstr "cannot open file"
 
-#: src/wigview/map_view.cpp:170
+#: src/wigview/map_view.cpp:171
 msgid "Odśwież listę"
 msgstr "Refresh list"
 
-#: src/wigview/map_view.cpp:171
+#: src/wigview/map_view.cpp:172
 msgid "Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania."
 msgstr "The game adds new saves to Data/Gamesave while running."
 
-#: src/wigview/map_view.cpp:172
-#: src/wigview/map_view.cpp:176
+#: src/wigview/map_view.cpp:173
+#: src/wigview/map_view.cpp:177
 msgid "Wczytaj"
 msgstr "Load"
 
-#: src/wigview/map_view.cpp:173
+#: src/wigview/map_view.cpp:174
 msgid "ścieżka do pliku .sav"
 msgstr "path to a .sav file"
 
-#: src/wigview/map_view.cpp:191
+#: src/wigview/map_view.cpp:192
 msgid "Rozpakowywanie i odczyt zapisu"
 msgstr "Unpacking and reading the save"
 
-#: src/wigview/map_view.cpp:193
+#: src/wigview/map_view.cpp:194
 msgid "Budowa świata z zapisu"
 msgstr "Building the world from the save"
 
-#: src/wigview/map_view.cpp:198
+#: src/wigview/map_view.cpp:199
 #, c-format
 msgid "Zapis %s, czas gry %.0f s, %zu obiektów."
 msgstr "Save %s, game time %.0f s, %zu objects."
 
-#: src/wigview/map_view.cpp:228
+#: src/wigview/map_view.cpp:229
 msgid "Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany."
 msgstr "Procedurally generated world (StoryMgr load_level/load_sandbox) - not supported yet."
 
-#: src/wigview/map_view.cpp:255
+#: src/wigview/map_view.cpp:256
 msgid "Składanie świata z szablonów"
 msgstr "Assembling the world from templates"
 
-#: src/wigview/map_view.cpp:280
+#: src/wigview/map_view.cpp:281
 msgid "brak szablonów do złożenia"
 msgstr "no templates to assemble"
 
-#: src/wigview/map_view.cpp:293
+#: src/wigview/map_view.cpp:294
 msgid "Siatka terenu"
 msgstr "Terrain mesh"
 
-#: src/wigview/map_view.cpp:296
+#: src/wigview/map_view.cpp:297
 msgid "Tekstury terenu"
 msgstr "Terrain textures"
 
-#: src/wigview/map_view.cpp:308
+#: src/wigview/map_view.cpp:309
 msgid "Modele obiektów"
 msgstr "Object models"
 
-#: src/wigview/map_view.cpp:334
+#: src/wigview/map_view.cpp:336
 msgid "Gotowe"
 msgstr "Done"
 
-#: src/wigview/map_view.cpp:528
+#: src/wigview/map_view.cpp:576
 msgid "Brak siatki .PMP"
 msgstr "No .PMP grid"
 
-#: src/wigview/map_view.cpp:531
+#: src/wigview/map_view.cpp:579
 msgid "Typ pola"
 msgstr "Tile type"
 
-#: src/wigview/map_view.cpp:531
+#: src/wigview/map_view.cpp:579
 msgid "ID bloku"
 msgstr "Block ID"
 
-#: src/wigview/map_view.cpp:531
+#: src/wigview/map_view.cpp:579
 msgid "Warstwa 2 (PMP)"
 msgstr "Layer 2 (PMP)"
 
-#: src/wigview/map_view.cpp:531
+#: src/wigview/map_view.cpp:579
 msgid "Warstwa .l2m"
 msgstr ".l2m layer"
 
-#: src/wigview/map_view.cpp:531
+#: src/wigview/map_view.cpp:579
 msgid "Głębokość (BlockDB)"
 msgstr "Depth (BlockDB)"
 
-#: src/wigview/map_view.cpp:533
+#: src/wigview/map_view.cpp:581
 msgid "Warstwa"
 msgstr "Layer"
 
-#: src/wigview/map_view.cpp:536
+#: src/wigview/map_view.cpp:584
 msgid "Zoom"
 msgstr "Zoom"
 
-#: src/wigview/map_view.cpp:589
+#: src/wigview/map_view.cpp:637
 #, c-format
 msgid "blok (%d, %d)"
 msgstr "block (%d, %d)"
 
-#: src/wigview/map_view.cpp:590
+#: src/wigview/map_view.cpp:638
 #, c-format
 msgid "typ %u  ID bloku %u  warstwa2 %u"
 msgstr "type %u  block ID %u  layer2 %u"
 
-#: src/wigview/map_view.cpp:591
+#: src/wigview/map_view.cpp:639
 #, c-format
 msgid "l2m 0x%04X"
 msgstr "l2m 0x%04X"
 
-#: src/wigview/map_view.cpp:595
+#: src/wigview/map_view.cpp:643
 msgid "(bez modelu)"
 msgstr "(no model)"
 
-#: src/wigview/map_view.cpp:610
+#: src/wigview/map_view.cpp:658
 msgid "Szablony"
 msgstr "Templates"
 
-#: src/wigview/map_view.cpp:612
+#: src/wigview/map_view.cpp:660
 msgid "Scenariusze"
 msgstr "Scenarios"
 
-#: src/wigview/map_view.cpp:615
+#: src/wigview/map_view.cpp:663
 msgid "filtr (np. urw_gng)"
 msgstr "filter (e.g. urw_gng)"
 
-#: src/wigview/map_view.cpp:615
+#: src/wigview/map_view.cpp:663
 msgid "filtr (np. single_)"
 msgstr "filter (e.g. single_)"
 
-#: src/wigview/map_view.cpp:615
+#: src/wigview/map_view.cpp:663
 msgid "filtr (np. quick)"
 msgstr "filter (e.g. quick)"
 
-#: src/wigview/map_view.cpp:617
+#: src/wigview/map_view.cpp:665
 msgid "Brak zapisów w Data/Gamesave."
 msgstr "No saves in Data/Gamesave."
 
-#: src/wigview/map_view.cpp:636
+#: src/wigview/map_view.cpp:684
 #, c-format
 msgid "Wybierz szablon z listy (%zu skryptów, %zu klas z modelem)."
 msgstr "Select a template from the list (%zu scripts, %zu classes with a model)."
 
-#: src/wigview/map_view.cpp:644
+#: src/wigview/map_view.cpp:692
 #, c-format
 msgid "Scenariusz: %d szablonów, obszar %ux%u bloków od (%d, %d)"
 msgstr "Scenario: %d templates, area %ux%u blocks from (%d, %d)"
 
-#: src/wigview/map_view.cpp:647
+#: src/wigview/map_view.cpp:695
 #, c-format
 msgid "Niebo do wiersza %d (set_light_begin): %d pól w świetle dziennym"
 msgstr "Sky down to row %d (set_light_begin): %d tiles in daylight"
 
-#: src/wigview/map_view.cpp:649
+#: src/wigview/map_view.cpp:697
 #, c-format
 msgid "PMP: %s  %ux%u bloków   l2m: %s"
 msgstr "PMP: %s  %ux%u blocks   l2m: %s"
 
-#: src/wigview/map_view.cpp:651
+#: src/wigview/map_view.cpp:699
 #, c-format
 msgid "obiekty: %zu, z modelem: %zu"
 msgstr "objects: %zu, with a model: %zu"
 
-#: src/wigview/map_view.cpp:652
+#: src/wigview/map_view.cpp:700
 #, c-format
 msgid "Teren niedostępny: %s"
 msgstr "Terrain unavailable: %s"
 
-#: src/wigview/map_view.cpp:653
+#: src/wigview/map_view.cpp:701
 msgid "Teren"
 msgstr "Terrain"
 
-#: src/wigview/map_view.cpp:655
+#: src/wigview/map_view.cpp:703
 msgid "Obiekty"
 msgstr "Objects"
 
-#: src/wigview/map_view.cpp:657
+#: src/wigview/map_view.cpp:705
 msgid "Detale (.l2m)"
 msgstr "Details (.l2m)"
 
-#: src/wigview/map_view.cpp:659
+#: src/wigview/map_view.cpp:707
 msgid "Strefa horyzontu"
 msgstr "Horizon zone"
 
-#: src/wigview/map_view.cpp:660
+#: src/wigview/map_view.cpp:710
+#, c-format
+msgid "Efekty z class_particle obiektów (%zu emiterów)."
+msgstr "Effects from the objects' class_particle (%zu emitters)."
+
+#: src/wigview/map_view.cpp:711
 msgid "Oświetlenie jak w grze"
 msgstr "In-game lighting"
 
-#: src/wigview/map_view.cpp:662
+#: src/wigview/map_view.cpp:713
 msgid "Lampa podglądu"
 msgstr "Preview lamp"
 
-#: src/wigview/map_view.cpp:664
+#: src/wigview/map_view.cpp:715
 #, c-format
 msgid "Dodatkowa lampa nad środkiem kadru (nie z gry), działa z oświetleniem jak w grze.\nDomyślnie włączona dla szablonów bez własnych świateł (%zu świateł w scenie)."
 msgstr "Extra lamp above the view center (not from the game), works with in-game lighting.\nOn by default for templates without their own lights (%zu lights in the scene)."
 
-#: src/wigview/map_view.cpp:669
+#: src/wigview/map_view.cpp:720
 msgid "Panorama nieba"
 msgstr "Sky panorama"
 
-#: src/wigview/map_view.cpp:671
+#: src/wigview/map_view.cpp:722
 msgid "Dywan łąki"
 msgstr "Meadow carpet"
 
-#: src/wigview/map_view.cpp:674
+#: src/wigview/map_view.cpp:725
 msgid "wyłączona"
 msgstr "off"
 
-#: src/wigview/map_view.cpp:674
+#: src/wigview/map_view.cpp:725
 msgid "całość odkryta, niewidoczna (szara)"
 msgstr "all explored, not visible (grey)"
 
-#: src/wigview/map_view.cpp:674
+#: src/wigview/map_view.cpp:725
 msgid "kadr widoczny, reszta szara"
 msgstr "view visible, rest grey"
 
-#: src/wigview/map_view.cpp:675
+#: src/wigview/map_view.cpp:726
 msgid "kadr widoczny, reszta czarna"
 msgstr "view visible, rest black"
 
-#: src/wigview/map_view.cpp:675
+#: src/wigview/map_view.cpp:726
 msgid "z zapisu gry (gracz 0)"
 msgstr "from the save (player 0)"
 
-#: src/wigview/map_view.cpp:679
+#: src/wigview/map_view.cpp:730
 msgid "Odkryj mapę"
 msgstr "Reveal map"
 
-#: src/wigview/map_view.cpp:689
+#: src/wigview/map_view.cpp:740
 msgid "Pokazuje cały teren i wszystkie obiekty bez mgły wojny."
 msgstr "Shows the whole terrain and all objects without fog of war."
 
-#: src/wigview/map_view.cpp:693
+#: src/wigview/map_view.cpp:744
 msgid "Mgła wojny"
 msgstr "Fog of war"
 
-#: src/wigview/map_view.cpp:695
+#: src/wigview/map_view.cpp:746
 msgid "Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
 msgstr "Rule from docs/silnik/10_mgla_wojny.md: grey fog (170,170,155) grows with depth,\nlamps do not shine in it, black tiles are unexplored; objects without viewinfog disappear."
 
-#: src/wigview/map_view.cpp:700
+#: src/wigview/map_view.cpp:751
 msgid "promień kadru"
 msgstr "view radius"
 
-#: src/wigview/map_view.cpp:703
+#: src/wigview/map_view.cpp:754
 msgid "bajt w kadrze"
 msgstr "byte in view"
 
-#: src/wigview/map_view.cpp:704
+#: src/wigview/map_view.cpp:755
 msgid "255 = widoczne; 0xE2..0x80 = wygasanie; < 0x80 = szara mgła"
 msgstr "255 = visible; 0xE2..0x80 = fading; < 0x80 = grey fog"
 
-#: src/wigview/map_view.cpp:710
+#: src/wigview/map_view.cpp:761
 msgid "6 warstw z paralaksą (Panorama_layer_0..5) i dywan łąki (Panorama_layer_6).\nTylko gdy scenariusz ustawia niebo (set_light_begin) albo set_ground_begin."
 msgstr "6 parallax layers (Panorama_layer_0..5) and the meadow carpet (Panorama_layer_6).\nOnly when the scenario sets the sky (set_light_begin) or set_ground_begin."
 
-#: src/wigview/map_view.cpp:713
+#: src/wigview/map_view.cpp:764
 #, c-format
 msgid "Prawo z gry: jasność bazowa z warstwy 2, stałe słońce z lewej góry,\nlampy class_light (%zu w scenie, rysowane do %d najbliższych)."
 msgstr "Game rule: base brightness from layer 2, fixed sun from the top left,\nclass_light lamps (%zu in the scene, up to %d nearest drawn)."
 
-#: src/wigview/map_view.cpp:716
+#: src/wigview/map_view.cpp:767
 #, c-format
 msgid "Kolor tła w otworach tylnej ściany (typ pola 5) i zanikanie modeli za skałą.\n%s"
 msgstr "Background color in back wall openings (tile type 5) and fading of models behind rock.\n%s"
 
-#: src/wigview/map_view.cpp:718
+#: src/wigview/map_view.cpp:769
 msgid "Szablon nie ma obiektu Info_Fog_*."
 msgstr "The template has no Info_Fog_* object."
 
-#: src/wigview/map_view.cpp:719
+#: src/wigview/map_view.cpp:770
 msgid "Kamera poza zasięgiem (size) wszystkich obiektów Info_Fog_*."
 msgstr "Camera outside the range (size) of all Info_Fog_* objects."
 
-#: src/wigview/map_view.cpp:723
+#: src/wigview/map_view.cpp:774
 msgid "Siatka 2D"
 msgstr "2D grid"
 
-#: src/wigview/map_view.cpp:724
+#: src/wigview/map_view.cpp:775
 msgid "Filtr obiektów"
 msgstr "Object filter"
 
-#: src/wigview/map_view.cpp:725
+#: src/wigview/map_view.cpp:776
 msgid "bez poziomu"
 msgstr "no level"
 
-#: src/wigview/map_view.cpp:730
+#: src/wigview/map_view.cpp:781
 msgid "Pokaż obiekty bez modelu (czerwone na siatce)"
 msgstr "Show objects without a model (red on the grid)"
 
-#: src/wigview/map_view.cpp:731
+#: src/wigview/map_view.cpp:782
 msgid "Znaczniki edytora (światła, obiekty Info)"
 msgstr "Editor markers (lights, Info objects)"
 
-#: src/wigview/map_view.cpp:733
+#: src/wigview/map_view.cpp:784
 msgid "Lista obiektów"
 msgstr "Object list"
+
+#: src/wigview/particle_view.cpp:18
+msgid "prostopadłościan"
+msgstr "box"
+
+#: src/wigview/particle_view.cpp:19
+msgid "dysk"
+msgstr "disc"
+
+#: src/wigview/particle_view.cpp:20
+msgid "stożek"
+msgstr "cone"
+
+#: src/wigview/particle_view.cpp:21
+msgid "kula"
+msgstr "sphere"
+
+#: src/wigview/particle_view.cpp:22
+msgid "wierzchołki modelu"
+msgstr "model vertices"
+
+#: src/wigview/particle_view.cpp:23
+msgid "punkt"
+msgstr "point"
+
+#: src/wigview/particle_view.cpp:29
+msgid "spada i odbija się od ziemi"
+msgstr "falls and bounces off the ground"
+
+#: src/wigview/particle_view.cpp:30
+msgid "brak (typ nieużywany)"
+msgstr "none (unused type)"
+
+#: src/wigview/particle_view.cpp:31
+msgid "zwykły"
+msgstr "standard"
+
+#: src/wigview/particle_view.cpp:37
+msgid "ciepła rampa (ogień)"
+msgstr "warm ramp (fire)"
+
+#: src/wigview/particle_view.cpp:38
+msgid "szara rampa (dym)"
+msgstr "grey ramp (smoke)"
+
+#: src/wigview/particle_view.cpp:39
+msgid "stały kolor"
+msgstr "constant colour"
+
+#: src/wigview/particle_view.cpp:40
+msgid "biały"
+msgstr "white"
+
+#: src/wigview/particle_view.cpp:150
+msgid "Ramki: komórki atlasu używane przez typ."
+msgstr "Frames: atlas cells used by the type."
+
+#: src/wigview/particle_view.cpp:158
+msgid "filtr (np. ogień)"
+msgstr "filter (e.g. fire)"
+
+#: src/wigview/particle_view.cpp:183
+#, c-format
+msgid "Typ %d: %s"
+msgstr "Type %d: %s"
+
+#: src/wigview/particle_view.cpp:184
+msgid "Parametry typu: Diggles-Unity (hipoteza: część dobrana na oko, do sprawdzenia w grze)."
+msgstr "Type parameters: Diggles-Unity (hypothesis: some tuned by eye, to be checked in the game)."
+
+#: src/wigview/particle_view.cpp:193
+msgid "atlas"
+msgstr "atlas"
+
+#: src/wigview/particle_view.cpp:194
+msgid "jasność, tryb"
+msgstr "brightness, mode"
+
+#: src/wigview/particle_view.cpp:195
+msgid "rozrzut"
+msgstr "spread"
+
+#: src/wigview/particle_view.cpp:196
+msgid "ruch"
+msgstr "motion"
+
+#: src/wigview/particle_view.cpp:197
+msgid "kolor"
+msgstr "colour"
+
+#: src/wigview/particle_view.cpp:198
+msgid "rozmiar"
+msgstr "size"
+
+#: src/wigview/particle_view.cpp:198
+#, c-format
+msgid "%.2f (×%.2f = %.2f bloku)"
+msgstr "%.2f (×%.2f = %.2f block)"
+
+#: src/wigview/particle_view.cpp:199
+msgid "czas życia"
+msgstr "lifetime"
+
+#: src/wigview/particle_view.cpp:199
+#, c-format
+msgid "%d klatek"
+msgstr "%d frames"
+
+#: src/wigview/particle_view.cpp:203
+msgid "Źródło"
+msgstr "Source"
+
+#: src/wigview/particle_view.cpp:205
+msgid "na klatkę"
+msgstr "per frame"
+
+#: src/wigview/particle_view.cpp:206
+msgid "najwięcej"
+msgstr "maximum"
+
+#: src/wigview/particle_view.cpp:207
+msgid "prędkość (dir)"
+msgstr "velocity (dir)"
+
+#: src/wigview/particle_view.cpp:208
+msgid "Bloki na klatkę w układzie gry (y w dół: ujemne y = w górę)."
+msgstr "Blocks per frame in game coordinates (y down: negative y = up)."
+
+#: src/wigview/particle_view.cpp:212
+msgid "Od nowa"
+msgstr "Restart"
+
+#: src/wigview/particle_view.cpp:214
+#, c-format
+msgid "żywych: %d"
+msgstr "alive: %d"
+
+#: src/wigview/particle_view.cpp:216
+msgid "klatek symulacji na s"
+msgstr "simulation frames per s"
+
+#: src/wigview/particle_view.cpp:217
+msgid "Nieznane: gra liczy cząsteczki co klatkę obrazu; Diggles-Unity przyjmuje 12/s."
+msgstr "Unknown: the game updates particles every rendered frame; Diggles-Unity assumes 12/s."
+
+#: src/wigview/particle_view.cpp:219
+msgid "skala rozmiaru"
+msgstr "size scale"
+
+#: src/wigview/particle_view.cpp:220
+msgid "Hipoteza: rozmiar typu × skala = bok w blokach (Diggles-Unity: 0,25; zrzut gry: ok. 0,12)."
+msgstr "Hypothesis: type size × scale = side in blocks (Diggles-Unity: 0.25; game capture: about 0.12)."
+
+#: src/wigview/particle_view.cpp:222
+msgid "Atlas"
+msgstr "Atlas"
+
+#: src/wigview/particle_view.cpp:226
+#, c-format
+msgid "Użycie w skryptach (%d)"
+msgstr "Usage in scripts (%d)"
+
+#: src/wigview/particle_view.cpp:228
+msgid "Brak bezpośredniego użycia (typ może być podany zmienną)."
+msgstr "No direct usage (the type may be given by a variable)."
+
+#: src/wigview/particle_view.cpp:249
+msgid "Kliknięcie class_particle przejmuje jego parametry źródła."
+msgstr "Clicking a class_particle line takes over its source parameters."
+

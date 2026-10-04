@@ -67,6 +67,9 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
 - [x] Wyszukiwarka Ctrl+F: modele, obiekty w modelach, tekstury, szablony
+- [x] Cząsteczki: zakładka z 43 typami (atlas, parametry, użycie w skryptach, podgląd emitera), `--particle N`; emitery z `class_particle` na mapach; rozdział [12](docs/silnik/12_czasteczki.md)
+- [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
+- [ ] Woda (płyny): gra rysuje ją np. w `kris_unq_060`; stan w zapisie `.sav` (pola wody); Diggles-Unity `FLUID_SYSTEM_RE.md`
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)

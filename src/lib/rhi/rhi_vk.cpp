@@ -722,6 +722,10 @@ Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
 		cb.blendEnable = VK_TRUE;
 		cb.srcColorBlendFactor = cb.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 		cb.dstColorBlendFactor = cb.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	} else if (d.blend == Blend::Additive) {
+		cb.blendEnable = VK_TRUE;
+		cb.srcColorBlendFactor = cb.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		cb.dstColorBlendFactor = cb.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	} else if (d.blend == Blend::Modulate2x) {
 		cb.blendEnable = VK_TRUE;
 		cb.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;

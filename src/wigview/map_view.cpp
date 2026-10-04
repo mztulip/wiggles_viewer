@@ -59,6 +59,7 @@ void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, con
 	std::string err;
 	if (!terrain_.init(dev, err)) blocksError_ = tr("shader terenu: ") + err;
 	panoramaReady_ = panorama_.init(dev, err, *textures);
+	particlesReady_ = particles_.init(dev, err, *textures);
 	try {
 		blocks_.load(*vfs);
 	} catch (const std::exception& e) {
@@ -314,6 +315,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		}
 	}
 	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
+	buildEmitters();
 	allLights_.clear();
 	if (script_)
 		for (const auto& o : script_->objects)
@@ -355,6 +357,42 @@ void MapView::step(int d) {
 // Docs/COORDINATE_SYSTEM.md §3.3–3.4, stałe z Wiggles.exe:
 //  - głębokość obiektu: z_świata = z_skryptu·0,5 + 7 bloków (DAT_0073708c, DAT_00737520),
 //  - obrót: M = Ry(−ry)·Rx(−rx)·Rz(−rz) (macierze gry są transpozycją standardowych).
+// Emitery cząsteczek obiektów (class_particle klasy), rozgrzane o 4 s symulacji, żeby efekt już trwał.
+void MapView::buildEmitters() {
+	emitters_.clear();
+	particleAcc_ = 0.f;
+	if (!particlesReady_) return;
+	for (const auto& o : objects_) {
+		const auto* list = classes_.particles(o.src.className);
+		if (!list) continue;
+		for (const ParticleSource& s : *list) {
+			const ParticleType* t = particleType(s.type);
+			if (!t) continue;
+			MapEmitter m;
+			m.x = int(std::floor(o.src.pos[0]));
+			m.y = int(std::floor(o.src.pos[1]));
+			m.emitter.configure(*t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
+			m.emitter.setUsableCells(particles_.usableCells(t->tex, t->grid));
+			m.emitter.setOrigin(o.src.pos[0], o.src.pos[1], o.src.pos[2] * 0.5f + 7.f);
+			for (int i = 0; i < 48; ++i) m.emitter.step();
+			emitters_.push_back(std::move(m));
+		}
+	}
+}
+
+void MapView::update(float dt) {
+	time_ += dt;
+	// Cząsteczki: 12 klatek symulacji na sekundę (❓ w grze co klatkę obrazu; za Diggles-Unity).
+	particleAcc_ += dt;
+	int steps = 0;
+	while (particleAcc_ >= 1.f / 12.f && steps < 4) {
+		for (auto& e : emitters_) e.emitter.step();
+		particleAcc_ -= 1.f / 12.f;
+		++steps;
+	}
+	if (steps == 4) particleAcc_ = 0.f;
+}
+
 glm::mat4 MapView::objectMatrix(const TemplateObject& o) {
 	glm::mat4 m = glm::translate(glm::mat4(1.f), glm::vec3(o.pos[0], o.pos[1], o.pos[2] * 0.5f + 7.f) * kBlock);
 	m = glm::rotate(m, -o.rot[1], glm::vec3(0, 1, 0));
@@ -457,6 +495,16 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		opt.gameModel = gm;
 		opt.base = baseLight(o.src.pos[0], o.src.pos[1]);
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
+	}
+	// Cząsteczki po modelach (addytywne, bez zapisu głębi). W mgle wojny tylko na polach z bajtem ≥ 0x81 (§10.5).
+	if (showParticles_) {
+		glm::mat4 gameToClip = viewProj * world;
+		for (const auto& e : emitters_) {
+			if (fog && fogAt(e.x, e.y) < 0x81) continue;
+			sprites_.clear();
+			e.emitter.collect(sprites_, kParticleSizeScale);
+			particles_.draw(sprites_, *e.emitter.type(), gameToClip);
+		}
 	}
 }
 
@@ -657,6 +705,9 @@ bool MapView::ui(bool savesTab) {
 	ImGui::Checkbox(tr("Detale (.l2m)"), &terrain_.showDetail);
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Strefa horyzontu"), &showZone_);
+	ImGui::SameLine();
+	ImGui::Checkbox(tr("Cząsteczki"), &showParticles_);
+	ImGui::SetItemTooltip(tr("Efekty z class_particle obiektów (%zu emiterów)."), emitters_.size());
 	ImGui::Checkbox(tr("Oświetlenie jak w grze"), &gameLighting_);
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Lampa podglądu"), &previewLamp_);

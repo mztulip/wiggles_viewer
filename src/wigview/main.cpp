@@ -17,6 +17,7 @@
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
+// --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
@@ -32,6 +33,7 @@
 #include "lib/png_write.h"
 #include "lib/vfs.h"
 #include "wigview/map_view.h"
+#include "wigview/particle_view.h"
 
 #include <ow_version.h> // generowany przez build.sh: OW_VERSION (commit), OW_VERSION_DATE
 
@@ -58,6 +60,7 @@ namespace {
 
 struct Args {
 	std::string game, model, object, anim, screenshot, templ, search, scenario, lang;
+	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
 	int ipol = 1;
 	int light = int(LightingMode::SphereNormal);
@@ -89,6 +92,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
+		else if (k == "--particle") a.particle = std::atoi(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center") {
@@ -148,9 +152,11 @@ struct Viewer {
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
-	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy, 3 zapisy (2 i 3 pokazują widok mapy)
+	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy, 3 zapisy (2 i 3 pokazują widok mapy), 4 cząsteczki
+	bool mapTab() const { return activeTab == 2 || activeTab == 3; }
 	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
 	MapView maps;
+	ParticleView particles;
 	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
 	char exportDir[512] = ".";
 	std::string exportMsg;
@@ -283,9 +289,20 @@ struct Viewer {
 		}
 	}
 
+	// Podgląd cząsteczek: emiter w początku układu, kamera z przodu.
+	void frameParticles() {
+		yaw = 0.f;
+		pitch = 10.f;
+		center = particles.center();
+		radius = particles.radius();
+		dist = radius * 2.4f;
+		pan = glm::vec3(0.f);
+		gameCam = false;
+	}
+
 	glm::mat4 viewProj(int w, int h) const {
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
-		if (gameCam && activeTab >= 2) {
+		if (gameCam && mapTab()) {
 			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
 			const auto& g = gameCamView;
 			float Rb = g.zoom * 16.f - 10.f;
@@ -327,8 +344,8 @@ struct Viewer {
 	// Kolor czyszczenia klatki: w zakładce Mapy kolor strefy horyzontu (jak w grze).
 	glm::vec3 clearColor() {
 		glm::vec3 clear = bg;
-		if (activeTab >= 2) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
-		if (activeTab >= 2)
+		if (mapTab()) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
+		if (mapTab())
 			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b);
 		return clear;
 	}
@@ -336,8 +353,10 @@ struct Viewer {
 	void renderScene(int w, int h, int x0 = 0) {
 		x0 = std::clamp(x0, 0, w - 1);
 		device->setViewport(x0, 0, w - x0, h);
-		if (activeTab >= 2) {
+		if (mapTab()) {
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
+		} else if (activeTab == 4) {
+			particles.render(viewProj(w - x0, h) * modelMatrix());
 		} else {
 			uint32_t a, b;
 			float t;
@@ -348,6 +367,7 @@ struct Viewer {
 
 	void update(float dt) {
 		if (playing) maps.update(dt);
+		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
 		if (!playing || n <= 1) return;
 		frame += dt * fps;
@@ -769,15 +789,21 @@ void Viewer::ui() {
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(tr("Mapy###mapy"), nullptr, tabFlags(2))) {
-			if (activeTab < 2) frameMap();
+			if (!mapTab()) frameMap();
 			activeTab = 2;
 			if (maps.ui(false)) frameMap();
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(tr("Zapisy###zapisy"), nullptr, tabFlags(3))) {
-			if (activeTab < 2) frameMap();
+			if (!mapTab()) frameMap();
 			activeTab = 3;
 			if (maps.ui(true)) frameMap();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem(tr("Cząsteczki###czasteczki"), nullptr, tabFlags(4))) {
+			if (activeTab != 4) frameParticles();
+			activeTab = 4;
+			if (particles.ui()) frameParticles();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -938,6 +964,7 @@ int main(int argc, char** argv) {
 	v.textures = std::make_unique<TextureCache>(v.vfs);
 	v.textures->setDevice(&dev);
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
+	v.particles.init(dev, &v.vfs, v.textures.get());
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
 		v.sphere = parseSphereDat(*sd);
 		v.renderer.setSphere(v.sphere);
@@ -972,6 +999,12 @@ int main(int argc, char** argv) {
 		v.frame = std::clamp(args.frame, 0.f, float(std::max(0, v.frameCount() - 1)) + 0.999f);
 	}
 
+	if (args.particle >= 0) {
+		v.particles.select(args.particle);
+		v.particles.prewarm(36); // 3 s przy 12 klatkach symulacji na sekundę
+		v.activeTab = v.forceTab = 4;
+		v.frameParticles();
+	}
 	if (!args.templ.empty() || !args.scenario.empty()) {
 		if (!args.scenario.empty()) {
 			std::string t = args.scenario;
@@ -1159,11 +1192,13 @@ int main(int argc, char** argv) {
 				case SDLK_UP:
 					if (v.activeTab == 0) v.stepModel(-1);
 					else if (v.activeTab == 1) v.stepTexture(-1);
+					else if (v.activeTab == 4) v.particles.step(-1);
 					else v.maps.step(-1);
 					break;
 				case SDLK_DOWN:
 					if (v.activeTab == 0) v.stepModel(1);
 					else if (v.activeTab == 1) v.stepTexture(1);
+					else if (v.activeTab == 4) v.particles.step(1);
 					else v.maps.step(1);
 					break;
 				case SDLK_PAGEUP: v.stepAnim(-1); break;

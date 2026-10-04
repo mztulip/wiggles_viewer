@@ -10,6 +10,7 @@
 #include "lib/blockdb.h"
 #include "lib/class_db.h"
 #include "lib/gfx/panorama_renderer.h"
+#include "lib/gfx/particle_renderer.h"
 #include "lib/gfx/terrain_renderer.h"
 #include "lib/heightfield.h"
 #include "lib/terrain_mesh.h"
@@ -69,7 +70,7 @@ public:
 	// savesTab: zakładka Zapisy (lista zapisów gry) zamiast Mapy (szablony i scenariusze).
 	bool ui(bool savesTab);
 	bool showingSave() const { return list_ == ListMode::Saves; }
-	void update(float dt) { time_ += dt; }
+	void update(float dt);
 	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
 	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).
 	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset,
@@ -143,6 +144,17 @@ private:
 	bool previewLamp_ = true; // lampa podglądu dla szablonów bez własnych świateł
 	float groundRow_ = 0.f; // wiersz gruntu panoramy (bloki)
 	ow::PanoramaRenderer panorama_;
+	// Cząsteczki obiektów z class_particle (docs/silnik/12_czasteczki.md).
+	struct MapEmitter {
+		ow::ParticleEmitter emitter;
+		int x = 0, y = 0; // pole obiektu (mgła wojny)
+	};
+	ow::ParticleRenderer particles_;
+	bool particlesReady_ = false, showParticles_ = true;
+	std::vector<MapEmitter> emitters_;
+	std::vector<ow::ParticleSprite> sprites_;
+	float particleAcc_ = 0.f;
+	void buildEmitters();
 	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64

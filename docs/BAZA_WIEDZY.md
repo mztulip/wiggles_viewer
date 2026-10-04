@@ -320,6 +320,11 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - Modele wyglądają na oświetlane dwustronnie (drzewa z normalnymi do środka są jasne).
 - 🔶 Własna klasa zdefiniowana w `userstartup.tcl` (`def_class` + `timer_event`) tworzy się (`new` zwraca uchwyt), ale jej zdarzenie timera się nie wywołało. Do zbadania, jeśli będą potrzebne odczyty w trakcie gry.
 
+### 9.4 Cząsteczki: kalibracja płomieni (2026-10-04)
+- Zrzut gry: `tools/lab/capture.sh template ../lab/zrzuty/czasteczki/kris_unq_060_gra.png kris_unq_060 24.5 21 1.0 0 0 60`; nasz: `wigview --template kris_unq_060 --view 8.5 5 1.0 0 0`.
+- Parametry typów 2 i 3 z Diggles-Unity dawały płomień ok. 3,5× za szeroki i czerwony. Po zmianie skali rozmiaru (0,25 → 0,12), koloru (barwa z atlasu, alfa 1 − t²), animacji (klatka wg t²) i rozrzutu prędkości płomień kielicha zgadza się ze zrzutem. Szczegóły: [rozdział 12 §12.6](silnik/12_czasteczki.md).
+- Uwagi poboczne: gra rysuje w tym szablonie wodę (u nas brak), a płomień lamp `Dummy_Haengelicht` (typ 3) u nas nie jest widoczny.
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji
@@ -337,6 +342,7 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 | Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
 | Nawigacja, pathfinding (maska RLE w `.PMP` = płaszczyzna nawigacji 0/1/3) | `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md` | faza 6 |
 | Generator świata, składanie map | `WORLDGEN_ORIGINAL_RE.md`, `LEVEL_GENERATOR.md` | następny etap map |
-| Zapisy `.sav` | `ORIGINAL_SAVE_FORMAT_RE.md`, `save-re-reports/` | faza 6 |
+| Zapisy `.sav` | `ORIGINAL_SAVE_FORMAT_RE.md`, `save-re-reports/` | ✅ mapa z zapisu ([formaty/sav.md](formaty/sav.md)); reszta faza 6 |
 | Animacje, twarze, łączenie czapek | `ANIMATION_CONTROLLER.md`, `FACE_ANIMATION.md`, `HAT_LINK_SYSTEM.md` | przeglądarka/silnik |
-| Dźwięk, cząsteczki, płyny, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `PARTICLE_SYSTEM_REWRITE.md`, `FLUID_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |
+| Cząsteczki | `PARTICLE_SYSTEM_REWRITE.md`, `ParticleTypeTable.cs`, `CpuParticleEmitter.cs` | 🔶 wspólny model, typy 2/3 skalibrowane ([rozdz. 12](silnik/12_czasteczki.md)) |
+| Dźwięk, płyny, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `FLUID_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |

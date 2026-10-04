@@ -225,6 +225,10 @@ public:
 			gl::Enable(GL_BLEND);
 			gl::BlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
 			break;
+		case Blend::Additive:
+			gl::Enable(GL_BLEND);
+			gl::BlendFunc(GL_ONE, GL_ONE);
+			break;
 		}
 		gl::PolygonMode(GL_FRONT_AND_BACK, d.wireframe ? GL_LINE : GL_FILL);
 	}
