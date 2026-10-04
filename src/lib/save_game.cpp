@@ -4,6 +4,7 @@
 
 #include <zlib.h>
 
+#include <cmath>
 #include <cstring>
 
 namespace ow {
@@ -216,6 +217,77 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	return o;
 }
 
+// Tablica obiektów menedżera (3 grupy po 2): klasa, 7 × i32, 3 B, napis Tcl, i32.
+void skipManagerArray(SaveReader& r) {
+	int32_t n = r.count("tablica menedżera");
+	for (int32_t i = 0; i < n; ++i) {
+		r.str();
+		r.skipI32(7);
+		r.skip(3);
+		r.str();
+		r.skipI32(1);
+	}
+}
+
+// Sekcje po ciałach obiektów (kolejność i rozmiary za Diggles-Unity,
+// Tools/SaveFormatResearch/parse_a5_object_bodies.py; B3-support-class-spatial.md §2–3).
+void parseDecorations(SaveReader& r, SaveGame& s) {
+	r.skipI32(18 * 512); // tablice atrybutów graczy
+	r.skipI32(2);
+	for (int g = 0; g < 3; ++g) {
+		skipManagerArray(r);
+		skipManagerArray(r);
+		r.skipIntVector();
+		r.skip(2);
+	}
+	if (r.count("rekordy akcji menedżera") != 0) throw ParseError("nieobsługiwane rekordy akcji menedżera");
+	// Tabela klas: lekkie obiekty zastępcze.
+	r.skipI32(1);
+	r.skipI32(0x3000);
+	r.skipI32(1);
+	r.skip(1);
+	r.skipIntVector();
+	r.skipIntVector();
+	for (int32_t idx = r.i32(); idx != -1; idx = r.i32()) {
+		if (idx < 0 || idx >= 0x3000) throw ParseError("nieprawidłowy indeks tabeli klas");
+		SaveDeco d;
+		d.proxy = true;
+		float m[16];
+		for (float& v : m) v = r.f32(); // macierz przekształcenia 4×4 (🔶 obrót z niej)
+		for (float& v : d.pos) v = r.f32();
+		r.skipI32(1);
+		r.skipIntVector();
+		r.skipI32(1);          // własny indeks
+		d.link = r.i32();      // obiekt, którego jest kopią
+		d.className = r.str();
+		r.skip(1);
+		r.skipI32(4);
+		r.skip(2);
+		r.skipI32(10);
+		r.str();               // nazwa instancji
+		r.skip(3);
+		r.skipI32(1 + 6);
+		r.skip(1);
+		d.rot[1] = std::atan2(m[8], m[0]); // 🔶 obrót wokół osi pionowej z macierzy
+		s.decos.push_back(d);
+	}
+	// Kubełki przestrzenne: ceil(W/8)·ceil(H/8), w każdym liczba i rekordy.
+	int buckets = ((s.width + 7) / 8) * ((s.height + 7) / 8);
+	for (int b = 0; b < buckets; ++b) {
+		int32_t n = r.count("kubełek");
+		for (int32_t i = 0; i < n; ++i) {
+			SaveDeco d;
+			for (float& v : d.pos) v = r.f32();
+			for (float& v : d.rot) v = r.f32();
+			d.className = r.str();
+			r.skipI32(4);
+			r.skip(2);
+			s.decos.push_back(d);
+		}
+	}
+	r.marker(7);
+}
+
 } // namespace
 
 SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
@@ -295,6 +367,11 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 		while (k < decl.size() && decl[k].first < id) ++k;
 		if (k >= decl.size() || decl[k].first != id) throw ParseError("ciało obiektu " + std::to_string(id) + " bez deklaracji");
 		s.objects.push_back(parseObjectBody(r, id, decl[k].second));
+	}
+	try {
+		parseDecorations(r, s);
+	} catch (const std::exception&) {
+		s.decoError = true; // dekoracje są dodatkiem: zapis bez nich nadal się wyświetla
 	}
 	return s;
 }

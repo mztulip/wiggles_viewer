@@ -25,6 +25,16 @@ struct SaveObject {
 	float rot[3] = {0, 0, 0}; // obrót w radianach
 };
 
+// Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji
+// w kubełku przestrzennym (docs/formaty/sav.md, sekcje po ciałach obiektów).
+struct SaveDeco {
+	std::string className;
+	float pos[3] = {0, 0, 0}; // jak SaveObject::pos (z w skali skryptu)
+	float rot[3] = {0, 0, 0};
+	int link = -1;            // obiekt zastępczy: ID obiektu, którego jest kopią (−1 = brak)
+	bool proxy = false;       // true = tabela klas, false = kubełek przestrzenny
+};
+
 struct SaveTile {
 	uint32_t block = 0;   // ID kształtu w BlockDB
 	uint8_t material = 0; // rodzaj gruntu: 0 A skała, 1 B ziemia, 2 C piasek, 3 otwór do tła
@@ -47,6 +57,8 @@ struct SaveGame {
 	int fowBegin[8] = {};
 	int lightBegin = -10000, groundBegin = -10000;
 	std::vector<SaveObject> objects;
+	std::vector<SaveDeco> decos;
+	bool decoError = false; // sekcje dekoracji nie dały się odczytać (reszta zapisu jest poprawna)
 };
 
 // Rozpakowanie gzip (zapisy są strumieniem gzip).

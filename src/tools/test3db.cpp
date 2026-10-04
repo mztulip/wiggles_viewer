@@ -157,8 +157,12 @@ int testSaves(const Vfs& vfs) {
 		auto data = vfs.read("Data/Gamesave/" + f);
 		try {
 			SaveGame s = parseSaveGame(*data);
-			std::printf("  %-40s %s  %dx%d  obiekty %zu  kamera (%.1f %.1f zoom %.2f)\n", f.c_str(), s.header.c_str(), s.width,
-			            s.height, s.objects.size(), s.viewX, s.viewY, s.viewZoom);
+			size_t proxies = 0;
+			for (const auto& d : s.decos) proxies += d.proxy;
+			std::printf("  %-40s %s  %dx%d  obiekty %zu  dekoracje %zu+%zu%s  kamera (%.1f %.1f zoom %.2f)\n", f.c_str(),
+			            s.header.c_str(), s.width, s.height, s.objects.size(), proxies, s.decos.size() - proxies,
+			            s.decoError ? " (BŁĄD sekcji dekoracji)" : "", s.viewX, s.viewY, s.viewZoom);
+			if (s.decoError) ++failed;
 		} catch (const std::exception& e) {
 			std::printf("  %-40s BŁĄD: %s\n", f.c_str(), e.what());
 			++failed;

@@ -9,7 +9,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
 - [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* (`src/lib/nav.h`)
 - [x] G4 Kopanie (PPM na skale): blok 59, przebudowa terenu
-- [ ] G5 Zapis: dekoracje spoza listy obiektów (ściany, lampy) i pozostałe sekcje pliku
+- [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
+- [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [ ] G6 Symulacja płynów (źródła `Wasser`, przepływ 10 Hz), żeby szablony miały wodę
 - [ ] G7 Osadzony Tcl 8.6 ze stubami komend: klasy obiektów (`def_class`, `obj_init`, zdarzenia, timery) dla krasnali i przedmiotów
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
@@ -90,7 +91,6 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
 - [ ] Symulacja płynów (10 Hz, źródła `Wasser`), żeby szablony i scenariusze miały wodę; oświetlenie płynu
-- [ ] Zapis: dekoracje spoza listy obiektów (lekkie obiekty zastępcze i „nasiona” w kubełkach przestrzennych, Diggles-Unity `B3-support-class-spatial.md`); bez nich np. zapis z laboratorium `ow_woda` nie ma ścian i lamp
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)

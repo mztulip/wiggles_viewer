@@ -122,20 +122,42 @@ i32 n + n × ładunek pomocniczy
 
 **Pozycja z** jest w skali skryptu, czyli tak jak argument `new` w szablonie: świat z = z · 0,5 + 7 (rozdz. 5). Przykład z zapisu OBERWELT: obiekt 89 `Dummy_Moos_um_a` ma (23,531, 42,5, 13,54) i obrót ry = 6,123, dokładnie jak w szablonie, z którego pochodzi.
 
+## Sekcje po obiektach
+
+Po znaczniku −1 kończącym ciała obiektów, aż do znacznika 7 (kolejność i rozmiary za Diggles-Unity: `Tools/SaveFormatResearch/parse_a5_object_bodies.py`, `Docs/save-re-reports/B3-support-class-spatial.md` §2–4; ✅ nasz czytnik dochodzi do znacznika 7 we wszystkich naszych zapisach):
+
+```
+18 × 512 × i32    tablice atrybutów graczy (owner −1..7, po 2 × 512)
+2 × i32
+3 × { tablica, tablica, wektor i32, 2 B }   tablica = i32 n + n × (str klasa, 7 × i32, 3 B, str, i32)
+i32 liczba rekordów akcji menedżera (zawsze 0)
+— tabela klas: lekkie obiekty zastępcze —
+i32, 0x3000 × i32 (stos wolnych miejsc), i32, 1 B, wektor i32, wektor i32
+powtarzaj { i32 indeks; −1 = koniec;
+            16 × f32 macierz 4×4, 3 × f32 pozycja, i32, wektor i32, i32 własny indeks, i32 ID obiektu-wzoru,
+            str klasa, 1 B, 4 × i32, 2 B, 10 × i32, str nazwa instancji, 3 B, i32, 6 × i32, 1 B }
+— kubełki przestrzenne: ceil(W/8) · ceil(H/8) —
+każdy: i32 n + n × { 3 × f32 pozycja, 3 × f32 obrót, str klasa, 4 × i32, 2 B }
+i32 znacznik 7
+```
+
+- **Obiekty zastępcze** to tanie kopie żywych obiektów do rysowania z daleka. W naszych zapisach wszystkie wskazują istniejący obiekt (OBERWELT: 893 z 893), więc pomijamy te, których obiekt-wzór jest na liście.
+- **Nasiona** w kubełkach to dekoracje czekające na utworzenie, gdy pozwoli na to poziom szczegółów. Pozycja jak w szablonie (z w skali skryptu), obrót w radianach. Kubełek = `ceil(W/8)·floor(y/8) + floor(x/8)`. Rysujemy je jak zwykłe obiekty.
+
 ## Odtworzenie mapy z zapisu
 
 Zapis zawiera **gotowy świat**: nie trzeba wykonywać skryptu scenariusza ani składać szablonów. Wystarczy:
 
 1. Siatka bloków W×H: `blok` z rekordu, typ pola z tabeli rodzajów gruntu (z bitem 0x80), detal `.l2m` z przesunięcia 15. Dalej jak w rozdz. 4.
 2. Linia nieba `lightBegin` i światło nieba (rozdz. 7.3), wiersz gruntu panoramy `groundBegin` (rozdz. 8).
-3. Obiekty: klasa, pozycja, obrót jak obiekty szablonu (rozdz. 5). Strefy horyzontu `Info_Fog_*` są zwykłymi obiektami zapisu, więc tło działa samo (rozdz. 8). Motyw świata (zestaw tekstur detali `urw`/`kris`/`lava`/`swf`) bierzemy z nazw tych klas, bo zapis nie trzyma go jawnie (🔶).
+3. Obiekty: klasa, pozycja, obrót jak obiekty szablonu (rozdz. 5), razem z nasionami dekoracji (§ „Sekcje po obiektach”). Strefy horyzontu `Info_Fog_*` są zwykłymi obiektami zapisu, więc tło działa samo (rozdz. 8). Motyw świata (zestaw tekstur detali `urw`/`kris`/`lava`/`swf`) bierzemy z nazw tych klas, bo zapis nie trzyma go jawnie (🔶).
 4. Kamera z sekcji 1.
 5. Mgła wojny: bajt gracza 0 z przesunięcia 45 (rozdz. 10).
 6. Płyny: typ (19) i wypełnienie (21) każdego pola, rysowane jak w [rozdziale 13](../silnik/13_plyny.md).
 
 **Układ bajtów płynu** ustaliliśmy na zapisie z wodą zrobionym w laboratorium: szablon `kris_unq_060` z obiektem `Wasser` (`{volume 1000} {vpf 5}`), po 40 s komenda Tcl `gamesave ow_woda` (gra zapisuje wtedy plik `ow_woda` w swoim katalogu, bez rozszerzenia). Basen 9 × 8 pól: w wierszu powierzchni wypełnienie 0,85, w każdym niższym o 1 więcej (1,85, 2,85…), typ 1. Pola obok basenu zachowują typ 1 przy wypełnieniu 0.
 
-**Dekoracje poza listą obiektów** ❓: w tym zapisie lista obiektów ma tylko 18 pozycji, a ściany, podłogi i lampy szablonu (`Dummy_*`) leżą dalej w pliku jako rekordy „nasion” w siatce kubełków przestrzennych (nazwa klasy, potem i32 ×3, i32 flagi, 2 bajty, pozycja 3 × f32, obrót 3 × f32) i jako lekkie obiekty zastępcze. Diggles-Unity opisuje te sekcje w `Docs/save-re-reports/B3-support-class-spatial.md` §2–3. Jeszcze ich nie czytamy, więc taki zapis pokazuje się bez dekoracji. W zapisie OBERWELT dekoracje są zwykłymi obiektami.
+**Dekoracje poza listą obiektów** ✅: część dekoracji nie leży na liście obiektów, tylko w sekcjach po ciałach obiektów (§ „Sekcje po obiektach”). W zapisie z laboratorium lista ma 18 obiektów, a ściany, podłogi i lampy szablonu to 94 „nasiona” w kubełkach; w zapisie OBERWELT jest ich 361 (łąki, ścieżki, trawa).
 
 W wigview: zakładka Zapisy obok Mapy (lista z `Data/Gamesave`, przycisk odświeżania, pole na ścieżkę do dowolnego pliku `.sav`) albo `wigview --save save_SaveGame.sav` (także `--save /ścieżka/plik.sav`). Mgła z zapisu to tryb 4 (`--fow 4`, domyślny dla zapisów); niezbadana część mapy jest czarna jak w grze. Pole „Odkryj mapę” (albo `--fow 0`) wyłącza mgłę i pokazuje cały teren i wszystkie obiekty; wybór zostaje przy przełączaniu zapisów.
 

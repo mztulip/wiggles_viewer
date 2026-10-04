@@ -5,6 +5,8 @@
 #include "lib/vfs.h"
 
 #include <algorithm>
+#include <cmath>
+#include <unordered_set>
 #include <climits>
 #include <sstream>
 
@@ -256,6 +258,21 @@ BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario&
 		for (int k = 0; k < 3; ++k) {
 			t.pos[k] = o.pos[k]; // zapis trzyma z w skali skryptu (jak argument new)
 			t.rot[k] = o.rot[k];
+		}
+		out.objects.push_back(t);
+	}
+	// Dekoracje spoza listy obiektów: „nasiona” z kubełków zawsze; obiekty zastępcze tylko wtedy, gdy
+	// obiekt, którego są kopią, nie istnieje (inaczej rysowalibyśmy go dwa razy).
+	std::unordered_set<int> ids;
+	for (const SaveObject& o : save.objects) ids.insert(o.id);
+	for (const SaveDeco& d : save.decos) {
+		if (d.proxy && ids.count(d.link)) continue;
+		TemplateObject t;
+		t.className = d.className;
+		t.name = d.proxy ? "kopia" : "dekoracja";
+		for (int k = 0; k < 3; ++k) {
+			t.pos[k] = d.pos[k];
+			t.rot[k] = std::isfinite(d.rot[k]) ? d.rot[k] : 0.f;
 		}
 		out.objects.push_back(t);
 	}
