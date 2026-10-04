@@ -111,6 +111,10 @@ public:
 	void setBlock(int x, int y, uint32_t block, uint8_t type);
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
+	float fluidFill(int x, int y) const {
+		if (!pmp_ || fluidFill_.empty() || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return 0.f;
+		return fluidFill_[size_t(y) * pmp_->width + size_t(x)];
+	}
 	const std::optional<ow::GameView>& view() const { return gameView_; }
 
 	// Podgląd mgły wojny (docs/silnik/10_mgla_wojny.md). Bez symulacji obiektów-odkrywców: stan pól

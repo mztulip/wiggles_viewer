@@ -11,6 +11,7 @@
 // sprawdzona w całości (różnice expr, kodowanie). Lista zaślepek: openwiggles_tcl.log.
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -72,8 +73,16 @@ struct Host {
 	virtual void setRotY(int, float) {}
 	virtual void setAnim(int, const std::string& /*obiekt.anim*/, int /*klatka*/, int /*tryb*/) {}
 	virtual double animLength(const std::string&) { return 1.0; }
-	// Akcja chodzenia: true = przyjęta; done() wywołać po dojściu.
+	// Akcja chodzenia: true = przyjęta; done(true) po dojściu, done(false) gdy nie ma drogi.
 	virtual bool walkTo(int, const float[3], std::function<void(bool)>) { return false; }
+	virtual float getRotY(int) { return 0.f; }
+	virtual float hmap(float, float) { return 0.f; }          // get_hmap: głębokość tylnej ściany (skala skryptu)
+	virtual bool underwater(const float[3]) { return false; }
+	virtual bool findPlace(const float c[3], float /*promień*/, float out[3]) { // wolne miejsce do stania
+		out[0] = c[0], out[1] = c[1], out[2] = c[2];
+		return true;
+	}
+	virtual int gnomePosition(int) { return 0; } // 0 stoi, 1 wisi na ścianie
 };
 
 struct ScriptObject {
@@ -88,6 +97,9 @@ struct ScriptObject {
 	bool alive = true;
 	std::vector<std::string> tasks; // tasklist_*
 	std::map<std::string, double> attribs;
+	int owner = -1;           // gracz 0..7, −1 = świat
+	int walkResult = 4;       // get_walkresult: 3 brak przejścia, 4 cel osiągnięty
+	bool walking = false;     // trwa akcja walk (koniec zgłasza gra)
 	double actionUntil = -1;  // akcja wait/anim: koniec w czasie gry
 	std::string actionDone;   // kod do wykonania po akcji
 };
@@ -108,6 +120,7 @@ public:
 	size_t classCount() const { return classes_.size(); }
 	// Obiekt świata już istniejący w grze (np. z szablonu): rejestracja i obj_init.
 	ScriptObject* attach(int id, const std::string& cls, const std::string& name, bool runInit = true);
+	friend struct ScriptHostAccess;
 	ScriptObject* object(int id);
 	void detach(int id);
 
@@ -149,6 +162,12 @@ public:
 	std::string cwd_; // katalog bieżący względem katalogu gry (cd/pwd/glob), na starcie katalog gry
 	std::string mainGlobals_; // migawka zmiennych głównego interpretera dla interpreterów obiektów
 	int mainGlobalCount_ = -1;
+	struct AttribDef {
+		double min = 0, max = 1e9, def = 0;
+	};
+	std::map<std::string, AttribDef> attribDefs_; // def_attrib nazwa min max domyślna
+	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, promień)
+	void finishAction(ScriptObject& o, bool ok);
 	std::string cacheDir_; // pliki zapisywane przez skrypty (np. gen_tt.tcl): ~/.cache/openwiggles, nie katalog gry
 	std::string cachePath(const std::string& gamePath) const;
 	std::set<std::string> nativeNames_;

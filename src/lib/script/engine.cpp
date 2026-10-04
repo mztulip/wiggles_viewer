@@ -518,7 +518,32 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 	double dur = 0;
 	std::string done;
 	if (kind == "wait" && a.size() > 3) dur = std::atof(a[3].c_str()), done = a.size() > 4 ? a[4] : "";
-	else if (kind == "anim" && a.size() > 3) {
+	else if (kind == "walk" && a.size() > 3) {
+		auto p = options(listItems(in, a[3]), 0);
+		float t[3];
+		done = a.size() > 4 ? a[4] : "";
+		if (p.count("target") && parseVec(in, p["target"], t) && e.host_) {
+			o->actionDone = done;
+			o->actionUntil = -1;
+			o->walking = true;
+			int id = o->id;
+			bool ok = e.host_->walkTo(id, t, [&e, id](bool reached) {
+				if (ScriptObject* x = e.object(id)) e.finishAction(*x, reached);
+			});
+			if (ok) {
+				setResult(in, "1");
+				return TCL_OK;
+			}
+			o->walking = false;
+			o->walkResult = 3;
+		}
+		dur = 0.1;
+	} else if (kind == "rotate" && a.size() > 3) {
+		auto v = listItems(in, a[3]);
+		if (e.host_ && !v.empty()) e.host_->setRotY(o->id, std::strtof(v[0].c_str(), nullptr));
+		dur = 0.3;
+		done = a.size() > 4 ? a[4] : "";
+	} else if (kind == "anim" && a.size() > 3) {
 		if (e.host_) e.host_->setAnim(o->id, a[3], 0, 1);
 		dur = e.host_ ? e.host_->animLength(a[3]) : 1.0;
 		done = a.size() > 4 ? a[4] : "";
@@ -552,13 +577,23 @@ int cmdTasklist(Engine& e, Tcl_Interp* in, Args& a) {
 	setResult(in, r.empty() && a[0] == "tasklist_cnt" ? "0" : r);
 	return TCL_OK;
 }
+int cmdDefAttrib(Engine& e, Tcl_Interp* in, Args& a) {
+	if (a.size() >= 5) e.attribDefs_[a[1]] = {std::atof(a[2].c_str()), std::atof(a[3].c_str()), std::atof(a[4].c_str())};
+	setResult(in, "");
+	return TCL_OK;
+}
+// get/set/add_attrib: wartość domyślna i zakres z def_attrib.
 int cmdAttrib(Engine& e, Tcl_Interp* in, Args& a) {
 	ScriptObject* o = a.size() > 2 ? e.object(e.resolveObj(in, a[1])) : nullptr;
 	double v = 0;
 	if (o) {
-		double& x = o->attribs[a[2]];
+		auto d = e.attribDefs_.find(a[2]);
+		auto it = o->attribs.find(a[2]);
+		if (it == o->attribs.end()) it = o->attribs.emplace(a[2], d != e.attribDefs_.end() ? d->second.def : 0.0).first;
+		double& x = it->second;
 		if (a[0] == "set_attrib" && a.size() > 3) x = std::atof(a[3].c_str());
 		else if (a[0] == "add_attrib" && a.size() > 3) x += std::atof(a[3].c_str());
+		if (d != e.attribDefs_.end()) x = std::clamp(x, d->second.min, d->second.max);
 		v = x;
 	}
 	setResult(in, fmt(v));
@@ -573,6 +608,243 @@ int cmdRandom(Engine&, Tcl_Interp* in, Args& a) {
 		setResult(in, std::to_string(hi > lo ? lo + int(r * (hi - lo)) : lo));
 	} else
 		setResult(in, fmt(r * n));
+	return TCL_OK;
+}
+
+// --- wektory, listy, liczby (pomoc gry: ENGINE_TCL_API, misc) ---
+std::string vecStr(const float v[3]) { return fmt(v[0]) + " " + fmt(v[1]) + " " + fmt(v[2]); }
+int cmdVector(Engine&, Tcl_Interp* in, Args& a) {
+	float p[3] = {0, 0, 0}, q[3] = {0, 0, 0}, r[3];
+	if (a.size() > 1) parseVec(in, a[1], p);
+	if (a.size() > 2) parseVec(in, a[2], q);
+	const std::string& c = a[0];
+	if (c == "vector_add") for (int k = 0; k < 3; ++k) r[k] = p[k] + q[k];
+	else if (c == "vector_sub") for (int k = 0; k < 3; ++k) r[k] = p[k] - q[k];
+	else if (c == "vector_mul") {
+		float f = a.size() > 2 ? std::strtof(a[2].c_str(), nullptr) : 1.f;
+		for (int k = 0; k < 3; ++k) r[k] = p[k] * f;
+	} else if (c == "vector_normalize") {
+		float l = std::sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+		for (int k = 0; k < 3; ++k) r[k] = l > 0 ? p[k] / l : 0.f;
+	} else if (c == "vector_dist") {
+		setResult(in, fmt(std::hypot(p[0] - q[0], p[1] - q[1])));
+		return TCL_OK;
+	} else if (c == "vector_dist3d") {
+		setResult(in, fmt(std::sqrt((p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]) + (p[2] - q[2]) * (p[2] - q[2]))));
+		return TCL_OK;
+	} else if (c == "vector_angle") { // kąt w płaszczyźnie x–y od p do q (🔶 konwencja)
+		setResult(in, fmt(std::atan2(q[1] - p[1], q[0] - p[0])));
+		return TCL_OK;
+	} else if (c == "vector_pack") {
+		for (int k = 0; k < 3; ++k) r[k] = a.size() > size_t(k + 1) ? std::strtof(a[size_t(k + 1)].c_str(), nullptr) : 0.f;
+	} else if (c == "vector_unpackx" || c == "vector_unpacky" || c == "vector_unpackz") {
+		setResult(in, fmt(p[c.back() - 'x']));
+		return TCL_OK;
+	} else if (c == "vector_inbox") {
+		float n[3], m[3];
+		bool ok = a.size() > 3 && parseVec(in, a[2], n) && parseVec(in, a[3], m);
+		bool inside = ok;
+		for (int k = 0; k < 3 && ok; ++k) inside = inside && p[k] >= n[k] && p[k] <= m[k];
+		setResult(in, inside ? "1" : "0");
+		return TCL_OK;
+	} else
+		for (int k = 0; k < 3; ++k) r[k] = p[k];
+	setResult(in, vecStr(r));
+	return TCL_OK;
+}
+int cmdFincr(Engine&, Tcl_Interp* in, Args& a) { // fincr zmienna liczba: incr na liczbach rzeczywistych
+	if (a.size() < 2) return TCL_ERROR;
+	const char* v = Tcl_GetVar(in, a[1].c_str(), 0);
+	double x = (v ? std::atof(v) : 0.0) + (a.size() > 2 ? std::atof(a[2].c_str()) : 1.0);
+	std::string s = fmt(x);
+	Tcl_SetVar(in, a[1].c_str(), s.c_str(), 0);
+	setResult(in, s);
+	return TCL_OK;
+}
+int cmdHminmax(Engine&, Tcl_Interp* in, Args& a) {
+	std::vector<double> v;
+	for (size_t i = 1; i < a.size(); ++i)
+		for (auto& x : listItems(in, a[i])) v.push_back(std::atof(x.c_str()));
+	if (v.empty()) v.push_back(0);
+	setResult(in, fmt(a[0] == "hmin" ? *std::min_element(v.begin(), v.end()) : *std::max_element(v.begin(), v.end())));
+	return TCL_OK;
+}
+int cmdListOp(Engine&, Tcl_Interp* in, Args& a) { // lnand l1 l2 = elementy l2 spoza l1; land = część wspólna; lor = suma
+	auto l1 = a.size() > 1 ? listItems(in, a[1]) : Args{};
+	auto l2 = a.size() > 2 ? listItems(in, a[2]) : Args{};
+	std::set<std::string> s1(l1.begin(), l1.end());
+	Args out;
+	if (a[0] == "lnand") {
+		for (auto& x : l2)
+			if (!s1.count(x)) out.push_back(x);
+	} else if (a[0] == "land") {
+		for (auto& x : l2)
+			if (s1.count(x)) out.push_back(x);
+	} else {
+		out = l1;
+		for (auto& x : l2)
+			if (!s1.count(x)) out.push_back(x);
+	}
+	std::vector<Tcl_Obj*> objs;
+	for (auto& x : out) objs.push_back(Tcl_NewStringObj(x.c_str(), -1));
+	Tcl_SetObjResult(in, Tcl_NewListObj(int(objs.size()), objs.data()));
+	return TCL_OK;
+}
+int cmdConst(Engine&, Tcl_Interp* in, Args& a) { // proste odpowiedzi do czasu prawdziwych systemów (🔶)
+	static const std::map<std::string, std::string> kValues = {
+		{"get_remaining_sparetime", "1.0"}, // zawsze czas wolny (brak harmonogramu pracy)
+		{"get_prodautoschedule", "0"}, {"is_contained", "0"}, {"is_wearing_pannier", "0"}, {"get_max_fow", "255"},
+		{"inv_find", "-1"}, {"inv_find_obj", "-1"}, {"inv_cnt", "0"}, {"inv_list", ""}, {"get_bestexp", ""},
+		{"get_linked_to", "-1"}, {"sm_get_event", "0"}, {"tasklist_find", "-1"}};
+	auto it = kValues.find(a[0]);
+	setResult(in, it != kValues.end() ? it->second : "");
+	return TCL_OK;
+}
+int cmdPosAxis(Engine& e, Tcl_Interp* in, Args& a) { // get_posx/y/z obj
+	float p[3] = {0, 0, 0};
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	if (e.host_ && id) e.host_->getPos(id, p);
+	setResult(in, fmt(p[a[0].back() - 'x']));
+	return TCL_OK;
+}
+int cmdLinkPos(Engine& e, Tcl_Interp* in, Args& a) { // 🔶 punkt modelu = pozycja obiektu (bez punktów zaczepienia .3db)
+	float p[3] = {0, 0, 0};
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	if (e.host_ && id) e.host_->getPos(id, p);
+	setResult(in, a[0] == "get_linkpos" ? "0 -0.5 0" : vecStr(p));
+	return TCL_OK;
+}
+int cmdVectorFix(Engine& e, Tcl_Interp* in, Args& a) { // najbliższa osiągalna pozycja
+	float p[3] = {0, 0, 0}, out[3];
+	if (a.size() > 1) parseVec(in, a[1], p);
+	if (e.host_ && e.host_->findPlace(p, 2.f, out)) setResult(in, vecStr(out));
+	else setResult(in, vecStr(p));
+	return TCL_OK;
+}
+int cmdLrep(Engine&, Tcl_Interp* in, Args& a) { // lrep zmienna indeks wartość: zamiana elementu listy w zmiennej
+	if (a.size() < 4) return TCL_ERROR;
+	const char* v = Tcl_GetVar(in, a[1].c_str(), 0);
+	auto items = listItems(in, v ? v : "");
+	size_t i = size_t(std::max(0, std::atoi(a[2].c_str())));
+	if (i < items.size()) items[i] = a[3];
+	else items.push_back(a[3]);
+	std::vector<Tcl_Obj*> objs;
+	for (auto& x : items) objs.push_back(Tcl_NewStringObj(x.c_str(), -1));
+	Tcl_Obj* l = Tcl_NewListObj(int(objs.size()), objs.data());
+	Tcl_SetVar2Ex(in, a[1].c_str(), nullptr, l, 0);
+	Tcl_SetObjResult(in, l);
+	return TCL_OK;
+}
+
+// --- świat (przez Host) ---
+int cmdOwner(Engine& e, Tcl_Interp* in, Args& a) {
+	ScriptObject* o = a.size() > 1 ? e.object(e.resolveObj(in, a[1])) : nullptr;
+	if (o && a[0] == "set_owner" && a.size() > 2) o->owner = std::atoi(a[2].c_str());
+	setResult(in, std::to_string(o ? o->owner : -1));
+	return TCL_OK;
+}
+int cmdRot(Engine& e, Tcl_Interp* in, Args& a) {
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	if (a[0] == "set_roty" && a.size() > 2 && e.host_ && id) e.host_->setRotY(id, std::strtof(a[2].c_str(), nullptr));
+	setResult(in, fmt(e.host_ && id ? e.host_->getRotY(id) : 0.f));
+	return TCL_OK;
+}
+int cmdHmap(Engine& e, Tcl_Interp* in, Args& a) {
+	float x = a.size() > 1 ? std::strtof(a[1].c_str(), nullptr) : 0.f, y = a.size() > 2 ? std::strtof(a[2].c_str(), nullptr) : 0.f;
+	setResult(in, fmt(e.host_ ? e.host_->hmap(x, y) : 0.f));
+	return TCL_OK;
+}
+int cmdUnderwater(Engine& e, Tcl_Interp* in, Args& a) {
+	float p[3];
+	setResult(in, e.host_ && a.size() > 1 && parseVec(in, a[1], p) && e.host_->underwater(p) ? "1" : "0");
+	return TCL_OK;
+}
+int cmdGnomePos(Engine& e, Tcl_Interp* in, Args& a) {
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	setResult(in, std::to_string(e.host_ && id ? e.host_->gnomePosition(id) : 0));
+	return TCL_OK;
+}
+int cmdWalkResult(Engine& e, Tcl_Interp* in, Args& a) {
+	ScriptObject* o = a.size() > 1 ? e.object(e.resolveObj(in, a[1])) : nullptr;
+	setResult(in, std::to_string(o ? o->walkResult : 0));
+	return TCL_OK;
+}
+// get_place -center {x y z} [-circle r | -rect x0 y0 x1 y1] …: wolne miejsce albo {0 0 0}.
+int cmdGetPlace(Engine& e, Tcl_Interp* in, Args& a) {
+	auto o = options(a, 1);
+	float c[3] = {0, 0, 0}, r = 2.f, out[3] = {0, 0, 0};
+	if (o.count("center")) parseVec(in, o["center"], c);
+	if (o.count("circle")) r = std::strtof(o["circle"].c_str(), nullptr);
+	if (!(e.host_ && e.host_->findPlace(c, r, out))) out[0] = out[1] = out[2] = 0;
+	setResult(in, vecStr(out));
+	return TCL_OK;
+}
+// placelock_set pos promień id / placelock_check pos promień [idwyjątek] / placelock_rem id
+int cmdPlacelock(Engine& e, Tcl_Interp* in, Args& a) {
+	float p[3];
+	const std::string& c = a[0];
+	if (c == "placelock_rem" && a.size() > 1) e.placeLocks_.erase(std::atoi(a[1].c_str()));
+	else if (c == "placelock_set" && a.size() > 3 && parseVec(in, a[1], p))
+		e.placeLocks_[std::atoi(a[3].c_str())] = {{p[0], p[1], p[2]}, std::strtof(a[2].c_str(), nullptr)};
+	else if (c == "placelock_check" && a.size() > 2 && parseVec(in, a[1], p)) {
+		float r = std::strtof(a[2].c_str(), nullptr);
+		int except = a.size() > 3 ? std::atoi(a[3].c_str()) : -1;
+		for (auto& [id, l] : e.placeLocks_)
+			if (id != except && std::hypot(l.first[0] - p[0], l.first[1] - p[1]) < r + l.second) {
+				setResult(in, "1");
+				return TCL_OK;
+			}
+		setResult(in, "0");
+		return TCL_OK;
+	}
+	setResult(in, "");
+	return TCL_OK;
+}
+// obj_query obj -class {…} -type t -range r -limit n -owner o -pos {…} -boundingbox {…}: lista ID albo 0.
+int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
+	Args args;
+	for (size_t i = 2; i < a.size(); ++i) // parametry bywają jednym napisem: "-class Pilz -range 10"
+		for (auto& x : listItems(in, a[i])) args.push_back(x);
+	args.insert(args.begin(), {"obj_query", "x"});
+	auto o = options(args, 2);
+	int self = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	float c[3] = {0, 0, 0};
+	if (o.count("pos")) parseVec(in, o["pos"], c);
+	else if (e.host_ && self) e.host_->getPos(self, c);
+	std::set<std::string> classes;
+	if (o.count("class"))
+		for (auto& x : listItems(in, o["class"])) classes.insert(Vfs::lower(x));
+	std::string type = o.count("type") ? o["type"] : "";
+	float range = o.count("range") ? std::strtof(o["range"].c_str(), nullptr) : 1e9f;
+	size_t limit = o.count("limit") ? size_t(std::atoi(o["limit"].c_str())) : SIZE_MAX;
+	std::string owner = o.count("owner") ? o["owner"] : "any";
+	int selfOwner = e.object(self) ? e.object(self)->owner : -1;
+	float bb[6];
+	bool box = o.count("boundingbox") && listItems(in, o["boundingbox"]).size() >= 6;
+	if (box) {
+		auto b = listItems(in, o["boundingbox"]);
+		for (int k = 0; k < 6; ++k) bb[k] = std::strtof(b[size_t(k)].c_str(), nullptr);
+	}
+	std::vector<std::pair<float, int>> hits;
+	for (auto& [id, ob] : e.objects_) {
+		if (!ob->alive || !ob->cls) continue;
+		if (!classes.empty() && !classes.count(Vfs::lower(ob->cls->name))) continue;
+		if (!type.empty() && ob->cls->type != type) continue;
+		if (owner == "own" && ob->owner != selfOwner) continue;
+		if (owner == "world" && ob->owner != -1) continue;
+		if ((owner == "enemy" || owner == "other") && (ob->owner == selfOwner || ob->owner < 0)) continue;
+		if (std::isdigit(static_cast<unsigned char>(owner[0])) && ob->owner != std::atoi(owner.c_str())) continue;
+		float p[3];
+		if (!e.host_ || !e.host_->getPos(id, p)) continue;
+		float d = std::hypot(p[0] - c[0], p[1] - c[1]);
+		if (d > range) continue;
+		if (box && (p[0] - c[0] < bb[0] || p[1] - c[1] < bb[1] || p[0] - c[0] > bb[3] || p[1] - c[1] > bb[4])) continue;
+		hits.push_back({d, id});
+	}
+	std::sort(hits.begin(), hits.end());
+	std::string r;
+	for (size_t i = 0; i < hits.size() && i < limit; ++i) r += (r.empty() ? "" : " ") + std::to_string(hits[i].second);
+	setResult(in, r.empty() ? "0" : r);
 	return TCL_OK;
 }
 
@@ -601,7 +873,21 @@ const Entry kCommands[] = {
 	{"action", cmdAction}, {"tasklist_add", cmdTasklist}, {"tasklist_addfront", cmdTasklist},
 	{"tasklist_get", cmdTasklist}, {"tasklist_rem", cmdTasklist}, {"tasklist_cnt", cmdTasklist},
 	{"tasklist_clear", cmdTasklist}, {"get_attrib", cmdAttrib}, {"set_attrib", cmdAttrib}, {"add_attrib", cmdAttrib},
-	{"random", cmdRandom}, {"irandom", cmdRandom}, {"sel", cmdNop}, {"def_attrib", cmdNop},
+	{"random", cmdRandom}, {"irandom", cmdRandom}, {"sel", cmdNop},
+	{"vector_add", cmdVector}, {"vector_sub", cmdVector}, {"vector_mul", cmdVector}, {"vector_normalize", cmdVector},
+	{"vector_dist", cmdVector}, {"vector_dist3d", cmdVector}, {"vector_angle", cmdVector}, {"vector_pack", cmdVector},
+	{"vector_unpackx", cmdVector}, {"vector_unpacky", cmdVector}, {"vector_unpackz", cmdVector}, {"vector_inbox", cmdVector},
+	{"fincr", cmdFincr}, {"hmin", cmdHminmax}, {"hmax", cmdHminmax}, {"lnand", cmdListOp}, {"land", cmdListOp},
+	{"lor", cmdListOp}, {"get_remaining_sparetime", cmdConst}, {"get_prodautoschedule", cmdConst},
+	{"is_contained", cmdConst}, {"is_wearing_pannier", cmdConst}, {"get_max_fow", cmdConst}, {"inv_find", cmdConst},
+	{"inv_find_obj", cmdConst}, {"inv_cnt", cmdConst}, {"inv_list", cmdConst}, {"get_bestexp", cmdConst},
+	{"get_linked_to", cmdConst}, {"sm_get_event", cmdConst}, {"tasklist_find", cmdConst}, {"get_posx", cmdPosAxis},
+	{"get_posy", cmdPosAxis}, {"get_posz", cmdPosAxis}, {"get_linkpos", cmdLinkPos}, {"vector_fix", cmdVectorFix},
+	{"lrep", cmdLrep}, {"enable_digbrushes", cmdNop},
+	{"gnome_idle", cmdNop}, {"get_owner", cmdOwner}, {"set_owner", cmdOwner}, {"get_roty", cmdRot}, {"set_roty", cmdRot},
+	{"get_hmap", cmdHmap}, {"isunderwater", cmdUnderwater}, {"get_gnomeposition", cmdGnomePos},
+	{"get_walkresult", cmdWalkResult}, {"get_place", cmdGetPlace}, {"placelock_set", cmdPlacelock},
+	{"placelock_check", cmdPlacelock}, {"placelock_rem", cmdPlacelock}, {"obj_query", cmdObjQuery}, {"def_attrib", cmdDefAttrib},
 };
 
 int dispatch(ClientData cd, Tcl_Interp* in, int objc, Tcl_Obj* const objv[]) {
@@ -886,7 +1172,7 @@ void Engine::tick(double dt) {
 	for (auto& [id, o] : objects_)
 		if (o->alive && o->interp) list.push_back(o.get());
 	for (ScriptObject* o : list) {
-		if (o->actionUntil >= 0 && time_ >= o->actionUntil) {
+		if (!o->walking && o->actionUntil >= 0 && time_ >= o->actionUntil) {
 			o->actionUntil = -1;
 			std::string done;
 			std::swap(done, o->actionDone);
@@ -901,9 +1187,15 @@ void Engine::tick(double dt) {
 			o->current = e;
 			runIn(*o, it->second, e.name.c_str());
 		}
-		if (!o->state.empty() && o->stateCounter > 0 && o->actionUntil < 0)
+		if (!o->state.empty() && o->stateCounter > 0 && o->actionUntil < 0 && !o->walking)
 			if (auto it = o->cls->states.find(o->state); it != o->cls->states.end()) runIn(*o, it->second, ("stan " + o->state).c_str());
 	}
+}
+
+void Engine::finishAction(ScriptObject& o, bool ok) {
+	o.walking = false;
+	o.walkResult = ok ? 4 : 3;
+	o.actionUntil = time_; // kod zakończenia wykona najbliższa tura logiki
 }
 
 void Engine::writeLog(const std::string& path) const {

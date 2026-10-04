@@ -40,3 +40,19 @@ Gra ma tu znacznie bogatsze prawa (drobna siatka 8×8, maska ruchu w `.pmp`, dra
 PPM na polu skały: krasnal idzie na najbliższe stanowisko obok (z boku, nad albo pod polem), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`), a potem pole dostaje blok 59 (pusty) i typ 3. Teren, wysokości i płyny przebudowujemy w całości.
 
 W grze kopanie wybiera kształty sąsiednich bloków z tablicy sąsiadów BlockDB (rekord §2, przesunięcie 64), tak żeby krawędzie się zszywały, i zależy od twardości materiału: Diggles-Unity `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md`.
+
+## 14.5 Krasnale ze skryptami gry
+
+Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` (`src/game/main.cpp`):
+
+| Komenda | U nas |
+|---|---|
+| `action <obj> walk "-target {x y z} …" kod` | droga A* po polach do pola stóp `(floor(x), floor(y − 0,6))`, po dojściu kod i `get_walkresult` = 4, bez drogi 3 |
+| `action <obj> rotate kąt kod` | obrót od razu, kod po 0,3 s (kąty: 4,71 w prawo, 1,57 w lewo, 3,14 tyłem, 0 przodem) |
+| `get_pos`, `set_pos` | pozycja ze stopami na podłożu: y = dół pola + pierwszy wiersz siatki 8×8 bloku pod spodem o wysokości ≥ 13 (np. na łące 30,5) |
+| `get_hmap x y` | wysokość siatki 8×8 bloku w punkcie (= z w skali skryptu) |
+| `get_place -center p -circle r` | najbliższe pole, na którym da się stać |
+| `get_gnomeposition` | 1, gdy krasnal wisi na ścianie |
+| `obj_query` | filtry `-class`, `-type`, `-range`, `-limit`, `-owner`, `-pos`, `-boundingbox`; wynik posortowany wg odległości albo 0 |
+
+🔶 `get_remaining_sparetime` zwraca zawsze 1 (krasnale mają tylko czas wolny), właściciel krasnali = gracz 0, `animLength` stałe 1,5 s. Rozkaz gracza (PPM) nadpisuje bieżący chód skryptu. `--player-gnomes` wyłącza skrypty krasnali.

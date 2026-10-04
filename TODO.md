@@ -14,7 +14,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
 - [ ] 🔧 Płyny: zatyczki, odpływy, `-height`/`-ventil`, źródła z zapisu, kolor wody bliżej gry, rzadka lista pól zamiast pełnego prostokąta
 - [x] G7a Osadzony Tcl 8.6: preprocesor, `call`, wirtualny katalog, 2684 klasy bez błędów, interpreter na obiekt, `obj_init`, timery, zdarzenia, stany, zaślepki z dziennikiem (`owscript`, rozdział 11.9)
-- [ ] G7b Komendy natywne dla krasnali: atrybuty i zdrowie, `action walk` przez nawigację, `obj_query`, `get_walkresult`, `tasklist_*`, praca i czas wolny; potem skrypty sterują krasnalami
+- [x] G7b Krasnale sterowane skryptami gry (czas wolny): atrybuty z `def_attrib`, `action walk/rotate/anim/wait` przez nawigację gry, `obj_query`, `get_place`, `placelock_*`, wektory i listy; zapis kampanii: 0 błędów skryptów w 60 s
+- [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, pamięć podręczna klas (start 5 s), tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów

@@ -38,6 +38,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -60,6 +61,7 @@ struct Args {
 	bool rendererForced = false;
 	int width = 1280, height = 800;
 	bool scripts = true;          // --no-scripts: bez silnika Tcl
+	bool scriptGnomes = true;     // --player-gnomes: krasnale tylko na rozkaz gracza, bez skryptów
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
 };
@@ -77,6 +79,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--no-scripts") a.scripts = false;
+		else if (k == "--player-gnomes") a.scriptGnomes = false;
 		else if (k == "--view") {
 			GameView v;
 			v.x = float(std::atof(next()));
@@ -128,39 +131,35 @@ struct Unit {
 	int digX = -1, digY = -1;
 	float digT = 0;
 	float facing = -kPi * 0.5f; // −π/2 = w prawo, +π/2 = w lewo (obserwacja modelu mann)
+	float z = kGnomeZ;          // głębokość (skala skryptu), z zapisu albo scenariusza
+	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
 };
 
+struct Game;
 // Most między silnikiem skryptów a sceną: ID obiektu skryptu = indeks obiektu MapView + 1.
+// Metody zdefiniowane po Game (korzystają z krasnali i nawigacji).
 struct ScriptHost : script::Host {
-	MapView* maps = nullptr;
-	int createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3]) override {
-		int i = maps->addObject(cls, pos[0], pos[1], pos[2]);
-		maps->setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
-		return i + 1;
-	}
-	void deleteObject(int id) override { // 🔶 brak usuwania obiektów sceny: wynosimy poza świat
-		if (id > 0 && id <= maps->objectCount()) maps->setObjectPose(id - 1, -1000.f, -1000.f, 0.f, 0.f);
-	}
-	bool getPos(int id, float pos[3]) override {
-		if (id <= 0 || id > maps->objectCount()) return false;
-		const float* p = maps->objectPos(id - 1);
-		pos[0] = p[0], pos[1] = p[1], pos[2] = p[2];
-		return true;
-	}
-	void setPos(int id, const float pos[3]) override {
-		if (id > 0 && id <= maps->objectCount()) maps->setObjectPose(id - 1, pos[0], pos[1], pos[2], maps->objectRotY(id - 1));
-	}
-	void setAnim(int id, const std::string& anim, int, int mode) override {
-		if (id <= 0 || id > maps->objectCount()) return;
-		size_t dot = anim.find('.');
-		maps->playAnim(id - 1, dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
-	}
+	Game* g = nullptr;
+	int createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3]) override;
+	void deleteObject(int id) override;
+	bool getPos(int id, float pos[3]) override;
+	void setPos(int id, const float pos[3]) override;
+	void setRotY(int id, float r) override;
+	float getRotY(int id) override;
+	void setAnim(int id, const std::string& anim, int, int mode) override;
+	double animLength(const std::string& anim) override;
+	bool walkTo(int id, const float target[3], std::function<void(bool)> done) override;
+	float hmap(float x, float y) override;
+	bool underwater(const float p[3]) override;
+	bool findPlace(const float c[3], float r, float out[3]) override;
+	int gnomePosition(int id) override;
 };
 
 struct Game {
 	Vfs vfs;
 	std::unique_ptr<script::Engine> scripts;
 	ScriptHost host;
+	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
 	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
@@ -177,17 +176,38 @@ struct Game {
 
 	const Pmp* grid() const { return maps.grid(); }
 
+	// Wysokość stóp w polu (x, ty): podłoże z bloku pod spodem (pierwszy wiersz siatki 8×8 o wysokości ≥ 13
+	// w środkowej kolumnie), np. na łące 0,5 pola niżej niż dół pola. Na ścianie: dół pola.
+	float floorY(int x, int ty) const {
+		if (!nav.standable(x, ty) || !grid()) return float(ty) + 1.f;
+		const Pmp* g = grid();
+		const BlockRecord* r = maps.blockDb().record(g->blocks[size_t(ty + 1) * g->width + size_t(x)]);
+		if (!r) return float(ty) + 1.f;
+		for (int row = 0; row < 8; ++row)
+			if (r->depth[size_t(row * 8 + 4)] >= 13) return float(ty + 1) + float(row) / 8.f;
+		return float(ty) + 1.f;
+	}
+
+	// Pole, w którym stoi postać o stopach na wysokości y (stopy do 0,6 pola w głąb pola niżej).
+	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
+
 	void snapToFloor(Unit& u) {
-		int x = int(std::floor(u.x)), y = int(std::floor(u.y - 0.01f));
+		int x = int(std::floor(u.x)), y = tileOfFeet(u.y);
 		for (int d = 0; d < 40; ++d) {
 			for (int yy : {y + d, y - d})
 				if (nav.standable(x, yy) || (d > 0 && nav.climbable(x, yy))) {
 					u.tx = x, u.ty = yy;
-					u.x = float(x) + 0.5f, u.y = float(yy) + 1.f;
+					u.x = float(x) + 0.5f, u.y = floorY(x, yy);
 					return;
 				}
 		}
 		u.tx = x, u.ty = y;
+	}
+
+	Unit* unitOf(int obj) {
+		for (auto& u : units)
+			if (u.obj == obj) return &u;
+		return nullptr;
 	}
 
 	int addUnit(int obj) {
@@ -195,7 +215,7 @@ struct Game {
 		Unit u;
 		u.obj = obj;
 		const float* p = maps.objectPos(obj);
-		u.x = p[0], u.y = p[1];
+		u.x = p[0], u.y = p[1], u.z = p[2];
 		snapToFloor(u);
 		units.push_back(u);
 		return int(units.size()) - 1;
@@ -265,9 +285,14 @@ struct Game {
 			if (u.step >= u.path.size()) {
 				u.state = u.digX >= 0 ? Unit::Dig : Unit::Idle;
 				u.digT = 0;
+				if (u.onArrive) {
+					auto f = std::move(u.onArrive);
+					u.onArrive = nullptr;
+					f(true);
+				}
 			} else {
 				auto [wx, wy] = u.path[u.step];
-				float gx = float(wx) + 0.5f, gy = float(wy) + 1.f;
+				float gx = float(wx) + 0.5f, gy = floorY(wx, wy);
 				bool vertical = wx == u.tx && wy != u.ty;
 				float speed = vertical ? kClimbSpeed : kWalkSpeed;
 				float ddx = gx - u.x, ddy = gy - u.y, len = std::hypot(ddx, ddy), mv = speed * dt;
@@ -297,10 +322,10 @@ struct Game {
 		if (u.state == Unit::Idle) {
 			if (!nav.standable(u.tx, u.ty) && !nav.climbable(u.tx, u.ty) && nav.open(u.tx, u.ty + 1)) {
 				u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = Unit::Walk; // spada
-			} else
+			} else if (!scripts) // ze skryptami animację w miejscu ustawia skrypt (set_anim)
 				maps.playAnim(u.obj, nav.standable(u.tx, u.ty) ? "standard" : "kletterstand", true);
 		}
-		maps.setObjectPose(u.obj, u.x, u.y, kGnomeZ, u.facing);
+		maps.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
 	}
 
 	// Skrypty obiektów świata (obj_init). Krasnale na razie steruje gracz (C++), nie skrypty.
@@ -308,10 +333,16 @@ struct Game {
 		if (!scripts) return;
 		int n = 0;
 		for (int i = 0; i < maps.objectCount(); ++i) {
-			if (Vfs::lower(maps.objectClass(i)) == "zwerg") continue;
-			auto* o = scripts->attach(i + 1, maps.objectClass(i), "");
-			n += o && o->interp;
+			bool gnome = Vfs::lower(maps.objectClass(i)) == "zwerg";
+			if (gnome && !scriptGnomes) continue;
+			auto* o = scripts->attach(i + 1, maps.objectClass(i), "", false);
+			if (!o) continue;
+			if (gnome) o->owner = 0; // krasnale gracza (🔶 właściciel z zapisu jeszcze nie czytany)
+			n += o->interp != nullptr;
 		}
+		// obj_init dopiero po rejestracji wszystkich obiektów (obj_query widzi cały świat)
+		for (int i = 0; i < maps.objectCount(); ++i)
+			if (auto* o = scripts->object(i + 1); o && o->interp && o->cls) scripts->runIn(*o, o->cls->initBody, "obj_init");
 		std::printf("skrypty: %d obiektów ze skryptami\n", n);
 	}
 
@@ -391,6 +422,83 @@ struct Game {
 	}
 };
 
+// --- ScriptHost ---
+int ScriptHost::createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3]) {
+	int i = g->maps.addObject(cls, pos[0], pos[1], pos[2]);
+	g->maps.setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
+	if (Vfs::lower(cls) == "zwerg") g->addUnit(i);
+	return i + 1;
+}
+void ScriptHost::deleteObject(int id) { // 🔶 brak usuwania obiektów sceny: wynosimy poza świat
+	if (id > 0 && id <= g->maps.objectCount()) g->maps.setObjectPose(id - 1, -1000.f, -1000.f, 0.f, 0.f);
+}
+bool ScriptHost::getPos(int id, float pos[3]) {
+	if (id <= 0 || id > g->maps.objectCount()) return false;
+	const float* p = g->maps.objectPos(id - 1);
+	pos[0] = p[0], pos[1] = p[1], pos[2] = p[2];
+	return true;
+}
+void ScriptHost::setPos(int id, const float pos[3]) {
+	if (id <= 0 || id > g->maps.objectCount()) return;
+	if (Unit* u = g->unitOf(id - 1)) {
+		u->x = pos[0], u->y = pos[1], u->z = pos[2];
+		u->path.clear(), u->state = Unit::Idle;
+		g->snapToFloor(*u);
+		return;
+	}
+	g->maps.setObjectPose(id - 1, pos[0], pos[1], pos[2], g->maps.objectRotY(id - 1));
+}
+void ScriptHost::setRotY(int id, float r) {
+	if (id <= 0 || id > g->maps.objectCount()) return;
+	if (Unit* u = g->unitOf(id - 1)) u->facing = r;
+	const float* p = g->maps.objectPos(id - 1);
+	g->maps.setObjectPose(id - 1, p[0], p[1], p[2], r);
+}
+float ScriptHost::getRotY(int id) { return id > 0 && id <= g->maps.objectCount() ? g->maps.objectRotY(id - 1) : 0.f; }
+void ScriptHost::setAnim(int id, const std::string& anim, int, int mode) {
+	if (id <= 0 || id > g->maps.objectCount()) return;
+	if (Unit* u = g->unitOf(id - 1); u && u->state != Unit::Idle) return; // chód i kopanie mają własne animacje
+	size_t dot = anim.find('.');
+	g->maps.playAnim(id - 1, dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
+}
+double ScriptHost::animLength(const std::string&) { return 1.5; } // 🔶 długość animacji po nazwie (db_animlength)
+bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done) {
+	Unit* u = g->unitOf(id - 1);
+	if (!u) return false;
+	int tx = int(std::floor(t[0])), ty = g->tileOfFeet(t[1]);
+	for (int d = 0; d < 4 && !g->nav.standable(tx, ty) && !g->nav.climbable(tx, ty); ++d) ++ty;
+	auto path = g->nav.path(u->tx, u->ty, tx, ty);
+	if (path.empty()) return false;
+	u->path = std::move(path), u->step = 0, u->state = Unit::Walk, u->digX = -1;
+	u->onArrive = std::move(done);
+	return true;
+}
+float ScriptHost::hmap(float x, float y) { // głębokość tylnej ściany w punkcie: wartość siatki 8×8 (= z skryptu)
+	const Pmp* p = g->grid();
+	if (!p || x < 0 || y < 0 || x >= float(p->width) || y >= float(p->height)) return 0.f;
+	const BlockRecord* r = g->maps.blockDb().record(p->blocks[size_t(int(y)) * p->width + size_t(int(x))]);
+	if (!r) return 0.f;
+	int fx = std::clamp(int((x - std::floor(x)) * 8.f), 0, 7), fy = std::clamp(int((y - std::floor(y)) * 8.f), 0, 7);
+	return float(r->depth[size_t(fy * 8 + fx)]);
+}
+bool ScriptHost::underwater(const float p[3]) { return g->maps.fluidFill(int(std::floor(p[0])), int(std::floor(p[1]))) > 0.5f; }
+bool ScriptHost::findPlace(const float c[3], float r, float out[3]) {
+	int cx = int(std::floor(c[0])), cy = g->tileOfFeet(c[1]);
+	int rad = std::max(1, int(std::ceil(r)));
+	for (int d = 0; d <= rad; ++d)
+		for (int dy = -d; dy <= d; ++dy)
+			for (int dx = -d; dx <= d; ++dx) {
+				if (std::max(std::abs(dx), std::abs(dy)) != d || !g->nav.standable(cx + dx, cy + dy)) continue;
+				out[0] = float(cx + dx) + 0.5f, out[1] = g->floorY(cx + dx, cy + dy), out[2] = c[2];
+				return true;
+			}
+	return false;
+}
+int ScriptHost::gnomePosition(int id) {
+	Unit* u = g->unitOf(id - 1);
+	return u && !g->nav.standable(u->tx, u->ty) ? 1 : 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -467,7 +575,8 @@ int main(int argc, char** argv) {
 	g.initWorld();
 	if (args.scripts) {
 		g.scripts = std::make_unique<script::Engine>(g.vfs);
-		g.host.maps = &g.maps;
+		g.host.g = &g;
+		g.scriptGnomes = args.scriptGnomes;
 		g.scripts->setHost(&g.host);
 		Uint64 t0 = SDL_GetTicks64();
 		std::string serr;
