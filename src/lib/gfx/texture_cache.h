@@ -32,6 +32,7 @@ public:
 	// Tekstura dla pełnej ścieżki w grze, np. "Data/Texture/m256/foo.tga".
 	const Entry& getPath(const std::string& gamePath);
 	void clear();
+	const Vfs& vfs() const { return vfs_; }
 
 private:
 	const Entry& checker();

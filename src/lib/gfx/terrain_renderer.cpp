@@ -2,6 +2,7 @@
 
 #include "lib/gfx/game_lighting.h"
 #include "lib/gfx/texture_cache.h"
+#include "lib/vfs.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,26 +15,29 @@ namespace ow {
 static const char* kVSHead = R"(#version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
-layout(location = 3) in vec3 aGround; // wagi gruntów A, B, C
+layout(location = 3) in vec4 aCorner; // grunty narożników TL, TR, BL, BR (0 A, 1 B, 2 C)
 layout(location = 4) in float aAlpha;  // alfa wycięcia (otwory do tła)
 layout(location = 5) in float aBase;   // jasność bazowa (oświetlenie gry)
+layout(location = 6) in vec2 aUV;      // UV gruntu z palety BlockDB
 uniform mat4 uViewProj;
 uniform mat4 uWorld;
 out vec3 vNormal;
 out vec3 vLocalNormal;
 out vec3 vLocalPos;
 out float vDepth;
-out vec3 vGround;
+flat out vec4 vCorner;
 out float vAlpha;
 out vec3 vGameDiffuse;
 out vec3 vGameSpec;
+out vec2 vUV;
 )";
 
 static const char* kVSBody = R"(
 void main() {
 	gameLighting(aPos / 200.0, aNormal, aBase, vGameDiffuse, vGameSpec);
-	vGround = aGround;
+	vCorner = aCorner;
 	vAlpha = aAlpha;
+	vUV = aUV;
 	vNormal = mat3(uWorld) * aNormal;
 	vLocalNormal = aNormal;
 	vLocalPos = aPos;
@@ -47,14 +51,16 @@ in vec3 vNormal;
 in vec3 vLocalNormal;
 in vec3 vLocalPos;
 in float vDepth;
-in vec3 vGround;
+flat in vec4 vCorner;
 in float vAlpha;
 in vec3 vGameDiffuse;
 in vec3 vGameSpec;
+in vec2 vUV;
 uniform int uGameLight;
 uniform sampler2D uTex;
 uniform sampler2D uTexB;
 uniform sampler2D uTexC;
+uniform sampler2D uMasks; // atlas 4×4 masek Msk_<TL TR BL BR>01: komórka = bity (B = 1; TL 8, TR 4, BL 2, BR 1)
 uniform vec3 uLightDir;
 uniform float uAmbient;
 uniform vec4 uTint;
@@ -69,16 +75,25 @@ void main() {
 		oColor = vec4(d.rgb, 1.0);
 		return;
 	}
-	// Mapowanie trójpłaszczyznowe (tekstura co blok = 200 jednostek), żeby strome ściany się nie rozciągały.
-	// Tekstury gruntu mają pustą alfę, więc ją ignorujemy.
-	vec3 w = pow(abs(normalize(vLocalNormal)), vec3(4.0));
-	w /= (w.x + w.y + w.z);
-	vec3 p = vLocalPos / 200.0;
-	vec3 tA = texture(uTex, p.xy).rgb * w.z + texture(uTex, p.xz).rgb * w.y + texture(uTex, p.yz).rgb * w.x;
-	vec3 tB = texture(uTexB, p.xy).rgb * w.z + texture(uTexB, p.xz).rgb * w.y + texture(uTexB, p.yz).rgb * w.x;
-	vec3 tC = texture(uTexC, p.xy).rgb * w.z + texture(uTexC, p.xz).rgb * w.y + texture(uTexC, p.yz).rgb * w.x;
-	vec3 g = vGround / max(vGround.x + vGround.y + vGround.z, 1e-4);
-	vec3 t = tA * g.x + tB * g.y + tC * g.z;
+	// UV z palety BlockDB, jak w grze (1 tekstura na blok). Tekstury gruntu mają pustą alfę.
+	vec3 tex[3];
+	tex[0] = texture(uTex, vUV).rgb;
+	tex[1] = texture(uTexB, vUV).rgb;
+	tex[2] = texture(uTexC, vUV).rgb;
+	// Przejścia gruntów (docs/silnik/04_teren.md §4.2): narożniki bloku mają grunty; przy dwóch gruntach
+	// maska Msk_<TL TR BL BR>01 (biel = A, czerń = B) w tych samych UV co grunt. 🔶 A = grunt o niższym
+	// indeksie; trzy grunty w jednym bloku: dwa wyższe łączymy jako B.
+	ivec4 c = ivec4(vCorner + 0.5);
+	int gA = min(min(c.x, c.y), min(c.z, c.w));
+	int gB = max(max(c.x, c.y), max(c.z, c.w));
+	vec3 t = tex[gA];
+	if (gB != gA) {
+		int bits = (c.x != gA ? 8 : 0) + (c.y != gA ? 4 : 0) + (c.z != gA ? 2 : 0) + (c.w != gA ? 1 : 0);
+		vec2 cell = vec2(float(bits % 4), float(bits / 4));
+		vec2 f = clamp(fract(vUV), vec2(0.5 / 64.0), vec2(1.0 - 0.5 / 64.0));
+		float m = texture(uMasks, (cell + f) / 4.0).r;
+		t = mix(tex[gB], tex[gA], m);
+	}
 	if (uGameLight == 1) {
 		oColor = vec4(t * vGameDiffuse + vGameSpec, 1.0) * uTint;
 		return;
@@ -116,14 +131,16 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 	gl::BufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(TerrainVertex), mesh.vertices.data(), GL_STATIC_DRAW);
 	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, pos));
 	gl::VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, normal));
-	gl::VertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, ground));
+	gl::VertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, corner));
 	gl::EnableVertexAttribArray(0);
 	gl::EnableVertexAttribArray(1);
 	gl::VertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, alpha));
 	gl::VertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, base));
+	gl::VertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, sizeof(TerrainVertex), (void*)offsetof(TerrainVertex, uv));
 	gl::EnableVertexAttribArray(3);
 	gl::EnableVertexAttribArray(4);
 	gl::EnableVertexAttribArray(5);
+	gl::EnableVertexAttribArray(6);
 
 	auto blockIndices = [&](int bx, int by, std::vector<uint32_t>& out) {
 		auto [first, count] = mesh.blockRanges[size_t(by) * mesh.width + bx];
@@ -137,6 +154,31 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 		gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 4, idx.data(), GL_STATIC_DRAW);
 		out.push_back(g);
 	};
+
+	// Atlas masek przejść gruntów: 4×4 komórki po 64 px, komórka = bity narożników z literą B.
+	if (!maskAtlas_) {
+		std::vector<uint8_t> atlas(256 * 256 * 4, 255);
+		for (int bits = 1; bits < 15; ++bits) {
+			std::string name = "Data/Ground/Msk_";
+			for (int k = 3; k >= 0; --k) name += (bits >> k) & 1 ? 'B' : 'A';
+			name += "01.tga";
+			Image img;
+			auto data = textures.vfs().read(name);
+			if (!data || !loadTga(*data, img) || img.width != 64 || img.height != 64) continue;
+			int cx = (bits % 4) * 64, cy = (bits / 4) * 64;
+			for (int y = 0; y < 64; ++y)
+				for (int x = 0; x < 64; ++x)
+					for (int ch = 0; ch < 4; ++ch)
+						atlas[(size_t(cy + y) * 256 + size_t(cx + x)) * 4 + ch] = img.rgba[(size_t(y) * 64 + x) * 4 + ch];
+		}
+		Image a;
+		a.width = a.height = 256;
+		a.rgba = std::move(atlas);
+		maskAtlas_ = uploadTexture(a, false);
+		gl::BindTexture(GL_TEXTURE_2D, maskAtlas_);
+		gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
 
 	// Podkład: grupy według wariantu tekstury (1..15, zależny od pozycji bloku).
 	std::map<int, std::vector<uint32_t>> byVariant;
@@ -193,6 +235,10 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 	gl::Uniform1i(prog_.uniform("uTex"), 0);
 	gl::Uniform1i(prog_.uniform("uTexB"), 1);
 	gl::Uniform1i(prog_.uniform("uTexC"), 2);
+	gl::Uniform1i(prog_.uniform("uMasks"), 3);
+	gl::ActiveTexture(GL_TEXTURE3);
+	gl::BindTexture(GL_TEXTURE_2D, maskAtlas_);
+	gl::ActiveTexture(GL_TEXTURE0);
 	gl::Uniform4f(prog_.uniform("uTint"), 1, 1, 1, 1);
 	gl::Uniform1i(prog_.uniform("uDetail"), 0);
 	gl::Enable(GL_DEPTH_TEST);

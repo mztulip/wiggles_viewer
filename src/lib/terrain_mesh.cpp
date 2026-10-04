@@ -35,18 +35,10 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 		return m.openNode[size_t(y) * m.width + x] != 0;
 	};
 
-	auto groundAt = [&](float gx, float gy, float w[3]) {
-		// Dwuliniowo między środkami bloków (bx+0.5, by+0.5).
-		float fx = gx - 0.5f, fy = gy - 0.5f;
-		int x0 = int(std::floor(fx)), y0 = int(std::floor(fy));
-		float tx = fx - float(x0), ty = fy - float(y0);
-		w[0] = w[1] = w[2] = 0.f;
-		for (int dy = 0; dy <= 1; ++dy)
-			for (int dx = 0; dx <= 1; ++dx) {
-				int bx = std::clamp(x0 + dx, 0, m.width - 1), by = std::clamp(y0 + dy, 0, m.height - 1);
-				float k = (dx ? tx : 1 - tx) * (dy ? ty : 1 - ty);
-				w[groundFromPmpType(pmp.type(bx, by))] += k;
-			}
+	auto nodeGround = [&](int x, int y) {
+		x = std::clamp(x, 0, m.width - 1);
+		y = std::clamp(y, 0, m.height - 1);
+		return float(groundFromPmpType(pmp.type(x, y)));
 	};
 
 	for (int by = 0; by < m.height; ++by)
@@ -65,11 +57,16 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 					v.pos[0] = (float(bx) + p.x) * B;
 					v.pos[1] = (float(by) + p.y) * B;
 					v.pos[2] = p.z * B;
+					v.uv[0] = p.u;
+					v.uv[1] = p.v;
 					Vec3f n = sphere.size() == 256 ? sphere[sm.normalIdx[i]] : Vec3f{0, 0, 1};
 					v.normal[0] = n.x;
 					v.normal[1] = n.y;
 					v.normal[2] = n.z;
-					groundAt(float(bx) + p.x, float(by) + p.y, v.ground);
+					v.corner[0] = nodeGround(bx, by);
+					v.corner[1] = nodeGround(bx + 1, by);
+					v.corner[2] = nodeGround(bx, by + 1);
+					v.corner[3] = nodeGround(bx + 1, by + 1);
 					float lx = std::clamp(p.x, 0.f, 1.f), ly = std::clamp(p.y, 0.f, 1.f);
 					auto zone = [&](int x, int y) {
 						x = std::clamp(x, 0, m.width - 1);

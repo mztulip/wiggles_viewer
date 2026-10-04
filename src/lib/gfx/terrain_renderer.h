@@ -46,6 +46,7 @@ private:
 	GLuint vao_ = 0, vbo_ = 0;
 	std::vector<Group> groups_;
 	std::vector<Group> detail_;
+	GLuint maskAtlas_ = 0; // atlas masek Msk_* (przejścia gruntów)
 };
 
 } // namespace ow

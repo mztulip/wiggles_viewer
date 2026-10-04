@@ -57,7 +57,7 @@ Historia ustaleń (co poprawiliśmy względem narzędzi społeczności):
 
 ### Teren (`Data/Ground`) ✅
 - 3 bazowe typy gruntu **A, B, C**, po 15 wariantów każdy (`gnd_c04.tga`). Kanał alfa jest pusty.
-- 14 **masek przejść** (`msk_aabb01.tga`, `Msk_AAAB01.tga`): na krawędzi między dwoma gruntami jeden polygon dostaje oba grunty, a maska służy jako alfa. To klasyczny *texture splatting*.
+- 14 **masek przejść** (`Msk_AAAB01.tga` … `Msk_BBBA01.tga`): w bloku, którego narożniki mają dwa grunty, maska miesza je (biel = A, czerń = B). Prawo ustaliliśmy eksperymentem `ow_flat` ([rozdział 4.2](silnik/04_teren.md)).
 - Detale zależne od świata, z alfą i prefiksem świata: `kris_0101.tga` (kryształy), `urw_0101.tga` (Urwald, czyli dżungla). Sufiks 4 bitów to narożniki bloku TL TR BL BR pokryte detalem ✅ (z `.l2m`; [rozdział 4.4](silnik/04_teren.md)). Pierwotna hipoteza „strony z pustą przestrzenią” była błędna.
 - Ograniczenie silnika: maski przejść działają tylko do 64×64.
 

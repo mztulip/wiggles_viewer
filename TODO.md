@@ -78,7 +78,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 `.l2m` (warstwa 2) i `.ENT`
 - [ ] 🔬 Renderowanie gruntu: grunty A/B/C, maski przejść, detale per świat (`Ground/`)
 - [x] Podgląd szablonu mapy w wigview: siatka PMP 2D (typ, ID bloku, warstwy), obiekty 3D z modelami (86,9% klas rozpoznanych)
-- [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu (triplanar)
+- [x] Teren: mapa wysokości z BlockDB (8×8 na blok, zweryfikowana z OBJ gry), renderer z tekstur gruntu
 - [x] Nakładki detali z `.l2m` (narożniki po 2 bity, tekstury `detail/<świat>[2]_<kod>`, modulate×2)
 - [x] Grunt podkładu z typu pola `.PMP` (2 = C, 3 = B, 4 = A) i bloki niewykopane (typ 0) ✅ z eksperymentu na zrzutach gry
 - [x] Typ 5: otwory do tła (węzły otwarte, alpha test, kolor strefy `Info_Fog_*`, zanikanie modeli za skałą)
@@ -93,7 +93,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] OBERWELT, różnice z grą: panorama trochę niżej, brak ciemnego pasa lasu w tle, skała `Felsen` ciemna (w grze jasnoszara)
 - [ ] Ciemnienie w kątach tuneli (BASELIGHT pod ziemią, splot różnic wypełnienia); teraz warstwa 2 szablonu
 - [x] Tekstury: rozlanie koloru w przezroczyste teksele (bez szarych obwódek przy mipmapach)
-- [ ] Przejścia gruntów maskami `Msk_*` (teraz interpolacja); bit 0x80; młodszy bajt `.l2m`
+- [ ] Bit 0x80 typu pola; młodszy bajt `.l2m`
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
 - [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to mgła wojny dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
 - [x] Mgła wojny: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
@@ -101,11 +101,15 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] 🔬 Porównanie mgły ze zrzutami gry (menu z `timer_delete` FogRemover; sprzeczność: notatka „obraz czarny” vs prawo „wygasa do szarości”)
 - [ ] Mgła wojny w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
 - [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
-- [ ] 🔬 Przejścia gruntów maskami `Msk_*`: zrzuty szablonów testowych `ow_m1..3` (gotowe w `../lab`), potrzebna płyta w napędzie
+- [x] UV terenu z palety BlockDB (trzy rzuty, ✅ na wszystkich punktach) zamiast trójpłaszczyznowego
+- [x] 🔬 Przejścia gruntów maskami `Msk_*`: grunt w węźle (lewy górny narożnik pola), maska per blok z narożników (✅ eksperyment `ow_flat`)
+- [ ] 🔬 Który grunt jest „A” w masce; trzy grunty w bloku; UV detali `.l2m` na podłogach
+- [ ] 🔬 Detale `.l2m`: pełny eksperyment 16 układów × 2 zestawy na płaskiej ścianie; zestaw 2 (`urw2_*`) nie pasuje do reguły narożników (tabela w 04_teren.md §4.4); mech na filarze w menu
+- [ ] 🔬 Powtórzyć zrzuty, które wyszły czarne (szachownica `ow_mix2`, OBERWELT w x = 200)
+- [x] wigview: lampa podglądu dla szablonów bez własnych świateł (nie z gry, wyłączalna)
 - [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
-- [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
 - [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [x] Menu gry jako scenariusz (`systeminit.tcl`: unq_menue + dwa korytarze + set_view)

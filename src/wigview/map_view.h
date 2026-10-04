@@ -115,6 +115,7 @@ private:
 	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false, gameLighting_ = true;
 	bool showPanorama_ = true, hasOpenAir_ = false; // panorama tylko, gdy scenariusz ma niebo (set_light_begin)
 	bool showCarpet_ = true;
+	bool previewLamp_ = true; // lampa podglądu dla szablonów bez własnych świateł
 	float groundRow_ = 0.f; // wiersz gruntu panoramy (bloki)
 	ow::PanoramaRenderer panorama_;
 	bool panoramaReady_ = false;

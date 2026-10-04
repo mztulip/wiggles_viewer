@@ -2,7 +2,7 @@
 
 Gracz widzi tylko to, co odkryły jego krasnale. Pola nigdy niewidziane są **czarne**, a pola już odkryte, na które teraz nikt nie patrzy, przykrywa **ciepła szara mgła** (170, 170, 155), mocniejsza w głębi wykopów. Ten rozdział opisuje dane mgły, to, jak obiekty ją odkrywają i jak wpływa na obraz.
 
-**Źródło i status.** Cały mechanizm opisuje [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/FOG_OF_WAR_RE.md`, implementacja `Runtime/World/FogOfWarState.cs`), ze stałymi odczytanymi z gry. U nas to 🔶: wzory przenosimy dokładnie, ale potwierdziliśmy na razie tylko ogólne zachowanie (menu wymaga `FogRemover`, inaczej obraz jest zakryty). Sprawdzenie zrzutami: TODO.
+**Źródło i status.** Cały mechanizm opisuje [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/FOG_OF_WAR_RE.md`, implementacja `Runtime/World/FogOfWarState.cs`), ze stałymi odczytanymi z gry. U nas to 🔶: wzory przenosimy dokładnie. ✅ Potwierdzone zrzutami: odkrywanie promieniami z „skorupą” 3 pól w skale (płaska ściana `ow_flat`: lita skała wokół szablonu zostaje czarna poza wąskim pasem przy krawędzi). Pozostałe prawa (szarość, wygasanie): do sprawdzenia.
 
 ## 10.1 Dane: jeden bajt na pole i gracza
 
@@ -67,7 +67,7 @@ dla i = 0..N:
 Promień wchodzi najwyżej 3 pola w litą skałę i staje, więc ściany tunelu są widoczne na głębokość „skorupy”, ale skała nie jest przezroczysta. Pole jest lite, gdy pierwsza wysokość jego rekordu BlockDB (lewe górne drobne pole) wynosi 15.
 
 **Inne kształty:**
-- **prostokąt bez kolizji**, gdy oba zasięgi są ujemne: odkrywa ±|sx| × ±|sy| wokół obiektu, przez skałę. Tego używa `FogRemover` (`fog_remove 0 50 50` ustawia −50 −50, czyli prostokąt 100 × 100 pól);
+- **prostokąt bez kolizji**, gdy oba zasięgi są ujemne: odkrywa ±|sx| × ±|sy| wokół obiektu, przez skałę. `FogRemover` przekazuje swoje argumenty wprost do `set_fogofwar`, więc `fog_remove 0 -50 -50` daje prostokąt, a `fog_remove 0 50 50` (menu) zwykły wachlarz promieni o promieniu 50;
 - **linia** dla obiektów na drabinie (w górę) i w windzie (w dół szybu): w każdym wierszu dwa poziome przebiegi w lewo i w prawo, każdy z własnym limitem 3 pól skały.
 
 **Odkrycie pola** (wspólne dla wszystkich kształtów):
@@ -151,7 +151,7 @@ Pola powyżej `set_fow_begin` scenariusza są zawsze widoczne. Uproszczenie 🔶
 
 `systeminit.tcl` tworzy obiekt `FogRemover` w (32,37; 39,5) i woła:
 ```tcl
-call_method $FR fog_remove 0 50 50     ;# właściciel 0 (gracz lokalny), set_fogofwar −50 −50
+call_method $FR fog_remove 0 50 50     ;# właściciel 0 (gracz lokalny), set_fogofwar 50 50
 call_method $FR timer_delete -1
 ```
-Prostokąt bez kolizji 100 × 100 pól wokół kamery staje się widoczny, więc cała scena menu jest czysta. ❓ Do sprawdzenia w laboratorium: zgodnie z prawem 10.4 po usunięciu `FogRemover` (`timer_delete`) scena powinna w ciągu kilkudziesięciu sekund zajść szarą mgłą; w naszym `capture.sh` zanotowaliśmy jednak, że obraz robił się czarny.
+Wachlarz promieni o promieniu 50 pól odkrywa całą jaskinię menu i 3 pola skały wokół niej; dalsza lita skała zostaje czarna, ale w kadrze jej nie widać. ❓ Do sprawdzenia w laboratorium: zgodnie z prawem 10.4 po usunięciu `FogRemover` (`timer_delete`) scena powinna w ciągu kilkudziesięciu sekund zajść szarą mgłą; w naszym `capture.sh` zanotowaliśmy jednak, że obraz robił się czarny.

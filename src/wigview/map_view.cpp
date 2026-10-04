@@ -310,6 +310,15 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 			                  });
 			lights.resize(kMaxGameLights);
 		}
+		// Lampa podglądu: tylko w zakładce Szablony i tylko gdy szablon nie ma własnych świateł
+		// (proste korytarze są w grze czarne bez lamp). Stoi przed przednią płaszczyzną nad ogniskiem
+		// kamery, z kolorem c = 11 (jak class_light {0,7 0,7 0,7}) i promieniem 25 pól. Nie należy do gry.
+		if (previewLamp_ && !scenarioMode_ && allLights_.empty()) {
+			GameLight l;
+			l.posRadius = glm::vec4(f.x, f.y, 17.f, 25.f);
+			l.color = glm::vec4(11.f, 11.f, 11.f, 0.f);
+			lights.push_back(l);
+		}
 	}
 	const std::vector<GameLight>* gl = gameLighting_ ? &lights : nullptr;
 	updateFog(focus);
@@ -549,6 +558,15 @@ bool MapView::ui() {
 	ImGui::SameLine();
 	ImGui::Checkbox("Strefa horyzontu", &showZone_);
 	ImGui::Checkbox("Oświetlenie jak w grze", &gameLighting_);
+	if (!scenarioMode_) {
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!allLights_.empty());
+		ImGui::Checkbox("Lampa podglądu", &previewLamp_);
+		ImGui::EndDisabled();
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+			ImGui::SetTooltip(allLights_.empty() ? "Szablon nie ma własnych świateł: dodatkowa lampa nad środkiem kadru (nie z gry)."
+			                                     : "Szablon ma własne światła (%zu), lampa podglądu niepotrzebna.", allLights_.size());
+	}
 	ImGui::SameLine();
 	ImGui::BeginDisabled(!hasOpenAir_);
 	ImGui::Checkbox("Panorama nieba", &showPanorama_);

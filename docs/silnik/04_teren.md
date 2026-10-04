@@ -40,15 +40,27 @@ Bit 0x80 nie zmienia wyglądu (0x04 i 0x84 wyglądają tak samo; ❓ znaczenie).
 
 Tekstury gruntu mają 64 × 64 px i pustą alfę. Każdy rodzaj ma 15 wariantów, żeby powierzchnia się nie powtarzała.
 
-**Jak dokładnie gra nakłada te tekstury, nie wiemy** (🔶/❓):
-- paleta BlockDB ma współrzędne `u, v` (zakres ok. 0…7,5), których gra używa do teksturowania; reguła nie jest rozpracowana;
-- przejścia między gruntami sąsiednich bloków gra robi maskami `Data/Ground/Msk_<ABCD>01.tga` (splatting: na granicy trójkąt dostaje oba grunty, a maska jest alfą);
-- nie wiadomo, który z 15 wariantów dostaje dany blok.
+**Współrzędne tekstury** ✅ pochodzą wprost z palety BlockDB (`u, v`), jedna tekstura na blok, z zawijaniem (REPEAT). Paleta zawiera trzy rzuty, a każdy z 3323 punktów `BlockDB2` pasuje dokładnie do jednego (sprawdzone na danych):
 
-**Zamiennik, który daje obraz bliski grze** (tak robi nasza przeglądarka):
-1. Wariant 01–15 wybierz pseudolosowo z (bx, by), stałym hashem.
-2. Teksturę nakładaj **trójpłaszczyznowo** w skali „1 tekstura na blok”: próbki z płaszczyzn (x, y), (x, z), (y, z) pozycji w blokach, z wagami `|n|⁴` znormalizowanymi do sumy 1. Pionowe ściany nie są wtedy rozciągnięte.
-3. Wagi gruntów A/B/C licz dla wierzchołka dwuliniowo między **środkami** czterech najbliższych bloków (punkt (bx + 0,5, by + 0,5) ma wagę 1 dla gruntu swojego bloku). Daje to miękkie przejścia zamiast masek.
+| powierzchnia | (u, v) | punktów |
+|---|---|---|
+| lico i tylna ściana | (x, y) | 400 |
+| podłogi, sufity, zbocza w głąb | (x, z − 7) | 2553 |
+| ściany boczne | (z − 7, y) | 400 |
+
+Na szwach między rzutami wierzchołki są zdublowane z różnymi UV. Na stromych zboczach tekstura się wyciąga; w grze wygląda to tak samo (porównanie `../lab/zrzuty/porownania/mixd_m1.png`). Wcześniejszy zamiennik trójpłaszczyznowy dawał rozmyte, „włochate” smugi.
+
+**Przejścia gruntów** ✅ (eksperyment na płaskiej ścianie z samych bloków 59: pojedyncze pole, kwadrat 2×2 i pas innego gruntu, zrzuty `../lab/zrzuty/porownania/flat.png`):
+1. Grunt pola leży w jego **lewym górnym narożniku** (węźle), tak jak światło bazowe i mgła. Pojedyncze pole ziemi daje plamę wielkości ok. 1 bloku wyśrodkowaną na węźle (bx, by), a nie na środku pola.
+2. Każdy blok ma więc cztery grunty narożników: TL (bx, by), TR (bx+1, by), BL (bx, by+1), BR (bx+1, by+1).
+3. Gdy wszystkie są równe, blok ma zwykłą teksturę tego gruntu.
+4. Gdy są dwa grunty, gra miesza je maską `Data/Ground/Msk_<TL><TR><BL><BR>01.tga` (litery A/B, 14 plików: wszystkie układy poza AAAA i BBBB). **Biel maski = grunt A, czerń = grunt B**, granica jest poszarpana. Maska używa tych samych UV co grunt.
+   ```
+   kolor = mix(tekstura_B, tekstura_A, maska(uv).r)
+   ```
+5. 🔶 Który z dwóch gruntów jest „A”, nie wiemy (przyjmujemy grunt o niższym indeksie: A skała < B ziemia < C piasek). Trzy różne grunty w jednym bloku: nie wiemy (łączymy dwa wyższe jako B).
+
+**Wariant tekstury** 01–15 dla bloku: ❓, wybieraj pseudolosowo z (bx, by).
 
 ## 4.3 Kolor wierzchołków
 
@@ -85,6 +97,20 @@ Przykłady (świat urw):
 
 Tekstury detalu mają gładkie plamy w narożnikach, więc sąsiednie bloki z pasującymi narożnikami łączą się w ciągłe połacie (jak w marching squares). ✅ Kolejność bitów odczytana z krawędzi plam w `unq_menue.l2m`.
 
+**Eksperyment `ow_det`** (płaska ściana z bloków 59, światło dzienne, pojedyncze wartości na osobnych blokach; zieloność zmierzona w ćwiartkach bloku na zrzucie z gry, tło ≈ 3):
+
+| wartość | zestaw 1 (`urw_*`) | wartość | zestaw 2 (`urw2_*`) |
+|---|---|---|---|
+| `0x4000` TL | ćwiartka TL 4,3 ✅ | `0x8000` TL | nic (2,4) ❓ |
+| `0x1000` TR | ćwiartka TR 4,3 ✅ | `0x2000` TR | ślad w TR (4,4) |
+| `0x0400` BL | ćwiartka BL 4,6 ✅ | `0x0800` BL | ślad w BL (5,6) |
+| `0x0100` BR | nic (2,5); `urw_0001` to tylko mały róg | `0x0200` BR | **cały blok** (21) ❓ |
+| `0x5000` TL+TR | góra 6 ✅ | `0xA000` TL+TR | góra 7 |
+| `0x4400` TL+BL | lewa strona 6,5 ✅ | `0x8800` TL+BL | lewa strona 5 |
+| `0x5500` komplet | cały blok 8 ✅ | `0xAA00` komplet | cały blok 21 |
+
+Zestaw 1 działa dokładnie według opisu wyżej. Zestaw 2 nie: wszystkie pliki `urw2_*` są prawie całe pokryte mchem, a mimo to samo TL nie daje nic, a samo BR daje pełny blok. ❓ Reguła dla zestawu 2 do ustalenia pełnym eksperymentem (16 układów dla obu zestawów).
+
 Rysowanie:
 - detal pokrywa **jeden blok**: UV = (x − bx, y − by), czyli położenie wierzchołka w obrębie bloku, bez zawijania;
 - rysuje się go **drugim przebiegiem** po tych samych trójkątach bloku, z testem głębi `LEQUAL` i bez zapisu głębi;
@@ -120,7 +146,8 @@ Prawo pochodzi z [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Do
 |---|---|
 | pozycja | (bx + p.x, by + p.y, p.z) z palety BlockDB |
 | normalna | `SPHERE.DAT[indeks]` |
-| wagi gruntów A/B/C | typ pola, dwuliniowo między środkami bloków (zamiennik) |
+| grunty narożników TL, TR, BL, BR | typ pola w węzłach bloku (4.2), stałe na blok |
+| UV | `u, v` z palety BlockDB (4.2) |
 | alfa otworu | węzły otwarte, dwuliniowo w (p.x, p.y) |
 | jasność bazowa B | warstwa 2, dwuliniowo w narożnikach bloku (rozdział 7) |
 | kolor oświetlenia | prawo z rozdziału 7, liczone per wierzchołek |

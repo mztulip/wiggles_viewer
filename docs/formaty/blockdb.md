@@ -56,7 +56,7 @@ Dane podsiatek leżą jedna za drugą: początek podsiatki to suma `3 · vertCou
 |---|---|
 | x, y | położenie w obrębie bloku, zwykle 0…1 (y w dół) |
 | z | głębokość w blokach: 14,5 = przednia płaszczyzna, 7 = najgłębsze dno ✅ (zakres sprawdzony na wszystkich punktach) |
-| u, v | 🔶 współrzędne tekstury (zakres ok. 0…7,5); reguła nieznana |
+| u, v | ✅ współrzędne tekstury w blokach (0…7,5): (x, y), (x, z − 7) albo (z − 7, y) zależnie od kierunku powierzchni; każdy punkt pasuje dokładnie do jednego rzutu ([rozdział 4.2](../silnik/04_teren.md)) |
 
 Pozycja wierzchołka bloku (bx, by) w świecie to `(bx + x, by + y, z)` bloków.
 

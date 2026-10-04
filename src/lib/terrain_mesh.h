@@ -26,9 +26,15 @@ class BlockDb;
 struct TerrainVertex {
 	float pos[3];
 	float normal[3];
-	float ground[3]; // wagi gruntów A, B, C (suma 1)
+	// Grunty narożników bloku TL, TR, BL, BR (0 = A skała, 1 = B ziemia, 2 = C piasek). Grunt pola leży
+	// w jego lewym górnym narożniku (węźle), jak światło bazowe; ✅ zrzuty płaskiej ściany ow_flat.
+	float corner[4];
 	float alpha;     // 0..1: dwuliniowo z narożników bloku (0 = węzeł otwarty do tła); rysujemy, gdy > 126/255
 	float base;      // jasność bazowa B = 16·warstwa2 (dwuliniowo z narożników) + 64 (game_lighting.h)
+	// UV tekstury gruntu wprost z palety BlockDB (1 tekstura na blok, zawijanie). Paleta zawiera trzy
+	// rzuty: (x, y) na licu i tylnej ścianie, (x, z − 7) na podłogach i sufitach, (z − 7, y) na ścianach
+	// bocznych; ✅ każdy z 3323 punktów BlockDB2 pasuje dokładnie do jednego (docs/formaty/blockdb.md §3).
+	float uv[2];
 };
 
 struct TerrainMesh {
