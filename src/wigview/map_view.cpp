@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 
 using namespace ow;
@@ -66,11 +67,18 @@ void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, con
 	scenarios_.push_back("systeminit.tcl"); // menu gry
 	for (auto& f : vfs->list("Data/Gamesave"))
 		if (endsWithI(f, ".tcl")) scenarios_.push_back(f);
-	for (auto& f : vfs->list("Data/Gamesave")) // zapisy gry na końcu listy
-		if (endsWithI(f, ".sav")) scenarios_.push_back(f);
+	refreshSaves();
 	files_.clear();
 	for (auto& f : vfs->list("Data/Templates"))
 		if (endsWithI(f, ".tcl")) files_.push_back(f);
+}
+
+// Lista zapisów gry z Data/Gamesave (gra dopisuje nowe w trakcie działania, stąd odświeżanie).
+void MapView::refreshSaves() {
+	saves_.clear();
+	for (auto& f : vfs_->list("Data/Gamesave"))
+		if (endsWithI(f, ".sav")) saves_.push_back(f);
+	std::sort(saves_.begin(), saves_.end());
 }
 
 MapView::ModelSlot* MapView::model(const std::string& file) {
@@ -137,16 +145,51 @@ bool MapView::loadTemplate(const std::string& file) {
 
 // Zapis gry .sav (docs/formaty/sav.md): pełna mapa, obiekty, kamera i mgła wojny z chwili zapisu.
 bool MapView::loadSave(const std::string& file) {
+	auto data = vfs_->read("Data/Gamesave/" + file);
+	if (!data) {
+		file_ = file;
+		error_ = "zapis " + file + ": brak pliku";
+		return false;
+	}
+	return loadSaveData(file, *data);
+}
+
+bool MapView::loadSavePath(const std::string& path) {
+	std::ifstream in(path, std::ios::binary);
+	if (!in) {
+		error_ = "zapis " + path + ": nie można otworzyć pliku";
+		return false;
+	}
+	std::vector<uint8_t> data((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	return loadSaveData(path, data);
+}
+
+// Pola wyboru zapisu: odświeżenie listy i wczytanie pliku spoza katalogu gry.
+void MapView::uiSaves(bool& recenter) {
+	if (ImGui::Button("Odśwież listę")) refreshSaves();
+	ImGui::SetItemTooltip("Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania.");
+	ImGui::SetNextItemWidth(-(ImGui::CalcTextSize("Wczytaj").x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x));
+	bool enter = ImGui::InputTextWithHint("##savepath", "ścieżka do pliku .sav", savePath_, sizeof savePath_,
+	                                      ImGuiInputTextFlags_EnterReturnsTrue);
+	ImGui::SameLine();
+	if ((ImGui::Button("Wczytaj") || enter) && savePath_[0]) {
+		loadSavePath(savePath_);
+		recenter = true;
+	}
+	ImGui::Separator();
+}
+
+bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& data) {
 	file_ = file;
+	list_ = ListMode::Saves;
 	scenarioMode_ = true;
 	scenarioInfo_.clear();
 	saveFog_.clear();
+	error_.clear();
 	Scenario sc;
 	BuiltWorld bw;
 	try {
-		auto data = vfs_->read("Data/Gamesave/" + file);
-		if (!data) throw std::runtime_error("brak pliku");
-		SaveGame s = parseSaveGame(*data);
+		SaveGame s = parseSaveGame(data);
 		bw = buildWorldFromSave(s, blocks_.loaded() ? &blocks_ : nullptr, sc);
 		saveFog_.resize(s.tiles.size());
 		for (size_t i = 0; i < s.tiles.size(); ++i) saveFog_[i] = s.tiles[i].fog[0];
@@ -174,6 +217,7 @@ bool MapView::loadSave(const std::string& file) {
 
 bool MapView::loadScenario(const std::string& file) {
 	if (endsWithI(file, ".sav")) return loadSave(file);
+	list_ = ListMode::Scenarios;
 	file_ = file;
 	scenarioMode_ = true;
 	// systeminit.tcl (menu gry) leży w Data/, pozostałe scenariusze w Data/Gamesave/.
@@ -284,7 +328,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 }
 
 void MapView::step(int d) {
-	const auto& list = listScenarios_ ? scenarios_ : files_;
+	const auto& list = currentList();
 	std::vector<int> vis;
 	for (int i = 0; i < int(list.size()); ++i)
 		if (passFilter(filter_, list[size_t(i)])) vis.push_back(i);
@@ -294,7 +338,7 @@ void MapView::step(int d) {
 		if (list[size_t(vis[k])] == file_) pos = int(k);
 	if (pos < 0) pos = d > 0 ? -1 : 0;
 	pos = (pos + d + int(vis.size())) % int(vis.size());
-	if (listScenarios_) loadScenario(list[size_t(vis[size_t(pos)])]);
+	if (list_ != ListMode::Templates) loadScenario(list[size_t(vis[size_t(pos)])]);
 	else loadTemplate(list[size_t(vis[size_t(pos)])]);
 	scrollToSel_ = true;
 }
@@ -549,16 +593,24 @@ void MapView::uiGrid() {
 
 bool MapView::ui() {
 	bool recenter = false;
-	ImGui::BeginChild("szablony", ImVec2(200, 0), ImGuiChildFlags_Borders);
-	if (ImGui::RadioButton("Szablony", !listScenarios_)) listScenarios_ = false;
+	ImGui::BeginChild("szablony", ImVec2(ImGui::GetFontSize() * 21.f, 0), ImGuiChildFlags_Borders);
+	auto radio = [&](const char* label, ListMode m) {
+		if (ImGui::RadioButton(label, list_ == m)) list_ = m;
+	};
+	radio("Szablony", ListMode::Templates);
 	ImGui::SameLine();
-	if (ImGui::RadioButton("Scenariusze", listScenarios_)) listScenarios_ = true;
+	radio("Scenariusze", ListMode::Scenarios);
+	ImGui::SameLine();
+	radio("Zapisy", ListMode::Saves);
+	if (list_ == ListMode::Saves) uiSaves(recenter);
 	ImGui::SetNextItemWidth(-1);
-	ImGui::InputTextWithHint("##mf", listScenarios_ ? "filtr (np. single_)" : "filtr (np. urw_gng)", filter_, sizeof filter_);
-	for (const auto& f : listScenarios_ ? scenarios_ : files_) {
+	const char* hint = list_ == ListMode::Templates ? "filtr (np. urw_gng)" : list_ == ListMode::Scenarios ? "filtr (np. single_)" : "filtr (np. quick)";
+	ImGui::InputTextWithHint("##mf", hint, filter_, sizeof filter_);
+	if (list_ == ListMode::Saves && saves_.empty()) ImGui::TextDisabled("Brak zapisów w Data/Gamesave.");
+	for (const auto& f : currentList()) {
 		if (!passFilter(filter_, f)) continue;
 		if (ImGui::Selectable(f.c_str(), f == file_)) {
-			if (listScenarios_) loadScenario(f);
+			if (list_ != ListMode::Templates) loadScenario(f);
 			else loadTemplate(f);
 			recenter = true;
 		}

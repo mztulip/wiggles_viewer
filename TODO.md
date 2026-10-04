@@ -150,7 +150,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka
 - [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`)
 - [ ] AI (`ai init`, `std_ai.tcl`)
-- [x] Odczyt mapy z zapisu `.sav`: teren, kamera, mgła wojny, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview `--save`, tryb mgły 4
+- [x] Odczyt mapy z zapisu `.sav`: teren, kamera, mgła wojny, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Mapy → Zapisy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4
 - [ ] 🔬 Pełny odczyt zapisu (zmienne Tcl obiektów, gracze, ekonomia) i zapis gry: własny format czy zgodność?
 - [ ] Zapis: sprawdzić hipotezy (starszy bajt stanu = wariant tekstury, motyw świata z klas `Info_Fog_*`)
 

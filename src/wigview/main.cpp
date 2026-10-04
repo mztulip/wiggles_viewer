@@ -11,7 +11,7 @@
 // --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
 // --fow: podgląd mgły wojny: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna,
 //        4 z zapisu gry (domyślnie dla zapisów).
-// --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav).
+// --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav) albo ścieżka do pliku .sav.
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
@@ -917,8 +917,9 @@ int main(int argc, char** argv) {
 		if (!args.scenario.empty()) {
 			std::string t = args.scenario;
 			bool hasExt = t.size() > 4 && Vfs::lower(t.substr(t.size() - 4)) == ".tcl";
-			if (!hasExt && !v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
-			if (!v.maps.loadScenario(t)) std::fprintf(stderr, "scenariusz %s: %s\n", t.c_str(), v.maps.error().c_str());
+			bool path = t.find('/') != std::string::npos && Vfs::lower(t).size() > 4 && Vfs::lower(t.substr(t.size() - 4)) == ".sav";
+			if (!hasExt && !path && !v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
+			if (!(path ? v.maps.loadSavePath(t) : v.maps.loadScenario(t))) std::fprintf(stderr, "scenariusz %s: %s\n", t.c_str(), v.maps.error().c_str());
 		} else {
 			std::string t = args.templ;
 			if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";

@@ -37,14 +37,16 @@ public:
 	void init(ow::rhi::Device& dev, const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
+	bool loadSavePath(const std::string& path);  // zapis gry .sav z dowolnego miejsca na dysku
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
 	void select(const std::string& file) {      // wczytaj i przewiń listę do szablonu
-		listScenarios_ = false;
+		list_ = ListMode::Templates;
 		loadTemplate(file);
 		scrollToSel_ = true;
 	}
 	void selectScenario(const std::string& file) {
-		listScenarios_ = true;
+		bool sav = file.size() > 4 && (file.compare(file.size() - 4, 4, ".sav") == 0 || file.compare(file.size() - 4, 4, ".SAV") == 0);
+		list_ = sav ? ListMode::Saves : ListMode::Scenarios;
 		loadScenario(file);
 		scrollToSel_ = true;
 	}
@@ -103,7 +105,10 @@ private:
 	void uiGrid();
 	static glm::mat4 objectMatrix(const ow::TemplateObject& o);
 	bool finishLoad(const ow::Scenario& sc, int margin, std::string world, ow::BuiltWorld* prebuilt = nullptr);
-	bool loadSave(const std::string& file);
+	bool loadSave(const std::string& file);                                    // nazwa pliku w Data/Gamesave
+	bool loadSaveData(const std::string& name, const std::vector<uint8_t>& data);
+	void refreshSaves();
+	void uiSaves(bool& recenter);
 
 	ow::rhi::Device* dev_ = nullptr;
 	const ow::Vfs* vfs_ = nullptr;
@@ -123,8 +128,14 @@ private:
 	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
-	bool listScenarios_ = false, scenarioMode_ = false;
-	std::vector<std::string> scenarios_;
+	enum class ListMode { Templates, Scenarios, Saves };
+	ListMode list_ = ListMode::Templates;
+	const std::vector<std::string>& currentList() const {
+		return list_ == ListMode::Templates ? files_ : list_ == ListMode::Scenarios ? scenarios_ : saves_;
+	}
+	bool scenarioMode_ = false;
+	std::vector<std::string> scenarios_, saves_;
+	char savePath_[512] = "";
 	std::string scenarioInfo_;
 	std::optional<ow::GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};

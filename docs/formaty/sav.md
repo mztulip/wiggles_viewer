@@ -127,7 +127,7 @@ Zapis zawiera **gotowy świat**: nie trzeba wykonywać skryptu scenariusza ani s
 4. Kamera z sekcji 1.
 5. Mgła wojny: bajt gracza 0 z przesunięcia 45 (rozdz. 10).
 
-W wigview: zakładka Mapy → Scenariusze (zapisy są na końcu listy) albo `wigview --save save_SaveGame.sav`. Mgła z zapisu to tryb 4 (`--fow 4`, domyślny dla zapisów; `--fow 0` ją wyłącza).
+W wigview: zakładka Mapy → Zapisy (lista z `Data/Gamesave`, przycisk odświeżania, pole na ścieżkę do dowolnego pliku `.sav`) albo `wigview --save save_SaveGame.sav` (także `--save /ścieżka/plik.sav`). Mgła z zapisu to tryb 4 (`--fow 4`, domyślny dla zapisów; `--fow 0` ją wyłącza).
 
 ## Czego nie czytamy
 
