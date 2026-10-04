@@ -300,6 +300,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		heights_ = buildHeightfield(*pmp_, blocks_);
 		auto mesh = buildTerrainMesh(*pmp_, blocks_, *sphere_);
 		report(0.09f, N_("Tekstury terenu"));
+		world_ = world;
 		terrain_.build(std::move(mesh), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	zone_.reset();
@@ -415,6 +416,72 @@ void MapView::update(float dt) {
 	if (steps == 4) particleAcc_ = 0.f;
 }
 
+bool MapView::setObjectModel(int i, const std::string& modelFile, const std::string& object) {
+	auto& o = objects_[size_t(i)];
+	ClassModel& cm = gameModels_[Vfs::lower(modelFile + "/" + object)];
+	cm.object = object;
+	cm.animation = "standard";
+	cm.modelHint = modelFile;
+	cm.animMode = 2;
+	o.cls = &cm;
+	o.slot = nullptr;
+	o.animation = -1;
+	return resolve(cm, o.slot, o.animation);
+}
+
+void MapView::setObjectPose(int i, float x, float y, float zScript, float rotY) {
+	auto& o = objects_[size_t(i)].src;
+	o.pos[0] = x, o.pos[1] = y, o.pos[2] = zScript;
+	o.rot[1] = rotY;
+}
+
+bool MapView::playAnim(int i, const std::string& anim, bool loop) {
+	auto& o = objects_[size_t(i)];
+	if (!o.slot || !o.cls) return false;
+	std::string want = Vfs::lower(anim);
+	for (const auto& ob : o.slot->model->objects) {
+		if (Vfs::lower(ob.name) != Vfs::lower(o.cls->object)) continue;
+		for (uint32_t a : ob.animations)
+			if (Vfs::lower(o.slot->model->animations[a].name) == want) {
+				if (o.animation != int(a) || o.animMode != (loop ? 2 : 1)) o.animStart = time_;
+				o.animation = int(a);
+				o.animMode = loop ? 2 : 1;
+				return true;
+			}
+	}
+	return false;
+}
+
+float MapView::animLength(int i) const {
+	const auto& o = objects_[size_t(i)];
+	if (!o.slot || o.animation < 0) return 0.f;
+	return float(o.slot->model->animations[size_t(o.animation)].frames.size()) / 10.f;
+}
+
+int MapView::addObject(const std::string& className, float x, float y, float zScript) {
+	PlacedObject p;
+	p.src.className = className;
+	p.src.pos[0] = x, p.src.pos[1] = y, p.src.pos[2] = zScript;
+	p.cls = classes_.find(className);
+	if (p.cls) resolve(*p.cls, p.slot, p.animation);
+	objects_.push_back(p);
+	return int(objects_.size()) - 1;
+}
+
+void MapView::setBlock(int x, int y, uint32_t block, uint8_t type) {
+	if (!pmp_ || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return;
+	size_t i = size_t(y) * pmp_->width + x;
+	pmp_->blocks[i] = block;
+	pmp_->types[i] = type;
+}
+
+void MapView::rebuildTerrain() {
+	if (!pmp_ || !blocks_.loaded()) return;
+	heights_ = buildHeightfield(*pmp_, blocks_);
+	terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_), *textures_, l2m_ ? &*l2m_ : nullptr, world_);
+	buildFluids();
+}
+
 glm::mat4 MapView::objectMatrix(const TemplateObject& o) {
 	glm::mat4 m = glm::translate(glm::mat4(1.f), glm::vec3(o.pos[0], o.pos[1], o.pos[2] * 0.5f + 7.f) * kBlock);
 	m = glm::rotate(m, -o.rot[1], glm::vec3(0, 1, 0));
@@ -504,10 +571,10 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		if (an.frames.empty()) continue;
 		int n = int(an.frames.size());
 		// Tryb animacji klasy: 0 = ANIM_STILL (klatka 0), 1 = raz, 2 = pętla; animrandom = losowy start.
-		int mode = o.cls ? o.cls->animMode : 2;
+		int mode = o.animMode >= 0 ? o.animMode : o.cls ? o.cls->animMode : 2;
 		float f = 0.f;
 		if (mode != 0) {
-			f = time_ * fps;
+			f = (time_ - o.animStart) * fps;
 			if (o.cls && o.cls->animRandom) f += float((unsigned(o.src.pos[0] * 131.f) * 2654435761u >> 8) % unsigned(n));
 			if (mode == 1) f = std::min(f, float(n - 1));
 		}

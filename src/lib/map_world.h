@@ -45,6 +45,8 @@ struct Scenario {
 	std::optional<GameView> view;
 	std::vector<ScenarioPlacement> placements;
 	bool usesGenerator = false; // StoryMgr load_level/load_sandbox: świat proceduralny (nieobsługiwany)
+	// Obiekty tworzone wprost w skrypcie: set_pos [qnew|new Klasa ...] {x y z} (np. krasnale), współrzędne świata.
+	std::vector<TemplateObject> objects;
 	int lightBegin = kNoSky;    // set_light_begin: wiersz świata, od którego w dół nie ma nieba
 	static constexpr int kNoSky = -10000; // domyślnie: cały świat jest „pod ziemią”
 	std::optional<int> groundBegin;       // set_ground_begin: wiersz gruntu panoramy (dywan łąki)

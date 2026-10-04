@@ -2,7 +2,7 @@
 # System budowania OpenWiggles (bez CMake).
 #
 # Użycie: ./build.sh [debug|release] [vulkan|opengl|both] [cel...]
-#   cele: lib, imgui, wigview, test3db, export_gltf, all (domyślnie), clean
+#   cele: lib, imgui, wigview, game (openwiggles), test3db, export_gltf, all (domyślnie), clean
 #   renderer: both (domyślnie: oba backendy, wybór przy starcie --renderer, domyślnie Vulkan),
 #             vulkan albo opengl (tylko jeden backend; wynik w build/<tryb>-<renderer>/)
 #   zmienne: CXX (domyślnie g++), JOBS (domyślnie nproc), VERBOSE=1
@@ -211,6 +211,14 @@ build_wigview() {
 	link "$OUT/wigview" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
+build_game() {
+	build_lib; build_imgui
+	log "[openwiggles]"
+	# 🔶 scena i rysowanie map z wigview (map_view.cpp), do przeniesienia do biblioteki
+	compile -- $(find src/game -name '*.cpp' | sort) src/wigview/map_view.cpp
+	link "$OUT/openwiggles" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
+}
+
 build_export_gltf() {
 	build_lib
 	log "[export_gltf]"
@@ -233,9 +241,10 @@ for t in "${TARGETS[@]}"; do
 		lib) build_lib ;;
 		imgui) build_imgui ;;
 		wigview) build_wigview ;;
+		game) build_game ;;
 		test3db) build_test3db ;;
 		export_gltf) build_export_gltf ;;
-		all) build_wigview; build_test3db; build_export_gltf ;;
+		all) build_wigview; build_game; build_test3db; build_export_gltf ;;
 		*) log "nieznany cel: $t"; exit 1 ;;
 	esac
 done

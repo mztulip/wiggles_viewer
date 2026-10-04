@@ -105,6 +105,16 @@ void parseInto(const Vfs& vfs, const std::string& gamePath, Scenario& sc, int de
 			ScenarioPlacement p;
 			p.script = pending;
 			if (ws >> p.x >> p.y) sc.placements.push_back(p);
+		} else if (cmd == "set_pos" && (line.find("[qnew ") != std::string::npos || line.find("[new ") != std::string::npos)) {
+			// set_pos [qnew Zwerg] {28.25 50.4 8.0}
+			size_t a = line.find("new ") + 4, b = line.find_first_of(" ]", a);
+			size_t lb = line.find('{', b), rb = line.find('}', lb == std::string::npos ? b : lb);
+			if (b != std::string::npos && lb != std::string::npos && rb != std::string::npos) {
+				TemplateObject o;
+				o.className = line.substr(a, b - a);
+				std::istringstream ps(line.substr(lb + 1, rb - lb - 1));
+				if (ps >> o.pos[0] >> o.pos[1] >> o.pos[2]) sc.objects.push_back(o);
+			}
 		} else if (line.find("load_level") != std::string::npos || line.find("load_sandbox") != std::string::npos)
 			sc.usesGenerator = true;
 	}
@@ -206,6 +216,11 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 			o.pos[1] += float(oy);
 			out.objects.push_back(o);
 		}
+	}
+	for (auto o : sc.objects) {
+		o.pos[0] -= float(x0);
+		o.pos[1] -= float(y0);
+		out.objects.push_back(o);
 	}
 	applySkyLight(out.grid, y0, sc.lightBegin, db, &out.skyTiles);
 	return out;

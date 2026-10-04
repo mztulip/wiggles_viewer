@@ -3,6 +3,25 @@
 Żywy plan. Odhaczamy `[x]`, dopisujemy nowe punkty, gdy coś odkryjemy.
 Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `docs/BAZA_WIEDZY.md`).
 
+## Droga do grywalności (priorytet)
+Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
+- [x] G1 Program `openwiggles`: świat z zapisu, scenariusza albo szablonu, kamera gry (WASD, mysz, kółko), HUD
+- [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
+- [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* (`src/lib/nav.h`)
+- [x] G4 Kopanie (PPM na skale): blok 59, przebudowa terenu
+- [ ] G5 Zapis: dekoracje spoza listy obiektów (ściany, lampy) i pozostałe sekcje pliku
+- [ ] G6 Symulacja płynów (źródła `Wasser`, przepływ 10 Hz), żeby szablony miały wodę
+- [ ] G7 Osadzony Tcl 8.6 ze stubami komend: klasy obiektów (`def_class`, `obj_init`, zdarzenia, timery) dla krasnali i przedmiotów
+- [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
+- [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
+- [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
+- [ ] G11 Zapis i wczytanie gry z poziomu gry
+- [ ] 🔧 Ruch: drobna siatka 8×8 i maska `.pmp` zamiast pól, drabiny, windy, spadanie z obrażeniami
+- [ ] 🔧 Kopanie: kształty bloków z tablicy sąsiadów BlockDB (zszywanie krawędzi), twardość materiału, czas kopania; przebudowa tylko zmienionego kawałka terenu
+- [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
+- [ ] 🔧 Scena i rysowanie map są w wigview (`MapView`); przenieść do biblioteki (wspólna scena dla gry i przeglądarki)
+- [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
+
 ## Faza 0: rozpoznanie
 - [x] Analiza repozytoriów społeczności w `../ref/` (w tym wng-game i wng-server: puste)
 - [x] Przegląd zainstalowanej gry i struktury `Data/`

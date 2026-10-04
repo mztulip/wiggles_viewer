@@ -92,6 +92,25 @@ public:
 	const std::string& current() const { return file_; }
 	const std::string& error() const { return error_; }
 
+	// --- Interfejs gry (src/game): obiekty sterowane z zewnątrz i zmiany terenu. 🔶 Tymczasowo w MapView;
+	// docelowo wspólna scena w bibliotece (TODO). Indeksy obiektów ważne do następnego wczytania mapy.
+	int objectCount() const { return int(objects_.size()); }
+	const std::string& objectClass(int i) const { return objects_[size_t(i)].src.className; }
+	const float* objectPos(int i) const { return objects_[size_t(i)].src.pos; }
+	// Model z pliku .3db i obiektu (dla klas bez class_defaultanim, np. Zwerg = mann.3db, obiekt mann).
+	bool setObjectModel(int i, const std::string& modelFile, const std::string& object);
+	void setObjectPose(int i, float x, float y, float zScript, float rotY);
+	// Animacja obiektu po nazwie (np. "gehen_loop"); loop = pętla, inaczej raz i stop na ostatniej klatce.
+	bool playAnim(int i, const std::string& anim, bool loop);
+	float animLength(int i) const; // długość bieżącej animacji w sekundach (10 kl./s)
+	int addObject(const std::string& className, float x, float y, float zScript);
+	const ow::Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
+	const ow::BlockDb& blockDb() const { return blocks_; }
+	void setBlock(int x, int y, uint32_t block, uint8_t type);
+	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
+	float time() const { return time_; }
+	const std::optional<ow::GameView>& view() const { return gameView_; }
+
 	// Podgląd mgły wojny (docs/silnik/10_mgla_wojny.md). Bez symulacji obiektów-odkrywców: stan pól
 	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
 	enum class FogMode { Off, Explored, ViewGrey, ViewBlack, FromSave };
@@ -114,7 +133,11 @@ private:
 		const ow::ClassModel* cls = nullptr;
 		ModelSlot* slot = nullptr;
 		int animation = -1; // indeks w Model3db::animations
+		int animMode = -1;  // nadpisanie trybu animacji (interfejs gry): 1 raz, 2 pętla
+		float animStart = 0.f;
 	};
+	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
+	std::map<std::string, ow::ClassModel> gameModels_; // modele nadane przez grę (stałe adresy)
 
 	ModelSlot* model(const std::string& file);
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.
