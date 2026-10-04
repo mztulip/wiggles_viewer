@@ -19,7 +19,7 @@ public:
 	~FluidRenderer();
 	bool init(rhi::Device& dev, std::string& err, TextureCache& textures);
 	// type/fill: pole po polu (width·height, wiersz po wierszu), blocks: ID bloków z BlockDB.
-	// visible(x, y) == false pomija pole (mgła wojny). Zwraca liczbę pól z płynem.
+	// visible(x, y) == false pomija pole (nieodkryty teren). Zwraca liczbę pól z płynem.
 	int build(int width, int height, const std::vector<uint8_t>& type, const std::vector<float>& fill,
 	          const std::vector<uint32_t>& blocks, const BlockDb& db, const std::vector<bool>* visible = nullptr);
 	void clear() { verts_[0].clear(), verts_[1].clear(), verts_[2].clear(); }

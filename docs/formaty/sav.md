@@ -1,6 +1,6 @@
 # Zapis gry `.sav`
 
-Pliki `Data/Gamesave/*.sav`: zapis ręczny (`save_<nazwa>.sav`) i szybki zapis (`quick_Quicksave_<data>.sav`). Ten opis obejmuje część potrzebną, żeby **odtworzyć mapę z zapisu**: kamerę, teren, mgłę wojny i obiekty (klasa, pozycja, obrót). Logikę obiektów (zmienne Tcl, akcje, trasy) czytamy tylko po to, żeby ją przeskoczyć.
+Pliki `Data/Gamesave/*.sav`: zapis ręczny (`save_<nazwa>.sav`) i szybki zapis (`quick_Quicksave_<data>.sav`). Ten opis obejmuje część potrzebną, żeby **odtworzyć mapę z zapisu**: kamerę, teren, nieodkryty teren i obiekty (klasa, pozycja, obrót). Logikę obiektów (zmienne Tcl, akcje, trasy) czytamy tylko po to, żeby ją przeskoczyć.
 
 **Źródło i status.** Układ opracował [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT): `Docs/ORIGINAL_SAVE_FORMAT_RE.md`, `Docs/save-re-reports/B4-fixed-engine-state.md`, `Runtime/Save/OriginalSaveObjectDocument.cs`. ✅ Wszystko poniżej sprawdziliśmy na trzech zapisach z laboratorium (polska wersja 1.0 build 844, wersja formatu 0xA5). Nasz czytnik przechodzi przez cały plik i trafia w każdy znacznik kontrolny. Sprawdzenie: `build/release/test3db` (funkcja `testSaves`). Implementacja: `src/lib/save_game.cpp`, budowa świata: `buildWorldFromSave` w `src/lib/map_world.cpp`.
 
@@ -66,7 +66,7 @@ ciała: powtarzaj { i32 id; jeśli id == −1 koniec; ciało obiektu }
 | 25 | f32 | wypełnienie, bufor B (prawie równe A) |
 | 29, 33 | 2 × f32 | przepływ poziomy (A, B) 🔶 |
 | 37, 41 | 2 × f32 | przepływ pionowy (A, B) 🔶 |
-| 45 | 8 × u8 | bajt mgły wojny graczy 0..7 (rozdz. 10.1) |
+| 45 | 8 × u8 | bajt nieodkrytego terenu graczy 0..7 (rozdz. 10.1) |
 
 **Rodzaj gruntu w zapisie a typ pola `.pmp`** ✅ (porównanie pól zapisu z szablonami, z których powstała mapa):
 
@@ -157,7 +157,7 @@ Zapis zawiera **gotowy świat**: nie trzeba wykonywać skryptu scenariusza ani s
 2. Linia nieba `lightBegin` i światło nieba (rozdz. 7.3), wiersz gruntu panoramy `groundBegin` (rozdz. 8).
 3. Obiekty: klasa, pozycja, obrót jak obiekty szablonu (rozdz. 5), razem z nasionami dekoracji (§ „Sekcje po obiektach”). Strefy horyzontu `Info_Fog_*` są zwykłymi obiektami zapisu, więc tło działa samo (rozdz. 8). Motyw świata (zestaw tekstur detali `urw`/`kris`/`lava`/`swf`) bierzemy z nazw tych klas, bo zapis nie trzyma go jawnie (🔶).
 4. Kamera z sekcji 1.
-5. Mgła wojny: bajt gracza 0 z przesunięcia 45 (rozdz. 10).
+5. Nieodkryty teren: bajt gracza 0 z przesunięcia 45 (rozdz. 10).
 6. Płyny: typ (19) i wypełnienie (21) każdego pola, rysowane jak w [rozdziale 13](../silnik/13_plyny.md).
 
 **Układ bajtów płynu** ustaliliśmy na zapisie z wodą zrobionym w laboratorium: szablon `kris_unq_060` z obiektem `Wasser` (`{volume 1000} {vpf 5}`), po 40 s komenda Tcl `gamesave ow_woda` (gra zapisuje wtedy plik `ow_woda` w swoim katalogu, bez rozszerzenia). Basen 9 × 8 pól: w wierszu powierzchni wypełnienie 0,85, w każdym niższym o 1 więcej (1,85, 2,85…), typ 1. Pola obok basenu zachowują typ 1 przy wypełnieniu 0.

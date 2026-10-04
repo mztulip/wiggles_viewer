@@ -186,7 +186,7 @@ Diggles-Unity przyjmuje (🔶, częściowo z obserwacji, częściowo ze stałych
 4. fizyka,
 5. **dla każdego aktywnego obiektu: zdarzenia z kolejki (`handle_event`), potem ciało stanu**,
 6. aktualizacje i przemieszczenia obiektów,
-7. mgła wojny (co 4. turę serwera, rozdział 10.2),
+7. nieodkryty teren (co 4. turę serwera, rozdział 10.2),
 8. mapa (kopanie, woda, walidacja światła bazowego),
 9. wyzwalacze fabularne (`Trigger_*`).
 

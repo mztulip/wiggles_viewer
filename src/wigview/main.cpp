@@ -11,7 +11,7 @@
 // --renderer: backend renderowania (domyślnie Vulkan; bez tej opcji, gdy Vulkan nie ruszy, OpenGL).
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
-// --fow: podgląd mgły wojny: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna,
+// --fow: podgląd nieodkrytego terenu: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna,
 //        4 z zapisu gry (domyślnie dla zapisów).
 // --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav) albo ścieżka do pliku .sav.
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.

@@ -146,7 +146,7 @@ bool MapView::loadTemplate(const std::string& file) {
 	return finishLoad(sc, 0, world);
 }
 
-// Zapis gry .sav (docs/formaty/sav.md): pełna mapa, obiekty, kamera i mgła wojny z chwili zapisu.
+// Zapis gry .sav (docs/formaty/sav.md): pełna mapa, obiekty, kamera i nieodkryty teren z chwili zapisu.
 bool MapView::loadSave(const std::string& file) {
 	auto data = vfs_->read("Data/Gamesave/" + file);
 	if (!data) {
@@ -214,7 +214,7 @@ bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& 
 	for (auto& [k, n] : worlds)
 		if (n > best && (k == "urw" || k == "kris" || k == "lava" || k == "swf")) best = n, world = k;
 	bool ok = finishLoad(sc, 0, world, &bw);
-	setFog(revealMap_ ? FogMode::Off : FogMode::FromSave, fogRadius_, fogByte_); // mgła wojny jak w chwili zapisu
+	setFog(revealMap_ ? FogMode::Off : FogMode::FromSave, fogRadius_, fogByte_); // nieodkryty teren jak w chwili zapisu
 	return ok;
 }
 
@@ -675,7 +675,7 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
 	}
 	if (showFluids_) fluids_.draw(viewProj * world, time_);
-	// Cząsteczki po modelach (addytywne, bez zapisu głębi). W mgle wojny tylko na polach z bajtem ≥ 0x81 (§10.5).
+	// Cząsteczki po modelach (addytywne, bez zapisu głębi). W nieodkrytym terenie tylko na polach z bajtem ≥ 0x81 (§10.5).
 	if (showParticles_) {
 		glm::mat4 gameToClip = viewProj * world;
 		for (const auto& e : emitters_) {
@@ -694,7 +694,7 @@ uint8_t MapView::fogAt(int x, int y) const {
 	return fog_[size_t(y) * pmp_->width + x];
 }
 
-// Stan mgły według trybu podglądu i tekstura narożników (docs/silnik/10_mgla_wojny.md §10.5).
+// Stan mgły według trybu podglądu i tekstura narożników (docs/silnik/10_nieodkryty_teren.md §10.5).
 void MapView::updateFog(const glm::vec3& focus) {
 	if (fogMode_ == FogMode::Off || !pmp_) return;
 	int W = int(pmp_->width), H = int(pmp_->height);
@@ -904,7 +904,7 @@ bool MapView::ui(bool savesTab) {
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Dywan łąki"), &showCarpet_);
 	{
-		// Podgląd mgły wojny (wymaga oświetlenia gry).
+		// Podgląd nieodkrytego terenu (wymaga oświetlenia gry).
 		const char* modes[] = {tr("wyłączona"), tr("całość odkryta, niewidoczna (szara)"), tr("kadr widoczny, reszta szara"),
 		                       tr("kadr widoczny, reszta czarna"), tr("z zapisu gry (gracz 0)")};
 		// Odkryj mapę: wyłącza mgłę, odznaczenie przywraca poprzedni tryb (dla zapisu: mgła z zapisu).
@@ -920,13 +920,13 @@ bool MapView::ui(bool savesTab) {
 				setFog(back, fogRadius_, fogByte_);
 			}
 		}
-		ImGui::SetItemTooltip(tr("Pokazuje cały teren i wszystkie obiekty bez mgły wojny."));
+		ImGui::SetItemTooltip(tr("Pokazuje cały teren i wszystkie obiekty, także te jeszcze nieodkryte."));
 		ImGui::SameLine();
 		int m = int(fogMode_);
 		ImGui::SetNextItemWidth(260);
-		if (ImGui::Combo(tr("Mgła wojny"), &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
+		if (ImGui::Combo(tr("Nieodkryty teren"), &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(tr("Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\n"
+			ImGui::SetTooltip(tr("Prawo z docs/silnik/10_nieodkryty_teren.md: szara mgła (170,170,155) rośnie w głąb,\n"
 			                  "lampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."));
 		if (fogMode_ == FogMode::ViewGrey || fogMode_ == FogMode::ViewBlack) {
 			int r = fogRadius_, b = fogByte_;

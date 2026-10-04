@@ -116,7 +116,7 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			ws >> currentClass;
 			continue;
 		}
-		// class_viewinfog 0|1 (widoczność w szarej mgle wojny)
+		// class_viewinfog 0|1 (widoczność w szarej nieodkrytym terenie)
 		size_t vp = t.find("class_viewinfog ");
 		if (vp != std::string::npos && !currentClass.empty() && t.find('$') == std::string::npos)
 			viewInFog_[Vfs::lower(currentClass)] = std::atoi(t.c_str() + vp + 16) != 0;

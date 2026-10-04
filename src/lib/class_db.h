@@ -29,7 +29,7 @@ struct ClassModel {
 	// 1 ANIM_ONCE, 2 ANIM_LOOP. Dekoracje z list Set*Classes: 2 tylko z opcją "anim", inaczej 0.
 	int animMode = 0;
 	bool animRandom = false; // opcja "animrandom": losowa klatka startowa
-	// Widoczność w szarej mgle wojny (class_viewinfog; dekoracje domyślnie 1, parametr "noviewinfog").
+	// Widoczność w szarej nieodkrytym terenie (class_viewinfog; dekoracje domyślnie 1, parametr "noviewinfog").
 	bool viewInFog = false;
 };
 

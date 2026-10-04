@@ -1,5 +1,5 @@
-// Oświetlenie per wierzchołek jak w Wiggles.exe (docs/silnik/07_oswietlenie.md) i mgła wojny
-// (docs/silnik/10_mgla_wojny.md §10.5). Prawo i stałe za Zimennik/Diggles-Unity (MIT),
+// Oświetlenie per wierzchołek jak w Wiggles.exe (docs/silnik/07_oswietlenie.md) i nieodkryty teren
+// (docs/silnik/10_nieodkryty_teren.md §10.5). Prawo i stałe za Zimennik/Diggles-Unity (MIT),
 // Docs/RENDERING_LIGHTING_RESEARCH.md §2a i Docs/FOG_OF_WAR_RE.md.
 UBO(1) uniform Scene {
 	vec4 uLightPos[32]; // x, y, z (bloki), promień

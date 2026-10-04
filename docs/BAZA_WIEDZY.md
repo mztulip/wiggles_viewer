@@ -344,7 +344,7 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 | Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | ✅ prawo i światło nieba wdrożone ([rozdz. 7](silnik/07_oswietlenie.md)); pochodnie krasnali do zrobienia |
 | Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | ✅ otwory, strefy horyzontu, panorama i dywan ([rozdz. 8](silnik/08_tlo.md)) |
 | Układ współrzędnych, kamera | `COORDINATE_SYSTEM.md`, `DigglesCameraController.cs` | ✅ zgodne z naszymi zrzutami ([rozdz. 1](silnik/01_przeglad.md), [6](silnik/06_kamera.md)) |
-| Mgła wojny | `FOG_OF_WAR_RE.md` | do zrobienia (silnik) |
+| Nieodkryty teren | `FOG_OF_WAR_RE.md` | do zrobienia (silnik) |
 | Interpreter Tcl, model obiektów, start skryptów | `TCL_*.md`, `ENGINE_TCL_API.txt`, `ENGINE_COMMAND_GAP.md` | faza 5 |
 | Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
 | Nawigacja, pathfinding (maska RLE w `.PMP` = płaszczyzna nawigacji 0/1/3) | `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md` | faza 6 |

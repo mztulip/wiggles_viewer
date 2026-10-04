@@ -50,7 +50,7 @@ struct Scenario {
 	int lightBegin = kNoSky;    // set_light_begin: wiersz świata, od którego w dół nie ma nieba
 	static constexpr int kNoSky = -10000; // domyślnie: cały świat jest „pod ziemią”
 	std::optional<int> groundBegin;       // set_ground_begin: wiersz gruntu panoramy (dywan łąki)
-	std::optional<int> fowBegin;          // set_fow_begin: powyżej tego wiersza mgła wojny nie wraca
+	std::optional<int> fowBegin;          // set_fow_begin: powyżej tego wiersza nieodkryty teren nie wraca
 };
 
 // Czyta skrypt scenariusza (np. "Data/Gamesave/single_Knockersdorf.tcl") i skrypty wołane przez

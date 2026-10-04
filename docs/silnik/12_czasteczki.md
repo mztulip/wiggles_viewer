@@ -117,7 +117,7 @@ Rysowanie: kwadrat o boku `rozmiar · 0,12` bloku, zwrócony do kamery, kolor `t
 
 **Tempo** ❓: gra liczy cząsteczki co klatkę obrazu. Diggles-Unity przyjmuje 12 klatek symulacji na sekundę i my też.
 
-**Mgła wojny** (rozdział 10.5): cząsteczki obiektu rysujemy tylko na polu z bajtem mgły ≥ 0x81.
+**Nieodkryty teren** (rozdział 10.5): cząsteczki obiektu rysujemy tylko na polu z bajtem mgły ≥ 0x81.
 
 ## 12.5 Czego jeszcze brakuje
 

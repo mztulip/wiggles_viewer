@@ -11,7 +11,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Detale `.l2m` zestawu 2 (`<świat>2_*`) | ❓ | zestaw 1 potwierdzony, zestaw 2 zachowuje się inaczej (tabela w 4.4); w menu mech na filarze leży w grze tylko na części powierzchni, u nas na całej |
 | Bit 0x80 typu pola, młodszy bajt `.l2m` | ❓ | bez widocznej różnicy na zrzutach |
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
-| Mgła wojny: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_mgla_wojny.md) za Diggles-Unity; brakuje porównania z grą |
+| Nieodkryty teren: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_nieodkryty_teren.md) za Diggles-Unity; brakuje porównania z grą |
 | **Cienie** pod obiektami | ❓ | `.3db` ma mapy cieni 32 × 32 przypisane do klatek; tylko w zasięgu `MaxShadowLightDist` = 8 od lampy; sposób rzutowania nieznany (Diggles-Unity też go nie zna); do ustalenia zrzutami z lampą |
 | Winieta (przyciemnienie brzegów ekranu w menu) | ❓ | widoczna na zrzutach |
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |

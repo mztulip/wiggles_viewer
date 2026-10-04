@@ -5,7 +5,7 @@
 // Docs/save-re-reports/B4-fixed-engine-state.md, Runtime/Save/OriginalSaveObjectDocument.cs);
 // kod jest nasz. ✅ Sprawdzone na zapisach polskiej wersji 1.0 build 844 (wersja formatu 0xA5).
 //
-// Czytamy: nagłówek, kamerę, teren (blok BlockDB, rodzaj gruntu, detal .l2m, mgła wojny),
+// Czytamy: nagłówek, kamerę, teren (blok BlockDB, rodzaj gruntu, detal .l2m, nieodkryty teren),
 // linie nieba i gruntu, listę obiektów z klasą, typem, pozycją i obrotem. Reszta zapisu
 // (logika, akcje, fabuła) jest pomijana.
 #pragma once
@@ -48,7 +48,7 @@ struct SaveTile {
 	uint16_t cell = 0;    // wartość detali .l2m
 	uint8_t fluidType = 0; // płyn: 0 brak, 1 woda, 2 siarka, 3 lawa, 4 lawa z wodą
 	float fluidFill = 0;   // wypełnienie pola (> 1 = ciśnienie od słupa płynu nad nim)
-	uint8_t fog[8] = {};  // bajt mgły wojny dla każdego gracza
+	uint8_t fog[8] = {};  // bajt nieodkrytego terenu dla każdego gracza
 };
 
 struct SaveGame {

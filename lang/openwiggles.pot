@@ -832,15 +832,15 @@ msgid "Odkryj mapę"
 msgstr ""
 
 #: src/wigview/map_view.cpp:923
-msgid "Pokazuje cały teren i wszystkie obiekty bez mgły wojny."
+msgid "Pokazuje cały teren i wszystkie obiekty, także te jeszcze nieodkryte."
 msgstr ""
 
 #: src/wigview/map_view.cpp:927
-msgid "Mgła wojny"
+msgid "Nieodkryty teren"
 msgstr ""
 
 #: src/wigview/map_view.cpp:929
-msgid "Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
+msgid "Prawo z docs/silnik/10_nieodkryty_teren.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
 msgstr ""
 
 #: src/wigview/map_view.cpp:934

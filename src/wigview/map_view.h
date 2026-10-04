@@ -146,7 +146,7 @@ public:
 	}
 	const std::optional<ow::GameView>& view() const { return gameView_; }
 
-	// Podgląd mgły wojny (docs/silnik/10_mgla_wojny.md). Bez symulacji obiektów-odkrywców: stan pól
+	// Podgląd nieodkrytego terenu (docs/silnik/10_nieodkryty_teren.md). Bez symulacji obiektów-odkrywców: stan pól
 	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
 	enum class FogMode { Off, Explored, ViewGrey, ViewBlack, FromSave };
 	void setFog(FogMode mode, int radius = 10, int viewByte = 0xFF) {
@@ -210,7 +210,7 @@ private:
 	// Cząsteczki obiektów z class_particle (docs/silnik/12_czasteczki.md).
 	struct MapEmitter {
 		ow::ParticleEmitter emitter;
-		int x = 0, y = 0; // pole obiektu (mgła wojny)
+		int x = 0, y = 0; // pole obiektu (nieodkryty teren)
 	};
 	ow::ParticleRenderer particles_;
 	bool particlesReady_ = false, showParticles_ = true;
@@ -250,7 +250,7 @@ private:
 	std::vector<ZoneObject> zoneObjects_;
 	std::optional<ow::HorizonZone> zone_;
 	std::string zoneClass_;
-	// Mgła wojny: bajt na pole (gracz lokalny), tekstura narożników (szarość, czerń, skala lamp).
+	// Nieodkryty teren: bajt na pole (gracz lokalny), tekstura narożników (szarość, czerń, skala lamp).
 	FogMode fogMode_ = FogMode::Off;
 	FogMode revealPrev_ = FogMode::Off; // tryb sprzed „Odkryj mapę”
 	bool revealMap_ = false;            // „Odkryj mapę” zaznaczone przez użytkownika

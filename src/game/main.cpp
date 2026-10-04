@@ -67,7 +67,7 @@ struct Args {
 	int width = 1280, height = 800;
 	bool scripts = true;          // --no-scripts: bez silnika Tcl
 	bool scriptGnomes = true;     // --player-gnomes: krasnale tylko na rozkaz gracza, bez skryptów
-	bool reveal = false;          // --reveal: bez mgły wojny
+	bool reveal = false;          // --reveal: bez nieodkrytego terenu
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
 	std::string load, saveTo;     // --load plik.ows, --save-to plik.ows (zapis po --warmup; testy)
 	std::optional<GameView> view; // --view x y zoom dx dy

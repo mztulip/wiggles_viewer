@@ -112,7 +112,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Przewodnik po silniku `docs/silnik/` (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
 - [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
-- [ ] Rozdziały do napisania, gdy będzie wiedza: mgła wojny, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), dźwięk, interfejs
+- [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), dźwięk, interfejs
 
 ## Faza 4: mapy i teren
 - [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
@@ -141,11 +141,11 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Tekstury: rozlanie koloru w przezroczyste teksele (bez szarych obwódek przy mipmapach)
 - [ ] Bit 0x80 typu pola; młodszy bajt `.l2m`
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
-- [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to mgła wojny dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
-- [x] Mgła wojny: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
-- [x] Podgląd mgły wojny w wigview (tryby `--fow`, szarość w głąb, czerń, lampy wygaszone, obiekty bez viewinfog ukryte)
+- [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to nieodkryty teren dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
+- [x] Nieodkryty teren: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
+- [x] Podgląd nieodkrytego terenu w wigview (tryby `--fow`, szarość w głąb, czerń, lampy wygaszone, obiekty bez viewinfog ukryte)
 - [ ] 🔬 Porównanie mgły ze zrzutami gry (menu z `timer_delete` FogRemover; sprzeczność: notatka „obraz czarny” vs prawo „wygasa do szarości”)
-- [ ] Mgła wojny w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
+- [ ] Nieodkryty teren w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
 - [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
 - [x] UV terenu z palety BlockDB (trzy rzuty, ✅ na wszystkich punktach) zamiast trójpłaszczyznowego
 - [x] 🔬 Przejścia gruntów maskami `Msk_*`: grunt w węźle (lewy górny narożnik pola), maska per blok z narożników (✅ eksperyment `ow_flat`)
@@ -180,7 +180,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 
 ## Faza 6: silnik gry
 - [ ] Pętla gry, czas (`gametime`), timery i zdarzenia
-- [ ] Świat: obiekty, pozycje, kamera (`set_view`), mgła wojny
+- [ ] Świat: obiekty, pozycje, kamera (`set_view`), nieodkryty teren
 - [ ] Postacie: animacje sterowane skryptem (`set_anim`, `play_anim`), chodzenie i pathfinding, wspinanie, drabiny
 - [ ] Kopanie (`dig_*`) i modyfikacja terenu
 - [ ] Produkcja, ekwipunek, drzewko technologii
@@ -188,7 +188,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka
 - [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`)
 - [ ] AI (`ai init`, `std_ai.tcl`)
-- [x] Odczyt mapy z zapisu `.sav`: teren, kamera, mgła wojny, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Zapisy obok Mapy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4, pole „Odkryj mapę”, pasek postępu wczytywania (czasy etapów: `OW_PROGRESS_LOG=1`)
+- [x] Odczyt mapy z zapisu `.sav`: teren, kamera, nieodkryty teren, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Zapisy obok Mapy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4, pole „Odkryj mapę”, pasek postępu wczytywania (czasy etapów: `OW_PROGRESS_LOG=1`)
 - [ ] 🔬 Pełny odczyt zapisu (zmienne Tcl obiektów, gracze, ekonomia) i zapis gry: własny format czy zgodność?
 - [ ] Zapis: sprawdzić hipotezy (starszy bajt stanu = wariant tekstury, motyw świata z klas `Info_Fog_*`)
 

@@ -1,6 +1,8 @@
-# 10. Mgła wojny
+# 10. Nieodkryty teren
 
-Gracz widzi tylko to, co odkryły jego krasnale. Pola nigdy niewidziane są **czarne**, a pola już odkryte, na które teraz nikt nie patrzy, przykrywa **ciepła szara mgła** (170, 170, 155), mocniejsza w głębi wykopów. Ten rozdział opisuje dane mgły, to, jak obiekty ją odkrywają i jak wpływa na obraz.
+Gracz widzi tylko to, co odkryły jego krasnale. Pola nigdy niewidziane są **czarne**, a pola już odkryte, na które teraz nikt nie patrzy, przykrywa **ciepła szara mgła** (170, 170, 155), mocniejsza w głębi wykopów. **Nazwa.** Gra nie nazywa tego mechanizmu w polskich tekstach (samouczek mówi tylko „Pod powierzchnią jest ciemno.”); w skryptach i komendach występuje angielskie `fogofwar` (`set_fogofwar`, `get_max_fow`), którego nie zmieniamy, bo to nazwy komend gry. W dokumentacji i interfejsie mówimy o **nieodkrytym terenie**; „szara mgła” opisuje tylko wygląd terenu zbadanego, którego teraz nikt nie widzi.
+
+Ten rozdział opisuje dane mgły, to, jak obiekty ją odkrywają i jak wpływa na obraz.
 
 **Źródło i status.** Cały mechanizm opisuje [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/FOG_OF_WAR_RE.md`, implementacja `Runtime/World/FogOfWarState.cs`), ze stałymi odczytanymi z gry. U nas to 🔶: wzory przenosimy dokładnie. ✅ Potwierdzone zrzutami: odkrywanie promieniami z „skorupą” 3 pól w skale (płaska ściana `ow_flat`: lita skała wokół szablonu zostaje czarna poza wąskim pasem przy krawędzi). Pozostałe prawa (szarość, wygasanie): do sprawdzenia.
 
@@ -136,7 +138,7 @@ Opcja uruchomienia `-nofow` odkrywa całą mapę na stałe.
 
 ## 10.7 Podgląd w przeglądarce
 
-`wigview` nie symuluje jeszcze obiektów odkrywających, ale pokazuje prawo renderu (opcja „Mgła wojny” w zakładce Mapy albo `--fow TRYB [PROMIEŃ [BAJT]]`):
+`wigview` nie symuluje jeszcze obiektów odkrywających, ale pokazuje prawo renderu (opcja „Nieodkryty teren” w zakładce Mapy albo `--fow TRYB [PROMIEŃ [BAJT]]`):
 
 | tryb | stan pól |
 |---|---|

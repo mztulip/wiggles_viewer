@@ -21,7 +21,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [7. Oświetlenie](silnik/07_oswietlenie.md) | Światło bazowe, niebo, słońce, lampy, nasycenie |
 | [8. Tło: strefy horyzontu i panorama](silnik/08_tlo.md) | Kolor tła jaskiń, zanikanie w głąb, niebo z paralaksą, dywan łąki |
 | [9. Klatka obrazu](silnik/09_klatka.md) | Kolejność rysowania i stany renderu w jednym miejscu |
-| [10. Mgła wojny](silnik/10_mgla_wojny.md) | Stan pól na gracza, odkrywanie promieniami, wygasanie, czarna i szara mgła w obrazie |
+| [10. Nieodkryty teren](silnik/10_nieodkryty_teren.md) | Stan pól na gracza, odkrywanie promieniami, wygasanie, czarna i szara mgła w obrazie |
 | [11. Obiekty Tcl i pętla gry](silnik/11_obiekty_tcl_i_petla.md) | Interpretery obiektów, klasy, metody, zdarzenia, timery, stany, takt logiki |
 | [12. Efekty cząsteczkowe](silnik/12_czasteczki.md) | Źródła z Tcl (`class_particle`), atlasy, 43 typy, symulacja emitera, rysowanie addytywne |
 | [13. Płyny](silnik/13_plyny.md) | Woda, siarka, lawa: źródła, kształt w polu z BlockDB, stan w zapisie, rysowanie |

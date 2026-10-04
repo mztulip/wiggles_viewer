@@ -35,7 +35,7 @@ Każde pole z płynem (`typ ≠ 0`, `f > 0,001`):
 - **powierzchnia**, gdy nad polem nie ma płynu albo `f < 1`: poziomy prostokąt na wysokości powierzchni, od głębokości 14,4 w tył o `(16 − (wariant bloku & 15)) / 2` bloku (wariant: bajt 84 rekordu BlockDB). Gra składa go z tylu pasów o szerokości 1;
 - **przezroczystość**: woda i lawa `min(255, max(f − 1, 1) · 64)/255`, czyli przy powierzchni 0,25 i coraz mniej przezroczyście w głębi; siarka stałe 64/255;
 - **tekstura**: `Texture/m064/wasser_env.tga`, `schwef_nahtlos.tga`, `lava_nahtlos.tga` (typ 3 i 4); u nas przesuwana powoli w czasie;
-- **mgła wojny**: pole pomijane, gdy wszystkie 4 narożniki mają bajt mgły 0.
+- **nieodkryty teren**: pole pomijane, gdy wszystkie 4 narożniki mają bajt mgły 0.
 
 Mieszanie alfa, test głębi bez zapisu, po terenie i modelach, przed cząsteczkami. 🔶 Oświetlenie: u nas stała jasność 0,75; gra liczy płyn jak teren (rozdział 7).
 

@@ -51,7 +51,7 @@ build/release/wigview --scenario single_Knockersdorf          # cała mapa zło�
 build/release/wigview --scenario systeminit                   # menu gry z kamerą jak w oryginale
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
-build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd mgły wojny (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
+build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd nieodkrytego terenu (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy
 OW_PROGRESS_LOG=1 build/release/wigview                                  # czasy etapów wczytywania map i zapisów na stderr
 build/release/openwiggles                                               # gra: najnowszy zapis, LPM zaznacz, PPM idź/kop
@@ -68,7 +68,7 @@ build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kris
 
 **Renderowanie: Vulkan albo OpenGL.** Kod renderujący korzysta z warstwy `src/lib/rhi/` (tekstury, bufory, potoki, uniformy), za którą stoją dwa backendy: Vulkan 1.2 (`rhi_vk.cpp`) i OpenGL 4.5 (`rhi_gl.cpp`). Shadery są pisane raz (`src/shaders/*.vert|*.frag`, GLSL 450): `build.sh` kompiluje je przez `glslc` do SPIR-V dla Vulkana i osadza tekst dla OpenGL. Program wybiera Vulkana, a gdy ten nie ruszy (i OpenGL jest wkompilowany), przełącza się na OpenGL. `--renderer` wymusza backend bez przełączania. Zrzuty ekranu (`--screenshot`) Vulkan renderuje poza ekranem, więc działają też w Xvfb. Obie ścieżki dają ten sam obraz (porównanie co do piksela przy budowie backendu). Walidacja Vulkana: `OW_VK_VALIDATION=1`. Nazwa backendu jest w tytule okna i w rogu ekranu.
 
-W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb mgły wojny i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
+W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb nieodkrytego terenu i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
 
 Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie, ←/→ zmiana klatki, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, **Ctrl+F wyszukiwarka** (modele, obiekty w modelach, tekstury, szablony; kilka słów = wszystkie muszą pasować), `Esc` wyjście.
 

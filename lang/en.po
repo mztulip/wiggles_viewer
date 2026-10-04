@@ -834,16 +834,16 @@ msgid "Odkryj mapę"
 msgstr "Reveal map"
 
 #: src/wigview/map_view.cpp:923
-msgid "Pokazuje cały teren i wszystkie obiekty bez mgły wojny."
-msgstr "Shows the whole terrain and all objects without fog of war."
+msgid "Pokazuje cały teren i wszystkie obiekty, także te jeszcze nieodkryte."
+msgstr "Shows the whole terrain and all objects, including unexplored ones."
 
 #: src/wigview/map_view.cpp:927
-msgid "Mgła wojny"
-msgstr "Fog of war"
+msgid "Nieodkryty teren"
+msgstr "Unexplored terrain"
 
 #: src/wigview/map_view.cpp:929
-msgid "Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
-msgstr "Rule from docs/silnik/10_mgla_wojny.md: grey fog (170,170,155) grows with depth,\nlamps do not shine in it, black tiles are unexplored; objects without viewinfog disappear."
+msgid "Prawo z docs/silnik/10_nieodkryty_teren.md: szara mgła (170,170,155) rośnie w głąb,\nlampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają."
+msgstr "Rule from docs/silnik/10_nieodkryty_teren.md: grey fog (170,170,155) grows with depth,\nlamps do not shine in it, black tiles are unexplored; objects without viewinfog disappear."
 
 #: src/wigview/map_view.cpp:934
 msgid "promień kadru"

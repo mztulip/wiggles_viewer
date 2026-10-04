@@ -59,7 +59,7 @@ if { [file exists data/userstartup.tcl] } {
     call templates/urw_gng_022_a.tcl  ; MapTemplateSet 45 40
     set_view 32.368 40.858 1.38 -0.355 0.165
     sel /obj
-    set FR [new FogRemover]            ;# zdejmuje mgłę wojny w kadrze
+    set FR [new FogRemover]            ;# zdejmuje nieodkryty teren w kadrze
     ...
     gui_new_game                       ;# okno menu
 }
