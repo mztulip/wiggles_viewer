@@ -991,6 +991,42 @@ int main(int argc, char** argv) {
 		return true;
 	};
 	auto drawableSize = [&](int& w, int& h) { SDL_GetWindowSizeInPixels(win, &w, &h); };
+	// Okno postępu wczytywania mapy: osobna klatka z samym paskiem (scena jest w trakcie przebudowy,
+	// więc jej nie rysujemy). Wołane między klatkami, najwyżej co 30 ms.
+	Uint64 lastProgress = 0;
+	static const bool logProgress = std::getenv("OW_PROGRESS_LOG") != nullptr; // OW_PROGRESS_LOG=1: czasy etapów na stderr
+	static Uint64 loadStart = 0;
+	auto drawProgress = [&](float f, const char* stage) {
+		Uint64 now = SDL_GetTicks64();
+		if (logProgress) {
+			static std::string lastStage;
+			if (lastStage.empty()) loadStart = now; // pierwszy etap wczytywania
+			if (lastStage != stage) std::fprintf(stderr, "[wczytywanie] %6llu ms  %3.0f%%  %s\n", (unsigned long long)(now - loadStart), f * 100.f, stage);
+			lastStage = f >= 1.f ? "" : stage;
+		}
+		if (now - lastProgress < 30) return;
+		lastProgress = now;
+		SDL_PumpEvents(); // okno odpowiada systemowi; zdarzenia obsłuży pętla główna po wczytaniu
+		int w, h;
+		drawableSize(w, h);
+		dev.imguiNewFrame();
+		ImGui_ImplSDL2_NewFrame();
+		ImGui::NewFrame();
+		ImVec2 ds = ImGui::GetIO().DisplaySize;
+		ImGui::SetNextWindowPos(ImVec2(ds.x * 0.5f, ds.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(420, 0));
+		ImGui::Begin("Wczytywanie", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+		                                         ImGuiWindowFlags_NoSavedSettings);
+		ImGui::TextUnformatted(v.maps.loadingName().c_str());
+		ImGui::TextDisabled("%s", stage);
+		ImGui::ProgressBar(std::clamp(f, 0.f, 1.f), ImVec2(-1, 0));
+		ImGui::End();
+		ImGui::Render();
+		if (!dev.beginFrame(w, h, 0.06f, 0.06f, 0.08f)) return;
+		dev.imguiRender(ImGui::GetDrawData());
+		dev.endFrame();
+	};
+	if (args.screenshot.empty()) v.maps.progress = drawProgress;
 	// Kolejność sprzątania: ImGui, potem obiekty z zasobami GPU (Viewer), urządzenie, na końcu okno.
 	auto shutdown = [&]() {
 		dev.waitIdle();
@@ -1083,6 +1119,12 @@ int main(int argc, char** argv) {
 				default: break;
 				}
 			}
+		}
+		if (v.maps.hasPending()) { // wczytanie wybrane w UI w poprzedniej klatce
+			lastProgress = 0;
+			v.maps.runPending();
+			v.frameMap();
+			last = SDL_GetPerformanceCounter(); // czas wczytywania nie przesuwa animacji
 		}
 		Uint64 now = SDL_GetPerformanceCounter();
 		float dt = float(now - last) / float(SDL_GetPerformanceFrequency());

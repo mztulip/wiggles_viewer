@@ -20,6 +20,7 @@
 
 #include <glm/glm.hpp>
 #include <map>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -39,17 +40,28 @@ public:
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	bool loadSavePath(const std::string& path);  // zapis gry .sav z dowolnego miejsca na dysku
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
-	void select(const std::string& file) {      // wczytaj i przewiń listę do szablonu
+	void select(const std::string& file) {      // wczytaj (odroczone) i przewiń listę do szablonu
 		list_ = ListMode::Templates;
-		loadTemplate(file);
+		pending_ = [this, file] { return loadTemplate(file); };
 		scrollToSel_ = true;
 	}
 	void selectScenario(const std::string& file) {
 		bool sav = file.size() > 4 && (file.compare(file.size() - 4, 4, ".sav") == 0 || file.compare(file.size() - 4, 4, ".SAV") == 0);
 		list_ = sav ? ListMode::Saves : ListMode::Scenarios;
-		loadScenario(file);
+		pending_ = [this, file] { return loadScenario(file); };
 		scrollToSel_ = true;
 	}
+	// Wczytywanie odroczone: wybór w UI (w trakcie klatki ImGui) tylko zleca wczytanie, a pętla główna
+	// wykonuje je między klatkami, rysując postęp (progress).
+	bool hasPending() const { return bool(pending_); }
+	const std::string& loadingName() const { return file_; }
+	void runPending() {
+		auto f = std::move(pending_);
+		pending_ = nullptr;
+		f();
+	}
+	// Postęp wczytywania: ułamek 0..1 i nazwa etapu. Ustawiany przez pętlę główną (rysuje pasek).
+	std::function<void(float, const char*)> progress;
 	const std::vector<std::string>& scenarios() const { return scenarios_; }
 	const std::vector<std::string>& files() const { return files_; }
 
@@ -109,6 +121,10 @@ private:
 	bool finishLoad(const ow::Scenario& sc, int margin, std::string world, ow::BuiltWorld* prebuilt = nullptr);
 	bool loadSave(const std::string& file);                                    // nazwa pliku w Data/Gamesave
 	bool loadSaveData(const std::string& name, const std::vector<uint8_t>& data);
+	void report(float f, const char* stage) const {
+		if (progress) progress(f, stage);
+	}
+	std::function<bool()> pending_;
 	void refreshSaves();
 	void uiSaves(bool& recenter);
 

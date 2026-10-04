@@ -172,10 +172,8 @@ void MapView::uiSaves(bool& recenter) {
 	bool enter = ImGui::InputTextWithHint("##savepath", "ścieżka do pliku .sav", savePath_, sizeof savePath_,
 	                                      ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
-	if ((ImGui::Button("Wczytaj") || enter) && savePath_[0]) {
-		loadSavePath(savePath_);
-		recenter = true;
-	}
+	if ((ImGui::Button("Wczytaj") || enter) && savePath_[0]) pending_ = [this, p = std::string(savePath_)] { return loadSavePath(p); };
+	(void)recenter;
 	ImGui::Separator();
 }
 
@@ -189,7 +187,9 @@ bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& 
 	Scenario sc;
 	BuiltWorld bw;
 	try {
+		report(0.02f, "Rozpakowywanie i odczyt zapisu");
 		SaveGame s = parseSaveGame(data);
+		report(0.04f, "Budowa świata z zapisu");
 		bw = buildWorldFromSave(s, blocks_.loaded() ? &blocks_ : nullptr, sc);
 		saveFog_.resize(s.tiles.size());
 		for (size_t i = 0; i < s.tiles.size(); ++i) saveFog_[i] = s.tiles[i].fog[0];
@@ -251,6 +251,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
+	if (!prebuilt) report(0.04f, "Składanie świata z szablonów");
 	BuiltWorld bw = prebuilt ? std::move(*prebuilt) : buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
 	if (!prebuilt) saveFog_.clear();
 	if (fogMode_ == FogMode::FromSave && saveFog_.empty()) fogMode_ = FogMode::Off;
@@ -288,8 +289,11 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		}
 	}
 	if (pmp_ && blocks_.loaded()) {
+		report(0.06f, "Siatka terenu");
 		heights_ = buildHeightfield(*pmp_, blocks_);
-		terrain_.build(buildTerrainMesh(*pmp_, blocks_, *sphere_), *textures_, l2m_ ? &*l2m_ : nullptr, world);
+		auto mesh = buildTerrainMesh(*pmp_, blocks_, *sphere_);
+		report(0.09f, "Tekstury terenu");
+		terrain_.build(std::move(mesh), *textures_, l2m_ ? &*l2m_ : nullptr, world);
 	}
 	zone_.reset();
 	zoneClass_.clear();
@@ -298,7 +302,9 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 		for (const auto& o : script_->objects)
 			if (const HorizonZone* z = classes_.horizon(o.className))
 				zoneObjects_.push_back({o.pos[0], o.pos[1], *z, o.className});
+		size_t done = 0, total = script_->objects.size();
 		for (const auto& o : script_->objects) {
+			report(0.13f + 0.86f * float(done++) / float(std::max<size_t>(total, 1)), "Modele obiektów");
 			PlacedObject p;
 			p.src = o;
 			p.cls = classes_.find(o.className);
@@ -324,6 +330,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
 	center_ = glm::vec3(w * 0.5f * kBlock, h * 0.5f * kBlock, Heightfield::kFrontZ - 400.f);
 	radius_ = (std::max(w, h) + 3.f) * kBlock * 0.55f; // margines: małe szablony nie wypełniają całego kadru
+	report(1.f, "Gotowe");
 	return error_.empty();
 }
 
@@ -610,9 +617,8 @@ bool MapView::ui(bool savesTab) {
 	for (const auto& f : currentList()) {
 		if (!passFilter(filter_, f)) continue;
 		if (ImGui::Selectable(f.c_str(), f == file_)) {
-			if (list_ != ListMode::Templates) loadScenario(f);
-			else loadTemplate(f);
-			recenter = true;
+			if (list_ != ListMode::Templates) pending_ = [this, f] { return loadScenario(f); };
+			else pending_ = [this, f] { return loadTemplate(f); };
 		}
 		if (f == file_ && scrollToSel_) ImGui::SetScrollHereY(0.5f);
 	}

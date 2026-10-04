@@ -53,6 +53,7 @@ build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --d
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd mgły wojny (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy
+OW_PROGRESS_LOG=1 build/release/wigview                                  # czasy etapów wczytywania map i zapisów na stderr
 build/release/wigview --renderer opengl                         # wybór backendu (domyślnie Vulkan)
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
 
