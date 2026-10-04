@@ -1,6 +1,7 @@
 #include "lib/map_world.h"
 
 #include "lib/blockdb.h"
+#include "lib/save_game.h"
 #include "lib/vfs.h"
 
 #include <algorithm>
@@ -207,6 +208,47 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 		}
 	}
 	applySkyLight(out.grid, y0, sc.lightBegin, db, &out.skyTiles);
+	return out;
+}
+
+BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario& sc) {
+	BuiltWorld out;
+	sc = Scenario{};
+	sc.width = save.width;
+	sc.height = save.height;
+	sc.lightBegin = save.lightBegin;
+	if (save.groundBegin != -10000 && save.groundBegin != save.lightBegin) sc.groundBegin = save.groundBegin;
+	out.grid = makeWorldGrid(save.width, save.height);
+	out.layer.width = out.grid.width;
+	out.layer.height = out.grid.height;
+	out.layer.values.assign(save.tiles.size(), 0);
+	static const uint8_t kType[4] = {4, 3, 2, 5};
+	for (size_t i = 0; i < save.tiles.size(); ++i) {
+		const SaveTile& t = save.tiles[i];
+		out.grid.blocks[i] = t.block;
+		out.grid.types[i] = uint8_t(kType[t.material & 3] | (t.flags & 0x80));
+		out.layer.values[i] = t.cell;
+	}
+	for (const SaveObject& o : save.objects) {
+		TemplateObject t;
+		t.className = o.className;
+		t.name = std::to_string(o.id);
+		for (int k = 0; k < 3; ++k) {
+			t.pos[k] = o.pos[k]; // zapis trzyma z w skali skryptu (jak argument new)
+			t.rot[k] = o.rot[k];
+		}
+		out.objects.push_back(t);
+	}
+	GameView v;
+	v.x = save.viewX;
+	v.y = save.viewY;
+	v.zoom = save.viewZoom;
+	v.dx = save.viewDx;
+	v.dy = save.viewDy;
+	out.view = v;
+	sc.view = v;
+	out.placedScripts.push_back("zapis");
+	applySkyLight(out.grid, 0, save.lightBegin, db, &out.skyTiles);
 	return out;
 }
 

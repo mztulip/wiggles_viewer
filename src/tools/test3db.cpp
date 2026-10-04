@@ -7,6 +7,7 @@
 #include "lib/class_db.h"
 #include "lib/map_template.h"
 #include "lib/model3db.h"
+#include "lib/save_game.h"
 #include "lib/binreader.h"
 #include "lib/tga.h"
 #include "lib/vfs.h"
@@ -147,6 +148,26 @@ static int testTemplates(const Vfs& vfs) {
 	return failed;
 }
 
+// Zapisy .sav: czytnik musi przejść teren i wszystkie ciała obiektów (docs/formaty/sav.md).
+int testSaves(const Vfs& vfs) {
+	int failed = 0, count = 0;
+	for (const auto& f : vfs.list("Data/Gamesave")) {
+		if (Vfs::lower(f).size() < 4 || Vfs::lower(f).substr(Vfs::lower(f).size() - 4) != ".sav") continue;
+		++count;
+		auto data = vfs.read("Data/Gamesave/" + f);
+		try {
+			SaveGame s = parseSaveGame(*data);
+			std::printf("  %-40s %s  %dx%d  obiekty %zu  kamera (%.1f %.1f zoom %.2f)\n", f.c_str(), s.header.c_str(), s.width,
+			            s.height, s.objects.size(), s.viewX, s.viewY, s.viewZoom);
+		} catch (const std::exception& e) {
+			std::printf("  %-40s BŁĄD: %s\n", f.c_str(), e.what());
+			++failed;
+		}
+	}
+	std::printf("zapisy: %d, błędy: %d\n", count, failed);
+	return failed;
+}
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::fprintf(stderr, "użycie: %s <katalog gry>\n", argv[0]);
@@ -163,6 +184,8 @@ int main(int argc, char** argv) {
 	failed += testTextures(vfs);
 	std::printf("\n");
 	failed += testTemplates(vfs);
+	std::printf("\n");
+	failed += testSaves(vfs);
 	std::printf("\n%s\n", failed ? "BŁĘDY" : "WSZYSTKO OK");
 	return failed ? 1 : 0;
 }

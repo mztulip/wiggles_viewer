@@ -76,7 +76,7 @@ public:
 
 	// Podgląd mgły wojny (docs/silnik/10_mgla_wojny.md). Bez symulacji obiektów-odkrywców: stan pól
 	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
-	enum class FogMode { Off, Explored, ViewGrey, ViewBlack };
+	enum class FogMode { Off, Explored, ViewGrey, ViewBlack, FromSave };
 	void setFog(FogMode mode, int radius = 10, int viewByte = 0xFF) {
 		fogMode_ = mode;
 		fogRadius_ = radius;
@@ -102,7 +102,8 @@ private:
 	bool resolve(const ow::ClassModel& cm, ModelSlot*& slot, int& animation);
 	void uiGrid();
 	static glm::mat4 objectMatrix(const ow::TemplateObject& o);
-	bool finishLoad(const ow::Scenario& sc, int margin, std::string world);
+	bool finishLoad(const ow::Scenario& sc, int margin, std::string world, ow::BuiltWorld* prebuilt = nullptr);
+	bool loadSave(const std::string& file);
 
 	ow::rhi::Device* dev_ = nullptr;
 	const ow::Vfs* vfs_ = nullptr;
@@ -142,6 +143,7 @@ private:
 	bool fogDirty_ = true;
 	int fogFocus_[2] = {-99999, -99999};
 	std::vector<uint8_t> fog_;
+	std::vector<uint8_t> saveFog_; // bajty mgły gracza 0 z wczytanego zapisu (FogMode::FromSave)
 	ow::GameFog gameFog_;
 	void updateFog(const glm::vec3& focus);
 	uint8_t fogAt(int x, int y) const;

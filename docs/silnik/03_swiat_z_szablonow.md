@@ -139,3 +139,7 @@ Po złożeniu świat ma 64 × 64 bloków, z czego zmienione są tylko pola trzec
 - **Maska w `.pmp`** (przebiegi u16) to 🔶 płaszczyzna ruchu postaci (wartości 0/1/3), nie kształt terenu. Do obrazu niepotrzebna. Opis formatu: [szablony.md](../formaty/szablony.md) §1.
 - **`.ENT`** to zwykle puste pliki (0 B), ❓.
 - Gra po złożeniu przelicza jeszcze **światło bazowe nieba** (rozdział 7.2). Zmienia ono warstwę 2 pól pod gołym niebem.
+
+## 3.8 Świat z zapisu gry
+
+Zapis `.sav` przechowuje **gotowy, złożony świat**: dla każdego pola blok, rodzaj gruntu i detal `.l2m`, a do tego wszystkie obiekty z pozycją i obrotem, linie nieba i gruntu, kamerę i mgłę wojny. Wczytanie zapisu pomija więc cały ten rozdział: nie wykonujemy skryptu scenariusza ani nie nakładamy szablonów. Budujemy siatkę wprost z rekordów pól (rodzaj gruntu przeliczamy na typ pola `.pmp`), obiekty traktujemy jak obiekty szablonu i przeliczamy światło nieba (rozdział 7) tak samo jak po `map create`. Układ bajtów i tabela rodzajów: [formaty/sav.md](../formaty/sav.md). ✅ Odczyt sprawdzony na zapisie OBERWELT (500 × 200, 1381 obiektów) i szybkich zapisach menu; obraz porównany z widokiem scenariusza tylko wzrokowo (🔶).

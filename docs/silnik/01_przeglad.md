@@ -42,7 +42,7 @@ Wszystko leży w katalogu `Data/` instalacji. **Nazwy plików mają mieszaną wi
 | `Data/Templates/` | szablony map: `.tcl` + `.pmp` + `.l2m` | [szablony.md](../formaty/szablony.md), rozdział 3 |
 | `Data/BlockDB0/1/2.BDB` | 118 688 kształtów bloków terenu, 3 poziomy szczegółów | [blockdb.md](../formaty/blockdb.md), rozdział 4 |
 | `Data/SPHERE.DAT` | 256 normalnych do kwantyzacji | [sphere_dat.md](../formaty/sphere_dat.md) |
-| `Data/Gamesave/` | scenariusze (`.tcl`) i zapisy (`.sav`, gzip) | rozdział 2 |
+| `Data/Gamesave/` | scenariusze (`.tcl`) i zapisy (`.sav`, gzip) | rozdział 2, [sav.md](../formaty/sav.md) |
 | `Data/Sound/`, `Data/Music/` | WAV 8 bit 22 kHz, MP3 | (jeszcze nieopisane) |
 | `Data/GUI/` | interfejs, fonty `.kft` | (jeszcze nieopisane) |
 

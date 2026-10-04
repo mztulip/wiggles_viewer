@@ -207,7 +207,7 @@ Każda linia: nazwa tekstury oraz rozdzielczość dla poziomów Minimal, Low, Hi
 Opis: [rozdział 3 przewodnika](silnik/03_swiat_z_szablonow.md), formaty: [formaty/szablony.md](formaty/szablony.md). `split/` zawiera warianty szablonów pocięte na ćwiartki (`_tAA`, `_tAB`, `_tBA`, `_tBB`) 🔶 (prawdopodobnie dla generatora poziomów).
 
 ### 7.5 Zapisy gry
-`.sav` to **gzip**. Po rozpakowaniu jest binarka (~7 MB) zaczynająca się od `V1.0.844`. Struktura nieznana.
+`.sav` to **gzip**. Po rozpakowaniu jest binarka (~7 MB) zaczynająca się od `V1.0.844`. ✅ Część z mapą (kamera, pola 53 B, linie nieba/gruntu, mgła, obiekty z pozycją i obrotem) odczytana według Diggles-Unity i sprawdzona na 3 zapisach z laboratorium (2 szybkie zapisy menu 64×64, 96 obiektów; OBERWELT 500×200, 1381 obiektów). Mapowanie rodzaju gruntu na typ `.pmp` (0→4, 1→3, 2→2, 3→5) ustalone porównaniem pól zapisu z szablonami. Opis: [formaty/sav.md](formaty/sav.md).
 
 ### 7.6 Natywne komendy: wyniki skanera
 `tools/scan_tcl_natives.py` przeszedł 3961 plików `.tcl` (skrypty i szablony) i znalazł 2301 procedur lub metod zdefiniowanych w skryptach oraz około 830 kandydatów na komendy natywne. Pełna lista jest w `docs/tcl_natywne_kandydaci.txt` i jest zaszumiona: zawiera też słowa ze stringów i list.

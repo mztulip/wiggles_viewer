@@ -3,6 +3,7 @@
 #include "lib/gfx/gl.h"
 #include "lib/gfx/texture_cache.h"
 #include "lib/map_world.h"
+#include "lib/save_game.h"
 #include "lib/vfs.h"
 
 #include <imgui.h>
@@ -65,6 +66,8 @@ void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, con
 	scenarios_.push_back("systeminit.tcl"); // menu gry
 	for (auto& f : vfs->list("Data/Gamesave"))
 		if (endsWithI(f, ".tcl")) scenarios_.push_back(f);
+	for (auto& f : vfs->list("Data/Gamesave")) // zapisy gry na końcu listy
+		if (endsWithI(f, ".sav")) scenarios_.push_back(f);
 	files_.clear();
 	for (auto& f : vfs->list("Data/Templates"))
 		if (endsWithI(f, ".tcl")) files_.push_back(f);
@@ -132,7 +135,45 @@ bool MapView::loadTemplate(const std::string& file) {
 	return finishLoad(sc, 0, world);
 }
 
+// Zapis gry .sav (docs/formaty/sav.md): pełna mapa, obiekty, kamera i mgła wojny z chwili zapisu.
+bool MapView::loadSave(const std::string& file) {
+	file_ = file;
+	scenarioMode_ = true;
+	scenarioInfo_.clear();
+	saveFog_.clear();
+	Scenario sc;
+	BuiltWorld bw;
+	try {
+		auto data = vfs_->read("Data/Gamesave/" + file);
+		if (!data) throw std::runtime_error("brak pliku");
+		SaveGame s = parseSaveGame(*data);
+		bw = buildWorldFromSave(s, blocks_.loaded() ? &blocks_ : nullptr, sc);
+		saveFog_.resize(s.tiles.size());
+		for (size_t i = 0; i < s.tiles.size(); ++i) saveFog_[i] = s.tiles[i].fog[0];
+		char info[160];
+		std::snprintf(info, sizeof info, "Zapis %s, czas gry %.0f s, %zu obiektów.", s.header.c_str(), s.gameTime, s.objects.size());
+		scenarioInfo_ = info;
+	} catch (const std::exception& e) {
+		error_ = "zapis " + file + ": " + e.what();
+		return false;
+	}
+	// Motyw świata (zestaw detali .l2m) z klas stref horyzontu Info_Fog_<Świat>_*.
+	std::map<std::string, int> worlds;
+	for (const auto& o : bw.objects) {
+		std::string c = Vfs::lower(o.className);
+		if (c.rfind("info_fog_", 0) == 0) worlds[c.substr(9, c.find('_', 9) - 9)]++;
+	}
+	std::string world = "urw";
+	int best = 0;
+	for (auto& [k, n] : worlds)
+		if (n > best && (k == "urw" || k == "kris" || k == "lava" || k == "swf")) best = n, world = k;
+	bool ok = finishLoad(sc, 0, world, &bw);
+	setFog(FogMode::FromSave, fogRadius_, fogByte_); // mgła wojny jak w chwili zapisu
+	return ok;
+}
+
 bool MapView::loadScenario(const std::string& file) {
+	if (endsWithI(file, ".sav")) return loadSave(file);
 	file_ = file;
 	scenarioMode_ = true;
 	// systeminit.tcl (menu gry) leży w Data/, pozostałe scenariusze w Data/Gamesave/.
@@ -150,7 +191,7 @@ bool MapView::loadScenario(const std::string& file) {
 	return finishLoad(sc, 2, world);
 }
 
-bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
+bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, BuiltWorld* prebuilt) {
 	error_.clear();
 	script_.reset();
 	pmp_.reset();
@@ -166,7 +207,9 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world) {
 	gameView_.reset();
 	if (world != "urw" && world != "kris" && world != "lava" && world != "swf") world = "urw";
 
-	BuiltWorld bw = buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
+	BuiltWorld bw = prebuilt ? std::move(*prebuilt) : buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
+	if (!prebuilt) saveFog_.clear();
+	if (fogMode_ == FogMode::FromSave && saveFog_.empty()) fogMode_ = FogMode::Off;
 	for (auto& e : bw.errors) error_ += (error_.empty() ? "" : "; ") + e;
 	if (!bw.placedScripts.empty()) {
 		placed_ = int(bw.placedScripts.size());
@@ -384,6 +427,8 @@ void MapView::updateFog(const glm::vec3& focus) {
 	fogFocus_[1] = fy;
 	uint8_t rest = fogMode_ == FogMode::ViewBlack ? 0 : 1;
 	fog_.assign(size_t(W) * H, rest);
+	if (fogMode_ == FogMode::FromSave && saveFog_.size() == fog_.size()) fog_ = saveFog_;
+	else
 	for (int y = 0; y < H; ++y)
 		for (int x = 0; x < W; ++x) {
 			bool inView = view && std::abs(x - fx) <= fogRadius_ && std::abs(y - fy) <= fogRadius_;
@@ -568,10 +613,10 @@ bool MapView::ui() {
 	{
 		// Podgląd mgły wojny (wymaga oświetlenia gry).
 		const char* modes[] = {"wyłączona", "całość odkryta, niewidoczna (szara)", "kadr widoczny, reszta szara",
-		                       "kadr widoczny, reszta czarna"};
+		                       "kadr widoczny, reszta czarna", "z zapisu gry (gracz 0)"};
 		int m = int(fogMode_);
 		ImGui::SetNextItemWidth(260);
-		if (ImGui::Combo("Mgła wojny", &m, modes, 4)) setFog(FogMode(m), fogRadius_, fogByte_);
+		if (ImGui::Combo("Mgła wojny", &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Prawo z docs/silnik/10_mgla_wojny.md: szara mgła (170,170,155) rośnie w głąb,\n"
 			                  "lampy w niej nie świecą, czarne pola nieodkryte; obiekty bez viewinfog znikają.");

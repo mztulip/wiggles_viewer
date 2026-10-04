@@ -80,4 +80,10 @@ void applySkyLight(Pmp& grid, int originY, int lightBegin, const BlockDb* db = n
 // db (opcjonalnie) dokładniej wyznacza otwarte pola dla reguły nieba.
 BuiltWorld buildWorld(const Vfs& vfs, const Scenario& scenario, int margin = 2, const BlockDb* db = nullptr);
 
+// Świat z zapisu gry (docs/formaty/sav.md): pełna mapa bez przycinania, typ pola odtworzony z rodzaju
+// gruntu (0 A → 4, 1 B → 3, 2 C → 2, 3 otwór → 5, plus bit 0x80), detale .l2m, obiekty, kamera z zapisu,
+// światło bazowe 4 i reguła nieba z linii nieba zapisu. scenarioOut dostaje linie nieba i gruntu.
+struct SaveGame;
+BuiltWorld buildWorldFromSave(const SaveGame& save, const BlockDb* db, Scenario& scenarioOut);
+
 } // namespace ow

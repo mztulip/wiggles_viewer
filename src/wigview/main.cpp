@@ -9,7 +9,9 @@
 // --renderer: backend renderowania (domyślnie Vulkan; bez tej opcji, gdy Vulkan nie ruszy, OpenGL).
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
-// --fow: podgląd mgły wojny: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna.
+// --fow: podgląd mgły wojny: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna,
+//        4 z zapisu gry (domyślnie dla zapisów).
+// --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav).
 // Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
@@ -60,7 +62,7 @@ struct Args {
 	bool ui = false, viewSet = false;
 	float camX = -1, camY = -1, camZ = -1, camDist = -1; // kamera map w blokach (lokalnie w szablonie)
 	std::optional<GameView> gameView;                    // --view
-	int fowMode = 0, fowRadius = 10, fowByte = 255;      // --fow
+	int fowMode = -1, fowRadius = 10, fowByte = 255;     // --fow (−1 = domyślnie)
 	rhi::Backend renderer = rhi::backendCompiled(rhi::Backend::Vulkan) ? rhi::Backend::Vulkan : rhi::Backend::OpenGL;
 	bool rendererForced = false;                          // --renderer: bez przełączania na drugi backend
 	int width = 1400, height = 900;
@@ -83,7 +85,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
-		else if (k == "--scenario") a.scenario = next();
+		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center") {
 			a.camX = float(std::atof(next()));
@@ -932,7 +934,7 @@ int main(int argc, char** argv) {
 		if (args.camX >= 0) v.center.x = args.camX * MapView::kBlock, v.center.y = args.camY * MapView::kBlock;
 		if (args.camZ >= 0) v.center.z = args.camZ * MapView::kBlock;
 		if (args.camDist > 0) v.dist = args.camDist * MapView::kBlock;
-		if (args.fowMode > 0) v.maps.setFog(MapView::FogMode(std::clamp(args.fowMode, 0, 3)), args.fowRadius, args.fowByte);
+		if (args.fowMode >= 0) v.maps.setFog(MapView::FogMode(std::clamp(args.fowMode, 0, 4)), args.fowRadius, args.fowByte);
 		if (args.gameView) {
 			GameView g = *args.gameView;
 			g.x -= float(v.maps.origin()[0]);

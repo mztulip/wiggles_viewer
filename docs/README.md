@@ -34,6 +34,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | `Data/SPHERE.DAT` | [sphere_dat.md](formaty/sphere_dat.md): 256 normalnych |
 | `Data/BlockDB0/1/2.BDB` | [blockdb.md](formaty/blockdb.md): kształty bloków terenu |
 | `Data/Templates/*.pmp`, `*.l2m`, `*.tcl` | [szablony.md](formaty/szablony.md): szablony map |
+| `Data/Gamesave/*.sav` | [sav.md](formaty/sav.md): zapis gry (mapa, kamera, mgła, obiekty) |
 
 ## Oznaczenia
 
@@ -48,4 +49,4 @@ Formaty i prawa działania pochodzą z trzech źródeł:
 2. **Obserwacja działającej gry** w laboratorium pod Wine: zrzuty ekranu przy zmienianych parametrach, sonda Tcl, eksport sceny. **Nie deasemblujemy exe.** Metoda: [BAZA_WIEDZY.md §8](BAZA_WIEDZY.md).
 3. **Opracowania społeczności**, zawsze z odnośnikiem i zweryfikowane eksperymentem. Najważniejsze: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT) i [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db). Pełna lista w [CREDITS.md](../CREDITS.md).
 
-Implementacja wzorcowa jest w `src/` (C++17, OpenGL 3.3). Przewodnik podaje jej pliki tylko pomocniczo: każde prawo da się zrealizować na podstawie samego opisu.
+Implementacja wzorcowa jest w `src/` (C++17, Vulkan 1.2 / OpenGL 4.5). Przewodnik podaje jej pliki tylko pomocniczo: każde prawo da się zrealizować na podstawie samego opisu.

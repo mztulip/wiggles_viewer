@@ -26,7 +26,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Maska ruchu w `.pmp` (przebiegi u16) | 🔶 | płaszczyzna nawigacji; Diggles-Unity `ORIGINAL_PATHFINDING_RE.md` |
 | Model obiektów Tcl: szczegóły | 🔶 | opisany w [rozdziale 11](11_obiekty_tcl_i_petla.md) za Diggles-Unity; do sprawdzenia: semantyka licznika stanów, dlaczego timer klasy z `userstartup.tcl` nie zadziałał |
 | Kopanie, produkcja, walka, AI, interfejs, dźwięk | ❓ | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu (indeks: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §10) |
-| Zapisy `.sav` | ❓ | gzip, ok. 7 MB binarki zaczynającej się od `V1.0.844` |
+| Zapisy `.sav`: stan rozgrywki | 🔶 | mapę, kamerę, mgłę i obiekty czytamy ✅ ([formaty/sav.md](../formaty/sav.md)); logika obiektów, gracze, ekonomia i fabuła wg Diggles-Unity `ORIGINAL_SAVE_FORMAT_RE.md`, niesprawdzone |
 | Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` | ❓ | |
 
 ## 10.3 Jak badać
