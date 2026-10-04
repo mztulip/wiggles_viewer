@@ -11,7 +11,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] G4 Kopanie (PPM na skale): blok 59, przebudowa terenu
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
-- [ ] G6 Symulacja płynów (źródła `Wasser`, przepływ 10 Hz), żeby szablony miały wodę
+- [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
+- [ ] 🔧 Płyny: zatyczki, odpływy, `-height`/`-ventil`, źródła z zapisu, kolor wody bliżej gry, rzadka lista pól zamiast pełnego prostokąta
 - [ ] G7 Osadzony Tcl 8.6 ze stubami komend: klasy obiektów (`def_class`, `obj_init`, zdarzenia, timery) dla krasnali i przedmiotów
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
@@ -90,7 +91,6 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Cząsteczki: zakładka z 43 typami (atlas, parametry, użycie w skryptach, podgląd emitera), `--particle N`; emitery z `class_particle` na mapach; rozdział [12](docs/silnik/12_czasteczki.md)
 - [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
-- [ ] Symulacja płynów (10 Hz, źródła `Wasser`), żeby szablony i scenariusze miały wodę; oświetlenie płynu
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)

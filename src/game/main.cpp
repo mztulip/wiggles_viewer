@@ -3,6 +3,7 @@
 // Użycie:
 //   openwiggles [--game <katalog gry>] [--scenario NAZWA | --save PLIK.sav | --template SZABLON]
 //               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--screenshot plik.png]
+//               [--view X Y ZOOM DX DY] [--warmup SEKUNDY]
 // Bez mapy: najnowszy zapis z Data/Gamesave, a gdy go nie ma, szablon kris_unq_060 z jednym krasnalem.
 //
 // Sterowanie: LPM zaznacza krasnala, PPM na wolnym polu = idź, PPM na skale = kop.
@@ -37,6 +38,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -56,6 +58,8 @@ struct Args {
 	rhi::Backend renderer = rhi::Backend::Vulkan;
 	bool rendererForced = false;
 	int width = 1280, height = 800;
+	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
+	std::optional<GameView> view; // --view x y zoom dx dy
 };
 
 bool parseArgs(int argc, char** argv, Args& a) {
@@ -69,6 +73,16 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--screenshot") a.screenshot = next();
 		else if (k == "--lang") a.lang = next();
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
+		else if (k == "--warmup") a.warmup = float(std::atof(next()));
+		else if (k == "--view") {
+			GameView v;
+			v.x = float(std::atof(next()));
+			v.y = float(std::atof(next()));
+			v.zoom = float(std::atof(next()));
+			v.dx = float(std::atof(next()));
+			v.dy = float(std::atof(next()));
+			a.view = v;
+		}
 		else if (k == "--renderer") {
 			if (!rhi::parseBackend(next(), a.renderer)) return false;
 			a.rendererForced = true;
@@ -399,6 +413,8 @@ int main(int argc, char** argv) {
 	}
 	if (!ok) std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
 	g.initWorld();
+	if (args.view) g.cam = *args.view;
+	for (float t = 0; t < args.warmup; t += 0.1f) g.update(0.1f);
 
 	ImGui::CreateContext();
 	ImGui::GetIO().IniFilename = nullptr;

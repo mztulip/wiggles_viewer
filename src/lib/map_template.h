@@ -35,6 +35,7 @@ struct TemplateObject {
 	float rot[3] = {0, 0, 0}; // radiany
 	std::string detail;       // loading_objdetail: high, medium, low, off (pusty = brak)
 	bool physic = false;      // set_physic
+	std::string info;         // call_method … Editor_Set_Info {…}: parametry obiektu z edytora, np. {volume 1000} {vpf 5}
 };
 
 struct TemplateScript {

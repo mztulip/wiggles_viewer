@@ -329,7 +329,8 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - W kopii gry w laboratorium dopisaliśmy do klasy `Wasser` (`Scripts/classes/items/WASSER.TCL`) zdarzenie, które 40 s po starcie źródła woła `gamesave ow_woda`; potem przywróciliśmy oryginał. `capture.sh template … kris_unq_060 24.5 21 1.0 0 0 75`. Gra zapisała plik `ow_woda` (bez rozszerzenia) w katalogu gry; kopia w `../lab/zapisy/ow_woda.sav`.
 - Z porównania bajtów: rekord pola zapisu ma płyn na przesunięciach 19–44 (typ ×2, wypełnienie f32 ×2, przepływ f32 ×4). Szczegóły: [formaty/sav.md](formaty/sav.md).
 - Deskryptor płynu w BlockDB (ostatnie 4 bajty rekordu 89 B) zgadza się z opisem Diggles-Unity.
-- Ten zapis ma tylko 18 obiektów na liście; dekoracje szablonu są w innych sekcjach (do rozpracowania).
+- Ten zapis ma tylko 18 obiektów na liście; dekoracje szablonu są w „nasionach” kubełków przestrzennych (odczytane, [formaty/sav.md](formaty/sav.md)).
+- ✅ Symulacja przepływu (`src/lib/fluid_sim.cpp`) po 410 taktach od startu daje w basenie te same wypełnienia co ten zapis (do setnej części; rozdział 13 §13.5). Porównanie: mały program z `buildWorld` (szablon w 16,16), `FluidSim`, `parseSaveGame`.
 
 ---
 

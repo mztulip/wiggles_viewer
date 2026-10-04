@@ -113,7 +113,9 @@ TemplateScript parseTemplateScript(const std::string& text) {
 			o.detail = detail;
 			t.objects.push_back(o);
 			last = &t.objects.back();
-		} else if (w[0] == "set_physic" && w.size() >= 3 && last)
+		} else if (w[0] == "call_method" && w.size() >= 4 && w[2] == "Editor_Set_Info" && last)
+			last->info = w[3];
+		else if (w[0] == "set_physic" && w.size() >= 3 && last)
 			last->physic = w[2] == "true" || w[2] == "1";
 	}
 	return t;

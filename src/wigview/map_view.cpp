@@ -322,6 +322,7 @@ bool MapView::finishLoad(const Scenario& sc, int margin, std::string world, Buil
 	}
 	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
 	buildEmitters();
+	initFluidSim();
 	buildFluids();
 	allLights_.clear();
 	if (script_)
@@ -403,8 +404,32 @@ void MapView::buildFluids() {
 	fluidCells_ = fluids_.build(W, H, fluidType_, fluidFill_, pmp_->blocks, blocks_, vis.empty() ? nullptr : &vis);
 }
 
+// Symulacja płynów: stan z zapisu i źródła z obiektów Wasser/Sulfur/Lava (Editor_Set_Info).
+// 🔶 Zapisy: źródła z zapisu (stan Tcl obiektów) jeszcze nie są czytane, więc woda tylko się wyrównuje.
+void MapView::initFluidSim() {
+	if (!pmp_ || !blocks_.loaded()) {
+		fluidSim_.init(0, 0, nullptr, nullptr);
+		return;
+	}
+	int W = int(pmp_->width), H = int(pmp_->height);
+	fluidSim_.init(W, H, &pmp_->blocks, &blocks_);
+	if (!fluidType_.empty()) fluidSim_.setState(fluidType_, fluidFill_);
+	for (const auto& o : objects_) {
+		FluidSource s;
+		if (!o.src.info.empty() && fluidSourceFromObject(o.src.className, o.src.info, o.src.pos, s)) fluidSim_.addSource(s);
+	}
+}
+
 void MapView::update(float dt) {
 	time_ += dt;
+	if (!fluidSim_.empty()) {
+		fluidSim_.update(dt);
+		if (fluidSim_.changed()) {
+			fluidType_ = fluidSim_.type();
+			fluidFill_ = fluidSim_.fill();
+			buildFluids();
+		}
+	}
 	// Cząsteczki: 12 klatek symulacji na sekundę (❓ w grze co klatkę obrazu; za Diggles-Unity).
 	particleAcc_ += dt;
 	int steps = 0;

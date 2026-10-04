@@ -10,6 +10,7 @@
 #include "lib/blockdb.h"
 #include "lib/class_db.h"
 #include "lib/gfx/panorama_renderer.h"
+#include "lib/fluid_sim.h"
 #include "lib/gfx/fluid_renderer.h"
 #include "lib/gfx/particle_renderer.h"
 #include "lib/gfx/terrain_renderer.h"
@@ -186,7 +187,9 @@ private:
 	std::vector<uint8_t> fluidType_;
 	std::vector<float> fluidFill_;
 	int fluidCells_ = 0;
+	ow::FluidSim fluidSim_; // przepływ (docs/silnik/13_plyny.md §13.5)
 	void buildFluids();
+	void initFluidSim();
 	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64

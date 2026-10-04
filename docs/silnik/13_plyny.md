@@ -1,6 +1,6 @@
 # 13. Płyny: woda, siarka, lawa
 
-Woda w basenach i rzekach, żółta siarka i lawa to „płyny”. Każde pole świata może zawierać jeden płyn z wypełnieniem. Płyn przelewa się między polami 10 razy na sekundę, a źródła (obiekty `Wasser`) go dolewają. Ten rozdział opisuje dane płynu, jego kształt w polu i rysowanie. Symulacji przepływu jeszcze nie mamy.
+Woda w basenach i rzekach, żółta siarka i lawa to „płyny”. Każde pole świata może zawierać jeden płyn z wypełnieniem. Płyn przelewa się między polami 10 razy na sekundę, a źródła (obiekty `Wasser`) go dolewają. Ten rozdział opisuje dane płynu, jego kształt w polu i rysowanie. Przepływ liczymy prawem gry (§13.5), sprawdzonym na zapisie z laboratorium.
 
 **Źródło i status.** Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/FLUID_SYSTEM_RE.md`, `Docs/WATER_PHASE1_RE.md`). ✅ Sprawdziliśmy na danych deskryptor płynu w BlockDB oraz zapis stanu w `.sav` (zapis z wodą z laboratorium). Rysowanie porównaliśmy ze zrzutem gry tylko wzrokowo (🔶).
 
@@ -41,5 +41,36 @@ Mieszanie alfa, test głębi bez zapisu, po terenie i modelach, przed cząsteczk
 
 ## 13.4 Czego brakuje
 
-- ❓ Symulacja przepływu (10 Hz): prawa i współczynniki są w `Docs/FLUID_SYSTEM_RE.md` („Flow contract”). Bez niej szablon z obiektem `Wasser` pokazuje się bez wody; wodę widać tylko w zapisach.
-- 🔶 Falowanie powierzchni, oświetlenie płynu, dokładny wygląd `wasser_env` (to mapa otoczenia).
+- 🔶 Falowanie powierzchni, oświetlenie płynu, dokładny wygląd `wasser_env` (to mapa otoczenia); u nas woda jest mniej niebieska niż w grze.
+- ❓ Zatyczki (`Wasserstopper*`, `set_fstopper`), odpływy (ujemne `vpf`), opcje `-height` i `-ventil`, mieszanie różnych płynów.
+- ❓ Źródła w zapisach gry: ich stan (pozostała objętość) jest w zapisie obiektu, którego jeszcze nie czytamy; woda z zapisu tylko się wyrównuje.
+
+## 13.5 Przepływ ✅
+
+Za Diggles-Unity (`WATER_PHASE1_RE.md` §4). Takt co 0,1 s (`src/lib/fluid_sim.cpp`):
+
+1. **Źródła.** Obiekt `Wasser` (`Sulfur`, `Lava`) z `Editor_Set_Info {volume V} {vpf R}`: sekundę po starcie dolewa co takt `R·128` jednostek do pola `(int(x), int(y − 1))`, aż wyda `V·128`. Wypełnienie pola rośnie o `ilość / pojemność`.
+2. **Migawka** wypełnień `F` wszystkich pól.
+3. **Jeden przebieg** po polach w kolejności wierszy. Dla pola bieżącego c i jego sąsiada n wyżej (pionowo) oraz z lewej (poziomo):
+
+```
+deskryptor c: przepuszczalność A (pionowa albo pozioma); A = 0 albo pojemność 0 → ściana
+A = max(A, 8), pojemności = max(C, 32)              (lawa: 16 i 128)
+H(F, przesunięcie) = (U − L)·F + (8 + przesunięcie − U)     przesunięcie = 8 dla pola wyżej, inaczej 0
+P(H) = H dla H ≤ 8, inaczej (H − 8)·8 + 8           (ciśnienie słupa ponad pełne pole rośnie 8× szybciej)
+T = (P(Hn) − P(Hc)) · 0,125 · 0,125 · A · relaksacja + praca · pęd
+T przycięte do [−zawartość c, zawartość n]; zawartość = F · pojemność
+n −= T, c += T; wypełnienie < 0,001 → 0; praca = T (gdy |T| > 0,004)
+```
+
+| płyn | relaksacja | pęd |
+|---|---|---|
+| woda (1), lawa z wodą (4) | 1,5 | 0,5 |
+| siarka (2) | 1,4 | 0,3 |
+| lawa (3) | 1,3 | 0,125 |
+
+Przykład: dwa otwarte pola (C = 960, A = 120, U/L = 8/0), pełne obok pustego: ΔP = 8, T = 8 · 0,015625 · 120 · 1,5 = 22,5 jednostki, czyli 0,023 pola w jednym takcie.
+
+**Sprawdzenie.** Szablon `kris_unq_060` w polu (16, 16), źródło `{volume 1000} {vpf 5}`, 410 taktów (41 s). Nasza symulacja daje w basenie x 20..28 dokładnie te same wypełnienia co zapis gry z tej chwili: 0,85 w wierszu powierzchni, potem 1,85, 2,85 … 7,85 i 10,13 w wierszu dna (zapis `../lab/zapisy/ow_woda.sav`, program porównujący w historii badań: BAZA_WIEDZY §9.5).
+
+🔶 Uproszczenia: przebieg po całym prostokącie z płynem zamiast rzadkiej listy pól, praca kierunkowa bez „starzenia”.
