@@ -1229,6 +1229,10 @@ ScriptObject* Engine::createScripted(int id, ScriptClass* cls, const std::string
 	return p;
 }
 
+void Engine::setVar(ScriptObject& o, const std::string& name, const std::string& value) {
+	if (o.interp) Tcl_SetVar(o.interp, name.c_str(), toUtf8(value).c_str(), TCL_GLOBAL_ONLY);
+}
+
 void Engine::detach(int id) {
 	auto it = objects_.find(id);
 	if (it == objects_.end()) return;

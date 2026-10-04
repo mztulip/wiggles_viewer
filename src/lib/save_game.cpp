@@ -147,8 +147,8 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	if (tcl == 1) {
 		int32_t n = r.count("zmienne Tcl");
 		for (int32_t i = 0; i < n; ++i) {
-			r.str();
-			r.str();
+			std::string k = r.str();
+			o.tclVars.emplace_back(k, r.str());
 		}
 	} else if (tcl != 0)
 		throw ParseError("nieprawidłowa obecność zmiennych Tcl");

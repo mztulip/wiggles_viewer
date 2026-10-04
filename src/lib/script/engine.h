@@ -126,6 +126,7 @@ public:
 	ScriptObject* attach(int id, const std::string& cls, const std::string& name, bool runInit = true);
 	friend struct ScriptHostAccess;
 	ScriptObject* object(int id);
+	void setVar(ScriptObject& o, const std::string& name, const std::string& value);
 	void detach(int id);
 
 	double time() const { return time_; }

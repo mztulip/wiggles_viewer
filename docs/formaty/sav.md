@@ -123,6 +123,7 @@ i32 n + n × ładunek pomocniczy
 **Odczytane pola ciała** (oprócz klasy, typu, pozycji, obrotu) ✅ na zapisie kampanii:
 - grupa 10 × i32 zaczynająca się od `+0x26C` (po `2 × i32` i `4 × i32` za siatką): element [3] = **rodzic przypięcia** (ID obiektu, `+0x278`), [4] = **punkt zaczepienia** (`+0x27C`). Przykład: 5 czapek `Dummy_Muetze_*` przypiętych do 5 krasnali w punkcie 4 (głowa);
 - trzecie i32 po napisie wyświetlania = **właściciel** (`+0x36C`): −1 świat, 0..7 gracze.
+- **zmienne Tcl obiektu** (i32 obecność, i32 n, n × (str nazwa, str wartość)): gra po wczytaniu przywraca je zamiast `obj_init`. My wykonujemy `obj_init` (ustawia timery, których kolejki jeszcze nie czytamy) i nakładamy na nie zapisane zmienne; dlatego obiekty z zapisu mają w skryptach te same ID co w zapisie (zmienne odwołują się do ID, np. `current_muetze_ref`).
 
 **Pozycja z** jest w skali skryptu, czyli tak jak argument `new` w szablonie: świat z = z · 0,5 + 7 (rozdz. 5). Przykład z zapisu OBERWELT: obiekt 89 `Dummy_Moos_um_a` ma (23,531, 42,5, 13,54) i obrót ry = 6,123, dokładnie jak w szablonie, z którego pochodzi.
 

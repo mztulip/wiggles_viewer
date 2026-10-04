@@ -26,6 +26,7 @@ struct SaveObject {
 	int owner = -1;           // gracz 0..7, −1 = świat
 	int linkParent = -1;      // obiekt, do którego jest przypięty (link_obj), −1 = brak
 	int linkPoint = 0;        // punkt zaczepienia rodzica (0..31)
+	std::vector<std::pair<std::string, std::string>> tclVars; // zmienne Tcl obiektu (nazwa, wartość)
 };
 
 // Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji

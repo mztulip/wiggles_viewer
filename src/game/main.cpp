@@ -43,6 +43,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace ow;
@@ -167,6 +168,25 @@ struct Game {
 	std::unique_ptr<script::Engine> scripts;
 	ScriptHost host;
 	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
+	// ID obiektów skryptów: obiekty z zapisu mają ID z zapisu (zmienne Tcl się do nich odwołują),
+	// pozostałe od 100000. idx(id) = indeks obiektu MapView.
+	std::unordered_map<int, int> idToIdx;
+	std::vector<int> idxToId;
+	int nextScriptId = 100000;
+	int idOf(int index) {
+		if (index >= int(idxToId.size())) idxToId.resize(size_t(index) + 1, 0);
+		int& id = idxToId[size_t(index)];
+		if (!id) {
+			const std::string& n = maps.objectName(index);
+			char* end = nullptr;
+			long v = n.empty() ? 0 : std::strtol(n.c_str(), &end, 10);
+			id = (v > 0 && end && !*end && !idToIdx.count(int(v))) ? int(v) : nextScriptId++;
+			idToIdx[id] = index;
+		}
+		return id;
+	}
+	bool valid(int id) const { return idToIdx.count(id) != 0; }
+	int idx(int id) const { auto it = idToIdx.find(id); return it == idToIdx.end() ? -1 : it->second; }
 	struct Glide {
 		int obj;
 		float from[3], to[3], t, dur;
@@ -244,6 +264,8 @@ struct Game {
 
 	void initWorld() {
 		units.clear();
+		idToIdx.clear(), idxToId.clear(), nextScriptId = 100000;
+		for (int i = 0; i < maps.objectCount(); ++i) idOf(i);
 		selected = -1;
 		if (const Pmp* g = grid()) nav.build(*g, maps.blockDb());
 		for (int i = 0; i < maps.objectCount(); ++i)
@@ -407,15 +429,20 @@ struct Game {
 		for (int i = 0; i < maps.objectCount(); ++i) {
 			bool gnome = Vfs::lower(maps.objectClass(i)) == "zwerg";
 			if (gnome && !scriptGnomes) continue;
-			auto* o = scripts->attach(i + 1, maps.objectClass(i), "", false);
+			auto* o = scripts->attach(idOf(i), maps.objectClass(i), "", false);
 			if (!o) continue;
 			o->owner = maps.objectOwner(i); // z zapisu
 			if (gnome && o->owner < 0) o->owner = 0; // krasnale ze scenariusza: gracz 0
 			n += o->interp != nullptr;
 		}
 		// obj_init dopiero po rejestracji wszystkich obiektów (obj_query widzi cały świat)
-		for (int i = 0; i < maps.objectCount(); ++i)
-			if (auto* o = scripts->object(i + 1); o && o->interp && o->cls) scripts->runIn(*o, o->cls->initBody, "obj_init");
+		// Potem zmienne Tcl z zapisu (stan skryptów w chwili zapisu; timery ustawił już obj_init).
+		for (int i = 0; i < maps.objectCount(); ++i) {
+			auto* o = scripts->object(idOf(i));
+			if (!o || !o->interp || !o->cls) continue;
+			scripts->runIn(*o, o->cls->initBody, "obj_init");
+			for (auto& [k, v] : maps.objectTclVars(i)) scripts->setVar(*o, k, v);
+		}
 		std::printf("skrypty: %d obiektów ze skryptami\n", n);
 	}
 
@@ -554,51 +581,51 @@ int ScriptHost::createObject(const std::string& cls, const std::string&, const f
 	int i = g->maps.addObject(cls, pos[0], pos[1], pos[2]);
 	g->maps.setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
 	if (Vfs::lower(cls) == "zwerg") g->addUnit(i);
-	return i + 1;
+	return g->idOf(i);
 }
 void ScriptHost::deleteObject(int id) { // 🔶 brak usuwania obiektów sceny: wynosimy poza świat
-	if (id > 0 && id <= g->maps.objectCount()) g->maps.setObjectPose(id - 1, -1000.f, -1000.f, 0.f, 0.f);
+	if (g->valid(id)) g->maps.setObjectPose(g->idx(id), -1000.f, -1000.f, 0.f, 0.f);
 }
 bool ScriptHost::getPos(int id, float pos[3]) {
-	if (id <= 0 || id > g->maps.objectCount()) return false;
-	const float* p = g->maps.objectPos(id - 1);
+	if (!g->valid(id)) return false;
+	const float* p = g->maps.objectPos(g->idx(id));
 	pos[0] = p[0], pos[1] = p[1], pos[2] = p[2];
 	return true;
 }
 void ScriptHost::setPos(int id, const float pos[3]) {
-	if (id <= 0 || id > g->maps.objectCount()) return;
-	if (Unit* u = g->unitOf(id - 1)) {
+	if (!g->valid(id)) return;
+	if (Unit* u = g->unitOf(g->idx(id))) {
 		u->x = pos[0], u->y = pos[1], u->z = pos[2];
 		u->path.clear(), u->state = Unit::Idle;
 		g->snapToFloor(*u);
 		return;
 	}
-	g->maps.setObjectPose(id - 1, pos[0], pos[1], pos[2], g->maps.objectRotY(id - 1));
+	g->maps.setObjectPose(g->idx(id), pos[0], pos[1], pos[2], g->maps.objectRotY(g->idx(id)));
 }
 void ScriptHost::setRotY(int id, float r) {
-	if (id <= 0 || id > g->maps.objectCount()) return;
-	if (Unit* u = g->unitOf(id - 1)) u->facing = r;
-	const float* p = g->maps.objectPos(id - 1);
-	g->maps.setObjectPose(id - 1, p[0], p[1], p[2], r);
+	if (!g->valid(id)) return;
+	if (Unit* u = g->unitOf(g->idx(id))) u->facing = r;
+	const float* p = g->maps.objectPos(g->idx(id));
+	g->maps.setObjectPose(g->idx(id), p[0], p[1], p[2], r);
 }
-float ScriptHost::getRotY(int id) { return id > 0 && id <= g->maps.objectCount() ? g->maps.objectRotY(id - 1) : 0.f; }
+float ScriptHost::getRotY(int id) { return g->valid(id) ? g->maps.objectRotY(g->idx(id)) : 0.f; }
 void ScriptHost::setAnim(int id, const std::string& anim, int, int mode) {
-	if (id <= 0 || id > g->maps.objectCount()) return;
-	if (Unit* u = g->unitOf(id - 1); u && u->state != Unit::Idle) return; // chód i kopanie mają własne animacje
+	if (!g->valid(id)) return;
+	if (Unit* u = g->unitOf(g->idx(id)); u && u->state != Unit::Idle) return; // chód i kopanie mają własne animacje
 	size_t dot = anim.find('.');
-	g->maps.playAnim(id - 1, dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
+	g->maps.playAnim(g->idx(id), dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
 }
 double ScriptHost::animLength(int id, const std::string& anim) { // klatki animacji modelu / 10 kl./s
 	size_t dot = anim.find('.');
 	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
-	if (id > 0 && id <= g->maps.objectCount()) {
-		double s = g->maps.animSeconds(id - 1, name);
+	if (g->valid(id)) {
+		double s = g->maps.animSeconds(g->idx(id), name);
 		if (s > 0) return s;
 	}
 	return 1.5; // 🔶 nieznana animacja albo db_animlength bez obiektu
 }
 bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done) {
-	Unit* u = g->unitOf(id - 1);
+	Unit* u = g->unitOf(g->idx(id));
 	if (!u || u->digJob) return false; // krasnal pracuje dla gracza
 	int tx = int(std::floor(t[0])), ty = g->tileOfFeet(t[1]);
 	for (int d = 0; d < 4 && !g->nav.standable(tx, ty) && !g->nav.climbable(tx, ty); ++d) ++ty;
@@ -630,9 +657,9 @@ bool ScriptHost::findPlace(const float c[3], float r, float out[3]) {
 	return false;
 }
 void ScriptHost::glide(int id, const float to[3], float seconds) {
-	if (id <= 0 || id > g->maps.objectCount() || g->unitOf(id - 1)) return;
-	const float* p = g->maps.objectPos(id - 1);
-	Game::Glide gl{id - 1, {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds};
+	if (!g->valid(id) || g->unitOf(g->idx(id))) return;
+	const float* p = g->maps.objectPos(g->idx(id));
+	Game::Glide gl{g->idx(id), {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds};
 	for (auto& x : g->glides)
 		if (x.obj == gl.obj) {
 			x = gl;
@@ -642,14 +669,14 @@ void ScriptHost::glide(int id, const float to[3], float seconds) {
 }
 
 void ScriptHost::link(int child, int parent, int link) {
-	if (child > 0 && child <= g->maps.objectCount()) g->maps.linkObject(child - 1, parent > 0 ? parent - 1 : -1, link);
+	if (g->valid(child)) g->maps.linkObject(g->idx(child), g->valid(parent) ? g->idx(parent) : -1, link);
 }
 bool ScriptHost::linkOffset(int id, int link, float out[3]) {
-	return id > 0 && id <= g->maps.objectCount() && g->maps.linkOffset(id - 1, link, out);
+	return g->valid(id) && g->maps.linkOffset(g->idx(id), link, out);
 }
 
 int ScriptHost::gnomePosition(int id) {
-	Unit* u = g->unitOf(id - 1);
+	Unit* u = g->unitOf(g->idx(id));
 	return u && !g->nav.standable(u->tx, u->ty) ? 1 : 0;
 }
 
