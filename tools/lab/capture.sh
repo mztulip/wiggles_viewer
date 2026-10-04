@@ -63,6 +63,7 @@ esac
 # wolny numer ekranu
 D=77; while [ -e "/tmp/.X$D-lock" ]; do D=$((D+1)); done
 Xvfb ":$D" -screen 0 1024x768x24 +extension GLX >/dev/null 2>&1 & XP=$!
+trap 'kill $XP 2>/dev/null' EXIT # sprzątanie także po przerwaniu (timeout)
 sleep 2
 cd "$LAB/Wiggles"
 DISPLAY=":$D" timeout $((WAIT + 20)) wine explorer /desktop=OWLab,1024x768 'C:\Wiggles\Wiggles.exe' >/dev/null 2>&1 & GP=$!
