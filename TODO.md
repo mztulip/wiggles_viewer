@@ -102,7 +102,7 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Mgła wojny w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
 - [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
 - [ ] 🔬 Przejścia gruntów maskami `Msk_*`: zrzuty szablonów testowych `ow_m1..3` (gotowe w `../lab`), potrzebna płyta w napędzie
-- [ ] 🔬 Cienie: zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta)
+- [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [ ] Teksturowanie współrzędnymi u, v z palety BlockDB zamiast triplanar
@@ -137,4 +137,8 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 ## Faza 7: dodatki
 - [ ] Mody w formacie DigglesModManager, stosowane w pamięci (`change_*.tcl`, `$if`, `config.json`)
 - [ ] Obsługa tekstur HD (`Data_HD`, HD mod)
+- [ ] **Tryb ulepszony** (opcja w ustawieniach, domyślnie wyłączona; domyślny wygląd zostaje wierny oryginałowi):
+  - [ ] cienie liczone na żywo (shadow mapping od lamp, cube mapy dla świateł punktowych) zamiast plam 32×32 z `.3db`
+  - [ ] oświetlenie w pikselach zamiast w wierzchołkach (z zachowaniem charakteru: nasycenie, światło bazowe)
+  - [ ] ewentualnie: wygładzanie krawędzi, tekstury HD, wyższa jakość mgły i panoramy
 - [ ] Multiplayer (bardzo daleko)
