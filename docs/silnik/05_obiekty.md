@@ -53,8 +53,8 @@ Model nie ma skali. Jego jednostki (1/200 bloku) pasują wprost do świata.
 
 Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 - klatka to osobny mesh (animacja wierzchołkowa);
-- gra **interpoluje liniowo** pozycje i normalne między kolejnymi klatkami (ustawienie `AnimInterpolation`, domyślnie włączone) ✅;
-- prędkość 🔶: przyjmujemy 20 klatek/s, co wygląda naturalnie;
+- 🔶 interpolacja: w rejestrze jest `AnimInterpolation=1` i opcja exe `AnimIpol`, więc liniowe przejścia między klatkami najpewniej istnieją; Diggles-Unity twierdzi jednak, że gra nie interpoluje. Do rozstrzygnięcia zrzutami (rozdział 11.6);
+- prędkość 🔶: **10 klatek/s** według stałej gry podanej przez Diggles-Unity (`klatka = start + round((teraz − t0)·10 + 0,05)`, rozdział 11.6). Wcześniej przyjmowaliśmy 20 kl./s na oko;
 - obiekty w trybie `ANIM_STILL` pokazują klatkę 0; przy `animrandom` każda instancja zaczyna od losowej klatki.
 
 ## 5.5 Rysowanie modelu

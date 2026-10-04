@@ -25,7 +25,7 @@ class Vfs;
 
 struct GltfExportOptions {
 	std::vector<int> animations; // indeksy w Object3db::animations; pusty = wszystkie
-	float fps = 20.f;
+	float fps = 10.f; // tempo animacji gry (docs/silnik/11_obiekty_tcl_i_petla.md §11.6)
 	float scale = 0.01f;     // jednostki modelu -> metry (krasnal ~2 m)
 	bool interpolate = true; // LINEAR (jak gra) albo STEP
 };

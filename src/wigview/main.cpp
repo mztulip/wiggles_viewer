@@ -145,7 +145,7 @@ struct Viewer {
 	int object = 0, anim = 0;
 	float frame = 0;
 	bool playing = true;
-	float fps = 20.f;
+	float fps = 10.f; // tempo animacji gry (docs/silnik/11_obiekty_tcl_i_petla.md §11.6)
 	bool loop = true;
 	bool interpolate = true; // jak oryginał (AnimIpol, domyślnie włączone)
 

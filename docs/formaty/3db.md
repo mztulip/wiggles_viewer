@@ -184,9 +184,9 @@ pozycja   = lerp(pos_i, pos_j, t)
 normalna  = normalize(lerp(sphere[nrm_i], sphere[nrm_j], t))
 ```
 
-**Interpolacja ✅:** oryginalny silnik interpoluje między klatkami. W exe jest opcja `AnimIpol [true|false] (true)`, w rejestrze `Performance\AnimInterpolation=1`, a dla obiektów komendy `set_forceipol`/`get_forceipol`. Dane są do tego przygotowane: w ok. 99,5% par kolejnych klatek linki mają ten sam materiał, tę samą pulę trójkątów i tę samą liczbę wierzchołków. Gdy topologia się różni, rysuj klatkę `i` bez interpolacji.
+**Interpolacja 🔶:** oryginalny silnik najpewniej interpoluje między klatkami (Diggles-Unity twierdzi, że nie; do sprawdzenia zrzutami). W exe jest opcja `AnimIpol [true|false] (true)`, w rejestrze `Performance\AnimInterpolation=1`, a dla obiektów komendy `set_forceipol`/`get_forceipol`. Dane są do tego przygotowane: w ok. 99,5% par kolejnych klatek linki mają ten sam materiał, tę samą pulę trójkątów i tę samą liczbę wierzchołków. Gdy topologia się różni, rysuj klatkę `i` bez interpolacji.
 
-🔶 Prędkość odtwarzania nie jest znana. 20 kl./s wygląda naturalnie; gra pozwala skryptom sprawdzić długość animacji w klatkach (`db_animlength obiekt.animacja`).
+🔶 Prędkość odtwarzania: **10 kl./s** według stałej gry podanej przez [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/ANIMATION_CONTROLLER.md` §1; [rozdział 11.6 przewodnika](../silnik/11_obiekty_tcl_i_petla.md)). Skrypty sprawdzają długość animacji w klatkach komendą `db_animlength obiekt.animacja`.
 
 Nazewnictwo animacji postaci: `*_start`, `*_loop`, `*_end` (np. `gehen_start` → `gehen_loop` → `gehen_end`). Statyczne obiekty mają jedną animację `standard`, często z jedną klatką.
 
@@ -235,4 +235,4 @@ cienie 2, cmapy 0
 ## 12. Otwarte pytania
 - `unknown80`, `unknown30` w meshu; flagi linku; rekordy 20-bajtowe; znaczenie `cmap` (kolizje? maski zaznaczania?).
 - Pola animacji: `flags`, `unknownF`, `move`, `rotate` (ruch korzenia?).
-- Prędkość animacji.
+- Prędkość animacji (10 kl./s według Diggles-Unity, niepotwierdzone) i to, czy gra interpoluje.

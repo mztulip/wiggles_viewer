@@ -113,6 +113,10 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Świat generowany proceduralnie (kampania, sandbox: `StoryMgr load_level`, `lg_*`, WORLDGEN_ORIGINAL_RE)
 
 ## Faza 5: skrypty, czyli osadzony Tcl
+- [x] Rozdział 11 przewodnika: interpretery obiektów, klasy, metody, zdarzenia, timery, maszyna stanów, takt gry (za Diggles-Unity i oficjalną pomocą komend)
+- [x] Tempo animacji 10 kl./s (stała gry według Diggles-Unity) w wigview i eksporcie glTF
+- [ ] 🔬 Zrzuty animowanego obiektu w serii: potwierdzić 10 kl./s i rozstrzygnąć, czy gra interpoluje (sprzeczność rejestr vs Diggles-Unity)
+- [ ] 🔬 Timer w klasie z `userstartup.tcl` nie zadziałał: ustalić dlaczego (czas gry? `def_event`?), żeby móc sondować grę w trakcie
 - [ ] Osadzenie Tcl (8.6 z systemu i sprawdzenie zgodności, albo 8.3 jak w oryginale: 🔬 decyzja po testach)
 - [ ] Preprocesor: komentarze `//`, `//# IF/IFNOT/IFNDEF/ELSE/ENDIF/STOPIFNOT`, symbole `FULL` i `NOSTARTSEQ`
 - [ ] `call` i `callnc` z normalizacją ścieżek (`scripts/` → `data/scripts/`, lowercase)

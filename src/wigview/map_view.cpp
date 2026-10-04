@@ -328,7 +328,7 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
 		opt.horizonZOffset = gameZOffset;
 	}
-	const float fps = 20.f;
+	const float fps = 10.f; // tempo animacji gry, §11.6
 	for (const auto& o : objects_) {
 		if (!o.slot || o.animation < 0) continue;
 		if (!showDetail_[detailIndex(o.src.detail)]) continue;

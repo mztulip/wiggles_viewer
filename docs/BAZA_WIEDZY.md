@@ -162,7 +162,7 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 ---
 
 ## Otwarte pytania
-Aktualna lista luk: [rozdział 11 przewodnika](silnik/11_niewiadome.md). Plan prac: [TODO.md](../TODO.md).
+Aktualna lista luk: [„Czego jeszcze nie wiemy”](silnik/niewiadome.md). Plan prac: [TODO.md](../TODO.md).
 
 ---
 

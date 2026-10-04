@@ -15,7 +15,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | **Cienie** pod obiektami | ❓ | `.3db` ma mapy cieni 32 × 32 przypisane do klatek; tylko w zasięgu `MaxShadowLightDist` = 8 od lampy; sposób rzutowania nieznany (Diggles-Unity też go nie zna); do ustalenia zrzutami z lampą |
 | Winieta (przyciemnienie brzegów ekranu w menu) | ❓ | widoczna na zrzutach |
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |
-| Prędkość animacji, pola `move`/`rotate` animacji | 🔶 | 20 kl./s wygląda dobrze ([3db.md](../formaty/3db.md) §8) |
+| Prędkość animacji i interpolacja; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; sprzeczne dane o interpolacji ([11.6](11_obiekty_tcl_i_petla.md)); `move` to najpewniej przesunięcie korzenia na cykl (prędkość chodu) |
 | Cząsteczki, woda, animacje tekstur (`txtanim`), materiały `shader.tcl` | ❓ | |
 
 ## 10.2 Świat i rozgrywka
@@ -24,7 +24,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 |---|---|---|
 | Generator świata kampanii i trybu swobodnego (`lg_*`, `StoryMgr load_level`) | ❓ | `Scripts/init/LGINIT.TCL`, Diggles-Unity `WORLDGEN_ORIGINAL_RE.md`, `LEVEL_GENERATOR.md` |
 | Maska ruchu w `.pmp` (przebiegi u16) | 🔶 | płaszczyzna nawigacji; Diggles-Unity `ORIGINAL_PATHFINDING_RE.md` |
-| Pełny model obiektów Tcl: osobne interpretery klas, zdarzenia, timery, stany | ❓ | rozdział 2.5; sonda w laboratorium pokazała, że ciała klas działają poza głównym interpreterem |
+| Model obiektów Tcl: szczegóły | 🔶 | opisany w [rozdziale 11](11_obiekty_tcl_i_petla.md) za Diggles-Unity; do sprawdzenia: semantyka licznika stanów, dlaczego timer klasy z `userstartup.tcl` nie zadziałał |
 | Kopanie, produkcja, walka, AI, interfejs, dźwięk | ❓ | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu (indeks: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §10) |
 | Zapisy `.sav` | ❓ | gzip, ok. 7 MB binarki zaczynającej się od `V1.0.844` |
 | Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` | ❓ | |
