@@ -138,6 +138,7 @@ struct Unit {
 	float z = kGnomeZ;          // głębokość (skala skryptu), z zapisu albo scenariusza
 	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
 	bool digJob = false;        // przydzielony do kopania zaznaczonych pól (gracz)
+	float goalX = -1, goalZ = -1; // dokładny cel chodu skryptu (x w polu, głębokość), −1 = środek pola
 };
 
 struct Game;
@@ -295,6 +296,7 @@ struct Game {
 				return;
 			}
 			u.path = std::move(p), u.step = 0, u.state = Unit::Walk, u.digX = -1;
+			u.goalX = u.goalZ = -1;
 			status.clear();
 			return;
 		}
@@ -311,6 +313,7 @@ struct Game {
 			return;
 		}
 		u.path = std::move(best), u.step = 0, u.state = Unit::Walk, u.digX = tx, u.digY = ty;
+		u.goalX = u.goalZ = -1;
 		status.clear();
 	}
 
@@ -354,6 +357,7 @@ struct Game {
 				auto p = nav.path(u.tx, u.ty, c[0], c[1]);
 				if (p.empty()) continue;
 				u.path = std::move(p), u.step = 0, u.state = Unit::Walk, u.digX = mx, u.digY = my;
+				u.goalX = u.goalZ = -1;
 				u.onArrive = nullptr;
 				return true;
 			}
@@ -386,6 +390,12 @@ struct Game {
 			} else {
 				auto [wx, wy] = u.path[u.step];
 				float gx = float(wx) + 0.5f, gy = floorY(wx, wy);
+				bool last = u.step + 1 == u.path.size();
+				if (last && u.goalX >= 0) gx = std::clamp(u.goalX, float(wx) + 0.1f, float(wx) + 0.9f);
+				if (u.goalZ >= 0) { // w głąb równolegle z chodem
+					float dz = u.goalZ - u.z, mz = 2.f * kWalkSpeed * dt;
+					u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
+				}
 				bool vertical = wx == u.tx && wy != u.ty;
 				float speed = vertical ? kClimbSpeed : kWalkSpeed;
 				float ddx = gx - u.x, ddy = gy - u.y, len = std::hypot(ddx, ddy), mv = speed * dt;
@@ -680,6 +690,7 @@ bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done
 	auto path = g->nav.path(u->tx, u->ty, tx, ty);
 	if (path.empty()) return false;
 	u->path = std::move(path), u->step = 0, u->state = Unit::Walk, u->digX = -1;
+	u->goalX = t[0], u->goalZ = t[2];
 	u->onArrive = std::move(done);
 	return true;
 }
@@ -694,6 +705,10 @@ float ScriptHost::hmap(float x, float y) { // głębokość tylnej ściany w pun
 bool ScriptHost::underwater(const float p[3]) { return g->maps.fluidFill(int(std::floor(p[0])), int(std::floor(p[1]))) > 0.5f; }
 bool ScriptHost::findPlace(const float c[3], float r, float out[3]) {
 	int cx = int(std::floor(c[0])), cy = g->tileOfFeet(c[1]);
+	if (g->nav.standable(cx, cy)) { // pole celu jest dobre: zostaje x i głębokość, y na podłożu
+		out[0] = c[0], out[1] = g->floorY(cx, cy), out[2] = c[2];
+		return true;
+	}
 	int rad = std::max(1, int(std::ceil(r)));
 	for (int d = 0; d <= rad; ++d)
 		for (int dy = -d; dy <= d; ++dy)

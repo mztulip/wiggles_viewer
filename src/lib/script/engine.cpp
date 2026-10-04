@@ -32,6 +32,8 @@ std::string fmt(double v) {
 	return b;
 }
 
+std::string vecStr(const float v[3]) { return fmt(v[0]) + " " + fmt(v[1]) + " " + fmt(v[2]); }
+
 // Tekst skryptu (CP1252/CP1250) -> UTF-8 dla Tcl 8.6. 🔶 Znaki 0x80..0x9F jak Latin-1.
 std::string toUtf8(const std::string& s) {
 	std::string o;
@@ -516,6 +518,15 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 		return TCL_OK;
 	}
 	const std::string& kind = a[2];
+	static const bool trace = std::getenv("OW_TRACE_STATES") != nullptr;
+	if (trace && o->cls && o->cls->type == "gnome") {
+		std::string args;
+		for (size_t i = 3; i < a.size(); ++i) args += " {" + a[i].substr(0, 60) + "}";
+		std::string caller;
+		if (Tcl_EvalEx(in, "set __l {}; for {set __i 1} {$__i <= [info level]} {incr __i} {lappend __l [lindex [info level $__i] 0]}; set __l", -1, 0) == TCL_OK)
+			caller = Tcl_GetStringResult(in);
+		std::fprintf(stderr, "  [%.1f] %d action %s%s  <- %s\n", e.time_, o->id, kind.c_str(), args.c_str(), caller.c_str());
+	}
 	double dur = 0;
 	std::string done;
 	if (kind == "wait" && a.size() > 3) dur = std::atof(a[3].c_str()), done = a.size() > 4 ? a[4] : "";
@@ -523,6 +534,14 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a) {
 		auto p = options(listItems(in, a[3]), 0);
 		float t[3];
 		done = a.size() > 4 ? a[4] : "";
+		if (!p.count("target") && p.count("randompath") && e.host_) { // -randompath L -randomz Z: losowy cel
+			float cur[3] = {0, 0, 0}, L = std::strtof(p["randompath"].c_str(), nullptr);
+			float Z = p.count("randomz") ? std::strtof(p["randomz"].c_str(), nullptr) : 0.f;
+			e.host_->getPos(o->id, cur);
+			float want[3] = {cur[0] + (float(std::rand()) / float(RAND_MAX) * 2.f - 1.f) * L, cur[1],
+			                 std::clamp(cur[2] + (float(std::rand()) / float(RAND_MAX) * 2.f - 1.f) * Z, 1.f, 14.f)};
+			if (e.host_->findPlace(want, L, t)) p["target"] = vecStr(t);
+		}
 		if (p.count("target") && parseVec(in, p["target"], t) && e.host_) {
 			o->actionDone = done;
 			o->actionUntil = -1;
@@ -637,7 +656,6 @@ int cmdRandom(Engine&, Tcl_Interp* in, Args& a) {
 }
 
 // --- wektory, listy, liczby (pomoc gry: ENGINE_TCL_API, misc) ---
-std::string vecStr(const float v[3]) { return fmt(v[0]) + " " + fmt(v[1]) + " " + fmt(v[2]); }
 int cmdVector(Engine&, Tcl_Interp* in, Args& a) {
 	float p[3] = {0, 0, 0}, q[3] = {0, 0, 0}, r[3];
 	if (a.size() > 1) parseVec(in, a[1], p);
@@ -809,22 +827,38 @@ int cmdGetPlace(Engine& e, Tcl_Interp* in, Args& a) {
 	float c[3] = {0, 0, 0}, r = 2.f, out[3] = {0, 0, 0};
 	if (o.count("center")) parseVec(in, o["center"], c);
 	if (o.count("circle")) r = std::strtof(o["circle"].c_str(), nullptr);
+	if (o.count("random")) { // losowe miejsce w kole, nie bliżej niż -mindist (walk_random)
+		float rr = std::strtof(o["random"].c_str(), nullptr), md = o.count("mindist") ? std::strtof(o["mindist"].c_str(), nullptr) : 0.f;
+		for (int tries = 0; tries < 8; ++tries) {
+			float d = md + (std::max(rr, md) - md) * float(std::rand()) / float(RAND_MAX);
+			float t[3] = {c[0] + (std::rand() % 2 ? d : -d), c[1], c[2] + (float(std::rand()) / float(RAND_MAX) * 2.f - 1.f) * 2.f};
+			t[2] = std::clamp(t[2], 1.f, 14.f);
+			if (e.host_ && e.host_->findPlace(t, 0.5f, out) && std::fabs(out[0] - c[0]) >= md) {
+				setResult(in, vecStr(out));
+				return TCL_OK;
+			}
+		}
+		setResult(in, "0 0 0");
+		return TCL_OK;
+	}
 	if (!(e.host_ && e.host_->findPlace(c, r, out))) out[0] = out[1] = out[2] = 0;
 	setResult(in, vecStr(out));
 	return TCL_OK;
 }
-// placelock_set pos promień id / placelock_check pos promień [idwyjątek] / placelock_rem id
+// placelock_set pos czas id: rezerwacja miejsca na `czas` sekund (🔶 z kontekstu: note_pathlength podaje
+// długość_drogi·2, czyli czas dojścia); placelock_check pos promień [idwyjątek]: czy w promieniu jest
+// cudza rezerwacja; placelock_rem id.
 int cmdPlacelock(Engine& e, Tcl_Interp* in, Args& a) {
 	float p[3];
 	const std::string& c = a[0];
 	if (c == "placelock_rem" && a.size() > 1) e.placeLocks_.erase(std::atoi(a[1].c_str()));
 	else if (c == "placelock_set" && a.size() > 3 && parseVec(in, a[1], p))
-		e.placeLocks_[std::atoi(a[3].c_str())] = {{p[0], p[1], p[2]}, std::strtof(a[2].c_str(), nullptr)};
+		e.placeLocks_[std::atoi(a[3].c_str())] = {{p[0], p[1], p[2]}, float(e.time_) + std::strtof(a[2].c_str(), nullptr)};
 	else if (c == "placelock_check" && a.size() > 2 && parseVec(in, a[1], p)) {
 		float r = std::strtof(a[2].c_str(), nullptr);
 		int except = a.size() > 3 ? std::atoi(a[3].c_str()) : -1;
 		for (auto& [id, l] : e.placeLocks_)
-			if (id != except && std::hypot(l.first[0] - p[0], l.first[1] - p[1]) < r + l.second) {
+			if (id != except && l.second >= float(e.time_) && std::hypot(l.first[0] - p[0], l.first[1] - p[1]) < r) {
 				setResult(in, "1");
 				return TCL_OK;
 			}
@@ -861,7 +895,7 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
 	}
 	std::vector<std::pair<float, int>> hits;
 	for (auto& [id, ob] : e.objects_) {
-		if (!ob->alive || !ob->cls) continue;
+		if (!ob->alive || !ob->cls || id == self) continue; // bez pytającego obiektu (act_when_idle szuka innych krasnali)
 		if (!classes.empty() && !classes.count(Vfs::lower(ob->cls->name))) continue;
 		if (!type.empty() && ob->cls->type != type) continue;
 		if (owner == "own" && ob->owner != selfOwner) continue;
@@ -872,7 +906,9 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a) {
 		if (!e.host_ || !e.host_->getPos(id, p)) continue;
 		float d = std::hypot(p[0] - c[0], p[1] - c[1]);
 		if (d > range) continue;
-		if (box && (p[0] - c[0] < bb[0] || p[1] - c[1] < bb[1] || p[0] - c[0] > bb[3] || p[1] - c[1] > bb[4])) continue;
+		if (box && (p[0] - c[0] < bb[0] || p[1] - c[1] < bb[1] || p[2] - c[2] < bb[2] || p[0] - c[0] > bb[3] ||
+		            p[1] - c[1] > bb[4] || p[2] - c[2] > bb[5]))
+			continue;
 		hits.push_back({d, id});
 	}
 	std::sort(hits.begin(), hits.end());
@@ -1277,6 +1313,8 @@ void Engine::setState(ScriptObject& o, const std::string& st, bool fresh) {
 	if (!o.cls) return;
 	if (!o.state.empty())
 		if (auto it = o.cls->stateLeave.find(o.state); it != o.cls->stateLeave.end()) runIn(o, it->second, "state_leave");
+	static const bool trace = std::getenv("OW_TRACE_STATES") != nullptr; // OW_TRACE_STATES=1: przejścia stanów na stderr
+	if (trace) std::fprintf(stderr, "[%.1f] %s %d: %s -> %s%s\n", time_, o.cls->name.c_str(), o.id, o.state.c_str(), st.c_str(), fresh ? " (fresh)" : "");
 	o.state = st;
 	if (fresh) o.stateCounter = 1;
 	if (!st.empty())
@@ -1305,7 +1343,12 @@ void Engine::tick(double dt) {
 	list.reserve(objects_.size());
 	for (auto& [id, o] : objects_)
 		if (o->alive && o->interp) list.push_back(o.get());
+	static const bool trace = std::getenv("OW_TRACE_STATES") != nullptr;
+	bool traceNow = trace && std::fmod(time_, 1.0) < dt;
 	for (ScriptObject* o : list) {
+		if (traceNow && o->cls && o->cls->type == "gnome")
+			std::fprintf(stderr, "  [%.1f] %d stan=%s licznik=%d chodzi=%d akcja_do=%.1f zdarzenia=%zu\n", time_, o->id, o->state.c_str(),
+			             o->stateCounter, int(o->walking), o->actionUntil, o->queue.size());
 		if (!o->walking && o->actionUntil >= 0 && time_ >= o->actionUntil) {
 			o->actionUntil = -1;
 			std::string done;

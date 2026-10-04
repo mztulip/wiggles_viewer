@@ -174,7 +174,7 @@ public:
 	std::map<std::string, AttribDef> attribDefs_; // def_attrib nazwa min max domyślna
 	std::map<int, std::map<std::string, double>> ownerAttribs_; // get/set_owner_attrib
 	std::map<int, std::set<std::string>> sparetimeOffers_;        // sparetime obj announce eat|sleep|… (miejsca czasu wolnego)
-	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, promień)
+	std::map<int, std::pair<std::array<float, 3>, float>> placeLocks_; // placelock: id -> (pozycja, koniec rezerwacji)
 	void finishAction(ScriptObject& o, bool ok);
 	// Nazwa logiczna z set_class_anim (np. standloopa) -> obiekt.animacja; pełne nazwy bez zmian.
 	std::string resolveAnim(const ScriptObject* o, const std::string& anim) const;
