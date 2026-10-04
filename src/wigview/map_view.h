@@ -150,6 +150,8 @@ private:
 	std::string zoneClass_;
 	// Mgła wojny: bajt na pole (gracz lokalny), tekstura narożników (szarość, czerń, skala lamp).
 	FogMode fogMode_ = FogMode::Off;
+	FogMode revealPrev_ = FogMode::Off; // tryb sprzed „Odkryj mapę”
+	bool revealMap_ = false;            // „Odkryj mapę” zaznaczone przez użytkownika
 	int fogRadius_ = 10, fogByte_ = 0xFF, fowBegin_ = -1;
 	bool fogDirty_ = true;
 	int fogFocus_[2] = {-99999, -99999};

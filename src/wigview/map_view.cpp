@@ -211,7 +211,7 @@ bool MapView::loadSaveData(const std::string& file, const std::vector<uint8_t>& 
 	for (auto& [k, n] : worlds)
 		if (n > best && (k == "urw" || k == "kris" || k == "lava" || k == "swf")) best = n, world = k;
 	bool ok = finishLoad(sc, 0, world, &bw);
-	setFog(FogMode::FromSave, fogRadius_, fogByte_); // mgła wojny jak w chwili zapisu
+	setFog(revealMap_ ? FogMode::Off : FogMode::FromSave, fogRadius_, fogByte_); // mgła wojny jak w chwili zapisu
 	return ok;
 }
 
@@ -666,6 +666,21 @@ bool MapView::ui() {
 		// Podgląd mgły wojny (wymaga oświetlenia gry).
 		const char* modes[] = {"wyłączona", "całość odkryta, niewidoczna (szara)", "kadr widoczny, reszta szara",
 		                       "kadr widoczny, reszta czarna", "z zapisu gry (gracz 0)"};
+		// Odkryj mapę: wyłącza mgłę, odznaczenie przywraca poprzedni tryb (dla zapisu: mgła z zapisu).
+		// Wybór zostaje przy wczytywaniu kolejnych zapisów.
+		bool reveal = fogMode_ == FogMode::Off;
+		if (ImGui::Checkbox("Odkryj mapę", &reveal)) {
+			revealMap_ = reveal;
+			if (reveal) {
+				revealPrev_ = fogMode_;
+				setFog(FogMode::Off, fogRadius_, fogByte_);
+			} else {
+				FogMode back = revealPrev_ != FogMode::Off ? revealPrev_ : saveFog_.empty() ? FogMode::Explored : FogMode::FromSave;
+				setFog(back, fogRadius_, fogByte_);
+			}
+		}
+		ImGui::SetItemTooltip("Pokazuje cały teren i wszystkie obiekty bez mgły wojny.");
+		ImGui::SameLine();
 		int m = int(fogMode_);
 		ImGui::SetNextItemWidth(260);
 		if (ImGui::Combo("Mgła wojny", &m, modes, saveFog_.empty() ? 4 : 5)) setFog(FogMode(m), fogRadius_, fogByte_);
