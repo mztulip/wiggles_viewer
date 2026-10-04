@@ -54,7 +54,9 @@ public:
 	const std::vector<std::string>& files() const { return files_; }
 
 	// Rysuje panel UI (lista, siatka 2D, informacje). Zwraca true, gdy kamera powinna się wycentrować.
-	bool ui();
+	// savesTab: zakładka Zapisy (lista zapisów gry) zamiast Mapy (szablony i scenariusze).
+	bool ui(bool savesTab);
+	bool showingSave() const { return list_ == ListMode::Saves; }
 	void update(float dt) { time_ += dt; }
 	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
 	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).

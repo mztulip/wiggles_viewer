@@ -143,7 +143,7 @@ struct Viewer {
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
-	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy
+	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy, 3 zapisy (2 i 3 pokazują widok mapy)
 	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
 	MapView maps;
 	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
@@ -280,7 +280,7 @@ struct Viewer {
 
 	glm::mat4 viewProj(int w, int h) const {
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
-		if (gameCam && activeTab == 2) {
+		if (gameCam && activeTab >= 2) {
 			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
 			const auto& g = gameCamView;
 			float Rb = g.zoom * 16.f - 10.f;
@@ -322,8 +322,8 @@ struct Viewer {
 	// Kolor czyszczenia klatki: w zakładce Mapy kolor strefy horyzontu (jak w grze).
 	glm::vec3 clearColor() {
 		glm::vec3 clear = bg;
-		if (activeTab == 2) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
-		if (activeTab == 2)
+		if (activeTab >= 2) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
+		if (activeTab >= 2)
 			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b);
 		return clear;
 	}
@@ -331,7 +331,7 @@ struct Viewer {
 	void renderScene(int w, int h, int x0 = 0) {
 		x0 = std::clamp(x0, 0, w - 1);
 		device->setViewport(x0, 0, w - x0, h);
-		if (activeTab == 2) {
+		if (activeTab >= 2) {
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
 		} else {
 			uint32_t a, b;
@@ -649,8 +649,7 @@ void Viewer::openHit(const SearchEntry& e) {
 		break;
 	case HitKind::Template:
 	case HitKind::Scenario:
-		forceTab = 2;
-		activeTab = 2;
+		forceTab = activeTab = 2;
 		if (e.kind == HitKind::Scenario) maps.selectScenario(e.file);
 		else maps.select(e.file);
 		frameMap();
@@ -746,9 +745,15 @@ void Viewer::ui() {
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Mapy", nullptr, tabFlags(2))) {
-			if (activeTab != 2) frameMap();
+			if (activeTab < 2) frameMap();
 			activeTab = 2;
-			if (maps.ui()) frameMap();
+			if (maps.ui(false)) frameMap();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Zapisy", nullptr, tabFlags(3))) {
+			if (activeTab < 2) frameMap();
+			activeTab = 3;
+			if (maps.ui(true)) frameMap();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -925,8 +930,7 @@ int main(int argc, char** argv) {
 			if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";
 			if (!v.maps.loadTemplate(t)) std::fprintf(stderr, "szablon %s: %s\n", t.c_str(), v.maps.error().c_str());
 		}
-		v.activeTab = 2;
-		v.forceTab = 2;
+		v.activeTab = v.forceTab = v.maps.showingSave() ? 3 : 2;
 		v.frameMap();
 		if (args.viewSet) {
 			v.yaw = args.yaw;

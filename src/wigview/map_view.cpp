@@ -591,18 +591,18 @@ void MapView::uiGrid() {
 	ImGui::EndChild();
 }
 
-bool MapView::ui() {
+bool MapView::ui(bool savesTab) {
 	bool recenter = false;
-	ImGui::BeginChild("szablony", ImVec2(ImGui::GetFontSize() * 21.f, 0), ImGuiChildFlags_Borders);
-	auto radio = [&](const char* label, ListMode m) {
-		if (ImGui::RadioButton(label, list_ == m)) list_ = m;
-	};
-	radio("Szablony", ListMode::Templates);
-	ImGui::SameLine();
-	radio("Scenariusze", ListMode::Scenarios);
-	ImGui::SameLine();
-	radio("Zapisy", ListMode::Saves);
-	if (list_ == ListMode::Saves) uiSaves(recenter);
+	ImGui::BeginChild("szablony", ImVec2(ImGui::GetFontSize() * (savesTab ? 21.f : 16.f), 0), ImGuiChildFlags_Borders);
+	if (savesTab) {
+		list_ = ListMode::Saves;
+		uiSaves(recenter);
+	} else {
+		if (list_ == ListMode::Saves) list_ = scenarioMode_ ? ListMode::Scenarios : ListMode::Templates;
+		if (ImGui::RadioButton("Szablony", list_ == ListMode::Templates)) list_ = ListMode::Templates;
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Scenariusze", list_ == ListMode::Scenarios)) list_ = ListMode::Scenarios;
+	}
 	ImGui::SetNextItemWidth(-1);
 	const char* hint = list_ == ListMode::Templates ? "filtr (np. urw_gng)" : list_ == ListMode::Scenarios ? "filtr (np. single_)" : "filtr (np. quick)";
 	ImGui::InputTextWithHint("##mf", hint, filter_, sizeof filter_);
