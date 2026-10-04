@@ -201,3 +201,16 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 5. Maszyna stanów z licznikiem włączeń, wołana w każdej turze logiki po zdarzeniach.
 6. Takt: 40 kroków na sekundę, tura logiki co 4. krok.
 7. Komendy natywne stopniowo, zaczynając od najczęstszych ([natywne_komendy_gry.txt](../natywne_komendy_gry.txt)); nieznane mogą na początek logować wywołanie i zwracać pusty wynik, a `catch` w `classinit.tcl` i tak izoluje błędy plików.
+
+## 11.9 Nasza implementacja (stan) 🔶
+
+`src/lib/script/engine.cpp`, test bez okna: `build/release/owscript [KLASA [SEKUNDY]]` (dziennik zaślepek i błędów), w grze: `openwiggles` (dziennik `openwiggles_tcl.log`, wyłączenie: `--no-scripts`).
+
+- **Tcl 8.6 z systemu.** Tekst skryptów (CP1252/1250) zamieniamy na UTF-8 przed wykonaniem. Preprocesor jak w 2.2 (symbol `FULL` zdefiniowany).
+- **Start**: `genattribs.tcl`, `customcommands.tcl`, `shader.tcl`, `txtinit.tcl`, `animinit.tcl`, `classinit.tcl`, `talkinit.tcl`, `claninit.tcl`, `fight.tcl` (bez menu, dźwięku, SI). Wynik: **2684 klasy w ok. 5 s, bez błędów**. `makettree.tcl` i `init_techtree` pomijamy (gra ma gotowy `gen_tt.tcl`).
+- **Katalog bieżący** `cd`/`pwd`/`glob`/`file exists` działa wirtualnie po katalogu gry (start: katalog gry, nie `Data`). `locale` zwraca `pl` (pliki `*_pl.tcl`).
+- **Zapis plików przez skrypty** (`open … w`) trafia do `~/.cache/openwiggles/<ścieżka>`; odczyt najpierw stamtąd, potem z gry. Instalacji gry nie zmieniamy.
+- **Klasy.** `def_class` wykonuje ciało w tymczasowym interpreterze. Wcześniej kopiuje do niego zmienne głównego interpretera, bo ciała w cudzysłowach (`obj_init "… $ANIM_STILL"`) podstawiają je od razu. `in_class_def` = 1 w ciele klasy. `get_class_name/type/category/era/flags` bez argumentu zwracają klasę z definicji (z tego korzysta `techtreetunes.tcl` przy zmiennych `ttt*_<klasa>`). Po wykonaniu zapamiętujemy procedury i zmienne globalne ciała.
+- **Obiekty**: interpreter na obiekt; kolejno zmienne głównego interpretera, zmienne i procedury klasy, pola (`member`), `obj_init`. Klasy z `class_disablescripting` nie dostają interpretera. W zapisie kampanii skrypty ma 118 obiektów.
+- **Takt** 10 Hz: timery → kolejka zdarzeń → `handle_event` → ciało stanu (gdy licznik > 0 i nie trwa akcja).
+- **Zaślepki**: nieznana komenda trafia do procedury `unknown`, liczy się w dzienniku i zwraca `0`. Krasnal ze skryptem „umiera” po kilku sekundach, bo atrybuty (np. zdrowie) wynoszą 0. Dlatego w grze krasnale steruje na razie gracz (rozdział 14), a skrypty mają pozostałe obiekty.

@@ -98,6 +98,7 @@ public:
 	int objectCount() const { return int(objects_.size()); }
 	const std::string& objectClass(int i) const { return objects_[size_t(i)].src.className; }
 	const float* objectPos(int i) const { return objects_[size_t(i)].src.pos; }
+	float objectRotY(int i) const { return objects_[size_t(i)].src.rot[1]; }
 	// Model z pliku .3db i obiektu (dla klas bez class_defaultanim, np. Zwerg = mann.3db, obiekt mann).
 	bool setObjectModel(int i, const std::string& modelFile, const std::string& object);
 	void setObjectPose(int i, float x, float y, float zScript, float rotY);

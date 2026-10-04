@@ -21,6 +21,7 @@
 #include "lib/nav.h"
 #include "lib/png_write.h"
 #include "lib/rhi/rhi.h"
+#include "lib/script/engine.h"
 #include "lib/sphere.h"
 #include "lib/vfs.h"
 #include "ow_version.h"
@@ -58,6 +59,7 @@ struct Args {
 	rhi::Backend renderer = rhi::Backend::Vulkan;
 	bool rendererForced = false;
 	int width = 1280, height = 800;
+	bool scripts = true;          // --no-scripts: bez silnika Tcl
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
 };
@@ -74,6 +76,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--lang") a.lang = next();
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
+		else if (k == "--no-scripts") a.scripts = false;
 		else if (k == "--view") {
 			GameView v;
 			v.x = float(std::atof(next()));
@@ -127,8 +130,38 @@ struct Unit {
 	float facing = -kPi * 0.5f; // −π/2 = w prawo, +π/2 = w lewo (obserwacja modelu mann)
 };
 
+// Most między silnikiem skryptów a sceną: ID obiektu skryptu = indeks obiektu MapView + 1.
+struct ScriptHost : script::Host {
+	MapView* maps = nullptr;
+	int createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3]) override {
+		int i = maps->addObject(cls, pos[0], pos[1], pos[2]);
+		maps->setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
+		return i + 1;
+	}
+	void deleteObject(int id) override { // 🔶 brak usuwania obiektów sceny: wynosimy poza świat
+		if (id > 0 && id <= maps->objectCount()) maps->setObjectPose(id - 1, -1000.f, -1000.f, 0.f, 0.f);
+	}
+	bool getPos(int id, float pos[3]) override {
+		if (id <= 0 || id > maps->objectCount()) return false;
+		const float* p = maps->objectPos(id - 1);
+		pos[0] = p[0], pos[1] = p[1], pos[2] = p[2];
+		return true;
+	}
+	void setPos(int id, const float pos[3]) override {
+		if (id > 0 && id <= maps->objectCount()) maps->setObjectPose(id - 1, pos[0], pos[1], pos[2], maps->objectRotY(id - 1));
+	}
+	void setAnim(int id, const std::string& anim, int, int mode) override {
+		if (id <= 0 || id > maps->objectCount()) return;
+		size_t dot = anim.find('.');
+		maps->playAnim(id - 1, dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
+	}
+};
+
 struct Game {
 	Vfs vfs;
+	std::unique_ptr<script::Engine> scripts;
+	ScriptHost host;
+	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
@@ -270,9 +303,28 @@ struct Game {
 		maps.setObjectPose(u.obj, u.x, u.y, kGnomeZ, u.facing);
 	}
 
+	// Skrypty obiektów świata (obj_init). Krasnale na razie steruje gracz (C++), nie skrypty.
+	void attachScripts() {
+		if (!scripts) return;
+		int n = 0;
+		for (int i = 0; i < maps.objectCount(); ++i) {
+			if (Vfs::lower(maps.objectClass(i)) == "zwerg") continue;
+			auto* o = scripts->attach(i + 1, maps.objectClass(i), "");
+			n += o && o->interp;
+		}
+		std::printf("skrypty: %d obiektów ze skryptami\n", n);
+	}
+
 	void update(float dt) {
 		dt = std::min(dt, 0.1f);
 		maps.update(dt);
+		if (scripts) { // tura logiki 10 razy na sekundę (rozdział 11.7)
+			scriptAcc += dt;
+			while (scriptAcc >= 0.1) {
+				scriptAcc -= 0.1;
+				scripts->tick(0.1);
+			}
+		}
 		for (auto& u : units) updateUnit(u, dt);
 	}
 
@@ -413,6 +465,16 @@ int main(int argc, char** argv) {
 	}
 	if (!ok) std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
 	g.initWorld();
+	if (args.scripts) {
+		g.scripts = std::make_unique<script::Engine>(g.vfs);
+		g.host.maps = &g.maps;
+		g.scripts->setHost(&g.host);
+		Uint64 t0 = SDL_GetTicks64();
+		std::string serr;
+		if (!g.scripts->boot(serr)) std::fprintf(stderr, "skrypty: %s\n", serr.c_str());
+		std::printf("skrypty: %zu klas w %llu ms\n", g.scripts->classCount(), (unsigned long long)(SDL_GetTicks64() - t0));
+		g.attachScripts();
+	}
 	if (args.view) g.cam = *args.view;
 	for (float t = 0; t < args.warmup; t += 0.1f) g.update(0.1f);
 
@@ -442,6 +504,7 @@ int main(int argc, char** argv) {
 		return true;
 	};
 	auto shutdown = [&]() {
+		if (g.scripts) g.scripts->writeLog("openwiggles_tcl.log");
 		dev.waitIdle();
 		dev.imguiShutdown();
 		ImGui::DestroyContext();

@@ -2,7 +2,7 @@
 # System budowania OpenWiggles (bez CMake).
 #
 # Użycie: ./build.sh [debug|release] [vulkan|opengl|both] [cel...]
-#   cele: lib, imgui, wigview, game (openwiggles), test3db, export_gltf, all (domyślnie), clean
+#   cele: lib, imgui, wigview, game (openwiggles), owscript, test3db, export_gltf, all (domyślnie), clean
 #   renderer: both (domyślnie: oba backendy, wybór przy starcie --renderer, domyślnie Vulkan),
 #             vulkan albo opengl (tylko jeden backend; wynik w build/<tryb>-<renderer>/)
 #   zmienne: CXX (domyślnie g++), JOBS (domyślnie nproc), VERBOSE=1
@@ -54,7 +54,7 @@ case "$MODE" in
 	debug)   CXXFLAGS+=(-O0 -g -DOW_DEBUG) ;;
 	release) CXXFLAGS+=(-O2 -DNDEBUG) ;;
 esac
-LIBS=($(pkg-config --libs sdl2 zlib) -ldl)
+LIBS=($(pkg-config --libs sdl2 zlib) -ltcl8.6 -ldl)
 [ "$WITH_GL" = 1 ] && CXXFLAGS+=(-DOW_RHI_GL)
 if [ "$WITH_VK" = 1 ]; then CXXFLAGS+=(-DOW_RHI_VK); LIBS+=($(pkg-config --libs vulkan)); fi
 
@@ -219,6 +219,13 @@ build_game() {
 	link "$OUT/openwiggles" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
+build_owscript() {
+	build_lib
+	log "[owscript]"
+	compile -- src/tools/owscript.cpp
+	link "$OUT/owscript" "${OBJS[@]}" "$OUT/libwiggles.a"
+}
+
 build_export_gltf() {
 	build_lib
 	log "[export_gltf]"
@@ -242,9 +249,10 @@ for t in "${TARGETS[@]}"; do
 		imgui) build_imgui ;;
 		wigview) build_wigview ;;
 		game) build_game ;;
+		owscript) build_owscript ;;
 		test3db) build_test3db ;;
 		export_gltf) build_export_gltf ;;
-		all) build_wigview; build_game; build_test3db; build_export_gltf ;;
+		all) build_wigview; build_game; build_test3db; build_export_gltf; build_owscript ;;
 		*) log "nieznany cel: $t"; exit 1 ;;
 	esac
 done

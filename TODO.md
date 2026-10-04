@@ -13,7 +13,9 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
 - [ ] 🔧 Płyny: zatyczki, odpływy, `-height`/`-ventil`, źródła z zapisu, kolor wody bliżej gry, rzadka lista pól zamiast pełnego prostokąta
-- [ ] G7 Osadzony Tcl 8.6 ze stubami komend: klasy obiektów (`def_class`, `obj_init`, zdarzenia, timery) dla krasnali i przedmiotów
+- [x] G7a Osadzony Tcl 8.6: preprocesor, `call`, wirtualny katalog, 2684 klasy bez błędów, interpreter na obiekt, `obj_init`, timery, zdarzenia, stany, zaślepki z dziennikiem (`owscript`, rozdział 11.9)
+- [ ] G7b Komendy natywne dla krasnali: atrybuty i zdrowie, `action walk` przez nawigację, `obj_query`, `get_walkresult`, `tasklist_*`, praca i czas wolny; potem skrypty sterują krasnalami
+- [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, pamięć podręczna klas (start 5 s), tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
 - [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
 - [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
 - [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
