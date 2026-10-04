@@ -49,19 +49,13 @@ std::vector<uint8_t> bleedTransparent(const Image& img) {
 
 } // namespace
 
-GLuint uploadTexture(const Image& img, bool mipmaps) {
+rhi::Handle TextureCache::upload(const Image& img, const rhi::TextureDesc& desc) {
+	if (!device_) return rhi::kNull;
 	std::vector<uint8_t> px = bleedTransparent(img);
-	GLuint id = 0;
-	gl::GenTextures(1, &id);
-	gl::BindTexture(GL_TEXTURE_2D, id);
-	gl::PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-	if (mipmaps) gl::GenerateMipmap(GL_TEXTURE_2D);
-	return id;
+	rhi::TextureDesc d = desc;
+	d.width = img.width;
+	d.height = img.height;
+	return device_->createTexture(d, px.data());
 }
 
 const TextureCache::Entry& TextureCache::checker() {
@@ -78,7 +72,7 @@ const TextureCache::Entry& TextureCache::checker() {
 				p[2] = on ? 255 : 40;
 				p[3] = 255;
 			}
-		checker_.id = uploadTexture(img);
+		checker_.id = upload(img, rhi::TextureDesc{});
 		checker_.width = checker_.height = 64;
 	}
 	return checker_;
@@ -92,7 +86,7 @@ const TextureCache::Entry& TextureCache::getPath(const std::string& gamePath) {
 	if (auto data = vfs_.read(gamePath)) {
 		Image img;
 		if (loadTga(*data, img)) {
-			e.id = uploadTexture(img);
+			e.id = upload(img, rhi::TextureDesc{});
 			e.width = img.width;
 			e.height = img.height;
 			e.hasAlpha = img.hasAlpha;
@@ -112,11 +106,13 @@ const TextureCache::Entry& TextureCache::get(const std::string& name) {
 }
 
 void TextureCache::clear() {
-	for (auto& [k, e] : byPath_)
-		if (e.id) gl::DeleteTextures(1, &e.id);
+	if (device_) {
+		for (auto& [k, e] : byPath_)
+			if (e.id) device_->destroyTexture(e.id);
+		if (checker_.id) device_->destroyTexture(checker_.id);
+	}
 	byPath_.clear();
 	byName_.clear();
-	if (checker_.id) gl::DeleteTextures(1, &checker_.id);
 	checker_ = {};
 }
 

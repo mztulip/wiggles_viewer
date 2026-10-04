@@ -47,14 +47,15 @@ ImU32 valueColor(unsigned v, unsigned max) {
 
 } // namespace
 
-void MapView::init(const Vfs* vfs, TextureCache* textures, const std::vector<Vec3f>* sphere) {
+void MapView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, const std::vector<Vec3f>* sphere) {
+	dev_ = &dev;
 	vfs_ = vfs;
 	textures_ = textures;
 	sphere_ = sphere;
 	classes_.load(*vfs);
 	std::string err;
-	if (!terrain_.init(err)) blocksError_ = "shader terenu: " + err;
-	panoramaReady_ = panorama_.init(err, *textures);
+	if (!terrain_.init(dev, err)) blocksError_ = "shader terenu: " + err;
+	panoramaReady_ = panorama_.init(dev, err, *textures);
 	try {
 		blocks_.load(*vfs);
 	} catch (const std::exception& e) {
@@ -80,7 +81,7 @@ MapView::ModelSlot* MapView::model(const std::string& file) {
 		s.model = std::make_unique<Model3db>(parseModel3db(*data));
 		s.renderer = std::make_unique<ModelRenderer>();
 		std::string err;
-		if (!s.renderer->init(err)) throw std::runtime_error(err);
+		if (!s.renderer->init(*dev_, err)) throw std::runtime_error(err);
 		s.renderer->setSphere(*sphere_);
 		s.renderer->setModel(s.model.get(), textures_);
 		for (size_t i = 0; i < s.model->objects.size(); ++i)
@@ -324,16 +325,16 @@ void MapView::render(const glm::mat4& viewProj, const glm::mat4& world, const Mo
 	const std::vector<GameLight>* gl = gameLighting_ ? &lights : nullptr;
 	updateFog(focus);
 	const GameFog* fog = fogMode_ != FogMode::Off ? &gameFog_ : nullptr;
+	uploadScene(*dev_, gl, gl ? fog : nullptr); // lampy i mgła klatki (wiązanie 1), wspólne dla terenu i modeli
 	if (showPanorama_ && hasOpenAir_ && panoramaReady_ && PanoramaRenderer::gateOpen(focus.y / kBlock, groundRow_)) {
 		panorama_.draw(glm::scale(glm::mat4(1.f), glm::vec3(1.f / kBlock)) * glm::inverse(viewProj * world));
 		if (showCarpet_)
 			panorama_.drawCarpet(viewProj * world * glm::scale(glm::mat4(1.f), glm::vec3(kBlock)), focus.x / kBlock, groundRow_);
 	}
-	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl, fog);
+	if (showTerrain_) terrain_.draw(viewProj, world, baseOpt.lightDir, baseOpt.ambient, baseOpt.wireframe, gl != nullptr);
 	if (!showObjects_) return;
 	ModelDrawOptions opt = baseOpt;
 	opt.gameLights = gl;
-	opt.fog = fog;
 	if (const HorizonZone* z = zone()) {
 		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
 		opt.horizonZOffset = gameZOffset;
@@ -390,7 +391,7 @@ void MapView::updateFog(const glm::vec3& focus) {
 			if (y >= 5 && y < fowBegin_) fog_[size_t(y) * W + x] = 0xFF; // set_fow_begin: niebo zawsze widoczne
 		}
 	// Dekodowanie bajtu na narożnik: szarość g, czerń k, skala lamp S (tabela w §10.5).
-	std::vector<uint8_t> rgb(size_t(W) * H * 3);
+	std::vector<uint8_t> rgb(size_t(W) * H * 4, 255);
 	for (size_t i = 0; i < fog_.size(); ++i) {
 		int b = fog_[i];
 		int g = 0, k = 255, s = 255;
@@ -401,23 +402,17 @@ void MapView::updateFog(const glm::vec3& focus) {
 			g = std::max(0, 255 - 2 * u);
 			s = std::min(255, u * 2);
 		} else g = 0;
-		rgb[i * 3] = uint8_t(g), rgb[i * 3 + 1] = uint8_t(k), rgb[i * 3 + 2] = uint8_t(s);
+		rgb[i * 4] = uint8_t(g), rgb[i * 4 + 1] = uint8_t(k), rgb[i * 4 + 2] = uint8_t(s);
 	}
-	if (!gameFog_.texture) {
-		GLuint t = 0;
-		gl::GenTextures(1, &t);
-		gameFog_.texture = t;
-	}
+	rhi::TextureDesc d;
+	d.width = W;
+	d.height = H;
+	d.mipmaps = false;
+	d.repeatU = d.repeatV = false;
+	if (!gameFog_.texture) gameFog_.texture = dev_->createTexture(d, rgb.data());
+	else dev_->updateTexture(gameFog_.texture, d, rgb.data());
 	gameFog_.width = W;
 	gameFog_.height = H;
-	GLuint t = gameFog_.texture;
-	gl::BindTexture(GL_TEXTURE_2D, t);
-	gl::PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, W, H, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 // Obiekt jest rysowany, gdy największy bajt mgły z 7 punktów wokół niego (środek, 4 narożniki,

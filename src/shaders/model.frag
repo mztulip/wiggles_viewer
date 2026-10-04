@@ -1,0 +1,27 @@
+#version 450
+#include "common.glsl"
+#include "model_ubo.glsl"
+layout(location = 0) in vec2 vUV;
+layout(location = 1) in float vByte;
+layout(location = 2) in vec3 vNormal;
+layout(location = 3) in float vGameZ;
+layout(location = 4) in vec3 vGameDiffuse;
+layout(location = 5) in vec3 vGameSpec;
+TEX(3) uniform sampler2D uTex;
+layout(location = 0) out vec4 oColor;
+void main() {
+	vec4 t = texture(uTex, vUV);
+	if (uFlags.y != 0 && t.a < 0.5) discard;
+	vec3 c = t.rgb;
+	int mode = uFlags.x;
+	if (uFlags.z == 1) c = c * vGameDiffuse + vGameSpec;
+	else if (mode == 1) c *= vByte;
+	else if (mode == 2) {
+		vec3 n = normalize(vNormal);
+		c *= uLightDirAmb.w + (1.0 - uLightDirAmb.w) * max(dot(n, uLightDirAmb.xyz), 0.0);
+	} else if (mode == 3) c = normalize(vNormal) * 0.5 + 0.5;
+	// Strefa horyzontu (docs/silnik/08_tlo.md §8.1): modele za terenem przechodzą w kolor strefy.
+	float zb = vGameZ / 200.0;
+	if (uHorizon.a > 0.0 && zb < 0.0) c = mix(c, uHorizon.rgb, clamp(-zb / uHorizon.a, 0.0, 1.0));
+	oColor = vec4(c, t.a) * uTint;
+}

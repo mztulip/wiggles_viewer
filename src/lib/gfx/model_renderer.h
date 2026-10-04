@@ -11,7 +11,7 @@
 #pragma once
 
 #include "lib/gfx/game_lighting.h"
-#include "lib/gfx/shader.h"
+#include "lib/rhi/rhi.h"
 #include "lib/model3db.h"
 #include "lib/sphere.h"
 
@@ -41,18 +41,18 @@ struct ModelDrawOptions {
 	// żeby otrzymać z gry w jednostkach modelu (przesunięcie kamery w macierzy świata).
 	glm::vec4 horizon{0.f};
 	float horizonZOffset = 0.f;
-	// Oświetlenie jak w grze (game_lighting.h): gameLights != nullptr włącza; gameModel = macierz
-	// obiektu w układzie gry (jednostki modelu), base = jasność bazowa B w miejscu obiektu.
+	// Oświetlenie jak w grze (game_lighting.h): gameLights != nullptr włącza (same lampy i mgłę klatki
+	// wysyła uploadScene); gameModel = macierz obiektu w układzie gry (jednostki modelu),
+	// base = jasność bazowa B w miejscu obiektu.
 	const std::vector<GameLight>* gameLights = nullptr;
 	glm::mat4 gameModel{1.f};
 	float base = 128.f;
-	const GameFog* fog = nullptr; // mgła wojny (tylko z oświetleniem gry)
 };
 
 class ModelRenderer {
 public:
 	~ModelRenderer();
-	bool init(std::string& err);
+	bool init(rhi::Device& dev, std::string& err);
 
 	// Ustawia model (nie przejmuje własności) i czyści cache GPU.
 	void setModel(const Model3db* model, TextureCache* textures);
@@ -73,16 +73,15 @@ public:
 
 private:
 	struct GpuLink {
-		GLuint vbo = 0, ebo = 0;
-		GLsizei count = 0;
+		rhi::Handle vbo = rhi::kNull, ebo = rhi::kNull;
+		uint32_t count = 0;
 		uint16_t material = 0;
 	};
 	const std::vector<GpuLink>& frame(uint32_t meshIndex);
 
-	void bindLink(const GpuLink& a, const GpuLink& b);
-
-	ShaderProgram prog_;
-	GLuint vao_ = 0; // jeden VAO, atrybuty przepinane przy każdym rysowaniu
+	rhi::Device* dev_ = nullptr;
+	rhi::Handle pipe_ = rhi::kNull, pipeWire_ = rhi::kNull; // wspólne dla wszystkich modeli na urządzeniu
+	rhi::Handle sphereBuf_ = rhi::kNull;                     // stały bufor 256 × vec4 (wiązanie 2)
 	const Model3db* model_ = nullptr;
 	TextureCache* textures_ = nullptr;
 	std::vector<Vec3f> sphere_;

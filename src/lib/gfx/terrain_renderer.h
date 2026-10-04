@@ -8,7 +8,7 @@
 #pragma once
 
 #include "lib/gfx/game_lighting.h"
-#include "lib/gfx/shader.h"
+#include "lib/rhi/rhi.h"
 #include "lib/map_template.h"
 #include "lib/terrain_mesh.h"
 
@@ -22,8 +22,8 @@ class TextureCache;
 
 class TerrainRenderer {
 public:
-	~TerrainRenderer() { clear(); }
-	bool init(std::string& err);
+	~TerrainRenderer();
+	bool init(rhi::Device& dev, std::string& err);
 	// layer2 i world (np. "urw", "kris", "lava", "swf") opcjonalne: nakładki detali.
 	void build(const TerrainMesh& mesh, TextureCache& textures, const L2m* layer2 = nullptr,
 	           const std::string& world = "urw");
@@ -31,22 +31,23 @@ public:
 	bool empty() const { return groups_.empty(); }
 	bool showDetail = true;
 	// world: macierz układu sceny (jak dla obiektów). lightDir w tym samym układzie co normalne po world.
-	// gameLights != nullptr: oświetlenie jak w grze (game_lighting.h) z podanymi lampami.
+	// gameLighting: oświetlenie jak w grze (game_lighting.h); lampy i mgłę klatki wysyła uploadScene.
 	void draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-	          bool wireframe, const std::vector<GameLight>* gameLights = nullptr, const GameFog* fog = nullptr);
+	          bool wireframe, bool gameLighting = false);
 
 private:
 	struct Group {
-		GLuint texture = 0;                // podkład: Gnd_A; nakładka: tekstura detalu
-		GLuint textureB = 0, textureC = 0; // podkład: Gnd_B, Gnd_C
-		GLuint ebo = 0;
-		GLsizei count = 0;
+		rhi::Handle texture = rhi::kNull;                     // podkład: Gnd_A; nakładka: tekstura detalu
+		rhi::Handle textureB = rhi::kNull, textureC = rhi::kNull; // podkład: Gnd_B, Gnd_C
+		rhi::Handle ebo = rhi::kNull;
+		uint32_t count = 0;
 	};
-	ShaderProgram prog_;
-	GLuint vao_ = 0, vbo_ = 0;
+	rhi::Device* dev_ = nullptr;
+	rhi::Handle pipe_ = rhi::kNull, pipeDetail_ = rhi::kNull, pipeWire_ = rhi::kNull;
+	rhi::Handle vbo_ = rhi::kNull;
 	std::vector<Group> groups_;
 	std::vector<Group> detail_;
-	GLuint maskAtlas_ = 0; // atlas masek Msk_* (przejścia gruntów)
+	rhi::Handle maskAtlas_ = rhi::kNull; // atlas masek Msk_* (przejścia gruntów)
 };
 
 } // namespace ow

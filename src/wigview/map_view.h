@@ -34,7 +34,7 @@ class MapView {
 public:
 	static constexpr float kBlock = 200.f; // jednostek modelu na blok szablonu
 
-	void init(const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
+	void init(ow::rhi::Device& dev, const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
@@ -104,6 +104,7 @@ private:
 	static glm::mat4 objectMatrix(const ow::TemplateObject& o);
 	bool finishLoad(const ow::Scenario& sc, int margin, std::string world);
 
+	ow::rhi::Device* dev_ = nullptr;
 	const ow::Vfs* vfs_ = nullptr;
 	ow::TextureCache* textures_ = nullptr;
 	const std::vector<ow::Vec3f>* sphere_ = nullptr;

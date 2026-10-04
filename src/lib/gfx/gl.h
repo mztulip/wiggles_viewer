@@ -1,4 +1,4 @@
-// Minimalny loader OpenGL 3.3 core (zamiast glad). Funkcje są w przestrzeni nazw gl::,
+// Minimalny loader OpenGL 4.5 core (zamiast glad), używany przez backend src/lib/rhi/rhi_gl.cpp. Funkcje są w przestrzeni nazw gl::,
 // żeby nie kolidowały z symbolami libGL, np. gl::GenBuffers(...).
 // Ładowanie: gl::load(SDL_GL_GetProcAddress) po utworzeniu kontekstu.
 #pragma once
@@ -58,7 +58,13 @@
 	X(PFNGLACTIVETEXTUREPROC, ActiveTexture) \
 	X(PFNGLTEXIMAGE2DPROC, TexImage2D) \
 	X(PFNGLTEXPARAMETERIPROC, TexParameteri) \
-	X(PFNGLGENERATEMIPMAPPROC, GenerateMipmap)
+	X(PFNGLGENERATEMIPMAPPROC, GenerateMipmap) \
+	X(PFNGLBINDBUFFERBASEPROC, BindBufferBase) \
+	X(PFNGLBINDBUFFERRANGEPROC, BindBufferRange) \
+	X(PFNGLBUFFERSUBDATAPROC, BufferSubData) \
+	X(PFNGLGETINTEGERVPROC, GetIntegerv) \
+	X(PFNGLDISABLEVERTEXATTRIBARRAYPROC, DisableVertexAttribArray) \
+	X(PFNGLFINISHPROC, Finish)
 
 namespace gl {
 

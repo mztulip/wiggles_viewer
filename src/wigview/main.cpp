@@ -4,7 +4,9 @@
 //   wigview [--game <katalog gry>] [--model NAZWA] [--object NAZWA] [--anim NAZWA] [--frame N]
 //           [--light 0..3] [--yaw ST] [--pitch ST] [--flip 0|1] [--size SZERxWYS]
 //           [--template SZABLON | --scenario SCENARIUSZ] [--center X Y] [--center-z Z] [--dist D] [--search TEKST]
-//           [--view X Y ZOOM DX DY] [--fow TRYB [PROMIEŃ [BAJT]]] [--screenshot plik.png] [--ui]
+//           [--view X Y ZOOM DX DY] [--fow TRYB [PROMIEŃ [BAJT]]] [--renderer vulkan|opengl]
+//           [--screenshot plik.png] [--ui]
+// --renderer: backend renderowania (domyślnie Vulkan; bez tej opcji, gdy Vulkan nie ruszy, OpenGL).
 // --center/--center-z/--dist: kamera map w blokach względem szablonu (do porównań ze zrzutami gry).
 // --view: kamera gry jak set_view (współrzędne świata scenariusza), zamiast set_view ze skryptu.
 // --fow: podgląd mgły wojny: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna.
@@ -18,7 +20,6 @@
 // Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Esc wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
-#include "lib/gfx/gl.h"
 #include "lib/gfx/model_renderer.h"
 #include "lib/gfx/texture_cache.h"
 #include "lib/gltf_export.h"
@@ -31,7 +32,6 @@
 
 #include <SDL.h>
 #include <imgui.h>
-#include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl2.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -61,6 +61,8 @@ struct Args {
 	float camX = -1, camY = -1, camZ = -1, camDist = -1; // kamera map w blokach (lokalnie w szablonie)
 	std::optional<GameView> gameView;                    // --view
 	int fowMode = 0, fowRadius = 10, fowByte = 255;      // --fow
+	rhi::Backend renderer = rhi::backendCompiled(rhi::Backend::Vulkan) ? rhi::Backend::Vulkan : rhi::Backend::OpenGL;
+	bool rendererForced = false;                          // --renderer: bez przełączania na drugi backend
 	int width = 1400, height = 900;
 };
 
@@ -88,7 +90,14 @@ bool parseArgs(int argc, char** argv, Args& a) {
 			a.camY = float(std::atof(next()));
 		} else if (k == "--center-z") a.camZ = float(std::atof(next()));
 		else if (k == "--dist") a.camDist = float(std::atof(next()));
-		else if (k == "--fow") {
+		else if (k == "--renderer") {
+			std::string r = next();
+			if (!rhi::parseBackend(r, a.renderer)) {
+				std::fprintf(stderr, "nieznany renderer %s (vulkan, opengl)\n", r.c_str());
+				return false;
+			}
+			a.rendererForced = true;
+		} else if (k == "--fow") {
 			a.fowMode = std::atoi(next());
 			if (i + 1 < argc && argv[i + 1][0] != '-') a.fowRadius = std::atoi(next());
 			if (i + 1 < argc && argv[i + 1][0] != '-') a.fowByte = std::atoi(next());
@@ -128,6 +137,7 @@ bool endsWithI(const std::string& s, const std::string& suf) {
 }
 
 struct Viewer {
+	std::unique_ptr<rhi::Device> device; // backend renderowania (Vulkan albo OpenGL)
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
@@ -307,16 +317,18 @@ struct Viewer {
 		return true;
 	}
 
-	void renderScene(int w, int h, int x0 = 0) {
-		gl::Viewport(0, 0, w, h);
+	// Kolor czyszczenia klatki: w zakładce Mapy kolor strefy horyzontu (jak w grze).
+	glm::vec3 clearColor() {
 		glm::vec3 clear = bg;
 		if (activeTab == 2) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
 		if (activeTab == 2)
-			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b); // jak w grze: kolor strefy
-		gl::ClearColor(clear.r, clear.g, clear.b, 1.f);
-		gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			if (const HorizonZone* z = maps.zone()) clear = glm::vec3(z->r, z->g, z->b);
+		return clear;
+	}
+
+	void renderScene(int w, int h, int x0 = 0) {
 		x0 = std::clamp(x0, 0, w - 1);
-		gl::Viewport(x0, 0, w - x0, h);
+		device->setViewport(x0, 0, w - x0, h);
 		if (activeTab == 2) {
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
 		} else {
@@ -324,7 +336,7 @@ struct Viewer {
 			float t;
 			if (currentFrames(a, b, t)) renderer.drawFrames(a, b, t, viewProj(w - x0, h), modelMatrix(), draw);
 		}
-		gl::Viewport(0, 0, w, h);
+		device->setViewport(0, 0, w, h);
 	}
 
 	void update(float dt) {
@@ -545,7 +557,7 @@ void Viewer::uiTextures() {
 		ImGui::Text("%s  %dx%d  %s", p.c_str(), t.width, t.height, t.hasAlpha ? "RGBA" : "RGB");
 		float avail = ImGui::GetContentRegionAvail().x;
 		float s = std::min(avail, 512.f) / float(std::max(1, t.width));
-		ImGui::Image(ImTextureID(intptr_t(t.id)), ImVec2(t.width * s, t.height * s));
+		ImGui::Image(ImTextureID(device->imguiTexture(t.id)), ImVec2(t.width * s, t.height * s));
 	}
 	ImGui::EndChild();
 }
@@ -821,36 +833,49 @@ int main(int argc, char** argv) {
 		std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
 		return 1;
 	}
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_Window* win = SDL_CreateWindow("wigview - OpenWiggles " OW_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                                   args.width, args.height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	if (!win) {
-		std::fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
-		return 1;
-	}
-	SDL_GLContext ctx = SDL_GL_CreateContext(win);
-	if (!ctx) {
-		std::fprintf(stderr, "SDL_GL_CreateContext: %s\n", SDL_GetError());
-		return 1;
-	}
-	SDL_GL_SetSwapInterval(1);
-	if (const char* missing = gl::load(SDL_GL_GetProcAddress)) {
-		std::fprintf(stderr, "Brak funkcji OpenGL: %s\n", missing);
-		return 1;
-	}
-	std::printf("OpenGL: %s / %s\n", (const char*)gl::GetString(GL_VERSION), (const char*)gl::GetString(GL_RENDERER));
-
+	// Backend renderowania: --renderer albo domyślnie Vulkan; gdy się nie uda, a OpenGL jest wkompilowany,
+	// przełączamy się na OpenGL.
+	SDL_Window* win = nullptr;
 	std::string err;
-	if (!v.renderer.init(err)) {
+	{
+		std::vector<rhi::Backend> order;
+		order.push_back(args.renderer);
+		rhi::Backend other = args.renderer == rhi::Backend::Vulkan ? rhi::Backend::OpenGL : rhi::Backend::Vulkan;
+		if (!args.rendererForced && rhi::backendCompiled(other)) order.push_back(other);
+		for (rhi::Backend b : order) {
+			if (!rhi::backendCompiled(b)) {
+				std::fprintf(stderr, "Backend %s nie jest wkompilowany\n", rhi::backendName(b));
+				continue;
+			}
+			rhi::prepareWindow(b);
+			win = SDL_CreateWindow("wigview - OpenWiggles " OW_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			                       args.width, args.height, rhi::windowFlags(b) | SDL_WINDOW_RESIZABLE);
+			if (!win) {
+				std::fprintf(stderr, "SDL_CreateWindow (%s): %s\n", rhi::backendName(b), SDL_GetError());
+				continue;
+			}
+			v.device = rhi::createDevice(b, win, true, err);
+			if (v.device) break;
+			std::fprintf(stderr, "%s: %s\n", rhi::backendName(b), err.c_str());
+			SDL_DestroyWindow(win);
+			win = nullptr;
+		}
+		if (!v.device) {
+			std::fprintf(stderr, "Nie udało się uruchomić żadnego backendu renderowania\n");
+			return 1;
+		}
+		SDL_SetWindowTitle(win, (std::string("wigview - OpenWiggles " OW_VERSION " (") + rhi::backendName(v.device->backend()) + ")").c_str());
+		std::printf("Renderer: %s\n", v.device->description().c_str());
+	}
+	rhi::Device& dev = *v.device;
+
+	if (!v.renderer.init(dev, err)) {
 		std::fprintf(stderr, "Shader: %s\n", err.c_str());
 		return 1;
 	}
 	v.textures = std::make_unique<TextureCache>(v.vfs);
-	v.maps.init(&v.vfs, v.textures.get(), &v.sphere);
+	v.textures->setDevice(&dev);
+	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
 		v.sphere = parseSphereDat(*sd);
 		v.renderer.setSphere(v.sphere);
@@ -925,21 +950,22 @@ int main(int argc, char** argv) {
 	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 	                      "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
 		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
-	ImGui_ImplSDL2_InitForOpenGL(win, ctx);
-	ImGui_ImplOpenGL3_Init("#version 330 core");
+	dev.imguiInit();
 	v.refreshTexFiles();
 
 	// Jedna klatka: scena 3D (na prawo od panelu UI) i opcjonalnie interfejs.
-	auto renderFrame = [&](int w, int h, bool withUi = true) {
-		withUi = withUi && (args.screenshot.empty() || args.ui);
+	// readback != nullptr: kopia obrazu klatki (RGBA, wiersz 0 = góra) do zrzutu ekranu.
+	auto renderFrame = [&](int w, int h, std::vector<uint8_t>* readback = nullptr) {
+		bool withUi = args.screenshot.empty() || args.ui;
 		if (withUi) {
-			ImGui_ImplOpenGL3_NewFrame();
+			dev.imguiNewFrame();
 			ImGui_ImplSDL2_NewFrame();
 			ImGui::NewFrame();
 			v.ui();
 			{
 				// Wersja programu w prawym dolnym rogu (identyfikacja wersji na zrzutach ekranu).
-				const char* ver = "wigview " OW_VERSION " (" OW_VERSION_DATE ")";
+				std::string verText = std::string("wigview " OW_VERSION " (" OW_VERSION_DATE ") ") + rhi::backendName(dev.backend());
+				const char* ver = verText.c_str();
 				ImVec2 ds = ImGui::GetIO().DisplaySize, ts = ImGui::CalcTextSize(ver);
 				ImVec2 pos(ds.x - ts.x - 8.f, ds.y - ts.y - 6.f);
 				auto* dl = ImGui::GetForegroundDrawList();
@@ -949,8 +975,24 @@ int main(int argc, char** argv) {
 			ImGui::Render();
 		}
 		float scale = ImGui::GetIO().DisplayFramebufferScale.x;
+		glm::vec3 clear = v.clearColor();
+		if (!dev.beginFrame(w, h, clear.r, clear.g, clear.b)) return false;
 		v.renderScene(w, h, withUi ? int(v.uiRight * scale) : 0);
-		if (withUi) ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		if (withUi) dev.imguiRender(ImGui::GetDrawData());
+		dev.endFrame(readback);
+		return true;
+	};
+	auto drawableSize = [&](int& w, int& h) { SDL_GetWindowSizeInPixels(win, &w, &h); };
+	// Kolejność sprzątania: ImGui, potem obiekty z zasobami GPU (Viewer), urządzenie, na końcu okno.
+	auto shutdown = [&]() {
+		dev.waitIdle();
+		dev.imguiShutdown();
+		ImGui::DestroyContext();
+		std::unique_ptr<rhi::Device> device = std::move(v.device);
+		viewer.reset();
+		device.reset();
+		SDL_DestroyWindow(win);
+		SDL_Quit();
 	};
 
 	if (!args.search.empty()) {
@@ -966,31 +1008,18 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < 5; ++i) {
 			SDL_Event e;
 			while (SDL_PollEvent(&e)) {}
-			SDL_GL_GetDrawableSize(win, &w, &h);
+			drawableSize(w, h);
 			renderFrame(w, h);
-			SDL_GL_SwapWindow(win);
 			SDL_Delay(30);
 		}
-		renderFrame(w, h);
-		if (GLenum ge = gl::GetError()) std::fprintf(stderr, "GL error 0x%x\n", ge);
+		std::vector<uint8_t> px;
+		renderFrame(w, h, &px);
 		std::printf("model %s obiekt %d anim %d klatka %d mesh %d  środek (%.1f %.1f %.1f) r=%.1f dist=%.1f\n",
 		            v.modelFile.c_str(), v.object, v.anim, int(v.frame), v.currentMesh(), v.center.x, v.center.y,
 		            v.center.z, v.radius, v.dist);
-		std::vector<uint8_t> px(size_t(w) * h * 4), flipped(px.size());
-		gl::PixelStorei(GL_PACK_ALIGNMENT, 1);
-		gl::ReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
-		for (int y = 0; y < h; ++y)
-			std::copy_n(&px[size_t(h - 1 - y) * w * 4], size_t(w) * 4, &flipped[size_t(y) * w * 4]);
-		bool ok = writePng(args.screenshot, w, h, flipped);
+		bool ok = px.size() == size_t(w) * h * 4 && writePng(args.screenshot, w, h, px);
 		std::printf("%s %s\n", ok ? "zapisano" : "BŁĄD zapisu", args.screenshot.c_str());
-		v.renderer.setModel(nullptr, nullptr);
-		v.textures.reset();
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplSDL2_Shutdown();
-		ImGui::DestroyContext();
-		SDL_GL_DeleteContext(ctx);
-		SDL_DestroyWindow(win);
-		SDL_Quit();
+		shutdown();
 		return ok ? 0 : 1;
 	}
 
@@ -1053,18 +1082,10 @@ int main(int argc, char** argv) {
 		v.update(dt);
 
 		int w, h;
-		SDL_GL_GetDrawableSize(win, &w, &h);
-		renderFrame(w, h);
-		SDL_GL_SwapWindow(win);
+		drawableSize(w, h);
+		if (!renderFrame(w, h)) SDL_Delay(16); // np. okno zminimalizowane
 	}
 
-	v.renderer.setModel(nullptr, nullptr);
-	v.textures.reset();
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
-	SDL_GL_DeleteContext(ctx);
-	SDL_DestroyWindow(win);
-	SDL_Quit();
+	shutdown();
 	return 0;
 }

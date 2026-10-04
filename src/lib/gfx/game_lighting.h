@@ -16,6 +16,8 @@
 //   oba · k.
 #pragma once
 
+#include "lib/rhi/rhi.h"
+
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -28,19 +30,24 @@ struct GameLight {
 	glm::vec4 color;     // współczynniki c (już × 31 × 0,5)
 };
 
-// Wspólny kod GLSL (wstawiany do shaderów wierzchołków).
-extern const char* kGameLightingGlsl;
+// Kod GLSL tego prawa: src/shaders/game_lighting.glsl.
 
-// Tekstura mgły wojny (0 = brak mgły) i rozmiar w polach.
+// Tekstura mgły wojny (kNull = brak mgły) i rozmiar w polach.
 struct GameFog {
-	unsigned texture = 0;
+	rhi::Handle texture = rhi::kNull;
 	int width = 0, height = 0;
 };
-constexpr int kFogTextureUnit = 5;
+constexpr int kFogTextureSlot = 5; // sampler uFow (wiązanie 8)
 
-class ShaderProgram;
-// Ustawia uniformy uGameLight, uLightCount, uLightPos[], uLightCol[] i mgłę wojny (uFow, uFowInfo).
-void uploadGameLights(const ShaderProgram& prog, bool enabled, const std::vector<GameLight>* lights,
-                      const GameFog* fog = nullptr);
+// Blok uniformów "Scene" (wiązanie 1, std140), wspólny dla terenu i modeli w jednej klatce.
+struct SceneUniforms {
+	glm::vec4 lightPos[kMaxGameLights];
+	glm::vec4 lightCol[kMaxGameLights];
+	glm::ivec4 counts{0};   // x = liczba lamp
+	glm::vec4 fowInfo{0.f}; // szerokość, wysokość, 1 = mgła włączona
+};
+
+// Ustawia lampy i mgłę klatki (wiązanie 1 i tekstura mgły). Wołać przed rysowaniem terenu i modeli.
+void uploadScene(rhi::Device& dev, const std::vector<GameLight>* lights, const GameFog* fog);
 
 } // namespace ow

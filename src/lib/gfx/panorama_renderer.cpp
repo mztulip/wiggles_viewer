@@ -1,6 +1,8 @@
 #include "lib/gfx/panorama_renderer.h"
 
 #include "lib/gfx/texture_cache.h"
+#include "lib/tga.h"
+#include "lib/vfs.h"
 
 #include <cmath>
 #include <vector>
@@ -9,33 +11,7 @@ namespace ow {
 
 namespace {
 
-const char* kVS = R"(#version 330 core
-layout(location = 0) in vec2 aNdc;
-layout(location = 1) in vec2 aUV;
-out vec2 vUV;
-void main() {
-	vUV = aUV;
-	gl_Position = vec4(aNdc, 0.0, 1.0);
-}
-)";
-
-const char* kFS = R"(#version 330 core
-in vec2 vUV;
-uniform sampler2D uTex;
-out vec4 oColor;
-void main() { oColor = texture(uTex, vUV); }
-)";
-
-const char* kCarpetVS = R"(#version 330 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aUV;
-uniform mat4 uMVP;
-out vec2 vUV;
-void main() {
-	vUV = aUV;
-	gl_Position = uMVP * vec4(aPos, 1.0);
-}
-)";
+// Shadery: src/shaders/panorama.vert/.frag i carpet.vert/.frag.
 
 struct Layer {
 	float depth, scale, offU, offV;
@@ -55,62 +31,54 @@ constexpr int kChunks = int(2 * kCarpetSpan / kChunk) + 1;
 } // namespace
 
 PanoramaRenderer::~PanoramaRenderer() {
-	if (carpetEbo_) gl::DeleteBuffers(1, &carpetEbo_);
-	if (carpetVbo_) gl::DeleteBuffers(1, &carpetVbo_);
-	if (carpetVao_) gl::DeleteVertexArrays(1, &carpetVao_);
-	if (ebo_) gl::DeleteBuffers(1, &ebo_);
-	if (vbo_) gl::DeleteBuffers(1, &vbo_);
-	if (vao_) gl::DeleteVertexArrays(1, &vao_);
+	if (!dev_) return;
+	for (auto t : tex_)
+		if (t) dev_->destroyTexture(t);
+	if (ebo_) dev_->destroyBuffer(ebo_);
+	if (carpetEbo_) dev_->destroyBuffer(carpetEbo_);
 }
 
-bool PanoramaRenderer::init(std::string& err, TextureCache& textures) {
-	if (!prog_.build(kVS, kFS, err) || !carpetProg_.build(kCarpetVS, kFS, err)) return false;
+bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& textures) {
+	dev_ = &dev;
+	rhi::PipelineDesc d;
+	d.shader = "panorama";
+	d.strides = {4 * sizeof(float)};
+	d.attribs = {{0, 0, 2, 0}, {1, 0, 2, 2 * sizeof(float)}};
+	d.blend = rhi::Blend::Alpha;
+	d.depth = rhi::DepthTest::Off;
+	d.depthWrite = false;
+	if (!(pipe_ = dev.createPipeline(d, err))) return false;
+	rhi::PipelineDesc c = d;
+	c.shader = "carpet";
+	c.strides = {5 * sizeof(float)};
+	c.attribs = {{0, 0, 3, 0}, {1, 0, 2, 3 * sizeof(float)}};
+	if (!(pipeCarpet_ = dev.createPipeline(c, err))) return false;
+	// Warstwy 0..5 i dywan (6): U zawijane; V zawijane tylko w warstwie 0 (BACKDROP_PARALLAX_RE §5).
 	for (int i = 0; i < 7; ++i) {
-		tex_[i] = textures.getPath("Data/Texture/Misc/Panorama_layer_" + std::to_string(i) + ".tga").id;
-		gl::BindTexture(GL_TEXTURE_2D, tex_[i]);
-		gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, i == 0 ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+		std::string path = "Data/Texture/Misc/Panorama_layer_" + std::to_string(i) + ".tga";
+		Image img;
+		auto data = textures.vfs().read(path);
+		if (!data || !loadTga(*data, img)) continue;
+		rhi::TextureDesc td;
+		td.repeatU = true;
+		td.repeatV = i == 0;
+		tex_[i] = textures.upload(img, td);
 	}
-	gl::GenVertexArrays(1, &vao_);
-	gl::BindVertexArray(vao_);
-	gl::GenBuffers(1, &vbo_);
-	gl::BindBuffer(GL_ARRAY_BUFFER, vbo_);
-	gl::BufferData(GL_ARRAY_BUFFER, kGrid * kGrid * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-	gl::VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	gl::VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-	gl::EnableVertexAttribArray(0);
-	gl::EnableVertexAttribArray(1);
 	std::vector<uint16_t> idx;
 	for (int r = 0; r + 1 < kGrid; ++r)
-		for (int c = 0; c + 1 < kGrid; ++c) {
-			uint16_t a = uint16_t(r * kGrid + c), b = uint16_t(a + 1), d = uint16_t(a + kGrid), e = uint16_t(d + 1);
-			idx.insert(idx.end(), {a, d, b, b, d, e});
+		for (int c2 = 0; c2 + 1 < kGrid; ++c2) {
+			uint16_t a = uint16_t(r * kGrid + c2), b = uint16_t(a + 1), e = uint16_t(a + kGrid), f = uint16_t(e + 1);
+			idx.insert(idx.end(), {a, e, b, b, e, f});
 		}
-	gl::GenBuffers(1, &ebo_);
-	gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-	gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 2, idx.data(), GL_STATIC_DRAW);
-
-	// Dywan: kChunks kawałków po 4×4 wierzchołki (x, y, z, u, v).
-	gl::GenVertexArrays(1, &carpetVao_);
-	gl::BindVertexArray(carpetVao_);
-	gl::GenBuffers(1, &carpetVbo_);
-	gl::BindBuffer(GL_ARRAY_BUFFER, carpetVbo_);
-	gl::BufferData(GL_ARRAY_BUFFER, kChunks * 16 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-	gl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	gl::VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	gl::EnableVertexAttribArray(0);
-	gl::EnableVertexAttribArray(1);
+	ebo_ = dev.createBuffer(rhi::BufferKind::Index16, idx.data(), idx.size() * 2);
 	idx.clear();
 	for (int k = 0; k < kChunks; ++k)
 		for (int r = 0; r < 3; ++r)
-			for (int c = 0; c < 3; ++c) {
-				uint16_t a = uint16_t(k * 16 + r * 4 + c), b = uint16_t(a + 1), d = uint16_t(a + 4), e = uint16_t(d + 1);
-				idx.insert(idx.end(), {a, d, b, b, d, e});
+			for (int c2 = 0; c2 < 3; ++c2) {
+				uint16_t a = uint16_t(k * 16 + r * 4 + c2), b = uint16_t(a + 1), e = uint16_t(a + 4), f = uint16_t(e + 1);
+				idx.insert(idx.end(), {a, e, b, b, e, f});
 			}
-	gl::GenBuffers(1, &carpetEbo_);
-	gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, carpetEbo_);
-	gl::BufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * 2, idx.data(), GL_STATIC_DRAW);
-	gl::BindVertexArray(0);
+	carpetEbo_ = dev.createBuffer(rhi::BufferKind::Index16, idx.data(), idx.size() * 2);
 	return true;
 }
 
@@ -127,24 +95,13 @@ void PanoramaRenderer::drawCarpet(const glm::mat4& gameToClip, float focusX, flo
 				v.push_back(float(c) * kCarpetUV);
 				v.push_back(float(r) * kCarpetUV);
 			}
-	carpetProg_.use();
-	gl::Uniform1i(carpetProg_.uniform("uTex"), 0);
-	gl::UniformMatrix4fv(carpetProg_.uniform("uMVP"), 1, GL_FALSE, &gameToClip[0][0]);
-	gl::Disable(GL_DEPTH_TEST);
-	gl::DepthMask(GL_FALSE);
-	gl::Disable(GL_CULL_FACE);
-	gl::Enable(GL_BLEND);
-	gl::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl::ActiveTexture(GL_TEXTURE0);
-	gl::BindTexture(GL_TEXTURE_2D, tex_[6]);
-	gl::BindVertexArray(carpetVao_);
-	gl::BindBuffer(GL_ARRAY_BUFFER, carpetVbo_);
-	gl::BufferData(GL_ARRAY_BUFFER, GLsizeiptr(v.size() * sizeof(float)), v.data(), GL_DYNAMIC_DRAW);
-	gl::DrawElements(GL_TRIANGLES, kChunks * 9 * 6, GL_UNSIGNED_SHORT, nullptr);
-	gl::BindVertexArray(0);
-	gl::DepthMask(GL_TRUE);
-	gl::Enable(GL_DEPTH_TEST);
-	gl::Disable(GL_BLEND);
+	if (!dev_ || !pipeCarpet_) return;
+	dev_->bindPipeline(pipeCarpet_);
+	dev_->setUniforms(rhi::kBindDraw, &gameToClip, sizeof gameToClip);
+	dev_->bindTexture(0, tex_[6]);
+	dev_->setVertexData(0, v.data(), v.size() * sizeof(float));
+	dev_->bindIndexBuffer(carpetEbo_);
+	dev_->drawIndexed(uint32_t(kChunks * 9 * 6));
 }
 
 void PanoramaRenderer::draw(const glm::mat4& ndcToGame) {
@@ -162,15 +119,8 @@ void PanoramaRenderer::draw(const glm::mat4& ndcToGame) {
 			rays[r * kGrid + c] = {x, y, near.x, near.y, d.x / dz, d.y / dz};
 		}
 
-	prog_.use();
-	gl::Uniform1i(prog_.uniform("uTex"), 0);
-	gl::Disable(GL_DEPTH_TEST);
-	gl::DepthMask(GL_FALSE);
-	gl::Disable(GL_CULL_FACE);
-	gl::Enable(GL_BLEND);
-	gl::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	gl::ActiveTexture(GL_TEXTURE0);
-	gl::BindVertexArray(vao_);
+	if (!dev_ || !pipe_) return;
+	dev_->bindPipeline(pipe_);
 	float verts[kGrid * kGrid * 4];
 	for (int l = 0; l < 6; ++l) {
 		const Layer& L = kLayers[l];
@@ -184,15 +134,11 @@ void PanoramaRenderer::draw(const glm::mat4& ndcToGame) {
 			verts[i * 4 + 2] = L.scale * uCore + L.offU;
 			verts[i * 4 + 3] = L.scale * vCore + L.offV;
 		}
-		gl::BindBuffer(GL_ARRAY_BUFFER, vbo_);
-		gl::BufferData(GL_ARRAY_BUFFER, sizeof verts, verts, GL_DYNAMIC_DRAW);
-		gl::BindTexture(GL_TEXTURE_2D, tex_[l]);
-		gl::DrawElements(GL_TRIANGLES, (kGrid - 1) * (kGrid - 1) * 6, GL_UNSIGNED_SHORT, nullptr);
+		dev_->bindTexture(0, tex_[l]);
+		dev_->setVertexData(0, verts, sizeof verts);
+		dev_->bindIndexBuffer(ebo_);
+		dev_->drawIndexed(uint32_t((kGrid - 1) * (kGrid - 1) * 6));
 	}
-	gl::BindVertexArray(0);
-	gl::DepthMask(GL_TRUE);
-	gl::Enable(GL_DEPTH_TEST);
-	gl::Disable(GL_BLEND);
 }
 
 } // namespace ow

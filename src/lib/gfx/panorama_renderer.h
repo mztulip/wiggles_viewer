@@ -20,7 +20,7 @@
 // a bez set_light_begin gra nie rysuje panoramy wcale.
 #pragma once
 
-#include "lib/gfx/shader.h"
+#include "lib/rhi/rhi.h"
 
 #include <glm/glm.hpp>
 #include <string>
@@ -32,7 +32,7 @@ class TextureCache;
 class PanoramaRenderer {
 public:
 	~PanoramaRenderer();
-	bool init(std::string& err, TextureCache& textures);
+	bool init(rhi::Device& dev, std::string& err, TextureCache& textures);
 	// ndcToGame: odwrotność pełnej macierzy (projekcja·widok·świat) przeskalowana do bloków gry.
 	void draw(const glm::mat4& ndcToGame);
 	// gameToClip: z bloków gry do przestrzeni przycięcia; focusX i groundRow w blokach.
@@ -40,10 +40,10 @@ public:
 	static bool gateOpen(float focusRow, float groundRow) { return focusRow - 20.f <= groundRow; }
 
 private:
-	ShaderProgram prog_, carpetProg_;
-	GLuint vao_ = 0, vbo_ = 0, ebo_ = 0;
-	GLuint carpetVao_ = 0, carpetVbo_ = 0, carpetEbo_ = 0;
-	GLuint tex_[7] = {};
+	rhi::Device* dev_ = nullptr;
+	rhi::Handle pipe_ = rhi::kNull, pipeCarpet_ = rhi::kNull;
+	rhi::Handle ebo_ = rhi::kNull, carpetEbo_ = rhi::kNull;
+	rhi::Handle tex_[7] = {};
 };
 
 } // namespace ow
