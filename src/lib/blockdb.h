@@ -1,4 +1,4 @@
-// Data/BlockDB0/1/2.BDB: baza 118688 bloków terenu (opis: docs/formaty/mapy.md).
+// Data/BlockDB0/1/2.BDB: baza 118688 bloków terenu (opis: docs/formaty/blockdb.md).
 //
 // Każdy blok ma:
 //  - rekord 89 B: siatka 8×8 wysokości (0..15; 15 = lita skała, z = 7 + 0,5·v bloku),

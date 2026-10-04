@@ -33,7 +33,7 @@ Nasz loader (`src/lib/tga.cpp`) obsługuje też typy 3, 10 i 11 (szarość, RLE)
 | `Texture/ClassIcons` | ikony klas obiektów |
 | `Texture/texlevels.txt` | wybór rozdzielczości dla poziomów jakości (Minimal, Low, High, Maximal) |
 | `Texture/TEXMAPS.BIN` | cache (magic `TexC`). Gra odbudowuje go sama, więc można pominąć |
-| `Ground/`, `Ground/detail` | teren: grunty A/B/C, maski przejść, detale per świat (opis w `BAZA_WIEDZY.md` §2) |
+| `Ground/`, `Ground/detail` | teren: grunty A/B/C, maski przejść, detale per świat (opis w [rozdziale 4 przewodnika](../silnik/04_teren.md)) |
 | `GUI/...` | interfejs |
 
 Wyszukiwanie tekstury materiału: [3db.md](3db.md) §6.

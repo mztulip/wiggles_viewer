@@ -62,6 +62,12 @@ Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `doc
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
 
+## Dokumentacja
+- [x] Przewodnik po silniku `docs/silnik/` (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
+- [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
+- [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
+- [ ] Rozdziały do napisania, gdy będzie wiedza: mgła wojny, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), dźwięk, interfejs
+
 ## Faza 4: mapy i teren
 - [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
 - [x] `.PMP`: struktura (typ, ID bloku, maska RLE, warstwa2)

@@ -15,7 +15,7 @@
 //   z = {−60, −37,5, −15, +7,5} (bloki głębokości, jak teren 7..14,5), uv = (kol·0,33, wiersz·0,33).
 // Też bez bufora głębi: teren i tak go zamalowuje.
 // Bramka (FUN_00480ee0 wg Diggles-Unity): całość tylko gdy wiersz ogniska kamery − 20 ≤ wiersz gruntu.
-// Wiersz gruntu ustalony obserwacją gry (docs/formaty/mapy.md, „Panorama”): set_ground_begin
+// Wiersz gruntu ustalony obserwacją gry (docs/silnik/08_tlo.md §8.4): set_ground_begin
 // przesuwa dywan; bez tej komendy (dane gry jej nie używają) obraz odpowiada set_light_begin,
 // a bez set_light_begin gra nie rysuje panoramy wcale.
 #pragma once

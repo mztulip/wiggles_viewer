@@ -144,7 +144,7 @@ Wynik to stały przecinek z krokiem 0,25 jednostki. Wszystkie klatki używają t
 
 **Orientacja ✅:** układ gry (Direct3D) jest **lewoskrętny**: x w prawo, **y w dół**, z w stronę widza (przód modelu patrzy w +z). Głowa postaci ma ujemne y; `BABY` mieści się w y ∈ (−97, 5). Do prawoskrętnego układu z Y w górę (OpenGL, glTF) **odbij samą oś Y**: (x, y, z) → (x, −y, z), normalne tak samo. Sprawdzone na teksturze z napisem (`brainposter` w `KRISTALL.3DB`): napis czyta się poprawnie z kamery w +z. Wcześniejsza wersja tej dokumentacji zalecała obrót o 180° wokół X i to było **błędne**, bo dawało lustrzany obraz.
 
-Skala: postać krasnala ma około 200 jednostek wysokości. 🔶 Relacja do jednostek świata gry nie jest jeszcze znana.
+Skala ✅: 1 blok świata = 200 jednostek modelu, a krasnal ma około 200 jednostek wysokości. Modele stawia się w świecie bez skalowania ([rozdział 5.3 przewodnika](../silnik/05_obiekty.md)).
 
 ## 5. Normalne ✅
 
@@ -235,4 +235,4 @@ cienie 2, cmapy 0
 ## 12. Otwarte pytania
 - `unknown80`, `unknown30` w meshu; flagi linku; rekordy 20-bajtowe; znaczenie `cmap` (kolizje? maski zaznaczania?).
 - Pola animacji: `flags`, `unknownF`, `move`, `rotate` (ruch korzenia?).
-- Prędkość animacji i skala względem świata.
+- Prędkość animacji.

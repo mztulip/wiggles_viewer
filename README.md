@@ -64,12 +64,11 @@ Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spac
 | `export_gltf` | Eksport do glTF 2.0 (`.glb`) z teksturami i animacjami. Ten sam eksport jest w wigview (sekcja „Eksport glTF”). Pliki otworzysz w Blenderze, Godocie, three.js albo na https://gltf-viewer.donmccurdy.com |
 | `test3db` | **Test automatyczny** parserów na prawdziwych danych gry: wczytuje wszystkie modele `Data/3db` i tekstury `Data/Texture`, sprawdza spójność (zakresy indeksów, rozmiary pul, koniec pliku) i wypisuje statystyki. Kod wyjścia ≠ 0, gdy cokolwiek zawiedzie. Uruchamiamy go po każdej zmianie w parserach |
 
-### Dokumentacja formatów
-Specyfikacje w [`docs/formaty/`](docs/formaty/) są pisane tak, żeby dało się na ich podstawie napisać własny loader i przeglądarkę bez zaglądania do naszego kodu:
-- [`3db.md`](docs/formaty/3db.md): modele i animacje
-- [`tekstury.md`](docs/formaty/tekstury.md): TGA i katalogi tekstur
-- [`sphere_dat.md`](docs/formaty/sphere_dat.md): tablica normalnych
-- [`mapy.md`](docs/formaty/mapy.md): szablony map (PMP, L2M, skrypty, klasy obiektów); teren w trakcie badań
+### Dokumentacja
+Dokumentacja jest pisana tak, żeby na jej podstawie dało się samodzielnie napisać silnik, bez zaglądania do naszego kodu. Start: [`docs/README.md`](docs/README.md).
+- [**Przewodnik po silniku**](docs/silnik/): jak gra działa, od startu do klatki obrazu (skrypty, składanie świata, teren, obiekty, kamera, oświetlenie, tło), z algorytmami i przykładami liczbowymi
+- [**Formaty plików**](docs/formaty/): [`3db.md`](docs/formaty/3db.md) (modele i animacje), [`tekstury.md`](docs/formaty/tekstury.md), [`sphere_dat.md`](docs/formaty/sphere_dat.md), [`blockdb.md`](docs/formaty/blockdb.md) (kształty terenu), [`szablony.md`](docs/formaty/szablony.md) (`.pmp`, `.l2m`, skrypty szablonów)
+- [`BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md): dziennik badań i materiały źródłowe
 
 ## Plan pracy
 

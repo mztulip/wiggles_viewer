@@ -60,8 +60,8 @@ struct Args {
 	int width = 1400, height = 900;
 };
 
-// Przycięcie kątów set_view przy dużym oddaleniu, ustalone obserwacją gry (docs/formaty/mapy.md,
-// „Kamera gry”): gra pokazuje kąty |dx|, |dy| ≤ 2,23 / (R − 15,6), R = 16·zoom − 10 bloków.
+// Przycięcie kątów set_view przy dużym oddaleniu, ustalone obserwacją gry (docs/silnik/06_kamera.md §6.3):
+// gra pokazuje kąty |dx|, |dy| ≤ 2,23 / (R − 15,6), R = 16·zoom − 10 bloków.
 // Pomiary: zoom 2,5 → 0,15; 2,25 → 0,23; 2,0 → 0,35; 1,7 i mniej bez przycięcia. 🔶 dopasowanie empiryczne.
 float gameViewAngleLimit(float R) {
 	constexpr float kA = 2.23f, kB = 15.6f;
@@ -272,7 +272,9 @@ struct Viewer {
 			eye.y = -eye.y;
 			up.y = -up.y;
 			float tanV = std::tan(0.3f * aspect) / aspect;     // poziomy pół-kąt = 0,3·proporcje
-			glm::mat4 proj = glm::perspective(2.f * std::atan(tanV), aspect, 10.f, 200000.f);
+			// Płaszczyzny przycinania gry: 0,5 i 180 bloków (Diggles-Unity, DigglesCameraController.cs).
+			// Bliska wyznacza punkt startowy promieni panoramy.
+			glm::mat4 proj = glm::perspective(2.f * std::atan(tanV), aspect, 0.5f * MapView::kBlock, 180.f * MapView::kBlock);
 			return proj * glm::lookAt(eye + pan, pan, up);
 		}
 		glm::mat4 proj = glm::perspective(glm::radians(40.f), aspect, radius * 0.01f, radius * 50.f + dist);

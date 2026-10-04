@@ -5,18 +5,11 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 ## Mapa dokumentacji
 - [TODO.md](TODO.md): **żywy plan prac**. Odhaczaj wykonane punkty i dopisuj nowe, gdy coś odkryjesz
 - [README.md](README.md): cele projektu, decyzje techniczne, plan pracy, lista materiałów referencyjnych
-- [docs/formaty/](docs/formaty/): **specyfikacje formatów** do samodzielnej implementacji (`3db.md`, `tekstury.md`, `sphere_dat.md`, `mapy.md`). Aktualizuj je razem z kodem
+- [docs/README.md](docs/README.md): **wejście do dokumentacji**. Zasada: dokumentacja ma wystarczyć człowiekowi do samodzielnego napisania silnika, więc opisujemy, jak i dlaczego coś działa (algorytm, przykład liczbowy, źródło, status ✅/🔶/❓), a nie tylko wynik
+- [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–10 od startu gry do klatki obrazu (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
+- [docs/formaty/](docs/formaty/): **specyfikacje plików** (`3db.md`, `tekstury.md`, `sphere_dat.md`, `blockdb.md`, `szablony.md`). Aktualizuj je razem z kodem
+- [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9), indeks dokumentów Diggles-Unity (§10)
 - **Diggles-Unity** (`../ref/Diggles-Unity-main/Docs/`, MIT): obszerna dokumentacja RE całej gry. Przed pracą nad podsystemem sprawdź indeks w `BAZA_WIEDZY.md` §10. Ich wnioski weryfikuj na danych lub zrzutach gry
-- [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): wiedza o grze wyciągnięta z `../ref/`
-  - §1 format modeli `.3db` (animacja wierzchołkowa, pule danych)
-  - §2 tekstury, katalogi `Data/Texture` i `Data/Ground`, `sphere.dat`
-  - §3 skrypty Tcl 8.3: preprocesor, `call`, model obiektowy, lista natywnych komend
-  - §4 dźwięk
-  - §5 format modów (DigglesModManager)
-  - §6 parametry i rejestr oryginalnego exe
-  - §7 zainstalowana gra: struktura `Data/`, `systeminit.tcl`, mapy z szablonów (`.PMP`, `.l2m`, `BlockDB`), zapisy, wyniki skanera komend
-  - §8 laboratorium: obserwacja działającej gry, trace komend, rejestr
-  - Otwarte pytania: kolejność dalszych badań
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
 - [LICENSE](LICENSE): GPL v3
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
@@ -54,4 +47,4 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - **Nie deasemblujemy ani nie analizujemy kodu exe.** Zachowanie gry ustalamy obserwacją (laboratorium, sonda Tcl, zrzuty przy zmienianych parametrach) i odtwarzamy. Ustalenia z cudzych opracowań (adresy `FUN_…` z Diggles-Unity) to tylko cytowane źródło, które sprawdzamy eksperymentem.
 - Po każdym kroku zaktualizuj `TODO.md`.
 - **Uznawaj pracę autorów.** Każda wiedza wzięta z cudzego repo (dokumentacja, komentarze w kodzie, opisy commitów) ma odnośnik do repozytorium na GitHubie (lista w `CREDITS.md`). Nie kopiujemy cudzego kodu, tylko wiedzę o formatach.
-- Nowe ustalenia o formatach dopisuj do `docs/BAZA_WIEDZY.md` (oznaczenia ✅ potwierdzone, 🔶 hipoteza).
+- Nowe ustalenia: zasada działania do przewodnika (`docs/silnik/`), układ bajtów do `docs/formaty/`, przebieg eksperymentu do `docs/BAZA_WIEDZY.md`. Oznaczenia: ✅ potwierdzone, 🔶 hipoteza, ❓ nieznane.

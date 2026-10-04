@@ -1,6 +1,6 @@
 // Szablony map (Data/Templates): .PMP (siatka bloków), .l2m (warstwa 2) i skrypt .tcl
 // z procedurą MapTemplateSet, który nakłada teren i ustawia obiekty dekoracyjne.
-// Opis formatów: docs/formaty/mapy.md, stan badań: docs/BAZA_WIEDZY.md §9.
+// Opis formatów: docs/formaty/szablony.md, składanie świata: docs/silnik/03_swiat_z_szablonow.md.
 #pragma once
 
 #include <cstdint>

@@ -1,6 +1,6 @@
 // Format modeli .3db ("3DDB 1.0") z Wiggles/Diggles.
 //
-// Opis formatu: docs/BAZA_WIEDZY.md §1. Wiedza pochodzi z projektu
+// Opis formatu: docs/formaty/3db.md. Wiedza pochodzi z projektu
 // djunkles/Diggles3db (https://github.com/djunkles/Diggles3db) oraz z naszej
 // weryfikacji na plikach gry (dekwantyzacja pozycji, bbox).
 //

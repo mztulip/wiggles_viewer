@@ -1,4 +1,6 @@
-# Baza wiedzy: co wynika z materiałów referencyjnych
+# Baza wiedzy: dziennik badań
+
+**To jest dziennik badań, nie podręcznik.** Opis działania gry, z którego da się napisać silnik, jest w [przewodniku](silnik/) i [formatach plików](formaty/) (start: [docs/README.md](README.md)). Tutaj zapisujemy, skąd co wiemy: materiały referencyjne, metody i wyniki eksperymentów w laboratorium, surowe notatki.
 
 Analiza zipów rozpakowanych do `../ref/` oraz zainstalowanej gry (`~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles`, sekcja 7). Status: ✅ potwierdzone w kodzie lub danych, 🔶 hipoteza do weryfikacji.
 
@@ -25,85 +27,16 @@ Analiza zipów rozpakowanych do `../ref/` oraz zainstalowanej gry (`~/.wine/driv
 
 ## 1. Format modeli `.3db` ✅
 
-**Pełna specyfikacja (wystarczająca do napisania loadera i przeglądarki): [`formaty/3db.md`](formaty/3db.md).** Ta sekcja to notatki z badań.
+Specyfikacja: [`formaty/3db.md`](formaty/3db.md). Źródło struktury pliku: [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) (`../ref/Diggles3db-main/python3/lib/parse_3db.py` to najczystszy kod, `python2.7/3dbScript.py` ma asercje, `c-sharp/` to przeglądarka WPF).
 
-Źródło: [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db), czyli `../ref/Diggles3db-main/python3/lib/parse_3db.py` (najczystszy kod), `python2.7/3dbScript.py` (ma asercje), `c-sharp/` (przeglądarka WPF z odtwarzaniem animacji).
-
-Wszystkie liczby są little-endian. `str` oznacza `u32` z długością, a po nim bajty bez znaku `\0`.
-
-```
-str   magic            = "3DDB 1.0"
-str   name             np. "baby"
-
-u16   material_count
-  str name             nazwa tekstury bez rozszerzenia, np. "Character_ZBaby_a"
-  str path             oryginalna ścieżka z serwera SEK (nieużywana)
-  u32 unknown          zawsze 1 (assert w wersji py2.7)
-
-u32   mesh_count       (baby: 479; każdy mesh to JEDNA KLATKA animacji)
-  u16 link_count       (baby: 2, po jednym na materiał)
-    u16 material       indeks materiału
-    u16 unknown        (baby: zawsze 1)
-    u16 triangles      indeks do puli trójkątów
-    u16 texcoords      indeks do puli UV
-    u16 points         indeks do puli pozycji
-    u16 brightness     indeks do puli jasności
-  vec3f bbox_min       ✅ AABB klatki w jednostkach modelu (te same co pozycje po dekwantyzacji)
-  vec3f bbox_max
-  u8[0x80] unknown     🔶 32 × u32 rosnących indeksów (0,1,2,3…), może odnośniki do rekordów 20-bajtowych
-  u16 shadowIndex      ✅ indeks cienia albo 0xFFFF
-  u8[0x30] unknown     🔶 12 × f32, prawdopodobnie 4 × vec3 (punkty zaczepienia lub dodatkowa geometria)
-  u16 cmapIndex        ✅ indeks cmapy albo 0xFFFF
-
-u16   object_count     (baby: 1, "baby")
-  str name
-  u16 count
-    u32 anim_index     lista animacji należących do obiektu
-
-u16   anim_count       (baby: 48)
-  str name             np. "aufwachen", "drehen_links", "auf_po_fallen"
-  u16 frame_count
-    u32 mesh_index     kolejne klatki, indeksy do tablicy meshy
-  u16 unknown          🔶 flagi (0, 3, …)
-  f32 unknown          🔶
-  str source_file      ścieżka do źródłowego pliku `.sex` (eksporter SEK)
-  vec3f move           🔶 ruch korzenia na cykl (drehen_*: x/y ≠ 0)
-  vec3f rotate         🔶 obrót na cykl w radianach (drehen_links: z = +0.1309 = 7.5°)
-
-u16   shadow_count
-  u8[32*32]            mapy cieni 32×32 w skali szarości (rzut cienia pod postacią)
-
-u16   cmap_count
-  u16 w, u16 h, u16 ?, u16 ?
-  u8[w*h]              🔶 "cube/color map", 8-bit
-
-u16   n_tri_pools, n_uv_pools, n_point_pools, n_bright_pools
-u32   n_unknown20
-u16[n_tri_pools]       liczności każdej puli
-u16[n_uv_pools]
-u16[n_point_pools]
-u16[n_bright_pools]
-u8[20] × n_unknown20   🔶 nieznane rekordy
-
-dane pul, kolejno:
-  trójkąty:  u16 indeksy (po 3 na trójkąt)
-  UV:        f32 u, f32 v
-  pozycje:   3 × u16, dekwantyzacja: (v - 32768) / 4.0   ✅ (zgadza się z bbox, współczynnik 3.99)
-  normalne:  u8 na wierzchołek = indeks do SPHERE.DAT (256 normalnych)   ✅ (wcześniej mylnie „brightness”)
-```
-
-Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wszystkich 43 plikach gry: wszystkie mają wersję `3DDB 1.0` i wszystkie parsują się do końca.
-
-### Wnioski dla renderera
-- **Animacja jest wierzchołkowa (vertex animation)**, bez kości. Każda klatka to osobny mesh. Odtwarzanie polega na wybieraniu `mesh_index` dla danej klatki. Opcjonalnie można interpolować pozycje między klatkami, bo topologia (pula trójkątów) jest zwykle współdzielona.
-- Pule są **współdzielone** między klatkami: UV i trójkąty mają ten sam indeks, a zmieniają się tylko `points` i `brightness`. Wystarczy wysłać UV i indeksy do GPU raz, a pozycje per klatka.
-- **Dekwantyzacja pozycji:** ✅ `(u16 - 32768) / 4.0`, czyli stały punkt z krokiem 0,25 jednostki. Wspólny układ dla wszystkich klatek, więc animacja nie „pływa”. Hipoteza z bbox była błędna. Baby ma około 100 jednostek wysokości, a oś Y jest prawdopodobnie skierowana w dół (zakres y: −97…5). 🔶 Relacja jednostek modelu do jednostek świata jest do ustalenia.
-- **Normalne:** ✅ bajt per wierzchołek (w narzędziach społeczności nazywany „brightness”) to **indeks normalnej w `SPHERE.DAT`**. Wartości rozkładają się równomiernie na 0–255, a podgląd normalnych w wigview daje gładkie, spójne gradienty zgodne z geometrią. Oświetlenie liczymy więc sami (Lambert z normalną `sphere[idx]`).
-- **Orientacja:** ✅ oś Y modelu jest skierowana w dół (góra postaci ma ujemne y). W wigview obracamy model o 180° wokół osi X, co prostuje go bez lustrzanego odbicia.
-- **UV:** ✅ konwencja Direct3D (v=0 u góry tekstury). Tekstury ładujemy od góry, więc bez odwracania v.
-- **Pule UV i normalnych mają zawsze tyle elementów co pula punktów** (✅ 191 448 linków we wszystkich modelach), więc wierzchołek = indeks wspólny dla pozycji, UV i normalnej.
-- Teksturę materiału szuka się po nazwie w katalogach w kolejności: `Texture/m256`, `m128`, `m064`, `m032`, `Gray`, `Misc`, `ClassIcons` (`.tga`). Ta kolejność pochodzi z wersji py2.7.
-- Istniejący eksport do glTF obsługuje **tylko mesh 0** i nie ma animacji. Nasza przeglądarka będzie pierwsza z pełnym odtwarzaniem.
+Historia ustaleń (co poprawiliśmy względem narzędzi społeczności):
+- **Dekwantyzacja pozycji** `(u16 − 32768) / 4` ✅. Pierwsza hipoteza (skalowanie do bbox) była błędna; potwierdzenie: rozpiętość punktów zgadza się z bbox klatki (stosunek 3,99 przed dzieleniem przez 4).
+- **Bajt „brightness” to indeks normalnej w `SPHERE.DAT`** ✅ (wartości rozłożone równomiernie, gładkie gradienty normalnych zgodne z geometrią).
+- **Orientacja**: układ lewoskrętny, y w dół ✅. Najpierw obracaliśmy model o 180° wokół X i to było **błędne** (lustrzane napisy na `brainposter` w `KRISTALL.3DB`); poprawnie jest odbić samą oś Y.
+- **Skala**: 1 blok świata = 200 jednostek modelu ✅ (wzorzec: OBJ z `save_map`).
+- **Interpolacja klatek** ✅: opcja exe `AnimIpol`, rejestr `Performance\AnimInterpolation=1`; 99,5% par kolejnych klatek ma zgodną topologię.
+- Wszystkie 43 pliki gry czytają się dokładnie do końca; pule UV i normalnych mają zawsze tyle elementów co pozycje (191 448 linków).
+- Istniejący eksport glTF społeczności obsługiwał tylko mesh 0 bez animacji; nasz eksportuje wszystkie animacje jako morph targets.
 
 ## 2. Tekstury i katalogi ✅
 
@@ -125,7 +58,7 @@ Po wczytaniu wskaźnik ma być dokładnie na końcu pliku. ✅ Sprawdzone na wsz
 ### Teren (`Data/Ground`) ✅
 - 3 bazowe typy gruntu **A, B, C**, po 15 wariantów każdy (`gnd_c04.tga`). Kanał alfa jest pusty.
 - 14 **masek przejść** (`msk_aabb01.tga`, `Msk_AAAB01.tga`): na krawędzi między dwoma gruntami jeden polygon dostaje oba grunty, a maska służy jako alfa. To klasyczny *texture splatting*.
-- Detale zależne od świata, z alfą i prefiksem świata: `kris_0101.tga` (kryształy), `urw_0101.tga` (prawdopodobnie Urwald, czyli dżungla). Sufiks w postaci 4 bitów (`0001`…`1111`) 🔶 oznacza, z których stron sąsiaduje pusta przestrzeń (marching squares lub autotiling).
+- Detale zależne od świata, z alfą i prefiksem świata: `kris_0101.tga` (kryształy), `urw_0101.tga` (Urwald, czyli dżungla). Sufiks 4 bitów to narożniki bloku TL TR BL BR pokryte detalem ✅ (z `.l2m`; [rozdział 4.4](silnik/04_teren.md)). Pierwotna hipoteza „strony z pustą przestrzenią” była błędna.
 - Ograniczenie silnika: maski przejść działają tylko do 64×64.
 
 ### `sphere.dat` ✅
@@ -228,15 +161,8 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 
 ---
 
-## Otwarte pytania (kolejność badań)
-1. ~~Dekwantyzacja pozycji `.3db`~~ ✅ rozwiązane. Pozostaje skala względem świata i orientacja osi.
-2. Znaczenie bloków `0x80` i `0x30` w meshu, rekordów 20-bajtowych i `cmap`.
-3. Formaty map: `.PMP` (częściowo, sekcja 7.4), `.l2m`, `BlockDB*.BDB`, `.ENT` oraz zapisów `.sav` (gzip, struktura nieznana).
-4. Format `texmaps.bin` (prawdopodobnie do pominięcia).
-5. Jak działa preprocesor Tcl poza `//`.
-6. ~~Skaner natywnych komend~~ ✅ `tools/scan_tcl_natives.py`, wynik w `docs/tcl_natywne_kandydaci.txt`. Pozostaje oczyszczenie listy i podział na moduły.
-7. Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` (scrollery).
-8. ~~Uruchomić oryginał pod Wine~~ ✅ działa (sekcja 8). Dalej: śledzenie w interpreterach obiektów i podczas rozgrywki, `tclhelp`, `web_shell`, `WebServer`.
+## Otwarte pytania
+Aktualna lista luk: [rozdział 10 przewodnika](silnik/10_niewiadome.md). Plan prac: [TODO.md](../TODO.md).
 
 ---
 
@@ -263,7 +189,7 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 | `Scripts/` (834 pliki .tcl, 6,5 MB) | Pełne skrypty: `ai`, `classes/{characters,deco,items,sparetime,story,work,zwerg}`, `gameplay`, `init`, `misc`, `sequences/{Kristall,Lava,Menue,Oberwelt,Schwefel,Urwald,Trailer,Test,soundmarker}`, `text/{doc,info,multiplayer,sequences,talk}` |
 | `Templates/` (9136 plików) | Klocki map (sekcja 7.4) |
 | `Gamesave/` | Definicje scenariuszy jako `.tcl` (`single_Campaign*.tcl`, `sandbox_*.tcl`, `multi_*.tcl`, `single_Tutorial.tcl`…) oraz zapis `save_SaveGame.sav` |
-| `BlockDB0/1/2.BDB` (20/26/37 MB) | 🔶 Baza geometrii bloków terenu (jaskinie), prawdopodobnie 3 poziomy szczegółowości. Nagłówek: `u32 11`, `u32 0`, `u32 0x1CFA0`… |
+| `BlockDB0/1/2.BDB` (20/26/37 MB) | ✅ 118 688 kształtów bloków terenu w 3 poziomach szczegółów ([formaty/blockdb.md](formaty/blockdb.md)) |
 | `SPHERE.DAT` | 3072 B = 256 × vec3 (sekcja 2) |
 | `ALPHABET.BIN` | Kształty wektorowe (`Triangle`, `Rect`… z listami punktów f32). 🔶 Kształty znaczników lub kursorów |
 | `LOCALE.TXT` | Kod języka (`de` w tej instalacji, mimo polskich tekstów) |
@@ -277,17 +203,8 @@ Nasz silnik może kiedyś stosować mody sam, przy ładowaniu i w pamięci, bez 
 ### 7.3 Tekstury: poziomy jakości (`texlevels.txt`)
 Każda linia: nazwa tekstury oraz rozdzielczość dla poziomów Minimal, Low, High i Maximal (0=16, 1=32, 2=64, 3=128, 4=256 px, katalogi `mNNN`). Gdy brak danej wersji, kolejność szukania jest określona w nagłówku pliku (np. low: 32 → 64 → 16 → 128 → 256). Nasz silnik może po prostu brać największą dostępną.
 
-### 7.4 Mapy: system szablonów ✅/🔶
-- Świat to siatka. `map create 64 64` tworzy mapę, a potem nakłada się na nią **szablony** (klocki).
-- Szablon to plik `Templates/tcl/<świat>_<typ>_<nr>_<wariant>.tcl` z procedurą `MapTemplateSet {xoffset yoffset}`, która:
-  1. `map_template <plik>.pmp $x $y` nakłada geometrię i typy pól,
-  2. `map_setlayer2 $x $y <plik>.l2m` nakłada drugą warstwę (🔶 dekoracje, wypełnienie lub materiał),
-  3. tworzy obiekty dekoracyjne: `new Dummy_<Nazwa> "" "<x y z>" "<rot>"` z `set_owner -1`, `set_physic`, `set_autolight`, `set_boxed`, pogrupowane według `loading_objdetail high/medium/low/off`.
-- Prefiksy światów: `urw` (Urwald, czyli dżungla), `kris` (kryształy), `lava`, `swf` (Schwefel, czyli siarka), `unq_*` (unikalne). Typy: `gng` (Gang, czyli korytarz), `hol` (Höhle, czyli jaskinia), `gsg`, `start`.
-- **`.PMP`** ✅ częściowo: `u32 w, u32 h`, potem `u8[w*h]` (typ pola), potem `u32[w*h]` (🔶 indeks bloku w `BlockDB`), potem ogon o nieznanej strukturze.
-- **`.l2m`**: magic `M2L\0`, `u32 w, u32 h`, potem `u16[w*h]` (🔶 flagi bitowe, wartości typu `0xC0xx`).
-- **`.ENT`**: często puste (0 B). 🔶 Encje szablonu.
-- `split/` zawiera warianty szablonów pocięte na ćwiartki (`_tAA`, `_tAB`, `_tBA`, `_tBB`).
+### 7.4 Mapy: system szablonów ✅
+Opis: [rozdział 3 przewodnika](silnik/03_swiat_z_szablonow.md), formaty: [formaty/szablony.md](formaty/szablony.md). `split/` zawiera warianty szablonów pocięte na ćwiartki (`_tAA`, `_tAB`, `_tBA`, `_tBB`) 🔶 (prawdopodobnie dla generatora poziomów).
 
 ### 7.5 Zapisy gry
 `.sav` to **gzip**. Po rozpakowaniu jest binarka (~7 MB) zaczynająca się od `V1.0.844`. Struktura nieznana.
@@ -369,7 +286,7 @@ Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując dzi
 
 ---
 
-## 9. Mapy i teren (badania w toku)
+## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅
 - `get_map_width`/`get_map_height` dla `map create 64 64` zwracają **512**, czyli 8 jednostek mapy na blok szablonu. Przesunięcia w `MapTemplateSet x y` są w blokach.
@@ -379,31 +296,14 @@ Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując dzi
 - `data/userstartup.tcl` zastępuje menu startowe, co pozwala ustawić dowolne szablony i zrzucić wzorce (`tools/lab/userstartup_templates.tcl`).
 - Exe: `BlockDB ILT load`, `BlockDB mesh load %d Blocks`, `Scape texturizer (TM)`, shadery `scape_solid`, `scape_blend`, `scape_fow`, `scape_urw_mt0/1`, `scape_lav_mt0/1`. `LandScapeQuality [value] (2)` wybiera plik `BlockDB0/1/2`.
 
-### 9.2 `.PMP` ✅ (struktura), 🔶 (znaczenie)
-```
-u32 w, u32 h                 rozmiar w blokach
-u8  typ[w*h]                 02 korytarz, 04 jaskinia, … 🔶
-u32 blok[w*h]                ID bloku w BlockDB (0..118687), numeracja globalna
-u32 n
-u16 maska[n]                 🔶 kodowanie przebiegami. W szybie GNG_007 wiersze mają 129 próbek
-                             (4 bloki × 32 + 1), 8 wierszy na blok, przebiegi naprzemienne.
-                             W GNG_001 sumy się nie zgadzają, więc format jest bardziej złożony
-u8  warstwa2[w*h]            🔶 wartości 0–8
-```
-Rozmiar pliku zgadza się co do bajta dla wszystkich sprawdzonych szablonów.
+### 9.2 Jak rozpracowaliśmy `.PMP` i BlockDB
+- Struktura `.PMP`: rozmiar pliku zgadza się co do bajta dla wszystkich szablonów przy układzie typ / blok / maska / warstwa 2 ([formaty/szablony.md](formaty/szablony.md)).
+- BlockDB: na początku znaleźliśmy tylko rekordy 89 B (siatka 8×8 = głębokość, zgodna z OBJ z `save_map`). Pełny układ (komórki, indeksy, deskryptory, paleta, dane podsiatek) pochodzi z Diggles-Unity i sprawdziliśmy go sumą rozmiarów sekcji ([formaty/blockdb.md](formaty/blockdb.md)).
+- **Typ pola** ustaliliśmy eksperymentem: korytarz `GNG_021` z podmienionymi typami pól w `userstartup.tcl` i zrzuty z gry (`../lab/zrzuty/gra/typ_*.png`). Diggles-Unity zgadywało mapowanie typ → tekstura; nasze pochodzi z obrazu. Pierwszy wniosek „typ 0 = niewykopany tunel” obalił szablon z samymi zerami, który okazał się w całości przezroczysty.
+- **Głębokość obiektów** `z · 0,5 + 7`: bez niej scena menu nie zgadzała się ze zrzutem; z nią zgadza się 1:1.
 
-### 9.3 `BlockDB0/1/2.BDB` 🔶
-```
-u32 11, u32 0, u32 118688 (liczba bloków), u32 0
-u32 X, u32 Y (liczba elementów puli), u32 Z, u32 4      BDB0: 561168, 17564, 1411
-ILT: 3 × 118688 rekordów (u16 a, u32 b)                  b = indeks w puli (0..Y-1), a stałe dla danego b
-dane: rekordy 89-bajtowe (4 B narożników, 5 B nagłówka, siatka 8×8 wartości 0x02..0x0F, 16 B dodatków / FF)
-      przeplatane dłuższymi blokami (🔶 siatki 3D)
-```
-✅ **Rozpracowane:** 118 688 rekordów po 89 B leży zaraz za ILT (po jednym na blok), a siatka 8×8 to głębokość (15 = skała). Pełny opis i weryfikacja z OBJ gry: [`formaty/mapy.md`](formaty/mapy.md).
-
-### 9.4 Powierzchnia (OBERWELT): ustalenia z laboratorium ✅
-Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, porównana z renderem wigview (`--view x y zoom dx dy`, przeszukiwanie parametrów po RMSE pomniejszonych obrazów). Szczegóły w [`formaty/mapy.md`](formaty/mapy.md):
+### 9.3 Powierzchnia (OBERWELT): ustalenia z laboratorium ✅
+Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, porównana z renderem wigview (`--view x y zoom dx dy`, przeszukiwanie parametrów po RMSE pomniejszonych obrazów). Opis praw: rozdziały [6](silnik/06_kamera.md), [7](silnik/07_oswietlenie.md) i [8](silnik/08_tlo.md) przewodnika:
 - `set_light_begin -10000` gasi panoramę i ok. 4× przyciemnia obiekty powierzchni, więc niebo daje światło bazowe i włącza panoramę.
 - `set_ground_begin` przesuwa dywan łąki. W danych gry nie występuje, domyślnie zachowanie odpowiada `set_light_begin`.
 - Gra przycina kąty `set_view` przy dużym zoomie (2,5 → ±0,15). `get_view 1` zwraca wartości zadane, a `get_view` bez argumentu zaraz po starcie zwraca śmieci (kamera jeszcze niezainicjowana).
@@ -420,9 +320,10 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 | Temat | Ich dokument | Stan u nas |
 |---|---|---|
 | Siatki BlockDB, kafel = 3 podsiatki, cliff path | `RENDERING_PIPELINE_COMPLETE.md` | ✅ wdrożone (siatki) |
-| Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | do zrobienia |
-| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | ✅ otwory do tła i strefy horyzontu; panorama powierzchni do zrobienia |
-| Układ współrzędnych | `COORDINATE_SYSTEM.md` | porównać z naszym (§1, `formaty/3db.md` §4) |
+| Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | ✅ prawo i światło nieba wdrożone ([rozdz. 7](silnik/07_oswietlenie.md)); pochodnie krasnali do zrobienia |
+| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | ✅ otwory, strefy horyzontu, panorama i dywan ([rozdz. 8](silnik/08_tlo.md)) |
+| Układ współrzędnych, kamera | `COORDINATE_SYSTEM.md`, `DigglesCameraController.cs` | ✅ zgodne z naszymi zrzutami ([rozdz. 1](silnik/01_przeglad.md), [6](silnik/06_kamera.md)) |
+| Mgła wojny | `FOG_OF_WAR_RE.md` | do zrobienia (silnik) |
 | Interpreter Tcl, model obiektów, start skryptów | `TCL_*.md`, `ENGINE_TCL_API.txt`, `ENGINE_COMMAND_GAP.md` | faza 5 |
 | Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
 | Nawigacja, pathfinding (maska RLE w `.PMP` = płaszczyzna nawigacji 0/1/3) | `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md` | faza 6 |
