@@ -498,6 +498,7 @@ void MapView::setBlock(int x, int y, uint32_t block, uint8_t type) {
 	size_t i = size_t(y) * pmp_->width + x;
 	pmp_->blocks[i] = block;
 	pmp_->types[i] = type;
+	if (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) l2m_->values[i] = 0; // bez starego detalu (mech, trawa)
 }
 
 void MapView::rebuildTerrain() {

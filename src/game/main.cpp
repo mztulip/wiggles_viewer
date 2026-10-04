@@ -38,6 +38,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <set>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -62,6 +63,7 @@ struct Args {
 	int width = 1280, height = 800;
 	bool scripts = true;          // --no-scripts: bez silnika Tcl
 	bool scriptGnomes = true;     // --player-gnomes: krasnale tylko na rozkaz gracza, bez skryptów
+	bool reveal = false;          // --reveal: bez mgły wojny
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
 };
@@ -80,6 +82,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--no-scripts") a.scripts = false;
 		else if (k == "--player-gnomes") a.scriptGnomes = false;
+		else if (k == "--reveal") a.reveal = true;
 		else if (k == "--view") {
 			GameView v;
 			v.x = float(std::atof(next()));
@@ -133,6 +136,7 @@ struct Unit {
 	float facing = -kPi * 0.5f; // −π/2 = w prawo, +π/2 = w lewo (obserwacja modelu mann)
 	float z = kGnomeZ;          // głębokość (skala skryptu), z zapisu albo scenariusza
 	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
+	bool digJob = false;        // przydzielony do kopania zaznaczonych pól (gracz)
 };
 
 struct Game;
@@ -166,6 +170,10 @@ struct Game {
 		float from[3], to[3], t, dur;
 	};
 	std::vector<Glide> glides; // płynne ruchy obiektów zlecone przez skrypty
+	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania (przeciągnięcie PPM)
+	int dragX0 = -1, dragY0 = -1;          // początek przeciągnięcia PPM (pole)
+	bool rightDrag = false;
+	float fogTimer = 0;
 	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
@@ -281,9 +289,62 @@ struct Game {
 	}
 
 	void dig(int x, int y) {
-		maps.setBlock(x, y, 59, 3);
+		// 🔶 Wykopane pole: tunel z tylną ścianą (blok 4523: siatka 8×8 o wysokości 7), bez zszywania z sąsiadami.
+		// Rodzaj gruntu bez zmian, ale nie „otwór do tła” (typ 5): wtedy grunt pola niżej albo skała A (4).
+		uint8_t type = grid()->types[size_t(y) * grid()->width + size_t(x)];
+		if ((type & 0x7F) == 5) {
+			uint8_t below = y + 1 < int(grid()->height) ? grid()->types[size_t(y + 1) * grid()->width + size_t(x)] : 4;
+			type = uint8_t((below & 0x7F) == 5 || (below & 0x7F) == 0 ? 4 : (below & 0x7F));
+		}
+		maps.setBlock(x, y, 4523, type);
 		nav.updateTile(*grid(), maps.blockDb(), x, y);
 		maps.rebuildTerrain();
+		digMarks.erase({x, y});
+		// Znalezisko jak w dig_execute (z_dignwalk.tcl): 4% szans; rodzaj losowany (🔶 bez stref kampanii).
+		if (float(std::rand()) / float(RAND_MAX) < 0.04f) {
+			static const char* kFinds[] = {"Stein", "Eisenerz", "Kohle", "Golderz", "Kristallerz"};
+			const char* cls = kFinds[std::rand() % 5];
+			float pos[3] = {float(x) + 0.5f, floorY(x, y), kGnomeZ}, rot[3] = {0, 0, 0};
+			int id = host.createObject(cls, "", pos, rot);
+			if (scripts) scripts->attach(id, cls, "");
+			status = std::string(tr("Znalezisko: ")) + cls;
+		}
+	}
+
+	// Następne zaznaczone pole dla krasnala z zadaniem kopania: najbliższe, do którego da się dojść.
+	bool nextDigJob(Unit& u) {
+		std::vector<std::pair<int, std::pair<int, int>>> cand;
+		for (auto& m : digMarks) cand.push_back({std::abs(m.first - u.tx) + std::abs(m.second - u.ty), m});
+		std::sort(cand.begin(), cand.end());
+		for (size_t i = 0; i < cand.size() && i < 12; ++i) {
+			auto [mx, my] = cand[i].second;
+			if (nav.open(mx, my)) {
+				digMarks.erase({mx, my});
+				continue;
+			}
+			const int st[4][2] = {{mx - 1, my}, {mx + 1, my}, {mx, my - 1}, {mx, my + 1}};
+			for (auto& c : st) {
+				if (!(nav.standable(c[0], c[1]) || nav.climbable(c[0], c[1]))) continue;
+				auto p = nav.path(u.tx, u.ty, c[0], c[1]);
+				if (p.empty()) continue;
+				u.path = std::move(p), u.step = 0, u.state = Unit::Walk, u.digX = mx, u.digY = my;
+				u.onArrive = nullptr;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Zaznaczenie prostokąta pól skały do kopania; zadanie dostaje zaznaczony krasnal.
+	void markDig(int x0, int y0, int x1, int y1) {
+		int n = 0;
+		for (int y = std::min(y0, y1); y <= std::max(y0, y1); ++y)
+			for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x)
+				if (!nav.open(x, y) && grid() && x >= 0 && y >= 0 && x < int(grid()->width) && y < int(grid()->height))
+					n += digMarks.insert({x, y}).second;
+		if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = true;
+		status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());
+		(void)n;
 	}
 
 	void updateUnit(Unit& u, float dt) {
@@ -325,6 +386,9 @@ struct Game {
 				snapToFloor(u); // pod krasnalem mogło zniknąć podłoże
 			}
 		}
+		if (u.state == Unit::Idle && u.digJob) {
+			if (digMarks.empty() || !nextDigJob(u)) u.digJob = false; // nic osiągalnego: koniec zadania
+		}
 		if (u.state == Unit::Idle) {
 			if (!nav.standable(u.tx, u.ty) && !nav.climbable(u.tx, u.ty) && nav.open(u.tx, u.ty + 1)) {
 				u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = Unit::Walk; // spada
@@ -363,6 +427,11 @@ struct Game {
 			}
 		}
 		for (auto& u : units) updateUnit(u, dt);
+		fogTimer += dt;
+		if (fogTimer >= 0.4f) { // mgła co 4 tury logiki (rozdział 10.2)
+			fogTimer = 0;
+			for (auto& u : units) maps.revealFog(u.tx, u.ty, 6);
+		}
 		for (auto it = glides.begin(); it != glides.end();) {
 			it->t = std::min(it->t + dt, it->dur);
 			float k = it->dur > 0 ? it->t / it->dur : 1.f, p[3];
@@ -402,8 +471,48 @@ struct Game {
 				if (d < bd) bd = d, best = int(i);
 			}
 			if (best >= 0) selected = best;
-		} else if (button == SDL_BUTTON_RIGHT)
+		} else if (button == SDL_BUTTON_RIGHT) {
+			rightDrag = true;
+			dragX0 = tx, dragY0 = ty;
+		}
+	}
+
+	void release(int mx, int my, int w, int h) {
+		if (!rightDrag) return;
+		rightDrag = false;
+		int tx, ty;
+		float fx, fy;
+		if (!pickTile(mx, my, w, h, tx, ty, fx, fy)) return;
+		if (tx == dragX0 && ty == dragY0) {
+			if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = false;
 			order(tx, ty);
+		} else
+			markDig(dragX0, dragY0, tx, ty);
+	}
+
+	// Znaczniki kopania i prostokąt przeciągania: rzut narożników pola (przednia płaszczyzna) na ekran.
+	void drawMarks(int w, int h) {
+		glm::mat4 vp, world;
+		gameCamera(cam, float(w) / float(std::max(h, 1)), vp, world);
+		glm::mat4 m = vp * world;
+		ImDrawList* dl = ImGui::GetBackgroundDrawList();
+		float sx = ImGui::GetIO().DisplaySize.x / float(w), sy = ImGui::GetIO().DisplaySize.y / float(h);
+		auto proj = [&](float x, float y, ImVec2& out) {
+			glm::vec4 c = m * glm::vec4(x * kBlock, y * kBlock, 14.5f * kBlock, 1.f);
+			if (c.w <= 0) return false;
+			out = ImVec2((c.x / c.w * 0.5f + 0.5f) * float(w) * sx, (0.5f - c.y / c.w * 0.5f) * float(h) * sy);
+			return true;
+		};
+		auto quad = [&](int x0, int y0, int x1, int y1, ImU32 fill, ImU32 line) {
+			ImVec2 a, b;
+			if (!proj(float(x0), float(y0), a) || !proj(float(x1 + 1), float(y1 + 1), b)) return;
+			if (fill) dl->AddRectFilled(a, b, fill);
+			dl->AddRect(a, b, line);
+		};
+		for (auto& [x, y] : digMarks) quad(x, y, x, y, IM_COL32(255, 200, 40, 50), IM_COL32(255, 200, 40, 160));
+		if (rightDrag && hoverX >= 0)
+			quad(std::min(dragX0, hoverX), std::min(dragY0, hoverY), std::max(dragX0, hoverX), std::max(dragY0, hoverY), 0,
+			     IM_COL32(255, 255, 255, 200));
 	}
 
 	void render(int w, int h) {
@@ -429,6 +538,7 @@ struct Game {
 		if (showHelp) {
 			ImGui::Separator();
 			ImGui::TextDisabled("%s", tr("LPM: zaznacz krasnala   PPM: idź / kop skałę"));
+			ImGui::TextDisabled("%s", tr("Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"));
 			ImGui::TextDisabled("%s", tr("WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"));
 			ImGui::TextDisabled("%s", tr("N: nowy krasnal przy kursorze   F1: pomoc   Esc: wyjście"));
 		}
@@ -478,7 +588,7 @@ void ScriptHost::setAnim(int id, const std::string& anim, int, int mode) {
 double ScriptHost::animLength(const std::string&) { return 1.5; } // 🔶 długość animacji po nazwie (db_animlength)
 bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done) {
 	Unit* u = g->unitOf(id - 1);
-	if (!u) return false;
+	if (!u || u->digJob) return false; // krasnal pracuje dla gracza
 	int tx = int(std::floor(t[0])), ty = g->tileOfFeet(t[1]);
 	for (int d = 0; d < 4 && !g->nav.standable(tx, ty) && !g->nav.climbable(tx, ty); ++d) ++ty;
 	auto path = g->nav.path(u->tx, u->ty, tx, ty);
@@ -599,6 +709,7 @@ int main(int argc, char** argv) {
 	}
 	if (!ok) std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
 	g.initWorld();
+	if (args.reveal) g.maps.setFog(MapView::FogMode::Off);
 	if (args.scripts) {
 		g.scripts = std::make_unique<script::Engine>(g.vfs);
 		g.host.g = &g;
@@ -628,6 +739,11 @@ int main(int argc, char** argv) {
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 		g.hud();
+		{
+			int fw, fh;
+			SDL_GetWindowSizeInPixels(win, &fw, &fh);
+			g.drawMarks(fw, fh);
+		}
 		ImGui::Render();
 		glm::vec3 clear(0.f);
 		if (const HorizonZone* z = g.maps.zone()) clear = glm::vec3(z->r, z->g, z->b);
@@ -654,9 +770,15 @@ int main(int argc, char** argv) {
 		// Zrzut: krótka symulacja (krasnal idzie w prawo), potem klatka do PNG.
 		if (!g.units.empty()) {
 			const Unit& u = g.units[0];
-			g.order(u.tx + 3, u.ty);
+			if (std::getenv("OW_TEST_DIG")) { // test: kopanie 3×2 pól pod pierwszym krasnalem
+				g.selected = 0;
+				int dx = std::getenv("OW_TEST_DIG_DX") ? std::atoi(std::getenv("OW_TEST_DIG_DX")) : 0;
+				g.markDig(u.tx - 1 + dx, u.ty + 1, u.tx + 1 + dx, u.ty + 2);
+			} else
+				g.order(u.tx + 3, u.ty);
 		}
-		for (int i = 0; i < 30; ++i) {
+		int frames = std::getenv("OW_TEST_DIG") ? std::atoi(std::getenv("OW_TEST_DIG")) : 30; // test kopania: liczba klatek po 0,05 s
+		for (int i = 0; i < frames; ++i) {
 			SDL_Event e;
 			while (SDL_PollEvent(&e)) {}
 			g.update(0.05f);
@@ -688,6 +810,7 @@ int main(int argc, char** argv) {
 			if (e.type == SDL_MOUSEBUTTONDOWN && (e.button.button == SDL_BUTTON_LEFT || e.button.button == SDL_BUTTON_RIGHT))
 				g.click(e.button.button, e.button.x, e.button.y, w, h);
 			if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_MIDDLE) dragging = true;
+			if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT) g.release(e.button.x, e.button.y, w, h);
 			if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_MIDDLE) dragging = false;
 			if (e.type == SDL_MOUSEMOTION) {
 				if (dragging) {

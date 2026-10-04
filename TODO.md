@@ -8,7 +8,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] G1 Program `openwiggles`: świat z zapisu, scenariusza albo szablonu, kamera gry (WASD, mysz, kółko), HUD
 - [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
 - [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* (`src/lib/nav.h`)
-- [x] G4 Kopanie (PPM na skale): blok 59, przebudowa terenu
+- [x] G4 Kopanie (PPM na skale, przeciągnięcie PPM = obszar do kopania dla zaznaczonego krasnala): tunel 4523 z gruntem pola, znaleziska 4%, odkrywanie mgły przez krasnale
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
@@ -22,6 +22,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
 - [ ] G11 Zapis i wczytanie gry z poziomu gry
 - [ ] 🔧 Ruch: drobna siatka 8×8 i maska `.pmp` zamiast pól, drabiny, windy, spadanie z obrażeniami
+- [ ] 🔧 Kopanie przez skrypty gry (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`) zamiast C++; czas pracy i wybór kopacza
+- [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól
 - [ ] 🔧 Kopanie: kształty bloków z tablicy sąsiadów BlockDB (zszywanie krawędzi), twardość materiału, czas kopania; przebudowa tylko zmienionego kawałka terenu
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
 - [ ] 🔧 Scena i rysowanie map są w wigview (`MapView`); przenieść do biblioteki (wspólna scena dla gry i przeglądarki)

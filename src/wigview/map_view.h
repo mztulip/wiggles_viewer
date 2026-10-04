@@ -111,6 +111,18 @@ public:
 	void setBlock(int x, int y, uint32_t block, uint8_t type);
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
+	// Odkrycie mgły wokół punktu (krasnale gracza). 🔶 Koło zamiast promieni z rozdziału 10.3.
+	void revealFog(int cx, int cy, int r) {
+		if (!pmp_ || saveFog_.empty()) return;
+		bool ch = false;
+		for (int y = cy - r; y <= cy + r; ++y)
+			for (int x = cx - r; x <= cx + r; ++x) {
+				if (x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height) || (x - cx) * (x - cx) + (y - cy) * (y - cy) > r * r) continue;
+				uint8_t& b = saveFog_[size_t(y) * pmp_->width + size_t(x)];
+				if (b != 0xFF) b = 0xFF, ch = true;
+			}
+		if (ch) fogDirty_ = true;
+	}
 	float fluidFill(int x, int y) const {
 		if (!pmp_ || fluidFill_.empty() || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return 0.f;
 		return fluidFill_[size_t(y) * pmp_->width + size_t(x)];

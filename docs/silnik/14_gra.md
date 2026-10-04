@@ -37,7 +37,13 @@ Gra ma tu znacznie bogatsze prawa (drobna siatka 8×8, maska ruchu w `.pmp`, dra
 
 ## 14.4 Kopanie (🔶 uproszczenie)
 
-PPM na polu skały: krasnal idzie na najbliższe stanowisko obok (z boku, nad albo pod polem), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`), a potem pole dostaje blok 59 (pusty) i typ 3. Teren, wysokości i płyny przebudowujemy w całości.
+PPM na polu skały: krasnal idzie na najbliższe stanowisko obok (z boku, nad albo pod polem), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`), a potem pole dostaje blok 4523 (tunel: płaska tylna ściana na wysokości 7, czyli z = 10,5). Rodzaj gruntu pola zostaje, więc ściana tunelu pokazuje materiał, w którym kopano (szara skała A, żółta glina C…); tylko „otwór do tła” (typ 5, np. wiersz powierzchni) zamieniamy na grunt pola niżej, bo inaczej ściana dostaje kolor strefy horyzontu. Warstwę detali `.l2m` pola zerujemy. Teren, wysokości i płyny przebudowujemy w całości.
+
+**Obszar do kopania**: przeciągnięcie PPM zaznacza prostokąt pól skały (żółte znaczniki na przedniej płaszczyźnie). Zaznaczony krasnal dostaje zadanie: sam wybiera najbliższe zaznaczone pole, do którego prowadzi droga, i kopie kolejne, aż skończą się osiągalne. W tym czasie skrypt nie może nim chodzić (`walkTo` odmawia). Pojedyncze kliknięcie PPM zdejmuje zadanie.
+
+**Znaleziska**: jak w `dig_execute` (`z_dignwalk.tcl`): przy wykopaniu pola z szansą 4% powstaje obiekt `Stein`, `Eisenerz`, `Kohle`, `Golderz` albo `Kristallerz` (🔶 rodzaj losowy, bez stref kampanii i doświadczenia krasnala).
+
+**Mgła**: krasnale gracza co 0,4 s odkrywają koło o promieniu 6 pól (🔶 zamiast promieni z rozdziału 10.3). `--reveal` wyłącza mgłę.
 
 W grze kopanie wybiera kształty sąsiednich bloków z tablicy sąsiadów BlockDB (rekord §2, przesunięcie 64), tak żeby krawędzie się zszywały, i zależy od twardości materiału: Diggles-Unity `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md`.
 
