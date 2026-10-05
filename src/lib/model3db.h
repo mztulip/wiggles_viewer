@@ -79,7 +79,9 @@ struct CMap3db
 {
 	uint16_t width = 0, height = 0;
 	int16_t originX = 0, originY = 0; // ✅ lewy górny róg maski względem punktu obiektu, w kratkach 1/8 bloku
-	std::vector<uint8_t> pixels; // ✅ maska zajętości 0/1 (🔶 kolizje, has_cmap)
+	// ✅ Maska zajętości 0/1 na ziemi: kolumna ↔ x, wiersz ↔ z (głębokość), kratka 25 jednostek.
+	// 🔶 Rzut bryły klatki poszerzony o kratkę; kolizje (has_cmap).
+	std::vector<uint8_t> pixels;
 };
 
 struct Model3db
@@ -90,6 +92,7 @@ struct Model3db
 	std::vector<Mesh3db> meshes;
 	std::vector<Object3db> objects;
 	std::vector<Animation3db> animations;
+	// 🔶 Cień 32×32 na prostokącie shadowQuad (kolumna ↔ x, wiersz ↔ z): rzut bryły światłem pod 45° w +z.
 	std::vector<std::array<uint8_t, 32 * 32>> shadows;
 	std::vector<CMap3db> cmaps;
 	// Rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz, 2 B dopełnienia, 3 × f32 kąty Eulera (radiany).

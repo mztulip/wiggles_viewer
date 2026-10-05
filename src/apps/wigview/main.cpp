@@ -20,6 +20,7 @@
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
 // --texture PLIK: zakładka Tekstury z plikiem względem Data/ (np. GUI/bordermask.tga); --texture-channel N: 0 RGBA,
 //                 1 RGB, 2 alfa, 3 R, 4 G, 5 B.
+// --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 // --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
 //                    można podać kilka razy (późniejsza wyżej).
@@ -56,6 +57,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <string>
@@ -70,6 +72,7 @@ struct Args
 {
 	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound, texture;
 	int textureChannel = 0;
+	bool shadowCmap = false;
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -110,6 +113,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--sound") a.sound = next();
 		else if (k == "--texture") a.texture = next();
 		else if (k == "--texture-channel") a.textureChannel = std::atoi(next());
+		else if (k == "--shadow-cmap") a.shadowCmap = true;
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
@@ -567,6 +571,10 @@ struct Viewer
 
 	void ui();
 	void uiModel();
+	void uiShadowCmap(const Mesh3db& mesh);
+	bool openShadowCmap = false; // --shadow-cmap
+	int scrollShadowCmap = 0;   // klatki, przez które przewijamy szczegóły do sekcji (układ ustala się po 1–2 klatkach)
+	bool showShadow = true, showCmap = true;
 	void uiTextures();
 };
 
@@ -700,6 +708,19 @@ void Viewer::uiModel()
 		if (ImGui::Button(tr("Wyśrodkuj"))) frameCamera();
 	}
 
+	if (openShadowCmap) ImGui::SetNextItemOpen(true), scrollShadowCmap = 3;
+	openShadowCmap = false;
+	if (ImGui::CollapsingHeader(tr("Cień i cmap")))
+	{
+		int mi = currentMesh();
+		if (mi >= 0) uiShadowCmap(model->meshes[size_t(mi)]);
+		if (scrollShadowCmap > 0)
+		{
+			--scrollShadowCmap;
+			ImGui::SetScrollHereY(1.f);
+		}
+	}
+
 	if (ImGui::CollapsingHeader(tr("Eksport glTF")))
 	{
 		ImGui::SetNextItemWidth(-60);
@@ -739,6 +760,69 @@ void Viewer::uiModel()
 		}
 	}
 	ImGui::EndChild();
+}
+
+// Cień 32×32 rozciągnięty na shadowQuad i maska cmap w kratkach 1/8 bloku. Oba leżą na ziemi, więc rysujemy je
+// z góry: x w prawo, z (głębokość, + do widza) w dół rysunku; tło to obrys bbox klatki. Format: docs/formaty/3db.md §3.6–3.7.
+void Viewer::uiShadowCmap(const Mesh3db& mesh)
+{
+	ImGui::Text(tr("model: cienie %zu, cmapy %zu"), model->shadows.size(), model->cmaps.size());
+	float q[12];
+	std::memcpy(q, mesh.shadowQuad.data(), sizeof q);
+	float qx0 = std::min({q[0], q[3], q[6], q[9]}), qx1 = std::max({q[0], q[3], q[6], q[9]});
+	float qz0 = std::min({q[2], q[5], q[8], q[11]}), qz1 = std::max({q[2], q[5], q[8], q[11]});
+	const auto* sh = mesh.shadowIndex < model->shadows.size() ? &model->shadows[mesh.shadowIndex] : nullptr;
+	const CMap3db* cm = mesh.cmapIndex < model->cmaps.size() ? &model->cmaps[mesh.cmapIndex] : nullptr;
+	constexpr float kCell = 25.f; // kratka cmapy: 1/8 bloku
+
+	// Wspólna skala: obrys bbox, prostokąt cienia i maska muszą się zmieścić.
+	float x0 = std::min(mesh.bboxMin.x, 0.f), x1 = std::max(mesh.bboxMax.x, 0.f);
+	float z0 = std::min(mesh.bboxMin.z, 0.f), z1 = std::max(mesh.bboxMax.z, 0.f);
+	if (sh) x0 = std::min(x0, qx0), x1 = std::max(x1, qx1), z0 = std::min(z0, qz0), z1 = std::max(z1, qz1);
+	if (cm)
+	{
+		x0 = std::min(x0, cm->originX * kCell), x1 = std::max(x1, (cm->originX + cm->width) * kCell);
+		z0 = std::min(z0, cm->originY * kCell), z1 = std::max(z1, (cm->originY + cm->height) * kCell);
+	}
+	ImGui::Checkbox(tr("cień"), &showShadow);
+	ImGui::SameLine();
+	ImGui::Checkbox(tr("cmap"), &showCmap);
+	float side = std::min(360.f, ImGui::GetContentRegionAvail().x);
+	float scale = side / std::max({x1 - x0, z1 - z0, 1.f});
+	ImVec2 p = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("cien_cmap", ImVec2(side, side));
+	ImDrawList* dl = ImGui::GetWindowDrawList();
+	dl->AddRectFilled(p, ImVec2(p.x + side, p.y + side), IM_COL32(40, 40, 40, 255));
+	float ou = p.x + (side - (x1 - x0) * scale) / 2.f - x0 * scale, ov = p.y + (side - (z1 - z0) * scale) / 2.f - z0 * scale;
+	auto at = [&](float x, float z) { return ImVec2(ou + x * scale, ov + z * scale); };
+	if (sh && showShadow)
+	{
+		float cw = (qx1 - qx0) / 32.f, ch = (qz1 - qz0) / 32.f;
+		for (int j = 0; j < 32; ++j)
+			for (int i = 0; i < 32; ++i)
+				if (uint8_t g = (*sh)[size_t(j * 32 + i)])
+					dl->AddRectFilled(at(qx0 + i * cw, qz0 + j * ch), at(qx0 + (i + 1) * cw, qz0 + (j + 1) * ch), IM_COL32(g, g, g, 255));
+		dl->AddRect(at(qx0, qz0), at(qx1, qz1), IM_COL32(255, 200, 80, 255));
+	}
+	if (cm && showCmap)
+		for (int j = 0; j < cm->height; ++j)
+			for (int i = 0; i < cm->width; ++i)
+			{
+				float x = (cm->originX + i) * kCell, z = (cm->originY + j) * kCell;
+				bool on = cm->pixels[size_t(j * cm->width + i)] != 0;
+				dl->AddRect(at(x, z), at(x + kCell, z + kCell), on ? IM_COL32(80, 220, 120, 255) : IM_COL32(90, 90, 90, 255));
+				if (on) dl->AddRectFilled(at(x, z), at(x + kCell, z + kCell), IM_COL32(80, 220, 120, 90));
+			}
+	dl->AddRect(at(mesh.bboxMin.x, mesh.bboxMin.z), at(mesh.bboxMax.x, mesh.bboxMax.z), IM_COL32(120, 160, 255, 255));
+	ImVec2 o = at(0, 0);
+	dl->AddLine(ImVec2(o.x - 5, o.y), ImVec2(o.x + 6, o.y), IM_COL32(255, 80, 80, 255));
+	dl->AddLine(ImVec2(o.x, o.y - 5), ImVec2(o.x, o.y + 6), IM_COL32(255, 80, 80, 255));
+
+	if (sh) ImGui::Text(tr("cień #%u  prostokąt x %.0f..%.0f  z %.0f..%.0f"), mesh.shadowIndex, qx0, qx1, qz0, qz1);
+	else ImGui::TextDisabled(tr("klatka bez cienia"));
+	if (cm) ImGui::Text(tr("cmap #%u  %u×%u kratek, początek (%d, %d)"), mesh.cmapIndex, cm->width, cm->height, cm->originX, cm->originY);
+	else ImGui::TextDisabled(tr("klatka bez cmap"));
+	ImGui::TextDisabled(tr("widok z góry: x w prawo, z (do widza) w dół\nniebieski: bbox klatki, czerwony krzyż: punkt obiektu,\npomarańczowy: shadowQuad, zielony: zajęte kratki cmap"));
 }
 
 void Viewer::uiTextures()
@@ -1399,6 +1483,7 @@ int main(int argc, char** argv)
 		v.activeTab = v.forceTab = 4;
 		v.frameParticles();
 	}
+	v.openShadowCmap = args.shadowCmap;
 	if (!args.texture.empty())
 	{
 		std::string t = args.texture;

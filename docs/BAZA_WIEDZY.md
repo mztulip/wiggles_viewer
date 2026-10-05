@@ -393,6 +393,12 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - Po `--warmup 20` (skrypty, krasnale chodzą) różni się 168 bajtami (czas, pozycje, obroty).
 - Wczytanie w grze: `capture.sh scene out.png load.tcl 120`, gdzie `load.tcl` woła `gameload Data/Gamesave/save_owtest.sav`. Sama nazwa (`gameload owtest`) zwraca 0, ale nic nie wczytuje (czarny ekran); ścieżka względem katalogu gry działa (kontrola: `save_SaveGame.sav`). ✅ Gra wczytała nasz zapis: krasnale w nowych miejscach, reszta stanu (beczki, przedmioty) bez zmian.
 
+### 9.7 Cień i `cmap` w `.3db`: dopasowanie do bryły (2026-10-05)
+Pytanie: w jakiej płaszczyźnie leżą `cmap` i obraz cienia oraz jak powstały. Metoda: trójkąty klatki próbkowane gęsto (siatka barycentryczna 8×8), rzut na kandydującą płaszczyznę, zbiór kratek porównany z maską przez IoU (część wspólna / suma), średnia po klatkach. Program jednorazowy na `libwiggles` (`parseModel3db`, `Model3db::dequant`).
+- **`cmap`**, 1799 klatek (co 11.) z `MANN`, `BRUT`, `FENRIR`, `produktionsstaetten`, `KRISTALL`, `TROLL`, kratka 25 jednostek: x/z 0,54, x/z z odbiciem z 0,22, x/y (y w górę) 0,34. Przesunięcie o kratkę i środek kratki zmieniają wynik o ±0,02. Rzut w masce 88%, maska w rzucie 62%: maska jest większa. Poszerzenie rzutu krzyżem o 1 kratkę: IoU 0,70 (maska w rzucie 86%), pełne 3×3 albo tylko w jednej osi: 0,66. Tylko część bryły przy ziemi (wysokość < 25/50/100) pasuje gorzej (0,29/0,35/0,44). Wniosek: ✅ płaszczyzna x/z, 🔶 rzut całej bryły poszerzony o kratkę (dokładna reguła ❓).
+- **Cień**, 39 obrazów z 8 modeli (do 3 klatek na obraz), piksele > 40 na prostokącie `shadowQuad`: rzut (x, z + k·wysokość) daje IoU 0,70 dla k = 1, 0,65 dla 0,75, 0,58 dla 1,25; odbicie x 0,62. Wniosek: 🔶 rozmyty rzut światłem pod 45° od tyłu, cień pada ku widzowi.
+- Podgląd obu: `wigview --model MANN.3DB --anim schlafen_boden_loop --shadow-cmap`.
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji

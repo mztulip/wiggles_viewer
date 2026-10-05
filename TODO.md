@@ -120,8 +120,9 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Esc zamyka wigview
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
 - [x] Orientacja osi: Y w dół, układ lewoskrętny; w OpenGL odbicie osi Y (poprawione: obrót odwracał napisy) ✅
-- [ ] 🔬 Skala modeli względem świata gry (jednostki mapy)
-- [ ] Podgląd cieni 32×32 i `cmap` z `.3db`
+- [x] Skala modeli względem świata gry: 1 blok = 200 jednostek modelu, bez skalowania ✅ ([3db.md](docs/formaty/3db.md), [rozdział 5](docs/silnik/05_obiekty.md))
+- [x] Podgląd cieni 32×32 i `cmap` z `.3db`: sekcja „Cień i cmap” w zakładce Modele (widok z góry x/z z bbox, `shadowQuad`, kratkami maski), `--shadow-cmap`; ustalona płaszczyzna i sposób rzutu ([3db.md §3.6–3.7](docs/formaty/3db.md), [BAZA_WIEDZY §9.7](docs/BAZA_WIEDZY.md))
+- [ ] 🔬 Cień w grze: czy oryginał rysuje plamę 32×32 pod obiektami (zrzut z laboratorium, obiekt na płaskiej ziemi), a jeśli tak, dodać do renderera
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje

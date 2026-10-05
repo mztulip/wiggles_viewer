@@ -65,7 +65,7 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | bboxMax | `vec3` | |
 | linkTable | 128 B | ✅ 32 × `u32`: punkty zaczepienia 0..31 tej klatki, wartość = indeks rekordu w puli 20-bajtowej (§9); indeks poza pulą = brak punktu |
 | shadowIndex | `u16` | ✅ indeks cienia (§3.6) albo `0xFFFF`, gdy klatka nie ma cienia |
-| shadowQuad | 48 B | ✅ prostokąt cienia: 4 narożniki × `vec3` na ziemi (y = 0): (x0, 0, z0), (x1, 0, z0), (x0, 0, z1), (x1, 0, z1). Niezerowy dokładnie wtedy, gdy klatka ma cień (37 431 meshy), same zera bez cienia (12 744); o ok. 42 jednostki szerszy niż obrys modelu. 🔶 Miejsce, na które gra kładzie plamę cienia 32×32 (§3.6) |
+| shadowQuad | 48 B | ✅ prostokąt cienia: 4 narożniki × `vec3` na ziemi (y = 0): (x0, 0, z0), (x1, 0, z0), (x0, 0, z1), (x1, 0, z1). Niezerowy dokładnie wtedy, gdy klatka ma cień (37 431 meshy), same zera bez cienia (12 744); o ok. 42 jednostki szerszy niż obrys modelu i wydłużony w +z o mniej więcej wysokość modelu (BRUT: z do 269 przy bbox do 111 i wysokości 188). 🔶 Miejsce, na które gra kładzie plamę cienia 32×32 (§3.6) |
 | cmapIndex | `u16` | ✅ indeks cmapy (§3.7) albo `0xFFFF`. Każda cmapa należy do dokładnie jednego mesha |
 
 **Link** (6 × `u16` = 12 B; tryby rysowania niżej):
@@ -122,13 +122,15 @@ Wartości zachowują się jak tryby (prawdopodobnie zestawy stanów etapów teks
 | count | `u16` | 0–2 |
 | *powtórz:* data | 1024 B | mapa 32 × 32, 8 bit, skala szarości (cień rzucany pod obiektem). Klatki wskazują cień przez `shadowIndex` |
 
+🔶 **Co przedstawia obraz cienia.** Obraz leży na prostokącie `shadowQuad` klatki: kolumna i rośnie z x (od x0 do x1), wiersz j rośnie z z (od z0 do z1), bez odbić. Jest to rozmyty rzut bryły na ziemię światłem padającym pod 45° od tyłu: punkt (x, y, z) trafia w (x, z − y), gdzie −y to wysokość nad ziemią (oś y w dół), więc cień pada w +z, ku widzowi. Sprawdzenie: piksele > 40 porównane z rzutem trójkątów klatki dają średnio IoU 0,70 na 39 cieniach z 8 modeli; przesunięcie k·wysokość z k = 0,75 daje 0,65, a z k = 1,25 daje 0,58, odbicie osi x daje 0,62. Model ma najwyżej 2 obrazy cienia, które dzielą wszystkie klatki z cieniem, więc cień nie nadąża za animacją ([BAZA_WIEDZY §9.7](../BAZA_WIEDZY.md)). ❓ Czy i jak gra rysuje ten cień. Podgląd: `wigview --model BRUT.3DB --shadow-cmap`.
+
 ### 3.7 Cmapy
 | Pole | Typ | Opis |
 |---|---|---|
 | count | `u16` | (MANN: 6390) |
 | *powtórz:* width, height | `u16`, `u16` | |
 | originX, originY | `i16`, `i16` | ✅ położenie lewego górnego rogu maski względem punktu obiektu, w kratkach (`BRUT`: 65531 = −5, 65533 = −3) |
-| pixels | `u8` × width × height | ✅ maska zajętości 0/1 (wszystkie piksele w danych to 0 albo 1) w kratkach **1/8 bloku** (25 jednostek modelu; `BRUT`: 8 wypełnionych kolumn na obrys 204 jednostek), w płaszczyźnie x (w prawo) i y (w dół). Przypisana do jednej klatki (`cmapIndex` mesha). 🔶 Mapa kolizji: `animinit.tcl` ustawia klasie `class_collision 1`, gdy `has_cmap obiekt.standard` (Diggles-Unity `DigglesModelLibrary.HasCMap`). Mają ją postacie (`MANN` 1020, `FRAU` 1016 klatek), budynki (`produktionsstaetten` 384) i część dekoracji |
+| pixels | `u8` × width × height | ✅ maska zajętości 0/1 (wszystkie piksele w danych to 0 albo 1) w kratkach **1/8 bloku** (25 jednostek modelu; `BRUT`: 8 wypełnionych kolumn na obrys 204 jednostek), **na ziemi, w płaszczyźnie x/z**: kolumna i ↔ x = (originX + i)·25, wiersz j ↔ z = (originY + j)·25 (z to głębokość, + ku widzowi). ✅ Płaszczyzna: leżący krasnal (`mann.schlafen_boden_loop`, bbox z −116..105) ma maskę 9×12, a stojący (bbox z −33..92) 8×8. 🔶 Kształt: rzut trójkątów klatki na x/z poszerzony o kratkę (krzyżem) daje IoU 0,70 z maską na 1799 klatkach 6 modeli; bez poszerzenia 0,54 (88% rzutu leży w masce, ale maska jest większa), płaszczyzna x/y najwyżej 0,34 ([BAZA_WIEDZY §9.7](../BAZA_WIEDZY.md)). Przypisana do jednej klatki (`cmapIndex` mesha). 🔶 Mapa kolizji: `animinit.tcl` ustawia klasie `class_collision 1`, gdy `has_cmap obiekt.standard` (Diggles-Unity `DigglesModelLibrary.HasCMap`). Mają ją postacie (`MANN` 1020, `FRAU` 1016 klatek), budynki (`produktionsstaetten` 384) i część dekoracji |
 
 ### 3.8 Nagłówek pul
 | Pole | Typ | Opis |
@@ -251,7 +253,7 @@ cienie 2, cmapy 0
 
 ## 12. Otwarte pytania
 - Tryby `flags` linku 4, 6, 7, 11 (tabela w §3.2): dokładny wzór mieszania; 9 = ciemniejsze niż 1 (❓ dlaczego).
-- Sposób rzutowania cienia na prostokąt `shadowQuad` (rozdział o cieniach, TODO).
+- Cień: obraz to rzut pod 45° na `shadowQuad` (🔶 §3.6); ❓ czy i jak gra go rysuje. Dokładna reguła budowy `cmap` (poszerzenie o kratkę daje IoU 0,70, nie 1).
 - Czy gra interpoluje klatki (rejestr `AnimInterpolation=1` sugeruje, że tak; tempo logiki 10 Hz potwierdzone, [rozdział 11.7](../silnik/11_obiekty_tcl_i_petla.md)).
 
 ## 9. Punkty zaczepienia ✅

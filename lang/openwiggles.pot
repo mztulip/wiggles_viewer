@@ -172,12 +172,12 @@ msgstr ""
 msgid "krasnal"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:303
+#: src/apps/wigview/main.cpp:307
 #: src/apps/wigview/sound_view.cpp:157
 msgid "nie można odczytać pliku"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:590
+#: src/apps/wigview/main.cpp:598
 #: src/apps/wigview/map_view.cpp:232
 #: src/apps/wigview/particle_view.cpp:200
 #: src/apps/wigview/sound_view.cpp:301
@@ -185,343 +185,382 @@ msgstr ""
 msgid "Błąd: %s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:593
+#: src/apps/wigview/main.cpp:601
 msgid "Wybierz model z listy."
 msgstr ""
 
-#: src/apps/wigview/main.cpp:597
+#: src/apps/wigview/main.cpp:605
 #, c-format
 msgid "%s  (%s)  wczytano w %.0f ms"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:598
+#: src/apps/wigview/main.cpp:606
 #, c-format
 msgid "materiały %zu  klatki %zu  obiekty %zu  animacje %zu"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:601
+#: src/apps/wigview/main.cpp:609
 msgid "Obiekty i animacje"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:604
+#: src/apps/wigview/main.cpp:612
 msgid "filtr obiektów"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:616
+#: src/apps/wigview/main.cpp:624
 msgid "filtr animacji"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:634
+#: src/apps/wigview/main.cpp:642
 msgid "Odtwarzanie"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:637
+#: src/apps/wigview/main.cpp:645
 #: src/apps/wigview/particle_view.cpp:236
 #: src/apps/wigview/sound_view.cpp:307
 msgid "Pauza"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:637
+#: src/apps/wigview/main.cpp:645
 #: src/apps/wigview/particle_view.cpp:236
 #: src/apps/wigview/sound_view.cpp:307
 msgid "Graj"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:643
+#: src/apps/wigview/main.cpp:651
 #: src/apps/wigview/sound_view.cpp:313
 msgid "Pętla"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:645
+#: src/apps/wigview/main.cpp:653
 msgid "Interpolacja"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:647
+#: src/apps/wigview/main.cpp:655
 msgid "Klatka"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:652
+#: src/apps/wigview/main.cpp:660
 msgid "FPS"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:656
+#: src/apps/wigview/main.cpp:664
 #, c-format
 msgid "Klatki %u i %u mają inną topologię (bez interpolacji)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:660
+#: src/apps/wigview/main.cpp:668
 msgid "Dźwięki animacji"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:662
+#: src/apps/wigview/main.cpp:670
 msgid "Odtwarzaj dźwięki klatek podczas animacji"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:663
+#: src/apps/wigview/main.cpp:671
 #, c-format
 msgid "Brak sound anim dla %s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:668
+#: src/apps/wigview/main.cpp:676
 msgid "graj"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:671
+#: src/apps/wigview/main.cpp:679
 #, c-format
 msgid "klatka %d: %s%s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:671
+#: src/apps/wigview/main.cpp:679
 msgid "  (poza sekwencjami)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:674
+#: src/apps/wigview/main.cpp:682
 msgid "(brak sound bind)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:678
+#: src/apps/wigview/main.cpp:686
 msgid "plik"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:688
+#: src/apps/wigview/main.cpp:696
 msgid "Widok"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:690
+#: src/apps/wigview/main.cpp:698
 msgid "Bez światła"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:690
+#: src/apps/wigview/main.cpp:698
 msgid "Bajt jako jasność (stare)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:690
+#: src/apps/wigview/main.cpp:698
 msgid "Normalne SPHERE.DAT"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:690
+#: src/apps/wigview/main.cpp:698
 msgid "Podgląd normalnych"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:692
+#: src/apps/wigview/main.cpp:700
 msgid "Oświetlenie"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:693
+#: src/apps/wigview/main.cpp:701
 msgid "Ambient"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:694
+#: src/apps/wigview/main.cpp:702
 msgid "Siatka"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:696
+#: src/apps/wigview/main.cpp:704
 msgid "Alpha test"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:698
+#: src/apps/wigview/main.cpp:706
 msgid "Odwróć Y"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:699
+#: src/apps/wigview/main.cpp:707
 msgid "Tło"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:700
+#: src/apps/wigview/main.cpp:708
 msgid "Wyśrodkuj"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:703
+#: src/apps/wigview/main.cpp:713
+msgid "Cień i cmap"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:724
 msgid "Eksport glTF"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:706
+#: src/apps/wigview/main.cpp:727
 msgid "Katalog"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:707
+#: src/apps/wigview/main.cpp:728
 msgid "Bieżąca animacja"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:709
+#: src/apps/wigview/main.cpp:730
 msgid "Wszystkie animacje obiektu"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:710
+#: src/apps/wigview/main.cpp:731
 msgid "Plik .glb z teksturami; animacje jako morph targets.\nUżywa ustawień FPS i interpolacji z odtwarzania."
 msgstr ""
 
-#: src/apps/wigview/main.cpp:714
+#: src/apps/wigview/main.cpp:735
 msgid "Informacje"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:718
+#: src/apps/wigview/main.cpp:739
 #, c-format
 msgid "animacja: %s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:719
+#: src/apps/wigview/main.cpp:740
 #, c-format
 msgid "flagi %u  f %.4g"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:720
+#: src/apps/wigview/main.cpp:741
 #, c-format
 msgid "ruch (%.3f %.3f %.3f)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:721
+#: src/apps/wigview/main.cpp:742
 #, c-format
 msgid "obrót (%.3f %.3f %.3f)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:722
+#: src/apps/wigview/main.cpp:743
 #, c-format
 msgid "źródło: %s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:728
+#: src/apps/wigview/main.cpp:749
 #, c-format
 msgid "mesh #%d  linki %zu"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:729
+#: src/apps/wigview/main.cpp:750
 #, c-format
 msgid "bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:732
+#: src/apps/wigview/main.cpp:753
 #, c-format
 msgid "klatki w GPU: %zu"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:733
+#: src/apps/wigview/main.cpp:754
 msgid "Materiały"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:737
+#: src/apps/wigview/main.cpp:758
 #, c-format
 msgid "%s  (brak)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:757
-msgid "filtr"
-msgstr ""
-
-#: src/apps/wigview/main.cpp:773
-msgid "alfa"
-msgstr ""
-
-#: src/apps/wigview/main.cpp:775
-msgid "Kanały"
-msgstr ""
-
-#: src/apps/wigview/main.cpp:777
-msgid "Szachownica"
-msgstr ""
-
-#: src/apps/wigview/main.cpp:779
-msgid "Dopasuj"
+#: src/apps/wigview/main.cpp:769
+#, c-format
+msgid "model: cienie %zu, cmapy %zu"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:787
+msgid "cień"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:789
+msgid "cmap"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:821
+#, c-format
+msgid "cień #%u  prostokąt x %.0f..%.0f  z %.0f..%.0f"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:822
+msgid "klatka bez cienia"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:823
+#, c-format
+msgid "cmap #%u  %u×%u kratek, początek (%d, %d)"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:824
+msgid "klatka bez cmap"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:825
+msgid "widok z góry: x w prawo, z (do widza) w dół\nniebieski: bbox klatki, czerwony krzyż: punkt obiektu,\npomarańczowy: shadowQuad, zielony: zajęte kratki cmap"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:841
+msgid "filtr"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:857
+msgid "alfa"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:859
+msgid "Kanały"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:861
+msgid "Szachownica"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:863
+msgid "Dopasuj"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:871
 #, c-format
 msgid "powiększenie %.2f×"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:815
+#: src/apps/wigview/main.cpp:899
 #, c-format
 msgid "piksel (%d, %d)\nR %d  G %d  B %d  A %d"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:819
+#: src/apps/wigview/main.cpp:903
 msgid "nie można wczytać pliku"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "model"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "obiekt"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "tekstura"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "szablon"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "scenariusz"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:997
+#: src/apps/wigview/main.cpp:1081
 msgid "dźwięk"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1002
+#: src/apps/wigview/main.cpp:1086
 msgid "szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze, dźwięki (kilka słów = wszystkie muszą pasować)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1017
+#: src/apps/wigview/main.cpp:1101
 msgid "Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków."
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1019
+#: src/apps/wigview/main.cpp:1103
 #, c-format
 msgid "%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1073
+#: src/apps/wigview/main.cpp:1157
 msgid "Szukaj (Ctrl+F)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1075
+#: src/apps/wigview/main.cpp:1159
 msgid "modele, obiekty, tekstury, szablony, dźwięki"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1100
+#: src/apps/wigview/main.cpp:1184
 msgid "Modele"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1106
+#: src/apps/wigview/main.cpp:1190
 msgid "Tekstury"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1112
+#: src/apps/wigview/main.cpp:1196
 msgid "Mapy"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1119
+#: src/apps/wigview/main.cpp:1203
 msgid "Zapisy"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1126
+#: src/apps/wigview/main.cpp:1210
 #: src/apps/wigview/map_view.cpp:263
 msgid "Cząsteczki"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1133
+#: src/apps/wigview/main.cpp:1217
 msgid "Dźwięki"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1213
+#: src/apps/wigview/main.cpp:1297
 #, c-format
 msgid "Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1215
+#: src/apps/wigview/main.cpp:1299
 msgid "\n(część klatek o innej topologii zastąpiona poprzednią)"
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1218
+#: src/apps/wigview/main.cpp:1302
 msgid "Błąd eksportu: "
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1526
+#: src/apps/wigview/main.cpp:1611
 msgid "Wczytywanie"
 msgstr ""
 
