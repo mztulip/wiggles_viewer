@@ -116,3 +116,6 @@ Stosujemy ją tylko do modeli, nie do terenu. ✅ Sprawdzone na zrzutach OBERWEL
 | tunel, pochodnia c = 13,5 tuż obok (exp ≈ 1, N·L = 1) | 128 | 3,6 | 255·13,5 | 46 + 344 = 390 | 100% + dodatek 64/255 |
 
 Pod ziemią bez lamp jest więc ciemno, jak w grze, a jedna pochodnia wystarcza do pełnego oświetlenia swojego otoczenia (ok. 3 bloków).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/render/game_lighting.h`](../../src/lib/render/game_lighting.h), [`shaders/game_lighting.glsl`](../../src/shaders/game_lighting.glsl), [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`baseLight`, `render`). Wszystkie moduły: [mapa kodu](../KOD.md).

@@ -25,12 +25,12 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 | Język | C++17 | Wydajność i łatwe osadzenie interpretera Tcl (C API) |
 | Grafika | **Vulkan 1.2 (domyślnie) i OpenGL 4.5** za wspólną warstwą `rhi` | Pierwotnie wybraliśmy sam OpenGL; na wczesnym etapie dodaliśmy Vulkana jako domyślny backend. Można zbudować oba albo tylko jeden (`./build.sh vulkan|opengl|both`), wybór przy starcie `--renderer` |
 | Okno i wejście | SDL2 | Wieloplatformowe okno, kontekst GL lub powierzchnia Vulkana, wejście i audio |
-| Ładowanie GL | własny mały loader (`src/lib/render/gl.h`) | |
-| Shadery | GLSL 450, jedno źródło | `glslc` do SPIR-V dla Vulkana, tekst dla OpenGL (`src/shaders/`) |
+| Ładowanie GL | własny mały loader ([`src/lib/render/gl.h`](src/lib/render/gl.h)) | |
+| Shadery | GLSL 450, jedno źródło | `glslc` do SPIR-V dla Vulkana, tekst dla OpenGL ([`src/shaders/`](src/shaders)) |
 | Matematyka | glm | |
 | UI przeglądarki | Dear ImGui | Szybkie budowanie narzędzi |
 | Skrypty | Tcl 8.3 (osadzony, jak w oryginale) | Oryginalna gra ma całą logikę w Tcl (`Data/Scripts/**/*.tcl`) |
-| Build | Własne skrypty bash (`build.sh`) | Bez CMake: prosty skrypt wywołujący kompilator bezpośrednio |
+| Build | Własne skrypty bash ([`build.sh`](build.sh)) | Bez CMake: prosty skrypt wywołujący kompilator bezpośrednio |
 | Platformy | Linux (główna), Windows | |
 
 ## Budowanie i uruchamianie
@@ -68,7 +68,7 @@ build/release/export_gltf "/ścieżka/do/Wiggles" BABY                  # wszyst
 build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kristall/   # 303 pliki
 ```
 
-**Renderowanie: Vulkan albo OpenGL.** Kod renderujący korzysta z warstwy `src/lib/render/rhi/` (tekstury, bufory, potoki, uniformy), za którą stoją dwa backendy: Vulkan 1.2 (`rhi_vk.cpp`) i OpenGL 4.5 (`rhi_gl.cpp`). Shadery są pisane raz (`src/shaders/*.vert|*.frag`, GLSL 450): `build.sh` kompiluje je przez `glslc` do SPIR-V dla Vulkana i osadza tekst dla OpenGL. Program wybiera Vulkana, a gdy ten nie ruszy (i OpenGL jest wkompilowany), przełącza się na OpenGL. `--renderer` wymusza backend bez przełączania. Zrzuty ekranu (`--screenshot`) Vulkan renderuje poza ekranem, więc działają też w Xvfb. Obie ścieżki dają ten sam obraz (porównanie co do piksela przy budowie backendu). Walidacja Vulkana: `OW_VK_VALIDATION=1`. Nazwa backendu jest w tytule okna i w rogu ekranu.
+**Renderowanie: Vulkan albo OpenGL.** Kod renderujący korzysta z warstwy [`src/lib/render/rhi/`](src/lib/render/rhi) (tekstury, bufory, potoki, uniformy), za którą stoją dwa backendy: Vulkan 1.2 (`rhi_vk.cpp`) i OpenGL 4.5 (`rhi_gl.cpp`). Shadery są pisane raz (`src/shaders/*.vert|*.frag`, GLSL 450): [`build.sh`](build.sh) kompiluje je przez `glslc` do SPIR-V dla Vulkana i osadza tekst dla OpenGL. Program wybiera Vulkana, a gdy ten nie ruszy (i OpenGL jest wkompilowany), przełącza się na OpenGL. `--renderer` wymusza backend bez przełączania. Zrzuty ekranu (`--screenshot`) Vulkan renderuje poza ekranem, więc działają też w Xvfb. Obie ścieżki dają ten sam obraz (porównanie co do piksela przy budowie backendu). Walidacja Vulkana: `OW_VK_VALIDATION=1`. Nazwa backendu jest w tytule okna i w rogu ekranu.
 
 W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb nieodkrytego terenu i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
 

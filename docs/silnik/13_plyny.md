@@ -47,7 +47,7 @@ Mieszanie alfa, test głębi bez zapisu, po terenie i modelach, przed cząsteczk
 
 ## 13.5 Przepływ ✅
 
-Za Diggles-Unity (`WATER_PHASE1_RE.md` §4). Takt co 0,1 s (`src/lib/fluid_sim.cpp`):
+Za Diggles-Unity (`WATER_PHASE1_RE.md` §4). Takt co 0,1 s ([`src/lib/fluid_sim.cpp`](../../src/lib/fluid_sim.cpp)):
 
 1. **Źródła.** Obiekt `Wasser` (`Sulfur`, `Lava`) z `Editor_Set_Info {volume V} {vpf R}`: sekundę po starcie dolewa co takt `R·128` jednostek do pola `(int(x), int(y − 1))`, aż wyda `V·128`. Wypełnienie pola rośnie o `ilość / pojemność`.
 2. **Migawka** wypełnień `F` wszystkich pól.
@@ -74,3 +74,6 @@ Przykład: dwa otwarte pola (C = 960, A = 120, U/L = 8/0), pełne obok pustego: 
 **Sprawdzenie.** Szablon `kris_unq_060` w polu (16, 16), źródło `{volume 1000} {vpf 5}`, 410 taktów (41 s). Nasza symulacja daje w basenie x 20..28 dokładnie te same wypełnienia co zapis gry z tej chwili: 0,85 w wierszu powierzchni, potem 1,85, 2,85 … 7,85 i 10,13 w wierszu dna (zapis `../lab/zapisy/ow_woda.sav`, program porównujący w historii badań: BAZA_WIEDZY §9.5).
 
 🔶 Uproszczenia: przebieg po całym prostokącie z płynem zamiast rzadkiej listy pól, praca kierunkowa bez „starzenia”.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/fluid_sim.h`](../../src/lib/fluid_sim.h), [`lib/render/fluid_renderer.h`](../../src/lib/render/fluid_renderer.h). Wszystkie moduły: [mapa kodu](../KOD.md).

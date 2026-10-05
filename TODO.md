@@ -1,13 +1,13 @@
 # TODO: OpenWiggles
 
 Żywy plan. Odhaczamy `[x]`, dopisujemy nowe punkty, gdy coś odkryjemy.
-Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do `docs/BAZA_WIEDZY.md`).
+Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do [`docs/BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md)).
 
 ## Droga do grywalności (priorytet)
 Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] G1 Program `openwiggles`: świat z zapisu, scenariusza albo szablonu, kamera gry (WASD, mysz, kółko), HUD
 - [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
-- [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* (`src/lib/nav.h`)
+- [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* ([`src/lib/nav.h`](src/lib/nav.h))
 - [x] G4 Kopanie (PPM na skale, przeciągnięcie PPM = obszar do kopania dla zaznaczonego krasnala): tunel 4523 z gruntem pola, znaleziska 4%, odkrywanie mgły przez krasnale
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
@@ -37,16 +37,16 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól
 - [ ] 🔧 Kopanie: kształty bloków z tablicy sąsiadów BlockDB (zszywanie krawędzi), twardość materiału, czas kopania; przebudowa tylko zmienionego kawałka terenu
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
-- [x] Scena i rysowanie map w bibliotece (`lib/map_scene.h`, `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
+- [x] Scena i rysowanie map w bibliotece ([`lib/map_scene.h`](src/lib/map_scene.h), `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
 
 ## Faza 0: rozpoznanie
 - [x] Analiza repozytoriów społeczności w `../ref/` (w tym wng-game i wng-server: puste)
 - [x] Przegląd zainstalowanej gry i struktury `Data/`
 - [x] Potwierdzenie formatu `.3db` na wszystkich 43 plikach i ustalenie dekwantyzacji pozycji
-- [x] Skaner natywnych komend Tcl (`tools/scan_tcl_natives.py`)
-- [x] Uruchomić oryginał pod Wine w osobnym prefiksie (`tools/lab/setup_lab.sh`, `run_lab.sh`)
-- [x] Sonda Tcl: dokładna lista 639 komend natywnych (`docs/natywne_komendy_gry.txt`), trace startu
+- [x] Skaner natywnych komend Tcl ([`tools/scan_tcl_natives.py`](tools/scan_tcl_natives.py))
+- [x] Uruchomić oryginał pod Wine w osobnym prefiksie ([`tools/lab/setup_lab.sh`](tools/lab/setup_lab.sh), `run_lab.sh`)
+- [x] Sonda Tcl: dokładna lista 639 komend natywnych ([`docs/natywne_komendy_gry.txt`](docs/natywne_komendy_gry.txt)), trace startu
 - [ ] Śledzenie wewnątrz interpreterów obiektów/klas (ciała `def_class`, `method`, `obj_init`) i podczas rozgrywki, nie tylko startu
 - [ ] 🔬 `tclhelp`, `web_shell`, rejestr `WebServer=1`, `TCLDEFINES`: czy gra ma wbudowaną dokumentację lub konsolę?
 - [ ] Sonda: zrzut `ClassInfo`/`ClassList` dla wszystkich klas (hierarchia, metody, atrybuty)
@@ -66,8 +66,8 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Ewentualnie: bufory w pamięci karty (staging) dla kart dyskretnych; dynamic rendering
 
 ## Faza 1: szkielet projektu i build
-- [x] Struktura katalogów: `src/lib` (libwiggles, renderery w `src/lib/render/`), `src/apps/wigview`, `src/apps/game`, `src/tools`, `third_party/`; `build.sh` pilnuje, żeby biblioteka nie zależała od programów
-- [x] `build.sh` (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
+- [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), [`src/apps/game`](src/apps/game), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów
+- [x] [`build.sh`](build.sh) (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
 - [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad (Tcl później)
 - [x] Ścieżka do gry: `--game`, zmienna `OW_GAME`, domyślnie instalacja w `~/.wine`
 - [x] `git init` (repo `openwiggles_git`; `ref/` i zipy zostają poza repo)
@@ -81,7 +81,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Parser `.3db` w C++ z walidacją odwołań; `test3db` przechodzi wszystkie 43 modele i 2052 tekstury
 - [x] `.3db`: pola mesha `shadowIndex` i `cmapIndex` rozpoznane ✅
 - [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, flagi linku, rekordy 20 B, znaczenie `cmap`, pola animacji (ruch korzenia, flagi)
-- [x] Specyfikacje formatów do samodzielnej implementacji: `docs/formaty/` (3db, tekstury, SPHERE.DAT)
+- [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [ ] Dekoder tekstów: CP1250 i CP1252 → UTF-8, `MESSAGES.TXT` (`lmsg`), `QUOTES.TXT`
 - [ ] 🔬 `texlevels.txt`, `TEXMAPS.BIN` (prawdopodobnie do pominięcia)
@@ -108,14 +108,15 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
-- [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
+- [ ] Tłumaczenia: komunikaty błędów z [`src/lib`](src/lib) i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
 - [x] Dźwięki: zakładka z plikami Data/Sound i Data/Music (WAV PCM, WAV/MP3, MP3 przez dr_mp3), odtwarzanie z przebiegiem fali i przewijaniem, odwołania w skryptach (`sound bind/anim/play`, muzyka, dialogi, wzmianki) z kontekstem i przejściem do animacji; w zakładce Modele dźwięki klatek animacji; `--sound`; Ctrl+F szuka też dźwięków po nazwie logicznej ([rozdział 15](docs/silnik/15_dzwiek.md))
 - [ ] 🔬 Dźwięki: porównać z grą głośność `sound play` od odległości kamery i wybór dźwięku po materiale (`sound anim … stone …`)
 
 ## Dokumentacja
-- [x] Przewodnik po silniku `docs/silnik/` (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
+- [x] Przewodnik po silniku [`docs/silnik/`](docs/silnik) (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
 - [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
+- [x] Mapa kodu [docs/KOD.md](docs/KOD.md) (podsystem → pliki → rozdział → sprawdzanie), odnośniki z rozdziałów do kodu, [`tools/check_docs.py`](tools/check_docs.py) (drzewo od CLAUDE.md, zepsute linki, nieaktualne ścieżki, `--fix`)
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
 - [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), interfejs
 
@@ -159,7 +160,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔬 Detale `.l2m`: pełny eksperyment 16 układów × 2 zestawy na płaskiej ścianie; zestaw 2 (`urw2_*`) nie pasuje do reguły narożników (tabela w 04_teren.md §4.4); mech na filarze w menu
 - [ ] 🔬 Powtórzyć zrzuty, które wyszły czarne (szachownica `ow_mix2`, OBERWELT w x = 200)
 - [x] wigview: lampa podglądu dla szablonów bez własnych świateł (nie z gry, wyłączalna)
-- [x] wigview: wersja (commit) w rogu ekranu i w tytule okna (`build/gen/ow_version.h` z `build.sh`)
+- [x] wigview: wersja (commit) w rogu ekranu i w tytule okna (`build/gen/ow_version.h` z [`build.sh`](build.sh))
 - [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
@@ -190,7 +191,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Kopanie (`dig_*`) i modyfikacja terenu
 - [ ] Produkcja, ekwipunek, drzewko technologii
 - [ ] GUI: `layout`, `textwin`, fonty `.kft` (🔬 format), ikony
-- [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka: dekodowanie i mikser są gotowe (`src/lib/sound.h`, [rozdział 15](docs/silnik/15_dzwiek.md)); brakuje komend Tcl, głośności od odległości i motywów muzyki
+- [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka: dekodowanie i mikser są gotowe ([`src/lib/sound.h`](src/lib/sound.h), [rozdział 15](docs/silnik/15_dzwiek.md)); brakuje komend Tcl, głośności od odległości i motywów muzyki
 - [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`)
 - [ ] AI (`ai init`, `std_ai.tcl`)
 - [x] Odczyt mapy z zapisu `.sav`: teren, kamera, nieodkryty teren, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Zapisy obok Mapy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4, pole „Odkryj mapę”, pasek postępu wczytywania (czasy etapów: `OW_PROGRESS_LOG=1`)

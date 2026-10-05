@@ -106,3 +106,6 @@ Mech z z = 13,54 ląduje więc na 13,77, skóra jaskini z z = 15,01 tuż przed p
 | **świat** (urw, kris, lava, swf) | motyw graficzny szablonu: dżungla, kryształy, lawa, siarka |
 
 Nazwy w danych są niemieckie: *Zwerg* to krasnal, *Urwald* dżungla, *Höhle* jaskinia, *Gang* korytarz, *Oberwelt* powierzchnia, *Baum* drzewo.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/vfs.h`](../../src/lib/vfs.h), [`lib/text.h`](../../src/lib/text.h). Wszystkie moduły: [mapa kodu](../KOD.md).

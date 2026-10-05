@@ -40,7 +40,7 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 
 ## 9.4 Weryfikacja
 
-Najlepszy test to porównanie ze zrzutem z oryginału w tej samej rozdzielczości i z tym samym `set_view`. Zrzuty robi `tools/lab/capture.sh` (gra pod Wine w niewidocznym serwerze X, opis w [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §8). Sceny wzorcowe:
+Najlepszy test to porównanie ze zrzutem z oryginału w tej samej rozdzielczości i z tym samym `set_view`. Zrzuty robi [`tools/lab/capture.sh`](../../tools/lab/capture.sh) (gra pod Wine w niewidocznym serwerze X, opis w [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §8). Sceny wzorcowe:
 
 | Scena | Co sprawdza |
 |---|---|
@@ -48,3 +48,6 @@ Najlepszy test to porównanie ze zrzutem z oryginału w tej samej rozdzielczośc
 | `OBERWELT.TCL` z `set_view 131.78 23.95 2.5 0 0` | panorama, światło nieba, oświetlenie dwustronne |
 | `OBERWELT.TCL` z kamerą startową | przycinanie kątów kamery |
 | korytarz `urw_gng_021_a` z różnymi typami pól | rodzaje gruntu |
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`MapScene::render`), [`lib/render/rhi/rhi.h`](../../src/lib/render/rhi/rhi.h). Wszystkie moduły: [mapa kodu](../KOD.md).

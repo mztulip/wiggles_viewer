@@ -2,7 +2,7 @@
 
 Specyfikacja wystarczająca do napisania własnego loadera i przeglądarki. Dotyczy wszystkich 43 plików `Data/3db/*.3db` z gry Wiggles / Diggles (wersja 1.0 build 844). Każde pole oznaczone ✅ jest zweryfikowane na wszystkich plikach; 🔶 oznacza pole, którego znaczenia nie znamy (trzeba je tylko poprawnie przeczytać lub pominąć).
 
-Źródła: struktura pliku pochodzi z [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) (narzędzia w Pythonie i C# z [forum Wiggles](https://wiggles.ruka.at/forum/)). Dekwantyzację pozycji, znaczenie bajtu normalnej, orientację osi, interpolację i walidację ustaliliśmy sami. Implementacja wzorcowa: `src/lib/model3db.cpp`, renderer: `src/lib/render/model_renderer.cpp`.
+Źródła: struktura pliku pochodzi z [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) (narzędzia w Pythonie i C# z [forum Wiggles](https://wiggles.ruka.at/forum/)). Dekwantyzację pozycji, znaczenie bajtu normalnej, orientację osi, interpolację i walidację ustaliliśmy sami. Implementacja wzorcowa: [`src/lib/model3db.cpp`](../../src/lib/model3db.cpp), renderer: [`src/lib/render/model_renderer.cpp`](../../src/lib/render/model_renderer.cpp).
 
 ---
 
@@ -203,7 +203,7 @@ Nazewnictwo animacji postaci: `*_start`, `*_loop`, `*_end` (np. `gehen_start` �
 
 ## 10. Eksport do glTF 2.0
 
-Tak eksportujemy modele (`src/lib/gltf_export.cpp`, wynik przechodzi walidator Khronos bez uwag):
+Tak eksportujemy modele ([`src/lib/gltf_export.cpp`](../../src/lib/gltf_export.cpp), wynik przechodzi walidator Khronos bez uwag):
 
 | `.3db` | glTF |
 |---|---|
@@ -249,4 +249,4 @@ dequant(v) = (v − 32768) · 0,25
 
 Punkt obracamy jak obiekt-rodzica (oś pionowa) i dodajemy do jego pozycji; dziecko dostaje też obrót rodzica. Punkty modelu krasnala `mann`: 0 prawa ręka, 1 lewa ręka, 4 głowa, 6 i 11 tułów, 7 ręka z narzędziem, 10 usta. Przykład: `stand_anim_a`, klatka 0, głowa ≈ (0, −1, 0,05) bloku, czyli blok nad stopami.
 
-Źródło: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/HAT_LINK_SYSTEM.md` §3–4. ✅ Sprawdzone u nas: czapki z zapisu kampanii (przypięte w zapisie do punktu 4 krasnali) siedzą na głowach i podążają za animacją. Kod: `Model3db::linkOffset`, `MapScene::linkOffset` (`src/lib/map_scene.cpp`).
+Źródło: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/HAT_LINK_SYSTEM.md` §3–4. ✅ Sprawdzone u nas: czapki z zapisu kampanii (przypięte w zapisie do punktu 4 krasnali) siedzą na głowach i podążają za animacją. Kod: `Model3db::linkOffset`, `MapScene::linkOffset` ([`src/lib/map_scene.cpp`](../../src/lib/map_scene.cpp)).

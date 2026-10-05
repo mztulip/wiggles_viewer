@@ -67,4 +67,4 @@ Pozycja wierzchołka bloku (bx, by) w świecie to `(bx + x, by + y, z)` bloków.
 | 0 | lita skała: wszystkie wysokości 15 ✅; wartość domyślna `map create` |
 | 59 | pusty blok: wszystkie wysokości 0, czyli wykopany do samego dna (z = 7) ✅; na powierzchni wypełnia powietrze nad gruntem |
 
-Implementacja wzorcowa: `src/lib/blockdb.cpp`.
+Implementacja wzorcowa: [`src/lib/blockdb.cpp`](../../src/lib/blockdb.cpp).

@@ -1,6 +1,6 @@
 # 14. Gra: pierwsza grywalna wersja
 
-Program `openwiggles` (`src/apps/game/main.cpp`) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
+Program `openwiggles` ([`src/apps/game/main.cpp`](../../src/apps/game/main.cpp)) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
 
 ## 14.1 Start
 
@@ -23,7 +23,7 @@ Wskazywanie pola: promień z kamery przez piksel kursora przecinamy z płaszczyz
 
 ## 14.3 Ruch (🔶 uproszczenie)
 
-Siatka pól (`src/lib/nav.h`):
+Siatka pól ([`src/lib/nav.h`](../../src/lib/nav.h)):
 
 ```
 otwarte(x, y)  = w dolnej połowie bloku (wiersze 4..7 siatki 8×8 BlockDB) ≥ 16 drobnych pól ma wysokość < 13
@@ -51,7 +51,7 @@ W grze kopanie wybiera kształty sąsiednich bloków z tablicy sąsiadów BlockD
 
 ## 14.5 Krasnale ze skryptami gry
 
-Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` (`src/apps/game/main.cpp`):
+Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` ([`src/apps/game/main.cpp`](../../src/apps/game/main.cpp)):
 
 | Komenda | U nas |
 |---|---|
@@ -96,3 +96,6 @@ u32 n, n × (i32 x, i32 y)                                 pola do kopania
 ```
 
 Napisy: u32 długość i bajty, liczby little-endian. Wczytanie: źródło jak przy starcie (obiekty i ich `obj_init` w tej samej kolejności, więc te same indeksy i ID), potem bloki, płyny, pozycje obiektów, obiekty utworzone w grze (dopisywane w kolejności), atrybuty, a na końcu zmienne Tcl i stany (zmienne mogą wskazywać obiekty utworzone później). 🔶 Timery skryptów nie są zapisywane: `obj_init` ustawia je na nowo.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`apps/game/main.cpp`](../../src/apps/game/main.cpp), [`lib/nav.h`](../../src/lib/nav.h), [`lib/map_scene.h`](../../src/lib/map_scene.h). Wszystkie moduły: [mapa kodu](../KOD.md).

@@ -204,7 +204,7 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 
 ## 11.9 Nasza implementacja (stan) 🔶
 
-`src/lib/script/engine.cpp`, test bez okna: `build/release/owscript [KLASA [SEKUNDY]]` (dziennik zaślepek i błędów), w grze: `openwiggles` (dziennik `openwiggles_tcl.log`, wyłączenie: `--no-scripts`).
+[`src/lib/script/engine.cpp`](../../src/lib/script/engine.cpp), test bez okna: `build/release/owscript [KLASA [SEKUNDY]]` (dziennik zaślepek i błędów), w grze: `openwiggles` (dziennik `openwiggles_tcl.log`, wyłączenie: `--no-scripts`).
 
 - **Tcl 8.6 z systemu.** Tekst skryptów (CP1252/1250) zamieniamy na UTF-8 przed wykonaniem. Preprocesor jak w 2.2 (symbol `FULL` zdefiniowany).
 - **Pamięć podręczna klas** `~/.cache/openwiggles/classes.cache` (ok. 21 MB): klasy, atrybuty, zmienne i procedury głównego interpretera. Ważna, dopóki nie zmienią się pliki `Data/Scripts` (liczba plików i najnowsza data modyfikacji). Start z niej trwa ok. 0,1 s zamiast 5,5 s. `OW_NO_CLASS_CACHE=1` wymusza pełne wczytanie.
@@ -217,3 +217,6 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 - **Zaślepki**: nieznana komenda trafia do procedury `unknown`, liczy się w dzienniku i zwraca `0`. Krasnal ze skryptem „umiera” po kilku sekundach, bo atrybuty (np. zdrowie) wynoszą 0. Dlatego w grze krasnale steruje na razie gracz (rozdział 14), a skrypty mają pozostałe obiekty.
 - **Komendy ważne dla zachowania** (ustalone na skryptach krasnala, 🔶): `obj_query` nie zwraca pytającego obiektu, a parametry bywają jednym napisem (`"-class Pilz -range 10"`) albo osobnymi słowami (`-class {Zwerg Baby} -boundingbox {…}`) i tylko pierwszy przypadek wolno rozbijać jako listę; `-boundingbox {x0 y0 z0 x1 y1 z1}` obejmuje też głębokość (z skryptu). `get_walkresult` w trakcie chodu = 2 (`WS_NOTFINISHED`). `placelock_set pos czas id` rezerwuje miejsce na czas (`note_pathlength`: długość drogi · 2), a `placelock_check pos promień id` sprawdza odległość 3D (z skryptu = ½ bloku). `get_place -random r -mindist d` losuje wolne miejsce (bez cudzych rezerwacji i postaci). `clock` jest własna (bez `clock.tcl` i `msgcat` z biblioteki Tcl).
 - **Diagnostyka**: `OW_TRACE_STATES=1` wypisuje przejścia stanów, co sekundę stan maszyny krasnali i każdą akcję z łańcuchem procedur, które ją zleciły. `OW_TRACE_QUERY=1` wypisuje zapytania o krasnali i trafione rezerwacje.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/script/engine.h`](../../src/lib/script/engine.h), [`tools/owscript.cpp`](../../src/tools/owscript.cpp). Wszystkie moduły: [mapa kodu](../KOD.md).

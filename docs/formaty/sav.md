@@ -2,7 +2,7 @@
 
 Pliki `Data/Gamesave/*.sav`: zapis ręczny (`save_<nazwa>.sav`) i szybki zapis (`quick_Quicksave_<data>.sav`). Ten opis obejmuje część potrzebną, żeby **odtworzyć mapę z zapisu**: kamerę, teren, nieodkryty teren i obiekty (klasa, pozycja, obrót). Logikę obiektów (zmienne Tcl, akcje, trasy) czytamy tylko po to, żeby ją przeskoczyć.
 
-**Źródło i status.** Układ opracował [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT): `Docs/ORIGINAL_SAVE_FORMAT_RE.md`, `Docs/save-re-reports/B4-fixed-engine-state.md`, `Runtime/Save/OriginalSaveObjectDocument.cs`. ✅ Wszystko poniżej sprawdziliśmy na trzech zapisach z laboratorium (polska wersja 1.0 build 844, wersja formatu 0xA5). Nasz czytnik przechodzi przez cały plik i trafia w każdy znacznik kontrolny. Sprawdzenie: `build/release/test3db` (funkcja `testSaves`). Implementacja: `src/lib/save_game.cpp`, budowa świata: `buildWorldFromSave` w `src/lib/map_world.cpp`.
+**Źródło i status.** Układ opracował [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT): `Docs/ORIGINAL_SAVE_FORMAT_RE.md`, `Docs/save-re-reports/B4-fixed-engine-state.md`, `Runtime/Save/OriginalSaveObjectDocument.cs`. ✅ Wszystko poniżej sprawdziliśmy na trzech zapisach z laboratorium (polska wersja 1.0 build 844, wersja formatu 0xA5). Nasz czytnik przechodzi przez cały plik i trafia w każdy znacznik kontrolny. Sprawdzenie: `build/release/test3db` (funkcja `testSaves`). Implementacja: [`src/lib/save_game.cpp`](../../src/lib/save_game.cpp), budowa świata: `buildWorldFromSave` w [`src/lib/map_world.cpp`](../../src/lib/map_world.cpp).
 
 ## Kodowanie
 
@@ -177,7 +177,7 @@ Nie umiemy jeszcze zbudować zapisu od zera (sekcje po znaczniku 7 są nieopisan
 | rekordy pól (53 B) | `tilesOffset` + 53·i | blok (+0), komórka l2m (+15), materiał (bity 0–1 bajtu +17, pozostałe bity zostają), typ płynu (+19, +20), wypełnienie (+21, +25), nieodkryty teren gracza 0 (+45) |
 | obiekt | `posOffset`, `rotOffset` | pozycja i obrót obiektów z listy zapisu (dopasowanie po ID) |
 
-Materiał zapisujemy odwrotnym mapowaniem (typ `.pmp` 4→0, 3→1, 2→2, 5→3). Wynik pakujemy gzipem (`gzopen(…, "wb7")`), `writeSavePatch` w `src/lib/save_game.cpp`.
+Materiał zapisujemy odwrotnym mapowaniem (typ `.pmp` 4→0, 3→1, 2→2, 5→3). Wynik pakujemy gzipem (`gzopen(…, "wb7")`), `writeSavePatch` w [`src/lib/save_game.cpp`](../../src/lib/save_game.cpp).
 
 Sprawdzenie:
 - łata bez zmian (wczytanie i zapis bez skryptów) daje po rozpakowaniu bajty identyczne z oryginałem (18 290 881 B, 0 różnic);

@@ -153,3 +153,6 @@ Prawo pochodzi z [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Do
 | kolor oświetlenia | prawo z rozdziału 7, liczone per wierzchołek |
 
 Stany renderu: test głębi, zapis głębi, bez cullingu, bez mieszania, alpha test > 126; potem przebieg detali (4.4).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/blockdb.h`](../../src/lib/blockdb.h), [`lib/heightfield.h`](../../src/lib/heightfield.h), [`lib/terrain_mesh.h`](../../src/lib/terrain_mesh.h), [`lib/render/terrain_renderer.h`](../../src/lib/render/terrain_renderer.h), [`shaders/terrain.frag`](../../src/shaders/terrain.frag). Wszystkie moduły: [mapa kodu](../KOD.md).

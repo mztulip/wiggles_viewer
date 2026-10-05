@@ -2,7 +2,7 @@
 
 Kroki Fenrira, stukanie młotka, okrzyki krasnali, muzyka w tle i dialogi w przerywnikach. Silnik nie wie, który dźwięk zagrać przy której czynności: wszystko opisują skrypty Tcl. Ten rozdział wyjaśnia, jakie pliki ma gra, jak skrypty nadają dźwiękom nazwy i jak przypinają je do klatek animacji, akcji i sekwencji.
 
-**Źródło i status.** ✅ Pliki, formaty i składnię komend sprawdziliśmy na danych gry: `test3db` dekoduje każdy plik, a indeks odwołań buduje statyczny skaner skryptów (`src/lib/sound_refs.cpp`). Znaczenie dalszych pól `sound anim` (materiał, pomieszczenie, wysokość) i komend `adaptive_sound` pochodzi z [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/CUTSCENE_SYSTEM.md`, „Audio”) i jest 🔶, dopóki nie porównamy go z grą. ❓ Jak gra wycisza dźwięk z odległością i jak miesza głośności, nie badaliśmy.
+**Źródło i status.** ✅ Pliki, formaty i składnię komend sprawdziliśmy na danych gry: `test3db` dekoduje każdy plik, a indeks odwołań buduje statyczny skaner skryptów ([`src/lib/sound_refs.cpp`](../../src/lib/sound_refs.cpp)). Znaczenie dalszych pól `sound anim` (materiał, pomieszczenie, wysokość) i komend `adaptive_sound` pochodzi z [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/CUTSCENE_SYSTEM.md`, „Audio”) i jest 🔶, dopóki nie porównamy go z grą. ❓ Jak gra wycisza dźwięk z odległością i jak miesza głośności, nie badaliśmy.
 
 ## 15.1 Pliki
 
@@ -90,3 +90,6 @@ W zakładce **Modele** sekcja „Dźwięki animacji” pokazuje `sound anim` bie
 ## 15.8 Odtwarzanie w OpenWiggles
 
 `src/lib/sound.{h,cpp}`: `decodeSound` zamienia WAV i MP3 na próbki int16 (MP3 dekoduje [dr_mp3](https://github.com/mackron/dr_libs)), `toOutputFormat` przelicza je na 44100 Hz stereo (interpolacja liniowa), a `AudioOut` to mikser kilku głosów na SDL2 (głośność, pętla, pauza, przewijanie). Gra użyje tego samego miksera. Brakuje jeszcze praw głośności od odległości i materiałów (❓, [niewiadome](niewiadome.md)).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/sound.h`](../../src/lib/sound.h), [`lib/sound_refs.h`](../../src/lib/sound_refs.h), [`apps/wigview/sound_view.h`](../../src/apps/wigview/sound_view.h). Wszystkie moduły: [mapa kodu](../KOD.md).

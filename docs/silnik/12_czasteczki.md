@@ -59,7 +59,7 @@ Typ dzieli swój atlas na siatkę `grid × grid` (4, 8 albo 16) i bierze z niej 
 
 ## 12.3 Typy
 
-Każdy typ to zestaw stałych: atlas i siatka, jasność (alfa materiału 70..255), kształt, w którym rodzą się cząsteczki, rozrzut prędkości, sposób wyboru komórki, kolor, rozmiar i jego zmiana, grawitacja lub wypór oraz czas życia w klatkach. W grze każdy typ ma własną funkcję. My liczymy wszystkie jednym modelem (§12.4), a różnice zapisujemy w tabeli (`src/lib/particles.cpp`, `buildTypes`).
+Każdy typ to zestaw stałych: atlas i siatka, jasność (alfa materiału 70..255), kształt, w którym rodzą się cząsteczki, rozrzut prędkości, sposób wyboru komórki, kolor, rozmiar i jego zmiana, grawitacja lub wypór oraz czas życia w klatkach. W grze każdy typ ma własną funkcję. My liczymy wszystkie jednym modelem (§12.4), a różnice zapisujemy w tabeli ([`src/lib/particles.cpp`](../../src/lib/particles.cpp), `buildTypes`).
 
 | typ | efekt | atlas, siatka | życie |
 |---|---|---|---|
@@ -138,3 +138,6 @@ W grze płomień kielicha ma ok. 0,27 bloku szerokości i 0,6 bloku wysokości, 
 3. rozrzut prędkości 0,02 → 0,004–0,008 i promień kuli 0,18 → 0,06 (typ 2) / 0,25 → 0,12 (typ 3).
 
 Przy okazji widać, że gra rysuje w tym szablonie wodę (rozdział o płynach: do napisania).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/particles.h`](../../src/lib/particles.h), [`lib/render/particle_renderer.h`](../../src/lib/render/particle_renderer.h), [`apps/wigview/particle_view.h`](../../src/apps/wigview/particle_view.h). Wszystkie moduły: [mapa kodu](../KOD.md).

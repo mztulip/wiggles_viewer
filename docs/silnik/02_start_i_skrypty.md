@@ -141,4 +141,7 @@ Scenariusz może wołać inne przez `call data/gamesave/…`. Kampania i tryb sw
 | `set_view x y zoom dx dy` | kamera | 6 |
 | `set_light_begin N`, `set_ground_begin N` | niebo i grunt panoramy | 7, 8 |
 
-Jeśli nie chcesz od razu osadzać Tcl, możesz czytać scenariusze i szablony prostym parserem linii: rozpoznaj powyższe komendy i wylicz wyrażenia `[expr {5.99 + $xoffset}]` jako liczbę plus przesunięcie szablonu. Tak działa nasza przeglądarka (`src/lib/map_world.cpp`, `src/lib/map_template.cpp`). Pliki klas (`def_class` …) czyta się podobnie, szukając w ich treści `class_defaultanim`, `class_light` i `horizon_set` (`src/lib/class_db.cpp`).
+Jeśli nie chcesz od razu osadzać Tcl, możesz czytać scenariusze i szablony prostym parserem linii: rozpoznaj powyższe komendy i wylicz wyrażenia `[expr {5.99 + $xoffset}]` jako liczbę plus przesunięcie szablonu. Tak działa nasza przeglądarka ([`src/lib/map_world.cpp`](../../src/lib/map_world.cpp), [`src/lib/map_template.cpp`](../../src/lib/map_template.cpp)). Pliki klas (`def_class` …) czyta się podobnie, szukając w ich treści `class_defaultanim`, `class_light` i `horizon_set` ([`src/lib/class_db.cpp`](../../src/lib/class_db.cpp)).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/script/engine.h`](../../src/lib/script/engine.h), [`lib/map_world.h`](../../src/lib/map_world.h) (`parseScenario`). Wszystkie moduły: [mapa kodu](../KOD.md).

@@ -132,7 +132,7 @@ Nazwy są niemieckie: *Zwerg* to krasnal (wiggle), *Lager* to magazyn, *Sägewer
 Źródło: [DigglesMods/WigSound](https://github.com/DigglesMods/WigSound).
 - Dialogi sekwencji: `Data/Sound/Sequenzen/<nazwa>.mp3`, odtwarzane przez `seq_audiostream open/play <start> <stop>`.
 - Opcja `-soundlog` w oryginale zapisuje `log_asnd.txt`.
-- ✅ (2026-10-05, skaner `src/lib/sound_refs.cpp`, `test3db`) Wszystkie 1420 plików dźwiękowych dekodują się (WAV PCM 8/16 bit, 4× WAV z MP3, MP3). Indeks: 1015 `sound bind`, 2171 `sound anim`, 735 `sound animnoseq`, 147 `sound play`, 353 odwołania muzyki, 205 dialogów; 1227 plików ma odwołanie. Wszystkie klucze `sound anim obiekt.animacja` pasują do obiektów i animacji z `.3db`; klatki liczone od 0 (🔶: 493 odwołań do klatki 0, 4 poza animacją). 11 nazw `sound bind` bez pliku (żarty `mp_chat_*` w `catch`).
+- ✅ (2026-10-05, skaner [`src/lib/sound_refs.cpp`](../src/lib/sound_refs.cpp), `test3db`) Wszystkie 1420 plików dźwiękowych dekodują się (WAV PCM 8/16 bit, 4× WAV z MP3, MP3). Indeks: 1015 `sound bind`, 2171 `sound anim`, 735 `sound animnoseq`, 147 `sound play`, 353 odwołania muzyki, 205 dialogów; 1227 plików ma odwołanie. Wszystkie klucze `sound anim obiekt.animacja` pasują do obiektów i animacji z `.3db`; klatki liczone od 0 (🔶: 493 odwołań do klatki 0, 4 poza animacją). 11 nazw `sound bind` bez pliku (żarty `mp_chat_*` w `catch`).
 - ✅ Linie plików sekwencji zaczynające się od `-` nie są wyłączone: `sequencer.tcl` (`parse_next`) wykonuje je, a pomija tylko po przerwaniu sekwencji przez gracza; `+` wykonuje się zawsze. Opis: [rozdział 15](silnik/15_dzwiek.md).
 
 ## 5. Mody: format DigglesModManager ✅
@@ -212,7 +212,7 @@ Opis: [rozdział 3 przewodnika](silnik/03_swiat_z_szablonow.md), formaty: [forma
 `.sav` to **gzip**. Po rozpakowaniu jest binarka (~7 MB) zaczynająca się od `V1.0.844`. ✅ Część z mapą (kamera, pola 53 B, linie nieba/gruntu, mgła, obiekty z pozycją i obrotem) odczytana według Diggles-Unity i sprawdzona na 3 zapisach z laboratorium (2 szybkie zapisy menu 64×64, 96 obiektów; OBERWELT 500×200, 1381 obiektów). Mapowanie rodzaju gruntu na typ `.pmp` (0→4, 1→3, 2→2, 3→5) ustalone porównaniem pól zapisu z szablonami. Opis: [formaty/sav.md](formaty/sav.md).
 
 ### 7.6 Natywne komendy: wyniki skanera
-`tools/scan_tcl_natives.py` przeszedł 3961 plików `.tcl` (skrypty i szablony) i znalazł 2301 procedur lub metod zdefiniowanych w skryptach oraz około 830 kandydatów na komendy natywne. Pełna lista jest w `docs/tcl_natywne_kandydaci.txt` i jest zaszumiona: zawiera też słowa ze stringów i list.
+[`tools/scan_tcl_natives.py`](../tools/scan_tcl_natives.py) przeszedł 3961 plików `.tcl` (skrypty i szablony) i znalazł 2301 procedur lub metod zdefiniowanych w skryptach oraz około 830 kandydatów na komendy natywne. Pełna lista jest w [`docs/tcl_natywne_kandydaci.txt`](tcl_natywne_kandydaci.txt) i jest zaszumiona: zawiera też słowa ze stringów i list.
 
 Najczęstsze komendy, czyli pierwsze do zaimplementowania: `new`, `sel` (np. `sel /obj`, wybór kontekstu tworzenia), `set_physic`, `set_owner`, `set_boxed`, `set_autolight`, `loading_objdetail`, `call_method`, `sound`, `map_setlayer2`, `map_template`, `call`, `set_class_anim`, `smalltalk`, `tasklist_add`, `textwin`, `log`, `get_pos`, `set_anim`, `def_class`, `obj_query`, `set_particlesource`, `adaptive_sound`, `layout`, `obj_init`, `def_event`, `handle_event`, `timer_event`, `set_hoverable`, `vector_add`, `class_defaultanim`, `get_ref`, `state_enable/disable`, `random`, `set_pos`, `get_attrib/set_attrib`, `link_obj`, `set_visibility`, `lmsg`, `del`, `obj_valid`, `irandom`, `set_roty`, `set_textureanimation`, `set_collision`, `walk`, `start_fade`, `get_mapedit`, `tasklist_clear`.
 
@@ -220,7 +220,7 @@ Najczęstsze komendy, czyli pierwsze do zaimplementowania: `new`, `sel` (np. `se
 
 ## 8. Laboratorium: obserwacja działającej gry ✅
 
-Oryginał działa pod Wine 11 (Direct3D 7 przez wined3d). Narzędzia są w `tools/lab/`:
+Oryginał działa pod Wine 11 (Direct3D 7 przez wined3d). Narzędzia są w [`tools/lab/`](../tools/lab):
 - `setup_lab.sh` kopiuje grę do `../lab/Wiggles`, tworzy **osobny prefiks Wine** (`../lab/prefix`, gra widziana jako `C:\Wiggles`), ustawia rejestr na okno 1024×768 i wstrzykuje sondę do `systeminit.tcl`. Oryginalna instalacja nie jest ruszana.
 - `run_lab.sh [sekundy] [parametry]` uruchamia grę z `-logerrors` i zamyka ją po czasie.
 - `owprobe.tcl` to sonda w czystym Tcl 8.3. Nie potrzebuje barnacle: zrzuca `info commands`, procedury i zmienne globalne, przechwytuje `log` i owija komendy natywne przez `rename`.
@@ -284,7 +284,7 @@ Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla
 `tclhelp` (zwraca pusty wynik, 🔶 pisze do konsoli), `web_shell`, `dump_var`, `proddump`, `output_3ddbstats`, `meminfo`, `perfwin`, `peek`/`poke`, `waterdbg`, `toggle_wf` (wireframe?), `render_gray`, `show_maped`, `save_map`, `save_scene`, `xtest`, `test`/`testd`, `vtune`.
 
 ### 8.5 Metoda: obserwacja, nie deasemblacja
-Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując działającą grę: sonda Tcl (`get_*`, `save_map`, `save_scene`, `tclerrors.txt`), zrzuty ekranu z `tools/lab/capture.sh` przy zmienianych parametrach (np. różne `set_view`, `set_ground_begin`) i porównania z naszym renderem. Wiedzę o wnętrzu exe bierzemy wyłącznie z cudzych opracowań (głównie Diggles-Unity) i zawsze sprawdzamy ją takim eksperymentem.
+Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując działającą grę: sonda Tcl (`get_*`, `save_map`, `save_scene`, `tclerrors.txt`), zrzuty ekranu z [`tools/lab/capture.sh`](../tools/lab/capture.sh) przy zmienianych parametrach (np. różne `set_view`, `set_ground_begin`) i porównania z naszym renderem. Wiedzę o wnętrzu exe bierzemy wyłącznie z cudzych opracowań (głównie Diggles-Unity) i zawsze sprawdzamy ją takim eksperymentem.
 
 **Przepis na czysty eksperyment** (sprawdzony przy UV terenu, przejściach gruntów i detalach):
 1. W kopii laboratoryjnej utwórz szablon testowy (`Data/Templates/ow_*.pmp`, `.tcl`, ewentualnie `.l2m`) skryptem w Pythonie. Najczytelniejsza jest **płaska ściana z samych bloków 59** (wykopane do dna, z = 7, UV = (x, y)), na której układa się badane wartości na osobnych blokach.
@@ -304,7 +304,7 @@ Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując dzi
 - **Teren to mapa wysokości** w płaszczyźnie (x, y) ekranu, a wysokość oznacza głębokość wydrążenia w głąb ekranu (0 = lita skała na przedniej płaszczyźnie). Gra 2,5D.
 - `save_map {x y w h} plik` zapisuje **Wavefront OBJ** „obj outputfile for template”: zgrubną mapę wysokości szablonów (blok = 200 jednostek, siatka co 50 lub 25, głębokości w krokach 100; korytarz `GNG_001` ma głębokość 400). To format edytora map i najlepszy wzorzec do weryfikacji dekodowania.
 - `save_scene plik` zapisuje VRML 2.0 („Wiggles VRML97 exporter”), a `hmap` zapisuje `hmap.raw` 512×512 u8 (🔶 nie jest to prosta głębokość: dominuje 240, w jaskiniach szum).
-- `data/userstartup.tcl` zastępuje menu startowe, co pozwala ustawić dowolne szablony i zrzucić wzorce (`tools/lab/userstartup_templates.tcl`).
+- `data/userstartup.tcl` zastępuje menu startowe, co pozwala ustawić dowolne szablony i zrzucić wzorce ([`tools/lab/userstartup_templates.tcl`](../tools/lab/userstartup_templates.tcl)).
 - Exe: `BlockDB ILT load`, `BlockDB mesh load %d Blocks`, `Scape texturizer (TM)`, shadery `scape_solid`, `scape_blend`, `scape_fow`, `scape_urw_mt0/1`, `scape_lav_mt0/1`. `LandScapeQuality [value] (2)` wybiera plik `BlockDB0/1/2`.
 
 ### 9.2 Jak rozpracowaliśmy `.PMP` i BlockDB
@@ -332,7 +332,7 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 - Z porównania bajtów: rekord pola zapisu ma płyn na przesunięciach 19–44 (typ ×2, wypełnienie f32 ×2, przepływ f32 ×4). Szczegóły: [formaty/sav.md](formaty/sav.md).
 - Deskryptor płynu w BlockDB (ostatnie 4 bajty rekordu 89 B) zgadza się z opisem Diggles-Unity.
 - Ten zapis ma tylko 18 obiektów na liście; dekoracje szablonu są w „nasionach” kubełków przestrzennych (odczytane, [formaty/sav.md](formaty/sav.md)).
-- ✅ Symulacja przepływu (`src/lib/fluid_sim.cpp`) po 410 taktach od startu daje w basenie te same wypełnienia co ten zapis (do setnej części; rozdział 13 §13.5). Porównanie: mały program z `buildWorld` (szablon w 16,16), `FluidSim`, `parseSaveGame`.
+- ✅ Symulacja przepływu ([`src/lib/fluid_sim.cpp`](../src/lib/fluid_sim.cpp)) po 410 taktach od startu daje w basenie te same wypełnienia co ten zapis (do setnej części; rozdział 13 §13.5). Porównanie: mały program z `buildWorld` (szablon w 16,16), `FluidSim`, `parseSaveGame`.
 
 ### 9.6 Zapis łatą wczytany przez grę (2026-10-04)
 - `openwiggles --save save_kampania.sav --no-scripts --save-to x.sav`: po rozpakowaniu `x.sav` jest bajt w bajt równy oryginałowi.

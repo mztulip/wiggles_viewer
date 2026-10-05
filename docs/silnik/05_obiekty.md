@@ -82,3 +82,6 @@ w szablonie nałożonym w (21, 40):
 1. Klasa `Dummy_Moos_um_a` pochodzi z listy `SetDummyClassesAll` w `classes/deco/dummy_flusslandschaft.tcl`: `{ Moos_um_a moos_um_a }`. Model to obiekt `moos_um_a` (baza `flusslandschaft.3db`), animacja `standard`, tryb 0 (nieruchomy).
 2. Pozycja: x = 23,531, y = 42,5, z = 13,54 · 0,5 + 7 = 13,77 bloku, czyli tuż za przednią płaszczyzną (14,5), na dnie płytkiego korytarza.
 3. Obrót: tylko ry = 6,123 rad, czyli M = T · Ry(−6,123).
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/class_db.h`](../../src/lib/class_db.h), [`lib/model3db.h`](../../src/lib/model3db.h), [`lib/render/model_renderer.h`](../../src/lib/render/model_renderer.h), [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`objectMatrix`, `resolve`). Wszystkie moduły: [mapa kodu](../KOD.md).

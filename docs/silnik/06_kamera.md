@@ -89,3 +89,6 @@ Wszystkie wielkości w tej samej skali (bloki albo jednostki modelu, × 200).
 | `set_viewpos x y z zoom dx dy …` | ❓ wariant z pełną pozycją |
 | `set_view_begin N` | „Y-beginning of the view”: ograniczenie przewijania w górę. Na kadr ustawiony przez `set_view` nie wpływa (sprawdzone) |
 | `camera_set`, `set_camerafollow` | przejazdy i śledzenie obiektu (przerywniki) ❓ |
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_world.h`](../../src/lib/map_world.h) (`GameView`), [`apps/wigview/main.cpp`](../../src/apps/wigview/main.cpp) (`viewProj`, `gameViewAngleLimit`), [`apps/game/main.cpp`](../../src/apps/game/main.cpp). Wszystkie moduły: [mapa kodu](../KOD.md).

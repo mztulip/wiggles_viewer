@@ -1,6 +1,6 @@
 # Szablony map: `.pmp`, `.l2m`, `.tcl`, `.ENT`
 
-Pliki w `Data/Templates/` (gra czyta z tego katalogu; podkatalogi `pmp/`, `l2m/`, `tcl/`, `ent/` to robocze kopie edytora). Jak szablony składają się w świat: [rozdział 3 przewodnika](../silnik/03_swiat_z_szablonow.md). Implementacja wzorcowa: `src/lib/map_template.cpp`.
+Pliki w `Data/Templates/` (gra czyta z tego katalogu; podkatalogi `pmp/`, `l2m/`, `tcl/`, `ent/` to robocze kopie edytora). Jak szablony składają się w świat: [rozdział 3 przewodnika](../silnik/03_swiat_z_szablonow.md). Implementacja wzorcowa: [`src/lib/map_template.cpp`](../../src/lib/map_template.cpp).
 
 Wszystkie liczby są little-endian. ✅ Wszystkie pliki `.pmp` i niepuste `.l2m` z gry czytają się dokładnie do ostatniego bajtu (sprawdza to `test3db`).
 

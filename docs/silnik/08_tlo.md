@@ -120,3 +120,6 @@ rysuj, gdy ognisko.y − 20 ≤ G                 (bramka wg Diggles-Unity, §2.
 ```
 
 ❓ Gra rysuje tylko te komórki siatki panoramy, które leżą nad rzutem płaszczyzny dywanu (linia przycięcia). Przy normalnym G niczego to nie zmienia, bo resztę i tak zamalowuje teren. Różnica jest widoczna tylko wtedy, gdy grunt jest nad kamerą (czarne pola przy `set_ground_begin 15`). Nie odtwarzamy tego.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/render/panorama_renderer.h`](../../src/lib/render/panorama_renderer.h), [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`updateZone`). Wszystkie moduły: [mapa kodu](../KOD.md).

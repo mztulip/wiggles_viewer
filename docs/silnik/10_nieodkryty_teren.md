@@ -157,3 +157,6 @@ call_method $FR fog_remove 0 50 50     ;# właściciel 0 (gracz lokalny), set_fo
 call_method $FR timer_delete -1
 ```
 Wachlarz promieni o promieniu 50 pól odkrywa całą jaskinię menu i 3 pola skały wokół niej; dalsza lita skała zostaje czarna, ale w kadrze jej nie widać. ❓ Do sprawdzenia w laboratorium: zgodnie z prawem 10.4 po usunięciu `FogRemover` (`timer_delete`) scena powinna w ciągu kilkudziesięciu sekund zajść szarą mgłą; w naszym `capture.sh` zanotowaliśmy jednak, że obraz robił się czarny.
+
+---
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`updateFog`, `objectVisibleInFog`), [`shaders/game_lighting.glsl`](../../src/shaders/game_lighting.glsl). Wszystkie moduły: [mapa kodu](../KOD.md).

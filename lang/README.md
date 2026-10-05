@@ -33,14 +33,14 @@ Interfejs OpenWiggles (na razie przeglądarka `wigview`) jest po polsku, a pozos
   *An empty `msgstr` or an entry marked `#, fuzzy` counts as untranslated, so the Polish text is shown.*
 - Nazwy z gry i plików (`Info_Fog_*`, `set_light_begin`, `.l2m`, `Data/Gamesave`) zostawiamy bez zmian.
   *Keep game and file names (`Info_Fog_*`, `set_light_begin`, `.l2m`, `Data/Gamesave`) unchanged.*
-- Font interfejsu to DejaVu Sans (łaciński, cyrylica, grecki). Pismo spoza tego zakresu (np. chińskie) wymaga dodania fontu w `src/apps/wigview/main.cpp`.
-  *The UI font is DejaVu Sans (Latin, Cyrillic, Greek); other scripts (e.g. Chinese) need an extra font in `src/apps/wigview/main.cpp`.*
+- Font interfejsu to DejaVu Sans (łaciński, cyrylica, grecki). Pismo spoza tego zakresu (np. chińskie) wymaga dodania fontu w [`src/apps/wigview/main.cpp`](../src/apps/wigview/main.cpp).
+  *The UI font is DejaVu Sans (Latin, Cyrillic, Greek); other scripts (e.g. Chinese) need an extra font in [`src/apps/wigview/main.cpp`](../src/apps/wigview/main.cpp).*
 
 ## Dla programistów / For developers
 
 - Napis interfejsu w kodzie: `tr("Tekst po polsku")`. Wołamy `tr()` przy każdym użyciu (bez zapamiętywania wyniku w zmiennych statycznych), więc zmiana języka działa od razu.
 - Napis tłumaczony później (np. przekazywany jako nazwa etapu): `N_("…")`, a w miejscu wyświetlenia `tr(zmienna)`.
 - Identyfikatory ImGui: przyrostek `##id` / `###id` nie jest tłumaczony. `tr("Mapy###mapy")` daje „Maps###mapy”, a `###` utrzymuje ten sam identyfikator we wszystkich językach (np. wybrana zakładka nie zmienia się po zmianie języka).
-- Po dodaniu albo zmianie napisów: `tools/i18n_update.py`. Odświeża `openwiggles.pot` i scala każdy `.po`: nowe napisy dostają pusty `msgstr`, usunięte trafiają na koniec jako `#~`. Potem uzupełnij `en.po`. `tools/i18n_update.py --check` kończy się kodem 1, gdy w którymś języku czegoś brakuje.
-- Implementacja: `src/lib/i18n.h`, `src/lib/i18n.cpp` (parser podzbioru `.po`: bez `msgctxt` i liczby mnogiej).
-- Komunikaty na konsoli i błędy z biblioteki (`src/lib`, np. błędy parsera) zostają po polsku.
+- Po dodaniu albo zmianie napisów: [`tools/i18n_update.py`](../tools/i18n_update.py). Odświeża `openwiggles.pot` i scala każdy `.po`: nowe napisy dostają pusty `msgstr`, usunięte trafiają na koniec jako `#~`. Potem uzupełnij `en.po`. `tools/i18n_update.py --check` kończy się kodem 1, gdy w którymś języku czegoś brakuje.
+- Implementacja: [`src/lib/i18n.h`](../src/lib/i18n.h), [`src/lib/i18n.cpp`](../src/lib/i18n.cpp) (parser podzbioru `.po`: bez `msgctxt` i liczby mnogiej).
+- Komunikaty na konsoli i błędy z biblioteki ([`src/lib`](../src/lib), np. błędy parsera) zostają po polsku.

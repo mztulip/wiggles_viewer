@@ -22,7 +22,7 @@ Kanał alfa jest używany (np. liście, włosy, kraty: wartości 0–255). Do re
 
 UV w modelach ma konwencję Direct3D (v = 0 to góra obrazu). Jeżeli trzymasz obraz wierszami od góry i wysyłasz go do OpenGL bez odwracania, UV działają bez zmian.
 
-Nasz loader (`src/lib/tga.cpp`) obsługuje też typy 3, 10 i 11 (szarość, RLE), na wypadek modów.
+Nasz loader ([`src/lib/tga.cpp`](../../src/lib/tga.cpp)) obsługuje też typy 3, 10 i 11 (szarość, RLE), na wypadek modów.
 
 ## Katalogi
 | Katalog | Zawartość |

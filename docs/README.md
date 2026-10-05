@@ -6,7 +6,8 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 
 1. **[Przewodnik po silniku](silnik/)**: rozdziały w kolejności, w jakiej powstaje obraz gry, od startu programu do gotowej klatki. Każdy opisuje zasadę działania, podaje algorytm w pseudokodzie i przykład liczbowy.
 2. **[Formaty plików](formaty/)**: dokładny układ bajtów każdego pliku. Do nich odsyłają rozdziały przewodnika.
-3. **[Baza wiedzy](BAZA_WIEDZY.md)**: dziennik badań. Skąd co wiemy, materiały referencyjne, laboratorium, otwarte pytania. Nie trzeba jej czytać, żeby pisać silnik.
+3. **[Mapa kodu](KOD.md)**: gdzie w [`src/`](../src) jest implementacja każdego podsystemu, który rozdział ją opisuje i czym ją sprawdzić.
+4. **[Baza wiedzy](BAZA_WIEDZY.md)**: dziennik badań. Skąd co wiemy, materiały referencyjne, laboratorium, otwarte pytania. Nie trzeba jej czytać, żeby pisać silnik.
 
 ## Przewodnik po silniku
 
@@ -53,4 +54,4 @@ Formaty i prawa działania pochodzą z trzech źródeł:
 2. **Obserwacja działającej gry** w laboratorium pod Wine: zrzuty ekranu przy zmienianych parametrach, sonda Tcl, eksport sceny. **Nie deasemblujemy exe.** Metoda: [BAZA_WIEDZY.md §8](BAZA_WIEDZY.md).
 3. **Opracowania społeczności**, zawsze z odnośnikiem i zweryfikowane eksperymentem. Najważniejsze: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT) i [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db). Pełna lista w [CREDITS.md](../CREDITS.md).
 
-Implementacja wzorcowa jest w `src/` (C++17, Vulkan 1.2 / OpenGL 4.5). Przewodnik podaje jej pliki tylko pomocniczo: każde prawo da się zrealizować na podstawie samego opisu.
+Implementacja wzorcowa jest w [`src/`](../src) (C++17, Vulkan 1.2 / OpenGL 4.5). Przewodnik podaje jej pliki tylko pomocniczo (linia „W kodzie OpenWiggles” na końcu rozdziałów, całość w [mapie kodu](KOD.md)): każde prawo da się zrealizować na podstawie samego opisu.
