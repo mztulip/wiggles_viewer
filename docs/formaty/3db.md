@@ -22,7 +22,7 @@ Model
 - **Animacja jest wierzchołkowa** (bez szkieletu). Każda klatka to osobny mesh z własnymi pozycjami wierzchołków.
 - Mesh nie zawiera geometrii bezpośrednio. Jego **linki** wskazują numery pul. Pule trójkątów i UV są zwykle **wspólne** dla wszystkich klatek animacji, a zmieniają się pule pozycji i normalnych.
 - Plik może zawierać jeden obiekt z setkami animacji (postacie: `MANN.3DB` ma 1023 animacje i 11 573 klatki) albo setki obiektów z jedną animacją `standard` (zestawy dekoracji: `KRISTALL.3DB`, `OBERWELT.3DB`).
-- Skrypty gry odwołują się do animacji jako `obiekt.animacja`, np. `urw_sumpf.standard`, a do pliku po nazwie bez rozszerzenia: `db_load mann`.
+- Skrypty gry odwołują się do animacji jako `obiekt.animacja`, np. `urw_sumpf.standard`, a do pliku po nazwie bez rozszerzenia: `db_load mann`. ✅ Liczba klatek każdej animacji z naszego parsera zgadza się z `db_animlength` w działającej grze (6444 z 6445; jedyna różnica to nazwa obiektu powtórzona w dwóch plikach, [rozdział 5.1](../silnik/05_obiekty.md)).
 
 ## 2. Typy
 

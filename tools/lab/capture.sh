@@ -10,6 +10,7 @@
 #   tools/lab/capture.sh scene out.png <plik.tcl> [sekundy=60]
 #       własny skrypt jako data/userstartup.tcl
 #
+# Zmienna OW_ARGS: dodatkowe parametry exe (np. OW_ARGS="-console -nosound").
 # Wymaga: laboratorium (setup_lab.sh), Xvfb, ImageMagick (import).
 # Gra działa tylko w trybie pełnoekranowym (okno ma 1×1 px), dlatego uruchamiamy ją
 # w wirtualnym pulpicie Wine 1024×768, pełną ścieżką C:\Wiggles\Wiggles.exe.
@@ -66,7 +67,7 @@ Xvfb ":$D" -screen 0 1024x768x24 +extension GLX >/dev/null 2>&1 & XP=$!
 trap 'kill $XP 2>/dev/null' EXIT # sprzątanie także po przerwaniu (timeout)
 sleep 2
 cd "$LAB/Wiggles"
-DISPLAY=":$D" timeout $((WAIT + 20)) wine explorer /desktop=OWLab,1024x768 'C:\Wiggles\Wiggles.exe' >/dev/null 2>&1 & GP=$!
+DISPLAY=":$D" timeout $((WAIT + 20)) wine explorer /desktop=OWLab,1024x768 'C:\Wiggles\Wiggles.exe' ${OW_ARGS:-} >/dev/null 2>&1 & GP=$!
 sleep "$WAIT"
 DISPLAY=":$D" import -window root "$OUT" 2>/dev/null && echo "zapisano $OUT" || echo "BŁĄD zrzutu"
 kill $GP 2>/dev/null; wait $GP 2>/dev/null

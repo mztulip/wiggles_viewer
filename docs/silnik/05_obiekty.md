@@ -6,7 +6,16 @@ Obiekt w świecie to instancja klasy (rozdział 2.5) z pozycją i obrotem. Klasa
 
 Przy starcie `Scripts/init/ANIMINIT.TCL` wczytuje komendą `db_load <nazwa>` około 40 baz z `Data/3db/` (`mann`, `frau`, `werkzeuge`, `oberwelt`, `kristall`, `lavawelt`, …). Format: [3db.md](../formaty/3db.md).
 
-Baza zawiera **obiekty** (nazwane zestawy animacji), a animacja to lista klatek-meshy. Skrypty adresują animację jako `<obiekt>.<animacja>`, np. `urw_sumpf.standard` albo `mann.gehen_loop`, bez podawania pliku. **Nazwy obiektów tworzą więc jedną wspólną przestrzeń dla wszystkich wczytanych baz.** Silnik powinien po wczytaniu baz zbudować słownik `nazwa obiektu → (baza, obiekt)` (bez rozróżniania wielkości liter; 🔶 przy powtórzonej nazwie bierz pierwszą wczytaną).
+Baza zawiera **obiekty** (nazwane zestawy animacji), a animacja to lista klatek-meshy. Skrypty adresują animację jako `<obiekt>.<animacja>`, np. `urw_sumpf.standard` albo `mann.gehen_loop`, bez podawania pliku. **Nazwy obiektów tworzą więc jedną wspólną przestrzeń dla wszystkich wczytanych baz.** Silnik powinien po wczytaniu baz zbudować słownik `nazwa obiektu → (baza, obiekt)` (bez rozróżniania wielkości liter). **Przy powtórzonej nazwie wygrywa pierwsza wczytana baza** (✅: obiekt `wuerfel` jest w `WERKZEUGE.3DB`, 46 klatek, i w `MUETZEN.3DB`, 11 klatek; `db_animlength wuerfel.standard` zwraca 46, a `werkzeuge` jest wczytywane wcześniej).
+
+✅ Komendy baz w działającej grze, porównane z naszym parserem dla wszystkich 6445 animacji ([BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)):
+
+| Komenda | Wynik |
+|---|---|
+| `db_load <nazwa>` | wczytuje `Data/3db/<nazwa>.3db`; zwraca pusty napis (nie numer bazy) |
+| `db_search <nazwa>` | numer bazy = kolejność wczytania (`mann` 0, `frau` 1, `werkzeuge` 2, `halbzeuge` 3, `muetzen` 4…), −1 gdy nie wczytana |
+| `db_findanim <baza> <obiekt> <animacja>` | numer animacji w obiekcie = kolejność w pliku (1023 z 1023 zgodne dla `mann`) |
+| `db_animlength <obiekt>.<animacja>` | liczba klatek; zgodna z naszym parserem dla 6444 z 6445 animacji (jedyna różnica to kolizja `wuerfel` opisana wyżej) |
 
 ## 5.2 Od klasy do modelu ✅
 

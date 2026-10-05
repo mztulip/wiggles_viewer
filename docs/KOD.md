@@ -67,4 +67,6 @@ src/shaders (GLSL, osadzane przez build.sh)    third_party (imgui, dr_mp3)
 | [tools/check_docs.py](../tools/check_docs.py) | spójność dokumentacji: wszystko osiągalne z `CLAUDE.md`, brak zepsutych linków i nieaktualnych ścieżek |
 | [tools/i18n_update.py](../tools/i18n_update.py) | napisy `tr()` → `lang/*.po` |
 | [tools/scan_tcl_natives.py](../tools/scan_tcl_natives.py) | komendy natywne używane w skryptach gry ([wynik](tcl_natywne_kandydaci.txt)) |
+| [tools/lab/live.sh](../tools/lab/live.sh) | gra z laboratorium w tle z serwerem WebTraq: Tcl w działającej grze (`tcl`), strony obiektów i klas (`page`), zrzuty (`shot`); [BAZA_WIEDZY.md §8.6](BAZA_WIEDZY.md) |
+| [tools/lab/owprobe_deep.tcl](../tools/lab/owprobe_deep.tcl), [owprobe_play.tcl](../tools/lab/owprobe_play.tcl) | sondy Fazy 0: klasy, bazy modeli, interpretery obiektów, takt i timery; obserwacja krasnali po `gameload` ([§8.7](BAZA_WIEDZY.md)) |
 | [tools/lab/](../tools/lab/setup_lab.sh) | laboratorium: oryginalna gra pod Wine z sondą Tcl ([setup_lab.sh](../tools/lab/setup_lab.sh), [run_lab.sh](../tools/lab/run_lab.sh), [capture.sh](../tools/lab/capture.sh) do zrzutów wzorcowych); metoda w [BAZA_WIEDZY.md §8](BAZA_WIEDZY.md) |

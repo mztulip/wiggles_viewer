@@ -3,9 +3,9 @@
 Rozdział 2 opisał, jak gra wczytuje skrypty. Ten opisuje, jak skrypty **żyją** w trakcie gry: gdzie trzymane są zmienne obiektu, jak działają metody, zdarzenia, timery i maszyna stanów, oraz w jakim takcie silnik to wszystko wywołuje. To podstawa całej rozgrywki: zachowanie krasnali, zwierząt, budynków i fabuły jest napisane w tych mechanizmach.
 
 **Źródła i status.**
-- Sygnatury komend pochodzą z oficjalnej pomocy gry `Doc/wiggles_tcl.htm` (wersja angielska). Wyciąg zrobiło Diggles-Unity: `Docs/ENGINE_TCL_API.txt`. Polska wersja tego pliku nie ma (🔶 komenda `tclhelp <komenda>` pisze pomoc do konsoli gry; w naszej sondzie zwracała pusty wynik).
+- Sygnatury komend pochodzą z oficjalnej pomocy gry `Doc/wiggles_tcl.htm` (wersja angielska). Wyciąg zrobiło Diggles-Unity: `Docs/ENGINE_TCL_API.txt`. Polska wersja tego pliku nie ma, a `tclhelp <komenda>` zwraca pusty wynik także przez wbudowany serwer WebTraq (✅, [BAZA_WIEDZY §8.6](../BAZA_WIEDZY.md)), więc pomocy w grze nie ma.
 - Działanie w środku opisuje [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/TCL_OBJECT_MODEL.md`, `TCL_INIT_LOADING.md`, `ENGINE_ARCHITECTURE.md`, kod `Runtime/Engine/Sim/DigglesGameSim.cs`). Status 🔶, chyba że zaznaczono inaczej.
-- ✅ Naszą obserwacją potwierdzone jest tylko to, że kod klas działa poza głównym interpreterem (11.1).
+- ✅ Naszą obserwacją (sondy w laboratorium, [BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)) potwierdzone są: osobny interpreter na obiekt i jego zawartość (11.1), działanie timerów (11.4), takt logiki 10 Hz i czas gry (11.7).
 
 ## 11.1 Interpretery
 
@@ -17,14 +17,19 @@ Gra używa **wielu interpreterów Tcl**:
 | **tymczasowy interpreter klasy** | przy `def_class` | ciało klasy (rejestracja metod, stanów, zdarzeń) |
 | **interpreter obiektu** | przy pierwszym użyciu obiektu, po jednym na obiekt | `obj_init`, metody, ciała stanów, obsługa zdarzeń tego obiektu |
 
-✅ Potwierdzenie z laboratorium: nasza sonda owija komendy natywne w głównym interpreterze (`rename`), a wywołania z ciał klas i metod przez nią nie przechodzą.
+✅ Potwierdzenie z laboratorium (`obj_eval` na krasnalach, grzybie i `FogRemover`, [BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)):
+- zmienna ustawiona przez `obj_eval` w jednym krasnalu nie jest widoczna w drugim krasnalu (ta sama klasa), w grzybie ani w głównym interpreterze; **każdy obiekt ma własny interpreter**,
+- metody klasy są **procedurami** w interpreterze obiektu (krasnal: 515 procedur, grzyb: 3, `FogRemover`: 2), a procedury głównego interpretera (`MapTemplateSet` i inne, 679 nazw) są w nim niedostępne; komendy natywne są te same,
+- interpreter obiektu ma Tcl 8.3, nie jest w trybie bezpiecznym (`interp issafe` = 0, dostępne `open`, `source`, `file`, `exec`), a `info level` w ciele daje 0 (poziom globalny),
+- `this` nie istnieje jako zmienna (`set this` daje błąd), `get_objname this` działa; nazwy obiektów są lokalizowane (`Karzeł_1`, `Grzyb_1`),
+- błędy w kodzie obiektu gra zapisuje do `tclerrors.txt` tak samo jak błędy głównego interpretera.
 
 **Zmienne obiektu to zmienne globalne jego interpretera.** Przy tworzeniu interpretera obiektu silnik:
 1. tworzy interpreter (`Tcl_CreateInterp`),
 2. zapamiętuje w nim, który obiekt jest „tym” (`this`),
 3. ustawia jako zmienne globalne wszystkie pola klasy (`member`) z wartościami domyślnymi,
 4. rejestruje w nim komendy silnika,
-5. 🔶 przełącza go w tryb bezpieczny (`Tcl_MakeSafe`), chyba że klasa wyłącza skrypty.
+5. ~~przełącza go w tryb bezpieczny (`Tcl_MakeSafe`)~~: tak podaje Diggles-Unity, ale ✅ obserwacja pokazuje interpreter **bez** trybu bezpiecznego (wyżej).
 
 Wszystkie ciała (`obj_init`, metody, stany, zdarzenia) wykonują się **na poziomie globalnym** interpretera obiektu, bez ramki procedury. Wynikają z tego reguły, które trzeba odtworzyć dokładnie:
 
@@ -36,7 +41,9 @@ Wszystkie ciała (`obj_init`, metody, stany, zdarzenia) wykonują się **na pozi
 | zmienna innego obiektu | tylko przez `ref_get $obj nazwa`, `ref_set $obj nazwa wartość`, `ref_checkvar` |
 | wykonanie kodu w innym obiekcie | `obj_eval $obj {skrypt}`, `call_method $obj metoda …` |
 
-Silnik nie musi tworzyć setek prawdziwych interpreterów. Wystarczy osobna tablica zmiennych na obiekt, podstawiana jako „globalna” na czas wykonywania jego kodu. Tak robi Diggles-Unity. Trzeba jednak zachować drugi poziom odczytu: wartości ustawione w głównym interpreterze przy starcie (np. stałe `ANIM_LOOP`, tabele `ttt*`) muszą być widoczne z ciał obiektów.
+Silnik nie musi tworzyć setek prawdziwych interpreterów. Wystarczy osobna tablica zmiennych na obiekt, podstawiana jako „globalna” na czas wykonywania jego kodu. Tak robi Diggles-Unity.
+
+**Zmienne głównego interpretera nie są widoczne w obiekcie** (✅). `FogRemover` nie ma `ANIM_LOOP`, choć główny interpreter ma `ANIM_LOOP = 2`, a zmienna ustawiona w głównym interpreterze po utworzeniu obiektu też do niego nie trafia. Zmienne obiektu to: pola i zmienne ustawione przez kod jego klasy (grzyb ma `ANIM_LOOP`, `ANIM_ONCE`, `ANIM_STILL`, bo ustawia je jego klasa; krasnal ma 422 zmienne), `CreationParam` (parametr z `new`), `env` i zmienne Tcl (`tcl_version`, `tcl_platform`…).
 
 ## 11.2 Definicja klasy
 
@@ -126,7 +133,9 @@ timer_event this evt_timer0 -attime [expr {[gettime] + 1}]
 timer_event this evt_fogremove -repeat -1 -interval 20 -userid 1 -attime [expr {[gettime] + 2}]
 ```
 
-❓ Obserwacja z laboratorium: klasa zdefiniowana w `userstartup.tcl` z `timer_event` w `obj_init` dała się utworzyć, ale jej zdarzenie nie przyszło. Może czas gry stoi przy ekranie startowym, może brakuje kroku (np. `def_event` przed `handle_event`). Do sprawdzenia.
+✅ Obserwacja z laboratorium: klasa zdefiniowana w `userstartup.tcl` (`def_event evt_timer0`, `handle_event evt_timer0`, w `obj_init` `timer_event this evt_timer0 -attime [expr {[gettime] + 1}] -repeat -1 -interval 0.5`) dostała zdarzenia w czasach 1,004; 1,550; 2,047; 2,544; 3,043… (145 zdarzeń w 72 s). Odstęp 0,5 s jest zachowany z dokładnością do kroku czasu gry (11.7). Przy `userstartup.tcl` czas gry wynosi 0,0 i rusza dopiero po `gametime start` na końcu `systeminit.tcl`.
+
+**Czas gry i doba** (✅): `gettime` zwraca sekundy czasu gry, a `gethours` = `gettime` / 150, czyli godzina gry trwa 150 s. Skrypty liczą godzinę na tarczy zegara jako `int([gethours]) % 12`, więc doba ma 12 godzin gry, czyli **30 minut czasu rzeczywistego** (zgodnie z instrukcją gry; pomiar 97,80 s → 0,652 h, 117,83 s → 0,786 h).
 
 ## 11.5 Maszyna stanów
 
@@ -178,7 +187,15 @@ dopóki gra działa:
     uśpij wątek, żeby utrzymać tempo
 ```
 
-Diggles-Unity przyjmuje (🔶, częściowo z obserwacji, częściowo ze stałych gry) **40 kroków symulacji na sekundę** (25 ms) i **turę logiki („think”) co 4. krok, czyli 10 razy na sekundę**. W turze logiki, w tej kolejności:
+Diggles-Unity przyjmuje (🔶, częściowo z obserwacji, częściowo ze stałych gry) **40 kroków symulacji na sekundę** (25 ms) i **turę logiki („think”) co 4. krok, czyli 10 razy na sekundę**.
+
+✅ Pomiary w laboratorium ([BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)):
+- **tura logiki co 0,1 s**: krasnal w stanie `sparetime_dispatch` wykonuje ciało stanu w czasach 7,02; 7,12; 7,22; 7,32… (śledzenie `state_get` w jego interpreterze),
+- **czas gry przesuwa się raz na klatkę obrazu**, nie ciągle: `gettime` rośnie skokami po ok. 0,05 s, bo gra ogranicza obraz do ok. 20 klatek na sekundę (rejestr `Performance\MaxFramerate=19`, WebTraq: średnio 19,94 FPS). Statystyki WebTraq: 501 klatek logiki na 974 klatki obrazu, czyli logika co drugą klatkę,
+- **takt powłoki** (`exec_deferred` w głównym interpreterze) to ok. 30 na sekundę (2207 w 75 s),
+- czas gry biegnie 1:1 z czasem rzeczywistym (73,1 s czasu gry w 75 s działania, w tym 1,7 s wczytywania).
+
+W turze logiki, w tej kolejności:
 
 1. mapa świateł i porządki menedżera obiektów,
 2. sztuczna inteligencja przeciwników (każdy gracz SI co 50 tur),
@@ -212,7 +229,7 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 - **Katalog bieżący** `cd`/`pwd`/`glob`/`file exists` działa wirtualnie po katalogu gry (start: katalog gry, nie `Data`). `locale` zwraca `pl` (pliki `*_pl.tcl`).
 - **Zapis plików przez skrypty** (`open … w`) trafia do `~/.cache/openwiggles/<ścieżka>`; odczyt najpierw stamtąd, potem z gry. Instalacji gry nie zmieniamy.
 - **Klasy.** `def_class` wykonuje ciało w tymczasowym interpreterze. Wcześniej kopiuje do niego zmienne głównego interpretera, bo ciała w cudzysłowach (`obj_init "… $ANIM_STILL"`) podstawiają je od razu. `in_class_def` = 1 w ciele klasy. `get_class_name/type/category/era/flags` bez argumentu zwracają klasę z definicji (z tego korzysta `techtreetunes.tcl` przy zmiennych `ttt*_<klasa>`). Po wykonaniu zapamiętujemy procedury i zmienne globalne ciała.
-- **Obiekty**: interpreter na obiekt; kolejno zmienne głównego interpretera, zmienne i procedury klasy, pola (`member`), `obj_init`. Klasy z `class_disablescripting` nie dostają interpretera. W zapisie kampanii skrypty ma 118 obiektów.
+- **Obiekty**: interpreter na obiekt; kolejno zmienne głównego interpretera, zmienne i procedury klasy, pola (`member`), `obj_init`. ⚠ Gra **nie** kopiuje zmiennych głównego interpretera do obiektu (11.1); u nas są kopiowane. Do poprawy (TODO), bo może maskować błędy skryptów, które w grze nie widzą tych zmiennych. Klasy z `class_disablescripting` nie dostają interpretera. W zapisie kampanii skrypty ma 118 obiektów.
 - **Takt** 10 Hz: timery → kolejka zdarzeń → `handle_event` → ciało stanu (gdy licznik > 0 i nie trwa akcja).
 - **Zaślepki**: nieznana komenda trafia do procedury `unknown`, liczy się w dzienniku i zwraca `0`. Krasnal ze skryptem „umiera” po kilku sekundach, bo atrybuty (np. zdrowie) wynoszą 0. Dlatego w grze krasnale steruje na razie gracz (rozdział 14), a skrypty mają pozostałe obiekty.
 - **Komendy ważne dla zachowania** (ustalone na skryptach krasnala, 🔶): `obj_query` nie zwraca pytającego obiektu, a parametry bywają jednym napisem (`"-class Pilz -range 10"`) albo osobnymi słowami (`-class {Zwerg Baby} -boundingbox {…}`) i tylko pierwszy przypadek wolno rozbijać jako listę; `-boundingbox {x0 y0 z0 x1 y1 z1}` obejmuje też głębokość (z skryptu). `get_walkresult` w trakcie chodu = 2 (`WS_NOTFINISHED`). `placelock_set pos czas id` rezerwuje miejsce na czas (`note_pathlength`: długość drogi · 2), a `placelock_check pos promień id` sprawdza odległość 3D (z skryptu = ½ bloku). `get_place -random r -mindist d` losuje wolne miejsce (bez cudzych rezerwacji i postaci). `clock` jest własna (bez `clock.tcl` i `msgcat` z biblioteki Tcl).

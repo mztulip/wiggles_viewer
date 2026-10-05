@@ -22,8 +22,12 @@ Zanim tekst pliku trafi do Tcl, przechodzi przez preprocesor gry:
    //# ENDIF
    //# STOPIFNOT FULL    przerwij cały plik, jeśli FULL nie jest zdefiniowany
    ```
-   W danych występują tylko symbole `FULL` (pełna wersja, nie demo, więc zdefiniuj go) i `NOSTARTSEQ` (wyłącza menu startowe). Dodatkowe symbole można podać w rejestrze (`TCLDEFINES`).
-3. **`//` jako komenda.** Gra rejestruje też komendę natywną `//`, która nic nie robi. Komentarze, które nie przejdą przez preprocesor (np. w treści przekazanej jako string do `def_class`), wykonują się więc jako pusta komenda. Silnik musi zrobić jedno i drugie.
+   W danych występują tylko symbole `FULL` (pełna wersja, nie demo, więc zdefiniuj go) i `NOSTARTSEQ` (wyłącza menu startowe).
+
+   ✅ Sprawdzone plikiem testowym w laboratorium ([BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)): `FULL` jest zdefiniowany, `NOSTARTSEQ`, `DEMO` i inne nie. `IF` działa tak samo jak `IFDEF`, a `IFNOT` tak samo jak `IFNDEF`; `ELSE` odwraca gałąź.
+
+   ❓ Rejestr `TCLDEFINES`: wpisanie samej nazwy (`OWTEST`, `NOSTARTSEQ`) **nie** definiuje symbolu (sprawdzone na obu). Nie wiadomo, czy wartość wymaga innej składni, czy w tej wersji jest ignorowana. Nasz silnik może przyjmować symbole z parametru wiersza poleceń.
+3. **`//` jako komenda.** Gra rejestruje też komendę natywną `//`, która nic nie robi (✅ widziana w trakcie gry: krasnal wywołał ją z komentarzem w argumencie). Komentarze, które nie przejdą przez preprocesor (np. w treści przekazanej jako string do `def_class`), wykonują się więc jako pusta komenda. Silnik musi zrobić jedno i drugie.
 
 Zwykłe komentarze Tcl `#` i `;#` działają normalnie.
 

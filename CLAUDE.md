@@ -6,7 +6,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [TODO.md](TODO.md): **żywy plan prac**. Odhaczaj wykonane punkty i dopisuj nowe, gdy coś odkryjesz
 - [README.md](README.md): cele projektu, decyzje techniczne, plan pracy, lista materiałów referencyjnych
 - [docs/README.md](docs/README.md): **wejście do dokumentacji**. Zasada: dokumentacja ma wystarczyć człowiekowi do samodzielnego napisania silnika, więc opisujemy, jak i dlaczego coś działa (algorytm, przykład liczbowy, źródło, status ✅/🔶/❓), a nie tylko wynik
-- [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–15 od startu gry do klatki obrazu (w tym nieodkryty teren, obiekty Tcl, cząsteczki, płyny, gra, dźwięk) (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
+- [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–16 od startu gry do klatki obrazu (w tym nieodkryty teren, obiekty Tcl, cząsteczki, płyny, gra, dźwięk, mechaniki rozgrywki z instrukcji) (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
 - [docs/formaty/](docs/formaty/): **specyfikacje plików** (`3db.md`, `tekstury.md`, `sphere_dat.md`, `blockdb.md`, `szablony.md`, `sav.md`). Aktualizuj je razem z kodem
 - [docs/KOD.md](docs/KOD.md): **mapa kodu**: podsystem → pliki w [`src/`](src) → rozdział przewodnika → narzędzie do sprawdzenia. Zacznij od niej, szukając implementacji
 - [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9), indeks dokumentów Diggles-Unity (§10)
@@ -15,6 +15,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [LICENSE](LICENSE): GPL v3
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
 - [`tools/lab/capture.sh`](tools/lab/capture.sh) robi zrzut obrazu z oryginalnej gry w niewidocznym Xvfb (`menu`, `template <szablon>`, `scene <plik.tcl>`). Używaj go jako wzorca wizualnego
+- [`tools/lab/live.sh`](tools/lab/live.sh): gra z laboratorium w tle z wbudowanym serwerem WebTraq; `tcl '…'` wykonuje Tcl w działającej grze, `page`, `shot`, `stop` (§8.6 bazy wiedzy). Najszybszy sposób na pytania o stan gry
 - §8 bazy wiedzy: laboratorium (gra pod Wine z sondą Tcl). Narzędzia w [`tools/lab/`](tools/lab), wyniki w `../lab/Wiggles/owprobe_*.txt` i `tclerrors.txt`
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik [`tools/scan_tcl_natives.py`](tools/scan_tcl_natives.py))
 

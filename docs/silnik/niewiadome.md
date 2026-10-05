@@ -28,10 +28,12 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Maska ruchu w `.pmp` (przebiegi u16) | 🔶 | płaszczyzna nawigacji; Diggles-Unity `ORIGINAL_PATHFINDING_RE.md` |
 | Model obiektów Tcl: szczegóły | 🔶 | opisany w [rozdziale 11](11_obiekty_tcl_i_petla.md) za Diggles-Unity; do sprawdzenia: semantyka licznika stanów, dlaczego timer klasy z `userstartup.tcl` nie zadziałał |
 | Dźwięk: głośność od odległości (`sound play` z pozycją), materiały i pomieszczenia w `sound anim`, przełączanie motywów `adaptive_sound` | 🔶 | składnia i powiązania: [rozdział 15](15_dzwiek.md); prawa mieszania: Diggles-Unity `SOUND_SYSTEM_RE.md` |
-| Kopanie, produkcja, walka, AI, interfejs | ❓ | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu (indeks: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §10) |
+| Ramka ekranu: rola prawej dolnej ćwiartki `bordermask.tga`, skalowanie w innych rozdzielczościach | ❓ | prawo przy 1024×768: [rozdział 9.4](09_klatka.md) |
+| Rejestr `TCLDEFINES`: składnia symboli preprocesora | ❓ | sama nazwa nie działa: [rozdział 2.2](02_start_i_skrypty.md) |
+| Kopanie, produkcja, walka, AI, interfejs | ❓ (zasady gracza: [rozdział 16](16_rozgrywka.md) 🔶) | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu (indeks: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §10) |
 | Zapisy `.sav`: stan rozgrywki | 🔶 | mapę, kamerę, mgłę i obiekty czytamy ✅ ([formaty/sav.md](../formaty/sav.md)); logika obiektów, gracze, ekonomia i fabuła wg Diggles-Unity `ORIGINAL_SAVE_FORMAT_RE.md`, niesprawdzone |
 | Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` | ❓ | |
 
 ## 10.3 Jak badać
 
-Nie analizujemy kodu exe. Zachowanie ustala się obserwacją oryginału: scena w `data/userstartup.tcl`, zrzut ekranu przy zmienianym jednym parametrze, porównanie z własnym renderem. Narzędzia i wnioski z dotychczasowych eksperymentów: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §8–9.
+Nie analizujemy kodu exe. Zachowanie ustala się obserwacją oryginału: scena w `data/userstartup.tcl`, zrzut ekranu przy zmienianym jednym parametrze, porównanie z własnym renderem. Stan działającej gry (obiekty, klasy, zmienne, wynik dowolnego Tcl) najprościej odczytać przez wbudowany serwer WebTraq ([`tools/lab/live.sh`](../../tools/lab/live.sh)). Narzędzia i wnioski z dotychczasowych eksperymentów: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §8–9.

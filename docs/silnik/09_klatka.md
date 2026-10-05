@@ -25,7 +25,8 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
      test i zapis głębi, bez cullingu, alpha test ≥ 0,5,
      oświetlenie dwustronne (7.5), zanikanie w kolor strefy dla z < 0 (8.1)
    (teren i modele: po oświetleniu szara mgła i czerń z rozdziału 10.5)
-8. interfejs
+8. ramka ekranu (9.4), gdy włączona w ustawieniach
+9. interfejs (🔶 kolejność 8 i 9 nie jest sprawdzona)
 ```
 
 ## 9.3 Stany renderu w tabeli
@@ -38,7 +39,21 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 | teren detale | LEQUAL | nie | nie | DST_COLOR, SRC_COLOR | jak podkład | (dziedziczy z podkładu) |
 | modele | LESS | tak (poza `nozwrite`) | nie | nie | alfa tekstury ≥ 0,5 | tak, dwustronnie (7.5) + nieodkryty teren (10.5) |
 
-## 9.4 Weryfikacja
+## 9.4 Ramka ekranu (`BorderMask`) ✅
+
+Wokół całego obrazu gra rysuje cienką czarną ramkę z zaokrąglonymi rogami. Daje ją wartość rejestru `Performance\BorderMask=1` (domyślnie włączona) i tekstura `Data/GUI/bordermask.tga`. Poza ramką obraz się nie zmienia: zrzuty z `BorderMask=1` i `0` są identyczne od 11. piksela od krawędzi w głąb. Ciemne brzegi widoczne na zrzutach z gry to więc treść sceny (nieoświetlona skała, rozdział 7), a nie winieta.
+
+**Tekstura.** 128×128, kolor czarny, cała informacja w kanale alfa. Ćwiartki: lewa górna to róg (zaokrąglony gradient), prawa górna to pasek górnej krawędzi, lewa dolna to pasek lewej krawędzi (w obu: alfa 1 przy krawędzi, przejście do 0 między tekselem 4 a 30 od krawędzi), prawa dolna to gradient poziomy o nieustalonej roli (❓). Pozostałe krawędzie i rogi to odbicia tych kawałków.
+
+**Prawo** (pomiar stosunku jasności „z ramką / bez ramki” na zrzutach 1024×768, [BAZA_WIEDZY §8.7](../BAZA_WIEDZY.md)): obraz = scena · (1 − α), czyli zwykłe mieszanie alfa czarnej tekstury. Przy krawędzi:
+
+| piksel od krawędzi | 0–3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | ≥ 11 |
+|---|---|---|---|---|---|---|---|---|---|
+| przepuszczanie (1 − α) | 0 | 0,04 | 0,17 | 0,31 | 0,50 | 0,72 | 0,86 | 0,92 | 1 |
+
+🔶 Dopasowanie: piksel `p` od krawędzi odpowiada tekselowi `4·(p − 3)` paska tekstury, czyli 3 piksele pełnej czerni, a dalej 64-tekselowy pasek ściśnięty do 16 pikseli. To samo przeliczenie zgadza się w rogu na przekątnej (przepuszczanie 0,5 przy tekselu 32 tekstury, czyli w pikselu 11, zmierzone 0,52 w pikselu 12). Nie sprawdzaliśmy innych rozdzielczości niż 1024×768 (❓ czy ramka skaluje się z ekranem).
+
+## 9.5 Weryfikacja
 
 Najlepszy test to porównanie ze zrzutem z oryginału w tej samej rozdzielczości i z tym samym `set_view`. Zrzuty robi [`tools/lab/capture.sh`](../../tools/lab/capture.sh) (gra pod Wine w niewidocznym serwerze X, opis w [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §8). Sceny wzorcowe:
 

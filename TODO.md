@@ -39,6 +39,9 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
 - [x] Scena i rysowanie map w bibliotece ([`lib/map_scene.h`](src/lib/map_scene.h), `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
+- [ ] Czas gry: `gethours` = `gettime`/150, doba = 12 h = 30 min, data gry `dzień.miesiąc.rok`; plan dnia krasnali (`current_time_plan`, zegar) (rozdziały 11.4, 16.2)
+- [ ] Ramka ekranu `BorderMask` w grze i jako opcja w wigview (prawo w rozdziale 9.4)
+- [ ] 🔧 Obiekty Tcl bez kopii zmiennych głównego interpretera, jak w grze (rozdział 11.1); sprawdzić, czy skrypty krasnali nadal działają
 
 ## Faza 0: rozpoznanie
 - [x] Analiza repozytoriów społeczności w `../ref/` (w tym wng-game i wng-server: puste)
@@ -47,15 +50,15 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Skaner natywnych komend Tcl ([`tools/scan_tcl_natives.py`](tools/scan_tcl_natives.py))
 - [x] Uruchomić oryginał pod Wine w osobnym prefiksie ([`tools/lab/setup_lab.sh`](tools/lab/setup_lab.sh), `run_lab.sh`)
 - [x] Sonda Tcl: dokładna lista 639 komend natywnych ([`docs/natywne_komendy_gry.txt`](docs/natywne_komendy_gry.txt)), trace startu
-- [ ] Śledzenie wewnątrz interpreterów obiektów/klas (ciała `def_class`, `method`, `obj_init`) i podczas rozgrywki, nie tylko startu
-- [ ] 🔬 `tclhelp`, `web_shell`, rejestr `WebServer=1`, `TCLDEFINES`: czy gra ma wbudowaną dokumentację lub konsolę?
-- [ ] Sonda: zrzut `ClassInfo`/`ClassList` dla wszystkich klas (hierarchia, metody, atrybuty)
-- [ ] Sonda: zrzut wyników `db_*` dla wszystkich modeli (nazwy animacji, długości): wzorzec do testów naszego parsera `.3db`
-- [ ] Opcjonalnie: zbudować barnacle (SDK) pod Wine, gdy czysty Tcl nie wystarczy
+- [x] Śledzenie wewnątrz interpreterów obiektów (`obj_eval` + owijki komend) i podczas rozgrywki (`gameload` zapisu kampanii, 5 krasnali przez 90 s): osobny interpreter na obiekt, bez trybu bezpiecznego, bez zmiennych głównego interpretera, logika 10 Hz, timery działają ([`tools/lab/owprobe_deep.tcl`](tools/lab/owprobe_deep.tcl), [`owprobe_play.tcl`](tools/lab/owprobe_play.tcl), BAZA §8.7, rozdział 11)
+- [x] `WebServer=1` uruchamia serwer twórców **WebTraq** (port 8082): obiekty, klasy z metodami, **powłoka Tcl do działającej gry**; narzędzie [`tools/lab/live.sh`](tools/lab/live.sh) (BAZA §8.6). `tclhelp` pusty (pomocy brak), `web_shell` bez efektu, `TCLDEFINES` z samą nazwą nie działa (❓ składnia), preprocesor: `IF`=`IFDEF`, `IFNOT`=`IFNDEF`, `FULL` zdefiniowany
+- [x] Sonda `ClassList`/`ClassInfo`/`get_class_*`: 2836 klas (5 klas C++ silnika), typy, kategorie, ery, flagi (BAZA §8.7); metody i stany klas są w WebTraq (`/classinfo:<klasa>`)
+- [x] Sonda `db_*` dla wszystkich 6445 animacji: długości zgodne z naszym parserem (6444; różnica = kolizja nazwy `wuerfel`), numery animacji = kolejność w pliku, powtórzona nazwa obiektu: wygrywa pierwsza wczytana baza (rozdział 5.1)
+- [x] ~~Barnacle (SDK) pod Wine~~: niepotrzebny, bo WebTraq i `obj_eval` dają dostęp do stanu gry
 - [x] Zrzuty obrazu z gry: `tools/lab/capture.sh menu|template|scene` (Xvfb, wirtualny pulpit Wine, pełny ekran 1024×768, pełna ścieżka C:\\Wiggles\\Wiggles.exe)
 - [x] Kamera wigview odpowiadająca `set_view x y zoom dx dy` z gry (prawo z exe za Diggles-Unity); menu ze `systeminit.tcl` zgodne 1:1 ze zrzutem gry
-- [ ] Winieta / przyciemnienie brzegów ekranu jak w grze (🔬 skąd się bierze)
-- [ ] Przejrzeć `Instrukcja.pdf` pod kątem mechanik gry
+- [x] „Winieta” to ramka ekranu z `Data/GUI/bordermask.tga` (rejestr `BorderMask=1`): ok. 10 px, 3 px czerni i gradient, zaokrąglone rogi; reszta ciemnych brzegów to treść sceny (rozdział 9.4)
+- [x] `Instrukcja.pdf`: mechaniki rozgrywki streszczone w [rozdziale 16](docs/silnik/16_rozgrywka.md); doba 30 min potwierdzona w grze (`gethours` = `gettime`/150, 12 h na dobę)
 
 ## Renderowanie: Vulkan i OpenGL
 - [x] Warstwa `rhi` (tekstury, bufory, potoki, uniformy w buforze pierścieniowym, odczyt klatki, ImGui)

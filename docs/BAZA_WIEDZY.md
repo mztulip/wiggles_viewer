@@ -242,7 +242,7 @@ Pliki wynikowe (w `../lab/Wiggles/`, poza repo, bo zawierają treść skryptów 
 - ✅ Klasy C++ silnika (`ClassList`): `CObj`, `CTclRootObj`, `CObjMgr`, `CObj_World`, `CObj_DigTask`, a dalej klasy ze skryptów (`Kristallbrut`, `Drache`, `Fenris`…). Do introspekcji służą też `ClassID`, `ClassInfo`, `ClassName`.
 - ✅ Kolejność startu jest potwierdzona logiem: `parse systeminit script`, `Class init`, `Adaptive Sound init`, `42 Attributkombinationen zum Erfinden nötig!` (techtree), `systeminit script succesfully parsed`.
 - ✅ Na starcie, w głównym interpreterze, wywoływanych jest tylko 61 różnych komend. Najczęstsze: `sound` (3870), `call_method_static` (2836), `def_class` (2685), `has_cmap` (1826), `smalltalk` (898), `db_load` (656), `call` (417).
-- 🔶 Ciała klas i metody obiektów (`obj_init`, `method`, `tasklist_*`) nie przechodzą przez nasze owijki. Prawdopodobnie wykonują się w **osobnych interpreterach** (per klasa lub per obiekt, `CTclRootObj`). Do zbadania.
+- ✅ Ciała klas i metody obiektów (`obj_init`, `method`, `tasklist_*`) nie przechodzą przez nasze owijki, bo wykonują się w **osobnych interpreterach, po jednym na obiekt** (sprawdzone przez `obj_eval`, §8.7).
 - ✅ Gra sama zapisuje pliki: `Data/texturelist.txt` (tekstury wczytane na starcie), `Data/msgmisses.txt` (brakujące tłumaczenia `lmsg`), `Data/Scripts/gameplay/gen_tt.tcl` i `gen_exp.lst` (wygenerowane drzewko technologii), a także `Data/Gamesave/quick_Quicksave_<data>.sav`.
 
 ### 8.2 Sygnatury z trace (przykłady)
@@ -276,12 +276,12 @@ init_techtree scripts/gameplay/gen_tt.tcl
 Klucz to `HKCU\Software\SekOst\Wiggles` (**nie** `Diggles`, jak podaje forum dla wersji angielskiej):
 - główny: `Language`, `TCLDEFINES` (🔶 dodatkowe symbole preprocesora!), `WorkingDir`, `KeyLocation`
 - `Misc`: `AnimStats`, `PerfStats`, `GameSaveCompression=7` (poziom gzip), `UseTclClassCache`, `ShowFMV`, `ShowQuotes`, `MaxGametimeFactor`, `AutoDigRange`, `AutoHarvestRange`…
-- `Performance`: `AnimInterpolation` (interpolacja klatek animacji!), `LandscapeQuality`, `TextureQuality`, `ObjectQuality`, `MaxFramerate`, `UseEnvMapping`, `MultiTexture`, `ScapeJitter`, `ValidateRenderJobs`, **`WebServer`** (🔶 wbudowany serwer WWW, por. komenda `web_shell`)
+- `Performance`: `AnimInterpolation` (interpolacja klatek animacji!), `LandscapeQuality`, `TextureQuality`, `ObjectQuality`, `MaxFramerate` (✅ 19: obraz ok. 20 kl./s, czas gry rośnie raz na klatkę, [rozdział 11.7](silnik/11_obiekty_tcl_i_petla.md)), `UseEnvMapping`, `MultiTexture`, `ScapeJitter`, `ValidateRenderJobs`, **`BorderMask`** (✅ czarna ramka ekranu z `Data/GUI/bordermask.tga`, [rozdział 9.4](silnik/09_klatka.md)), **`WebServer`** (✅ wbudowany serwer WebTraq na porcie 8082, §8.6), a także `LightGlow`, `EvtFrameSkip`, `LazyTextureLoad`, `MaxShadowLightDist`, `Particles`, `UseIdiObjs`, `TexVideoMemLimit`, `Rating*`
 - `Screen`: `Fullscreen`, `Width`, `Height`, `Gamma`, `Brightness`, `TnL`, GUID-y Direct3D/DirectDraw
 - `Control`, `Input`: mapowanie myszy i klawiszy; `Sound`: głośności
 
 ### 8.4 Komendy debugowe do zbadania
-`tclhelp` (zwraca pusty wynik, 🔶 pisze do konsoli), `web_shell`, `dump_var`, `proddump`, `output_3ddbstats`, `meminfo`, `perfwin`, `peek`/`poke`, `waterdbg`, `toggle_wf` (wireframe?), `render_gray`, `show_maped`, `save_map`, `save_scene`, `xtest`, `test`/`testd`, `vtune`.
+`tclhelp` (✅ zwraca pusty wynik także przez WebTraq i z `-console`: pomocy w tej wersji nie ma), `web_shell` (✅ przyjmuje 1 argument i nic widocznego nie robi; serwer WWW włącza rejestr, §8.6), `dump_var`, `proddump`, `output_3ddbstats`, `meminfo`, `perfwin`, `peek`/`poke`, `waterdbg`, `toggle_wf` (wireframe?), `render_gray`, `show_maped`, `save_map`, `save_scene`, `xtest`, `test`/`testd`, `vtune`.
 
 ### 8.5 Metoda: obserwacja, nie deasemblacja
 Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując działającą grę: sonda Tcl (`get_*`, `save_map`, `save_scene`, `tclerrors.txt`), zrzuty ekranu z [`tools/lab/capture.sh`](../tools/lab/capture.sh) przy zmienianych parametrach (np. różne `set_view`, `set_ground_begin`) i porównania z naszym renderem. Wiedzę o wnętrzu exe bierzemy wyłącznie z cudzych opracowań (głównie Diggles-Unity) i zawsze sprawdzamy ją takim eksperymentem.
@@ -293,7 +293,50 @@ Nie analizujemy kodu `Wiggles.exe`. Zachowanie silnika ustalamy, obserwując dzi
 4. Nasz render: `wigview --game ../lab/Wiggles --scenario ow_* --size 1024x768 --screenshot …`, zestawienie `magick … +append`.
 5. Wnioski ilościowe: mierz kolor w regionach zrzutu (np. zieloność ćwiartek bloku). Uwaga na skalę: współrzędne bierz z pełnej rozdzielczości, nie z pomniejszonego zestawienia.
 
-**Płyta CD.** Gra wymaga płyty w napędzie (komunikat „CD not found.”). Po restarcie komputera płytę trzeba zamontować: `udisksctl mount -b /dev/sr0` (prefiks laboratorium ma `d::` → `/dev/sr0`).
+**Płyta CD.** Gra wymaga płyty w napędzie (komunikat „CD not found.”). Po restarcie komputera płytę trzeba zamontować: `udisksctl mount -b /dev/sr0` (prefiks laboratorium ma `d::` → `/dev/sr0`). Płyta potrafi się odmontować w trakcie serii uruchomień; przed eksperymentem sprawdź `findmnt /dev/sr0` (`live.sh start` robi to sam), bo bez płyty gra kończy się po cichu i wyniki są puste.
+
+### 8.6 WebTraq: wbudowany serwer twórców ✅
+
+Wartość rejestru `HKCU\Software\SekOst\Wiggles\Performance\WebServer=1` uruchamia w grze serwer HTTP **„SEK WebTraq”** na porcie **8082** (odpowiada ok. 15 s po starcie; wersja na stronie: `V 1.0.844r Build 59495 (7.11.2001 15:36)`). Strony:
+
+| Adres | Zawartość |
+|---|---|
+| `/index` | system, pamięć, **data gry**, statystyki klatek (klatki logiki, klatki obrazu, średnie FPS) |
+| `/objlist`, `/objinfo:<nazwa>` | wszystkie obiekty; karta obiektu: klasa, pozycja, obrót, stan, właściciel, flagi (`CanClimb`, `AlternateAnimDB`…), ekwipunek, lista zadań |
+| `/classlist`, `/classinfo:<klasa>`, `/classinfomethod:<klasa>:<metoda>` | klasy: id, metody (z treścią), stany, instancje |
+| `/tclshell?script=…` | **wykonanie Tcl w głównym interpreterze działającej gry** (wynik: `Ok.` albo `Error:` ze stosem) |
+| `/tclcommand` | lista komend: w tej wersji pusta |
+| `/screenshot`, `/autoscreenshot`, `/jumpview:<x>:<y>` | zrzuty i skok kamery (nie sprawdzane) |
+
+Niezależnie od rejestru gra zawsze nasłuchuje na TCP **12345** (nie odpowiada po HTTP; 🔶 gra sieciowa). Parametr `-console` i komenda `web_shell` nie otwierają portów.
+
+**Narzędzie:** [`tools/lab/live.sh`](../tools/lab/live.sh) uruchamia grę z laboratorium w tle (Xvfb) z włączonym WebTraq i daje dostęp bez restartów:
+```
+tools/lab/live.sh start [scena.tcl]          # scena jako userstartup.tcl (np. wczytanie zapisu przez gameload)
+tools/lab/live.sh tcl 'list [gettime] [gethours]'
+tools/lab/live.sh page /objinfo:Ole
+tools/lab/live.sh shot zrzut.png
+tools/lab/live.sh stop
+```
+To zastępuje wstrzykiwanie sond przez `userstartup.tcl` przy pytaniach o stan gry. Barnacle (SDK do wstrzykiwania kodu do exe) nie jest potrzebny.
+
+### 8.7 Faza 0: sondy głębokie (2026-10-05)
+
+Sondy: [`tools/lab/owprobe_deep.tcl`](../tools/lab/owprobe_deep.tcl) (świat z jednego szablonu; klasy, bazy modeli, interpretery obiektów, takt i timery) i [`tools/lab/owprobe_play.tcl`](../tools/lab/owprobe_play.tcl) (wczytanie zapisu przez `gameload` i 90 s obserwacji krasnali). Uruchomienie: `tools/lab/capture.sh scene zrzut.png <sonda> 130`. Wyniki w `../lab/Wiggles/owdeep_*.txt` i `owplay_*.txt` (poza repo).
+
+**Klasy** (`ClassList`, `ClassInfo`, `get_class_*`): 2836 klas, w tym 5 klas C++ silnika (`CObj`; `CTclRootObj`, `CObjMgr` z bazą `CObj`; `CObj_World`; `CObj_DigTask`). Typy: `dummy` 2398, `tool` 140, `material` 91, `info` 91, `production` 48, `monster` 32, `protection` 11, `transport` 8, `elevator` 6, `gnome` 5, `energy` 4, `baby` 1. Kategorie (poza `none`): `metal` 110, `wood` 50, `food` 42, `stone` 33, `fight` 17, `service` 16, `energy` 16. Ery 0–4 (99/56/26/13 klas w erach 1–4). Flagi występują tylko u postaci: `moves`, `lives`, `reproduces` (`Zwerg` ma wszystkie trzy). `ClassInfo` podaje tylko klasę bazową i liczbę instancji. Wartości są takie same jak w nagłówku `def_class <nazwa> <kategoria> <typ> <era> {<flagi>}`.
+
+**Bazy modeli**: [rozdział 5.1](silnik/05_obiekty.md). Długości wszystkich 6445 animacji zgodne z naszym parserem (poza kolizją nazwy `wuerfel`), numery animacji zgodne z kolejnością w pliku, przy powtórzonej nazwie obiektu wygrywa pierwsza wczytana baza.
+
+**Interpretery obiektów**: [rozdział 11.1](silnik/11_obiekty_tcl_i_petla.md). Osobny interpreter na obiekt, bez trybu bezpiecznego, metody jako procedury, bez zmiennych głównego interpretera.
+
+**Takt i czas**: [rozdział 11.7](silnik/11_obiekty_tcl_i_petla.md). Logika 10 Hz (ciało stanu krasnala co 0,1 s), czas gry raz na klatkę (ok. 20 kl./s), takt `exec_deferred` ok. 30 Hz; timery klasy z `userstartup.tcl` działają; doba = 12 godzin gry po 150 s = 30 min ([rozdział 11.4](silnik/11_obiekty_tcl_i_petla.md)).
+
+**Rozgrywka** (zapis kampanii, 5 krasnali, 90 s): trzy krasnale przechodzą cyklicznie `work_idle` ⇄ `prodfill_dispatch` (napełnianie produkcji) co 10–20 s, dwa są cały czas w `sparetime_dispatch` (czas wolny). Najczęstsze polecenia na liście zadań: `sparetime_idle_loop`, `play_anim`, `prod_anim`, `unlock_item`, `add_attrib`, `adjust_gnome_rotation`, `walk_around`. Komendy wołane stale 2 razy na sekundę przez każdego krasnala: `isunderwater`, `net`, `vector_add` (180 w 90 s; 🔶 cykliczny timer sprawdzający wodę), `get_linkpos` 1 raz na sekundę. W świecie z samego szablonu krasnal nie może chodzić (`get_walkresult` = 3), więc do obserwacji zachowań potrzebny jest zapis. Obiekty z wczytanego zapisu dostają nowe, małe numery (4–8), a nie numery z pliku `.sav`.
+
+**Preprocesor**: [rozdział 2.2](silnik/02_start_i_skrypty.md). `FULL` zdefiniowany, `IF` = `IFDEF`, `IFNOT` = `IFNDEF`; `TCLDEFINES` z samą nazwą symbolu nie działa.
+
+**Ramka ekranu** (dawne „winieta”): [rozdział 9.4](silnik/09_klatka.md). Zrzuty menu i zapisu kampanii z `BorderMask` 1/0 oraz `LightGlow` 1/0: różnią się tylko pikselami 0–10 od krawędzi; `LightGlow` nie zmienia tych scen.
 
 ---
 

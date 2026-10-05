@@ -21,13 +21,14 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [6. Kamera](silnik/06_kamera.md) | `set_view`, perspektywa, przycinanie kątów, przejście do OpenGL |
 | [7. Oświetlenie](silnik/07_oswietlenie.md) | Światło bazowe, niebo, słońce, lampy, nasycenie |
 | [8. Tło: strefy horyzontu i panorama](silnik/08_tlo.md) | Kolor tła jaskiń, zanikanie w głąb, niebo z paralaksą, dywan łąki |
-| [9. Klatka obrazu](silnik/09_klatka.md) | Kolejność rysowania i stany renderu w jednym miejscu |
+| [9. Klatka obrazu](silnik/09_klatka.md) | Kolejność rysowania i stany renderu w jednym miejscu, ramka ekranu (`BorderMask`) |
 | [10. Nieodkryty teren](silnik/10_nieodkryty_teren.md) | Stan pól na gracza, odkrywanie promieniami, wygasanie, czarna i szara mgła w obrazie |
 | [11. Obiekty Tcl i pętla gry](silnik/11_obiekty_tcl_i_petla.md) | Interpretery obiektów, klasy, metody, zdarzenia, timery, stany, takt logiki |
 | [12. Efekty cząsteczkowe](silnik/12_czasteczki.md) | Źródła z Tcl (`class_particle`), atlasy, 43 typy, symulacja emitera, rysowanie addytywne |
 | [13. Płyny](silnik/13_plyny.md) | Woda, siarka, lawa: źródła, kształt w polu z BlockDB, stan w zapisie, rysowanie |
 | [14. Gra: pierwsza grywalna wersja](silnik/14_gra.md) | Program `openwiggles`: start, kamera, ruch krasnali po polach, kopanie (przybliżenia) |
 | [15. Dźwięk](silnik/15_dzwiek.md) | Pliki WAV/MP3, nazwy `sound bind`, dźwięki klatek animacji `sound anim`, `sound play`, muzyka, dialogi sekwencji; indeks odwołań i odtwarzanie |
+| [16. Rozgrywka: mechaniki według instrukcji](silnik/16_rozgrywka.md) | Cel i tryby gry, doba i plan dnia, potrzeby krasnali, sterowanie, kopanie, walka i dyplomacja, produkcja, wynalazki, doświadczenie, rozmnażanie |
 | [Czego jeszcze nie wiemy](silnik/niewiadome.md) | Luki: cienie, przejścia gruntów, generator świata, rozgrywka |
 
 ## Formaty plików
