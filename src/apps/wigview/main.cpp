@@ -24,6 +24,8 @@
 //                      (albo pierwszej), klatka 0: KATALOG/<model>/<obiekt>.png i KATALOG/index.html; rozmiar z --size
 //                      (domyślnie 256x256), kończy działanie.
 // --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
+// --emit TYP X Y Z [MAX NAKLATKĘ]: dodatkowe źródło cząsteczek na mapie w punkcie gry (x, y bloki, z jak w skrypcie:
+//                 świat = z·0,5 + 7), domyślnie 64 cząsteczki i 2 na klatkę; do porównań ze zrzutami gry (§12.6).
 // --border-mask: ramka ekranu gry (Data/GUI/bordermask.tga) na scenie map, jak w grze z BorderMask=1.
 // --no-draw-modes: wszystkie linki modeli rysowane jak tryb 1 (bez trybów z flags linku), do porównań.
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
@@ -61,6 +63,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -83,6 +86,7 @@ struct Args
 	bool shadowCmap = false;
 	bool drawModes = true; // --no-draw-modes
 	bool borderMask = false; // --border-mask
+	std::vector<std::array<float, 6>> emits; // --emit TYP X Y Z MAX NAKLATKĘ
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -131,6 +135,13 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--shadow-cmap") a.shadowCmap = true;
 		else if (k == "--no-draw-modes") a.drawModes = false;
 		else if (k == "--border-mask") a.borderMask = true;
+		else if (k == "--emit")
+		{
+			std::array<float, 6> e{0, 0, 0, 0, 64, 2};
+			for (int j = 0; j < 4; ++j) e[size_t(j)] = float(std::atof(next()));
+			for (int j = 4; j < 6 && i + 1 < argc && argv[i + 1][0] != '-'; ++j) e[size_t(j)] = float(std::atof(next()));
+			a.emits.push_back(e);
+		}
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
@@ -1690,6 +1701,15 @@ int main(int argc, char** argv)
 			v.gameCam = true;
 			v.gameCamView = g;
 			v.center = glm::vec3(g.x, g.y, 14.f) * MapView::kBlock;
+		}
+		for (const auto& e : args.emits)
+		{
+			ParticleSource s;
+			s.type = int(e[0]);
+			s.maxParticles = int(e[4]);
+			s.perFrame = int(e[5]);
+			if (!v.maps.addEmitter(s, e[1] - float(v.maps.origin()[0]), e[2] - float(v.maps.origin()[1]), e[3] * 0.5f + 7.f))
+				std::fprintf(stderr, "--emit: nieznany typ %d\n", s.type);
 		}
 	}
 

@@ -55,6 +55,7 @@ build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamer
 build/release/wigview --sound Data/Sound/Fenris/fe_schritt1.WAV      # zakładka Dźwięki z plikiem
 build/release/wigview --model MANN.3DB --anim schlafen_boden_loop --shadow-cmap   # cień 32×32 i maska cmap klatki (widok z góry)
 build/release/wigview --file Data/MESSAGES.TXT                    # zakładka Pliki: drzewo Data/, podgląd tekstu i hex
+build/release/wigview --save save_kampania.sav --fow 0 --view 237.375 41.5 1.0 0 0 --emit 39 237.375 41.6 13   # źródło cząsteczek typu 39 w punkcie gry (porównania ze zrzutami)
 build/release/wigview --thumbnails miniatury --size 160x160         # miniatury wszystkich obiektów + miniatury/index.html
 build/release/wigview --texture GUI/bordermask.tga --texture-channel 2   # zakładka Tekstury, sam kanał alfa (0 RGBA, 1 RGB, 2 alfa, 3–5 R/G/B)
 build/release/wigview --overlay ../ref/DigglesHDmod-master          # tekstury HD z moda (Data/ + Data_<język>), bez kopiowania do gry

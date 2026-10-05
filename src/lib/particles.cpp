@@ -94,8 +94,8 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(7, N_("spadające krople"), D256d, 0x0f, 200, 4);
-		p.shape = S::Box, set3(p.box, .1f, .1f, .1f), p.count = N::Gated, p.gate = .12f, set3(p.jitter, .03f, .02f, .03f);
-		p.atlas = A::Fixed, p.fixedV = 2, p.colour = C::Constant, p.argb = grey, p.size = 4.5f, p.gravity = -.015f;
+		p.shape = S::Box, set3(p.box, .1f, .1f, .1f), set3(p.jitter, .03f, .02f, .03f);
+		p.atlas = A::Fixed, p.fixedV = 2, p.colour = C::Constant, p.argb = grey, p.size = 7.f, p.gravity = -.015f;
 	}
 	{
 		auto& p = T(8, N_("ciemnoczerwone krople (ziemia)"), B128d, 0x0f, 255, 16);
@@ -119,17 +119,17 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(12, N_("mały obłok dymu"), A128d, 0x0f, 255, 16);
-		p.count = N::Jitter, p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4, p.colour = C::Grey, p.size = 1.f, p.sizeCurve = Z::Grow;
+		p.count = N::Jitter, p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4, p.colour = C::Grey, p.size = 10.f, p.sizeCurve = Z::Grow;
 		p.ageCap = 64;
 	}
 	{
 		auto& p = T(13, N_("magiczne iskierki w dół"), C256d, 0x10, 180, 4);
-		p.shape = S::Sphere, p.radius = .4f, p.count = N::Jitter, p.colour = C::Constant, p.argb = 0xFFB0A8FF, p.size = 1.2f;
+		p.shape = S::Sphere, p.radius = .4f, p.count = N::Jitter, p.colour = C::Constant, p.argb = 0xFFB0A8FF, p.size = 2.5f;
 		p.sizeCurve = Z::Shrink, p.gravity = -.01f, p.ageCap = 48;
 	}
 	{
 		auto& p = T(14, N_("wybuch promienisty"), C256d, 0x10, 70, 4);
-		p.shape = S::Sphere, p.radius = .5f, set3(p.jitter, 0, .05f, 0), p.rows = 1, p.colour = C::Grey, p.size = 2.f;
+		p.shape = S::Sphere, p.radius = .5f, set3(p.jitter, 0, .05f, 0), p.rows = 1, p.colour = C::Grey, p.size = 6.f;
 		p.sizeCurve = Z::Grow, p.drag = .92f, p.ageCap = 64;
 	}
 	{
@@ -144,16 +144,16 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(17, N_("wióry (stolarz)"), B128d, 0x0f, 255, 8);
-		p.motion = M::Ground, p.shape = S::Cone, p.radius = .15f, p.row0 = 5, p.rows = 2, p.size = .5f, p.gravity = -.01f, p.ageCap = 100;
+		p.motion = M::Ground, p.shape = S::Cone, p.radius = .15f, p.row0 = 5, p.rows = 2, p.size = 2.5f, p.gravity = -.01f, p.ageCap = 100;
 	}
 	{
 		auto& p = T(18, N_("iskry (kuźnia)"), B128d, 0x10, 170, 8);
 		p.motion = M::Ground, set3(p.jitter, .02f, .02f, .02f), p.atlas = A::Fixed, p.fixedU = 5, p.fixedV = 3, p.colour = C::Warm;
-		p.argb = yellow, p.size = .6f, p.gravity = -.01f;
+		p.argb = yellow, p.size = 2.f, p.gravity = -.01f;
 	}
 	{
 		auto& p = T(19, N_("pył"), E256, 0x0f, 100, 4);
-		p.shape = S::Box, set3(p.box, .1f, .1f, .1f), set3(p.jitter, .05f, .05f, .05f), p.row0 = 1, p.rows = 1, p.size = .8f;
+		p.shape = S::Box, set3(p.box, .1f, .1f, .1f), set3(p.jitter, .05f, .05f, .05f), p.row0 = 1, p.rows = 1, p.size = 7.f;
 		p.gravity = -.005f, p.ageCap = 128;
 	}
 	{
@@ -167,8 +167,8 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(22, N_("duże szare płatki"), D256d, 0x0f, 200, 4);
-		p.shape = S::Box, set3(p.box, .2f, .2f, .2f), p.count = N::Gated, p.gate = .25f, p.rows = 1, p.colour = C::Constant;
-		p.argb = grey, p.size = 5.5f, p.gravity = -.015f;
+		p.shape = S::Box, set3(p.box, .2f, .2f, .2f), p.rows = 1, p.colour = C::Constant;
+		p.argb = grey, p.size = 9.f, p.gravity = -.015f;
 	}
 	{
 		auto& p = T(23, N_("bąbelki z powierzchni"), D256d, 0x0f, 200, 8);
@@ -177,7 +177,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(24, N_("unoszące się płatki"), D256d, 0x0f, 170, 8);
-		p.shape = S::Box, set3(p.box, .1f, .1f, .2f), set3(p.jitter, .05f, .05f, .05f), p.rows = 2, p.size = 2.5f, p.buoyancyFrames = 6;
+		p.shape = S::Box, set3(p.box, .1f, .1f, .2f), set3(p.jitter, .05f, .05f, .05f), p.rows = 2, p.size = 1.2f, p.buoyancyFrames = 6;
 	}
 	{
 		auto& p = T(25, N_("promień / lina"), B128d, 0x10, 220, 8);
@@ -185,7 +185,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(26, N_("wióry (kamieniarz)"), B128d, 0x0f, 255, 8);
-		p.motion = M::Ground, p.shape = S::Cone, p.radius = .1f, p.row0 = 5, p.rows = 2, p.size = .5f, p.gravity = -.01f, p.ageCap = 100;
+		p.motion = M::Ground, p.shape = S::Cone, p.radius = .1f, p.row0 = 5, p.rows = 2, p.size = 2.5f, p.gravity = -.01f, p.ageCap = 100;
 	}
 	{
 		auto& p = T(27, N_("mała kula ognia (pochodnia)"), A128d, 0x10, 180, 16);
@@ -194,17 +194,17 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(28, N_("fioletowy dym"), E256, 0x10, 170, 4);
-		p.shape = S::Sphere, p.radius = .3f, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFF9866C8, p.size = 1.6f;
+		p.shape = S::Sphere, p.radius = .3f, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFF9866C8, p.size = 2.5f;
 		p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 16;
 	}
 	{
 		auto& p = T(29, N_("fioletowy dym (większy)"), E256, 0x10, 170, 4);
-		p.shape = S::Sphere, p.radius = .4f, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFF9866C8, p.size = 1.8f;
+		p.shape = S::Sphere, p.radius = .4f, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFF9866C8, p.size = 6.f;
 		p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 16;
 	}
 	{
 		auto& p = T(30, N_("unoszący się szary dym"), E256, 0x10, 170, 4);
-		p.shape = S::Disc, p.radius = .3f, set3(p.jitter, .05f, .05f, .05f), p.row0 = 1, p.rows = 1, p.colour = C::Grey, p.size = .5f;
+		p.shape = S::Disc, p.radius = .3f, set3(p.jitter, .05f, .05f, .05f), p.row0 = 1, p.rows = 1, p.colour = C::Grey, p.size = 2.f;
 		p.sizeCurve = Z::Grow, p.buoyancyFrames = 16, p.wander = true;
 	}
 	{
@@ -214,43 +214,43 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(32, N_("pulsujący błysk"), C256d, 0x10, 200, 4);
-		p.count = N::Gated, p.gate = .012f, p.rows = 1, p.colour = C::Warm, p.argb = gold, p.size = 5.f, p.sizeCurve = Z::Pulse;
+		p.count = N::Gated, p.gate = .4f, p.rows = 1, p.colour = C::Warm, p.argb = gold, p.size = 9.f, p.sizeCurve = Z::Pulse;
 		p.ageCap = 16;
 	}
 	{
 		auto& p = T(33, N_("magiczne iskierki (elfy)"), C256d, 0x10, 180, 4);
-		p.shape = S::Sphere, p.radius = .5f, p.count = N::Jitter, p.colour = C::Constant, p.argb = 0xFFB0A8FF, p.size = 1.6f;
+		p.shape = S::Sphere, p.radius = .5f, p.count = N::Jitter, p.colour = C::Constant, p.argb = 0xFFB0A8FF, p.size = 7.f;
 		p.sizeJitter = .5f, p.sizeCurve = Z::Shrink, p.gravity = -.012f, p.ageCap = 48;
 	}
 	{
 		auto& p = T(34, N_("kula ognia"), E256, 0x10, 170, 4);
-		p.shape = S::Sphere, p.radius = .3f, p.rows = 1, p.colour = C::Warm, p.size = 3.f, p.sizeJitter = .2f, p.sizeCurve = Z::Grow;
+		p.shape = S::Sphere, p.radius = .3f, p.rows = 1, p.colour = C::Warm, p.size = 5.f, p.sizeJitter = .2f, p.sizeCurve = Z::Grow;
 		p.buoyancyFrames = 12;
 	}
 	{
 		auto& p = T(35, N_("dym"), A128d, 0x0f, 200, 16);
 		p.shape = S::Box, set3(p.box, .2f, .1f, .2f), p.count = N::Jitter, p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4;
-		p.colour = C::Grey, p.size = 3.f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.drag = .92f, p.ageCap = 40;
+		p.colour = C::Grey, p.size = 5.f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.drag = .92f, p.ageCap = 40;
 	}
-	auto poof = [&](int id, const char* name, std::vector<int> frames) {
+	auto poof = [&](int id, const char* name, std::vector<int> frames, float size) {
 		auto& p = T(id, name, A256d, 0x10, 100, 8);
-		p.count = N::Gated, p.gate = .06f, p.atlas = A::Flipbook, p.frames = std::move(frames), p.size = 6.5f;
+		p.atlas = A::Flipbook, p.frames = std::move(frames), p.size = size;
 		p.sizeCurve = Z::Grow, p.ageCap = int(p.frames.size()) + 1;
 	};
-	poof(36, N_("obłok „puf” A"), {8, 9, 10, 11, 12, 13, 14, 15, 16});
-	poof(37, N_("obłok „puf” B"), {17, 18, 19, 20, 21, 22, 23, 24, 25});
-	poof(38, N_("obłok „puf” C"), {26, 27, 28, 29, 30, 31, 32, 33, 0});
-	poof(39, N_("turkusowy pierścień energii"), {24, 25, 26, 27, 28, 29, 30, 31});
-	poof(40, N_("pomarańczowy wybuch energii"), {16, 17, 18, 19, 20, 21, 22, 23});
+	poof(36, N_("obłok „puf” A"), {8, 9, 10, 11, 12, 13, 14, 15, 16}, 13.f);
+	poof(37, N_("obłok „puf” B"), {17, 18, 19, 20, 21, 22, 23, 24, 25}, 13.f);
+	poof(38, N_("obłok „puf” C"), {26, 27, 28, 29, 30, 31, 32, 33, 0}, 13.f);
+	poof(39, N_("turkusowy pierścień energii"), {24, 25, 26, 27, 28, 29, 30, 31}, 28.f);
+	poof(40, N_("pomarańczowy wybuch energii"), {16, 17, 18, 19, 20, 21, 22, 23}, 20.f);
 	{
 		auto& p = T(41, N_("białe błyski"), C256d, 0x10, 200, 4);
-		p.shape = S::Sphere, p.radius = .6f, p.count = N::Gated, p.gate = .1f, p.rows = 1, p.colour = C::Constant, p.size = 2.f;
+		p.shape = S::Sphere, p.radius = .6f, p.rows = 1, p.colour = C::Constant, p.size = 10.f;
 		p.sizeJitter = .3f, p.sizeCurve = Z::Pulse, p.ageCap = 12;
 	}
 	{
 		auto& p = T(42, N_("rosnąca kula pyłu"), E256, 0x0f, 150, 4);
 		p.shape = S::Sphere, p.radius = .3f, p.count = N::Jitter, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFFA89880;
-		p.size = 1.5f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.ageCap = 63;
+		p.size = 20.f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.ageCap = 63;
 	}
 	return t;
 }

@@ -57,6 +57,9 @@ public:
 	// bez takiego obiektu strefy nie ma. focus w jednostkach modelu (układ gry).
 	void updateZone(const glm::vec3& focus);
 	const HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
+	// Dodatkowe źródło cząsteczek w punkcie (x, y bloki sceny, y w dół; zWorld = z świata w blokach), jak
+	// change_particlesource na obiekcie stojącym w tym punkcie (porównania ze zrzutami gry). false: nieznany typ.
+	bool addEmitter(const ParticleSource& s, float x, float y, float zWorld);
 	// Kamera startowa scenariusza (set_view), we współrzędnych przyciętego świata.
 	const std::optional<GameView>& gameView() const { return gameView_; }
 	const int* origin() const { return worldOrigin_; } // lewy górny róg przyciętego świata (bloki)

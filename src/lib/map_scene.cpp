@@ -344,6 +344,21 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 // Docs/COORDINATE_SYSTEM.md §3.3–3.4, stałe z Wiggles.exe:
 //  - głębokość obiektu: z_świata = z_skryptu·0,5 + 7 bloków (DAT_0073708c, DAT_00737520),
 //  - obrót: M = Ry(−ry)·Rx(−rx)·Rz(−rz) (macierze gry są transpozycją standardowych).
+bool MapScene::addEmitter(const ParticleSource& s, float x, float y, float zWorld)
+{
+	const ParticleType* t = particlesReady_ ? particleType(s.type) : nullptr;
+	if (!t) return false;
+	MapEmitter m;
+	m.x = int(std::floor(x));
+	m.y = int(std::floor(y));
+	m.emitter.configure(*t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
+	m.emitter.setUsableCells(particles_.usableCells(t->tex, t->grid));
+	m.emitter.setOrigin(x + s.rel[0], y + s.rel[1], zWorld + s.rel[2] * 0.5f);
+	for (int i = 0; i < 36; ++i) m.emitter.step(); // 3 s przy 12 klatkach na sekundę, jak zrzuty z gry
+	emitters_.push_back(std::move(m));
+	return true;
+}
+
 // Emitery cząsteczek obiektów (class_particle klasy), rozgrzane o 4 s symulacji, żeby efekt już trwał.
 void MapScene::buildEmitters()
 {
