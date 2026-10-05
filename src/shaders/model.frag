@@ -38,6 +38,8 @@ void main()
 		vec3 n = normalize(vNormal);
 		c *= uLightDirAmb.w + (1.0 - uLightDirAmb.w) * max(dot(n, uLightDirAmb.xyz), 0.0);
 	}
+	// Podświetlenie w przeglądarce (obiekt pod kursorem / zaznaczony): rozjaśnienie w stronę jasnego błękitu.
+	if (uParams.w > 0.0) c = mix(c, vec3(0.55, 0.8, 1.0), uParams.w);
 	// Strefa horyzontu (docs/silnik/08_tlo.md §8.1): modele za terenem przechodzą w kolor strefy.
 	float zb = vGameZ / 200.0;
 	if (uHorizon.a > 0.0 && zb < 0.0) c = mix(c, uHorizon.rgb, clamp(-zb / uHorizon.a, 0.0, 1.0));

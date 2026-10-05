@@ -304,6 +304,9 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 			objects_.push_back(p);
 		}
 	}
+	// Krasnale: klasa Zwerg nie ma class_defaultanim (model nadaje gra), więc bez tego z zapisu widać same czapki.
+	for (int i = 0; i < int(objects_.size()); ++i)
+		if (!objects_[size_t(i)].slot && Vfs::lower(objects_[size_t(i)].src.className) == "zwerg") setObjectModel(i, "mann.3db", "mann");
 	// Lampy z class_light obiektów (pozycja: obiekt + przesunięcie, z·0,5 + 7; kolor int(c·31)·0,5).
 	// Przypięcia z zapisu (czapki, narzędzia): rodzic po ID zapisanym w nazwie obiektu.
 	{
@@ -565,6 +568,112 @@ float MapScene::animSeconds(int i, const std::string& anim) const
 	return 0.f;
 }
 
+bool MapScene::objectShown(const PlacedObject& o) const
+{
+	if (!o.slot || o.animation < 0) return false;
+	if (!showDetail_[detailIndex(o.src.detail)]) return false;
+	if (o.cls && o.cls->editorOnly && !showEditorOnly_) return false;
+	if (fogMode_ != FogMode::Off && !objectVisibleInFog(o)) return false;
+	return true;
+}
+
+const Model3db* MapScene::objectModel(int i) const
+{
+	const auto& o = objects_[size_t(i)];
+	return o.slot ? o.slot->model.get() : nullptr;
+}
+
+std::string MapScene::objectAnimation(int i) const
+{
+	const auto& o = objects_[size_t(i)];
+	return o.slot && o.animation >= 0 ? o.slot->model->animations[size_t(o.animation)].name : std::string();
+}
+
+int MapScene::pickObject(const glm::vec3& ro, const glm::vec3& rd) const
+{
+	int best = -1;
+	float bestT = 1e30f;
+	for (int i = 0; i < int(objects_.size()); ++i)
+	{
+		const auto& o = objects_[size_t(i)];
+		if (!objectShown(o)) continue;
+		int mesh = currentMesh(o);
+		if (mesh < 0) continue;
+		const Mesh3db& m = o.slot->model->meshes[size_t(mesh)];
+		// promień do układu obiektu (obrót i przesunięcie z objectMatrix), test wstępny „slab” z bbox klatki
+		glm::mat4 inv = glm::inverse(objectMatrix(o.src));
+		glm::vec3 lo = glm::vec3(inv * glm::vec4(ro, 1.f)), ld = glm::vec3(inv * glm::vec4(rd, 0.f));
+		float mn[3] = {m.bboxMin.x, m.bboxMin.y, m.bboxMin.z}, mx[3] = {m.bboxMax.x, m.bboxMax.y, m.bboxMax.z};
+		float t0 = 0.f, t1 = bestT;
+		bool hit = true;
+		for (int k = 0; k < 3 && hit; ++k)
+		{
+			if (std::abs(ld[k]) < 1e-9f)
+			{
+				hit = lo[k] >= mn[k] && lo[k] <= mx[k];
+				continue;
+			}
+			float a = (mn[k] - lo[k]) / ld[k], b = (mx[k] - lo[k]) / ld[k];
+			if (a > b) std::swap(a, b);
+			t0 = std::max(t0, a), t1 = std::min(t1, b);
+			hit = t0 <= t1;
+		}
+		if (!hit) continue;
+		// dokładnie: najbliższy trójkąt klatki (Möller–Trumbore), żeby duże obiekty (drzewa) nie zasłaniały
+		// mniejszych za pustą przestrzenią swojego bbox
+		const Model3db& md = *o.slot->model;
+		for (const MeshLink& l : m.links)
+		{
+			const auto& pts = md.points[l.points];
+			const auto& tri = md.triangles[l.triangles];
+			for (size_t k = 0; k + 2 < tri.size(); k += 3)
+			{
+				if (tri[k] >= pts.size() || tri[k + 1] >= pts.size() || tri[k + 2] >= pts.size()) continue;
+				Vec3f a0 = Model3db::dequant(pts[tri[k]]), a1 = Model3db::dequant(pts[tri[k + 1]]), a2 = Model3db::dequant(pts[tri[k + 2]]);
+				glm::vec3 v0(a0.x, a0.y, a0.z), e1 = glm::vec3(a1.x, a1.y, a1.z) - v0, e2 = glm::vec3(a2.x, a2.y, a2.z) - v0;
+				glm::vec3 pv = glm::cross(ld, e2);
+				float det = glm::dot(e1, pv);
+
+				if (std::abs(det) < 1e-9f) continue;
+				float inv = 1.f / det;
+				glm::vec3 tv = lo - v0;
+				float u = glm::dot(tv, pv) * inv;
+				if (u < 0.f || u > 1.f) continue;
+				glm::vec3 qv = glm::cross(tv, e1);
+				float w = glm::dot(ld, qv) * inv;
+				if (w < 0.f || u + w > 1.f) continue;
+				float t = glm::dot(e2, qv) * inv;
+				if (t > 0.f && t < bestT) bestT = t, best = i;
+			}
+		}
+	}
+	return best;
+}
+
+bool MapScene::pickTerrain(const glm::vec3& ro, const glm::vec3& rd, int& tx, int& ty) const
+{
+	if (!heights_ || !pmp_ || std::abs(rd.z) < 1e-9f) return false;
+	const Heightfield& h = *heights_;
+	constexpr float S = Heightfield::kSampleUnits;
+	// od przedniej płaszczyzny (z = 14,5 bloku) w głąb, krokiem ćwierci próbki; trafienie: punkt za powierzchnią
+	float tStart = (Heightfield::kFrontZ + 1.f - ro.z) / rd.z, tEnd = (1300.f - ro.z) / rd.z;
+	if (tStart > tEnd) std::swap(tStart, tEnd);
+	tStart = std::max(tStart, 0.f);
+	float step = S * 0.25f / std::max(glm::length(rd), 1e-6f);
+	for (float t = tStart; t <= tEnd; t += step)
+	{
+		glm::vec3 p = ro + rd * t;
+		int sx = int(std::floor(p.x / S)), sy = int(std::floor(p.y / S));
+		if (sx < 0 || sy < 0 || sx >= h.width || sy >= h.height) continue;
+		if (p.z <= Heightfield::depthZ(h.at(sx, sy)))
+		{
+			tx = sx / Heightfield::kSamplesPerBlock, ty = sy / Heightfield::kSamplesPerBlock;
+			return true;
+		}
+	}
+	return false;
+}
+
 int MapScene::currentMesh(const PlacedObject& o) const
 {
 	if (!o.slot || o.animation < 0) return -1;
@@ -744,10 +853,7 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 	draws.reserve(objects_.size());
 	for (const auto& o : objects_)
 	{
-		if (!o.slot || o.animation < 0) continue;
-		if (!showDetail_[detailIndex(o.src.detail)]) continue;
-		if (o.cls && o.cls->editorOnly && !showEditorOnly_) continue;
-		if (fog && !objectVisibleInFog(o)) continue;
+		if (!objectShown(o)) continue;
 		const auto& an = o.slot->model->animations[size_t(o.animation)];
 		if (an.frames.empty()) continue;
 		int n = int(an.frames.size());
@@ -770,6 +876,9 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 		{
 			opt.gameModel = d.gm;
 			opt.base = d.base;
+			int i = int(d.o - objects_.data());
+			opt.highlight = i == selectedObject ? 0.4f : i == hoverObject ? 0.22f
+			                                                              : 0.f;
 			d.o->slot->renderer->drawFrames(d.a, d.b, d.t, viewProj, world * d.gm, opt);
 		}
 	};

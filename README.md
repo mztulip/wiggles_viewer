@@ -60,6 +60,7 @@ build/release/wigview --file Data/MESSAGES.TXT                    # zakładka Pl
 build/release/wigview --save save_kampania.sav --fow 0 --view 237.375 41.5 1.0 0 0 --emit 39 237.375 41.6 13   # źródło cząsteczek typu 39 w punkcie gry (porównania ze zrzutami)
 build/release/wigview --template kris_unq_060 --simulate   # symulacja: skrypty obiektów, krasnale i wukery (przełącznik w zakładce Mapy)
 build/release/wigview --template kris_unq_060 --simulate --populate 3 1   # do pustego szablonu 3 krasnale i wuker (dodatek przeglądarki)
+build/release/wigview --save save_kampania.sav --view 245 30.5 1.3 0 0 --ui --click 1217 570 --screenshot z.png   # zaznaczenie obiektu w punkcie obrazu (w oknie: kliknięcie)
 build/release/wigview --thumbnails miniatury --size 160x160         # miniatury wszystkich obiektów + miniatury/index.html
 build/release/wigview --texture GUI/bordermask.tga --texture-channel 2   # zakładka Tekstury, sam kanał alfa (0 RGBA, 1 RGB, 2 alfa, 3–5 R/G/B)
 build/release/wigview --overlay ../ref/DigglesHDmod-master          # tekstury HD z moda (Data/ + Data_<język>), bez kopiowania do gry

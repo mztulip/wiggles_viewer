@@ -60,6 +60,13 @@ public:
 	int populateGnomes = 3, populateWukers = 1;
 	std::string simInfo;        // stan symulacji do panelu (ustawia Viewer)
 	void reloadCurrent();       // ponowne wczytanie bieżącej mapy (odroczone, jak wybór z listy)
+	// Zaznaczenie w scenie (kliknięcie): obiekt (selectedObject w MapScene) albo pole terenu.
+	int selectedTileX = -1, selectedTileY = -1;
+	void clearSelection() { selectedObject = -1, selectedTileX = selectedTileY = -1; }
+	// Dodatkowe informacje o zaznaczonym obiekcie z symulacji (stan skryptu, atrybuty; ustawia Viewer).
+	std::function<void(int obj)> objectExtra;
+	// Otwarcie modelu zaznaczonego obiektu w zakładce Modele (obiekt .3db, animacja).
+	std::function<void(const std::string& object, const std::string& anim)> openModel;
 
 private:
 	enum class ListMode
@@ -77,6 +84,7 @@ private:
 	void uiGrid();
 	void refreshSaves();
 	bool loadListed(const std::string& f);
+	void uiSelection();
 	void uiSaves(bool& recenter);
 
 	std::function<bool()> pending_;

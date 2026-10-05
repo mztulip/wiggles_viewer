@@ -40,6 +40,7 @@ struct ModelDrawOptions
 	// Tryby rysowania linków według MeshLink::flags (docs/formaty/3db.md §3.2): 0 pominięty, 2 addytywnie,
 	// 3 miękka alfa, 5–7 mapowanie otoczenia, 8 bez oświetlenia; false = wszystko jak tryb 1 (do porównań).
 	bool drawModes = true;
+	float highlight = 0.f; // 0..1: rozjaśnienie na niebiesko (obiekt pod kursorem / zaznaczony w przeglądarce)
 	// Faza: Opaque rysuje nieprzezroczyste części (alfa ≥ 0,5, z zapisem głębi), Transparent miękkie brzegi
 	// trybu 3 (alfa < 0,5) i blask trybu 2 bez zapisu głębi. Scena rysuje najpierw wszystkie obiekty w fazie
 	// Opaque, potem w Transparent od najdalszego; All = obie fazy po kolei (pojedynczy model).

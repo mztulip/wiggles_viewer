@@ -1,6 +1,11 @@
 #include "apps/wigview/map_view.h"
 
 #include "lib/i18n.h"
+#include "lib/text.h"
+#include "lib/map_template.h"
+#include "lib/model3db.h"
+#include "lib/heightfield.h"
+#include "lib/blockdb.h"
 #include "lib/vfs.h"
 
 #include <imgui.h>
@@ -88,6 +93,94 @@ void MapView::setSavesDir(const std::string& dir)
 {
 	savesDir_ = dir;
 	refreshSaves();
+}
+
+// Panel zaznaczenia: obiekt pod kliknięciem albo pole terenu (szablon: jego elementy składowe).
+void MapView::uiSelection()
+{
+	if (selectedObject >= objectCount()) selectedObject = -1;
+	bool tile = selectedObject < 0 && pmp_ && selectedTileX >= 0 && selectedTileY >= 0 && selectedTileX < int(pmp_->width) &&
+	    selectedTileY < int(pmp_->height);
+	if (selectedObject < 0 && !tile)
+	{
+		ImGui::TextDisabled(tr("Kliknij obiekt albo teren w scenie, żeby zobaczyć szczegóły."));
+		return;
+	}
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.35f, 0.55f, 1));
+	bool open = ImGui::CollapsingHeader(tr("Zaznaczenie###zaznaczenie"), ImGuiTreeNodeFlags_DefaultOpen);
+	ImGui::PopStyleColor();
+	if (!open) return;
+	if (ImGui::SmallButton(tr("Odznacz"))) clearSelection();
+	if (selectedObject >= 0)
+	{
+		int i = selectedObject;
+		const PlacedObject& o = objects_[size_t(i)];
+		const TemplateObject& s = o.src;
+		ImGui::Text(tr("Klasa: %s"), s.className.c_str());
+		if (!s.instanceName.empty()) ImGui::TextWrapped(tr("Nazwa: %s"), cp1250ToUtf8(s.instanceName).c_str()); // zapis w CP1250
+		if (!s.name.empty()) ImGui::Text(tr("Nazwa w skrypcie / ID: %s"), s.name.c_str());
+		ImGui::TextWrapped(tr("Pozycja: x %.2f  y %.2f bloku, z %.2f (skrypt) = %.2f bloku świata"), s.pos[0], s.pos[1], s.pos[2],
+		    s.pos[2] * 0.5f + 7.f);
+		ImGui::Text(tr("Pole: %d, %d   obrót: %.0f°"), int(std::floor(s.pos[0])), int(std::floor(s.pos[1])),
+		    s.rot[1] * 57.2958f);
+		if (const Model3db* m = objectModel(i))
+		{
+			std::string anim = objectAnimation(i);
+			int mesh = currentMesh(o);
+			ImGui::TextWrapped(tr("Model: %s, obiekt %s, animacja %s"), m->name.c_str(), o.cls ? o.cls->object.c_str() : "?",
+			    anim.c_str());
+			if (mesh >= 0)
+			{
+				const Mesh3db& me = m->meshes[size_t(mesh)];
+				ImGui::TextWrapped(tr("Klatka (mesh) %d, rozmiar %.2f × %.2f × %.2f bloku"), mesh, (me.bboxMax.x - me.bboxMin.x) / kBlock,
+				    (me.bboxMax.y - me.bboxMin.y) / kBlock, (me.bboxMax.z - me.bboxMin.z) / kBlock);
+			}
+			if (openModel && o.cls && ImGui::SmallButton(tr("Otwórz model w zakładce Modele"))) openModel(o.cls->object, anim);
+		}
+		else ImGui::TextDisabled(tr("Bez modelu"));
+		if (o.cls)
+		{
+			const char* modes[] = {"ANIM_STILL", "ANIM_ONCE", "ANIM_LOOP"};
+			ImGui::TextWrapped(tr("Klasa: tryb animacji %s%s%s%s"), modes[std::clamp(o.cls->animMode, 0, 2)],
+			    o.cls->animRandom ? ", animrandom" : "", o.cls->viewInFog ? ", viewinfog" : "", o.cls->editorOnly ? tr(", tylko edytor") : "");
+		}
+		if (!s.detail.empty()) ImGui::TextDisabled(tr("Poziom detali: %s"), s.detail.c_str());
+		if (s.owner >= 0) ImGui::Text(tr("Właściciel: gracz %d"), s.owner);
+		if (s.linkParent >= 0) ImGui::Text(tr("Przypięty do obiektu %d, punkt %d"), s.linkParent, s.linkPoint);
+		if (!s.info.empty()) ImGui::TextWrapped(tr("Parametry z edytora: %s"), s.info.c_str());
+		if (objectExtra) objectExtra(i);
+		if (!s.tclVars.empty() && ImGui::TreeNode("zmienne", tr("Zmienne Tcl z zapisu (%zu)"), s.tclVars.size()))
+		{
+			for (const auto& [k, v] : s.tclVars) ImGui::TextWrapped("%s = %s", k.c_str(), cp1250ToUtf8(v).c_str());
+			ImGui::TreePop();
+		}
+	}
+	else
+	{
+		int x = selectedTileX, y = selectedTileY;
+		size_t k = size_t(y) * pmp_->width + size_t(x);
+		uint8_t type = pmp_->types[k];
+		static const char* kGround[] = {"A", "B", "C"};
+		ImGui::Text(tr("Pole terenu: %d, %d"), x, y);
+		ImGui::Text(tr("Blok BlockDB: %u"), pmp_->blocks[k]);
+		ImGui::Text(tr("Typ pola: 0x%02X (grunt %s%s)"), type, kGround[std::clamp(groundFromPmpType(type), 0, 2)],
+		    (type & 0x7F) == 5 ? tr(", otwór do tła") : "");
+		if (const L2m* l = layer(); l && k < l->values.size()) ImGui::Text(tr("Warstwa detali (.l2m): %u"), unsigned(l->values[k]));
+		if (const BlockRecord* r = blockDb().record(pmp_->blocks[k]))
+		{
+			int solid = 0, mn = 15, mx = 0;
+			for (int j = 0; j < 64; ++j) solid += r->depth[size_t(j)] >= 15, mn = std::min(mn, int(r->depth[size_t(j)])), mx = std::max(mx, int(r->depth[size_t(j)]));
+			ImGui::Text(tr("Głębokość: %d..%d (15 = lita skała), lite drobne pola %d/64"), mn, mx, solid);
+		}
+		float fl = fluidFill(x, y);
+		if (fl > 0.f) ImGui::Text(tr("Płyn: wypełnienie %.2f"), fl);
+		if (fogMode_ != FogMode::Off) ImGui::Text(tr("Mgła: bajt 0x%02X"), fogAt(x, y));
+		int n = 0;
+		for (int j = 0; j < objectCount(); ++j)
+			n += int(std::floor(objects_[size_t(j)].src.pos[0])) == x && int(std::floor(objects_[size_t(j)].src.pos[1])) == y;
+		ImGui::Text(tr("Obiekty w polu: %d"), n);
+	}
+	ImGui::Separator();
 }
 
 void MapView::reloadCurrent()
@@ -262,6 +355,7 @@ bool MapView::ui(bool savesTab)
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("mapa_szczegoly");
+	uiSelection();
 	if (!error_.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), tr("Błąd: %s"), error_.c_str());
 	if (!scenarioInfo_.empty()) ImGui::TextColored(ImVec4(1, 0.8f, 0.4f, 1), "%s", scenarioInfo_.c_str());
 	if (!script_)

@@ -19,6 +19,7 @@
 // --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
+// --click X Y: z --screenshot zaznacza obiekt albo pole w punkcie obrazu (piksele) przed zrzutem, jak kliknięcie.
 // --paths: otwiera okno „Ścieżki” (katalog gry i zapisów) przy starcie.
 // --saves-dir KATALOG: zapisy .sav z tego katalogu w zakładce Zapisy (domyślnie Data/Gamesave gry albo wybór z okna).
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
@@ -102,6 +103,7 @@ struct Args
 	bool simulate = false;                   // --simulate: symulacja (skrypty) na mapie
 	float warmup = 0;                        // --warmup S: przewinięcie symulacji przed zrzutem
 	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
+	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
@@ -141,6 +143,11 @@ bool parseArgs(int argc, char** argv, Args& a)
 		if (k == "--game") a.game = next();
 		else if (k == "--saves-dir") a.savesDir = next();
 		else if (k == "--paths") a.paths = true;
+		else if (k == "--click")
+		{
+			a.clickX = std::atoi(next());
+			a.clickY = std::atoi(next());
+		}
 		else if (k == "--simulate") a.simulate = true;
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--populate")
@@ -491,6 +498,58 @@ struct Viewer
 		dist = radius * 2.4f;
 		pan = glm::vec3(0.f);
 		gameCam = false;
+	}
+
+	// Promień spod kursora (piksele obrazu mx, my; obraz w×h, scena od kolumny x0) w układzie sceny map
+	// (przed macierzą world, jednostki modelu): o + t·d. false: kursor poza sceną.
+	bool sceneRay(float mx, float my, int w, int h, int x0, glm::vec3& o, glm::vec3& d) const
+	{
+		if (mx < float(x0) || w - x0 <= 0 || h <= 0) return false;
+		float nx = (mx - float(x0)) / float(w - x0) * 2.f - 1.f, ny = 1.f - my / float(h) * 2.f;
+		glm::mat4 inv = glm::inverse(viewProj(w - x0, h) * modelMatrix());
+		glm::vec4 a = inv * glm::vec4(nx, ny, -1.f, 1.f), b = inv * glm::vec4(nx, ny, 1.f, 1.f);
+		o = glm::vec3(a) / a.w;
+		d = glm::vec3(b) / b.w - o;
+		return true;
+	}
+	// Informacje z symulacji o obiekcie mapy (panel zaznaczenia).
+	void uiSimObject(int i)
+	{
+		if (!simActive || !sim)
+		{
+			ImGui::TextDisabled(tr("Stan skryptu: włącz „Symulacja (skrypty)”."));
+			return;
+		}
+		int id = i < int(sim->idxToId.size()) ? sim->idxToId[size_t(i)] : 0;
+		const script::ScriptObject* so = id && sim->scripts ? sim->scripts->object(id) : nullptr;
+		if (!so)
+		{
+			ImGui::TextDisabled(tr("Obiekt bez skryptu (ID %d)."), id);
+			return;
+		}
+		ImGui::Text(tr("Skrypt: ID %d, stan %s (licznik %d), właściciel %d"), id, so->state.empty() ? "-" : so->state.c_str(),
+		    so->stateCounter, so->owner);
+		if (const SimUnit* u = sim->unitOf(i))
+		{
+			const char* st = u->state == SimUnit::Walk ? tr("idzie") : u->state == SimUnit::Dig ? tr("kopie")
+			                                                                                    : tr("stoi");
+			ImGui::Text(tr("Postać: %s, pole %d, %d"), st, u->tx, u->ty);
+			static const char* kNeeds[4][2] = {{"atr_Hitpoints", N_("zdrowie")}, {"atr_Nutrition", N_("jedzenie")},
+			    {"atr_Alertness", N_("sen")}, {"atr_Mood", N_("nastrój")}};
+			if (u->gnome)
+				for (auto& n : kNeeds)
+				{
+					float v = float(sim->scripts->attrib(id, n[0]));
+					ImGui::ProgressBar(std::clamp(v, 0.f, 1.f), ImVec2(ImGui::GetFontSize() * 8.f, 0), "");
+					ImGui::SameLine();
+					ImGui::Text("%s %.2f", tr(n[1]), v);
+				}
+		}
+		if (!so->tasks.empty() && ImGui::TreeNode("zadania", tr("Zadania (%zu)"), so->tasks.size()))
+		{
+			for (const auto& t : so->tasks) ImGui::TextWrapped("%s", t.c_str());
+			ImGui::TreePop();
+		}
 	}
 
 	glm::mat4 viewProj(int w, int h) const
@@ -1835,6 +1894,8 @@ int main(int argc, char** argv)
 	v.borderMask = args.borderMask;
 	v.maps.borderMask = &v.borderMask;
 	v.maps.simulate = &v.simulate;
+	v.maps.objectExtra = [&v](int i) { v.uiSimObject(i); };
+	v.maps.openModel = [&v](const std::string& obj, const std::string& anim) { v.openAnim(obj, anim, 0); };
 	v.simulate = args.simulate;
 	if (args.popGnomes >= 0) v.maps.populate = true, v.maps.populateGnomes = args.popGnomes, v.maps.populateWukers = args.popWukers;
 	startupProgress(0.6f, N_("Cząsteczki i ramka ekranu"));
@@ -2078,6 +2139,19 @@ int main(int argc, char** argv)
 			renderFrame(w, h);
 			SDL_Delay(30);
 		}
+		if (args.clickX >= 0)
+		{
+			glm::vec3 ro, rd;
+			float sc = ImGui::GetIO().DisplayFramebufferScale.x;
+			if (v.sceneRay(float(args.clickX), float(args.clickY), w, h, int(v.uiRight * sc), ro, rd))
+			{
+				v.maps.selectedObject = v.maps.hoverObject = v.maps.pickObject(ro, rd);
+				if (v.maps.selectedObject < 0) v.maps.pickTerrain(ro, rd, v.maps.selectedTileX, v.maps.selectedTileY);
+				std::printf("klik (%d, %d): obiekt %d, pole %d, %d\n", args.clickX, args.clickY, v.maps.selectedObject,
+				    v.maps.selectedTileX, v.maps.selectedTileY);
+			}
+			for (int i = 0; i < 2; ++i) renderFrame(w, h); // panel zaznaczenia w interfejsie
+		}
 		std::vector<uint8_t> px;
 		renderFrame(w, h, &px);
 		std::printf("model %s obiekt %d anim %d klatka %d mesh %d  środek (%.1f %.1f %.1f) r=%.1f dist=%.1f\n",
@@ -2105,6 +2179,8 @@ int main(int argc, char** argv)
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
+	bool clickArmed = false;
+	int clickX = 0, clickY = 0;
 	std::string restartGame;
 	while (running)
 	{
@@ -2120,6 +2196,27 @@ int main(int argc, char** argv)
 			ImGuiIO& io = ImGui::GetIO();
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+			if (!io.WantCaptureMouse && v.mapTab())
+			{ // zaznaczanie obiektów: kliknięcie bez przeciągania (przeciąganie obraca kamerę)
+				if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+					clickArmed = true, clickX = e.button.x, clickY = e.button.y;
+				if (e.type == SDL_MOUSEMOTION && clickArmed && std::abs(e.motion.x - clickX) + std::abs(e.motion.y - clickY) > 4)
+					clickArmed = false;
+				if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_LEFT && clickArmed)
+				{
+					clickArmed = false;
+					int w, h;
+					drawableSize(w, h);
+					float sc = io.DisplayFramebufferScale.x;
+					glm::vec3 ro, rd;
+					v.maps.clearSelection();
+					if (v.sceneRay(float(e.button.x) * sc, float(e.button.y) * sc, w, h, int(v.uiRight * sc), ro, rd))
+					{
+						v.maps.selectedObject = v.maps.pickObject(ro, rd);
+						if (v.maps.selectedObject < 0) v.maps.pickTerrain(ro, rd, v.maps.selectedTileX, v.maps.selectedTileY);
+					}
+				}
+			}
 			if (!io.WantCaptureMouse)
 			{
 				if ((e.type == SDL_MOUSEMOTION && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK))) ||
@@ -2212,6 +2309,16 @@ int main(int argc, char** argv)
 
 		int w, h;
 		drawableSize(w, h);
+		{ // obiekt pod kursorem (podświetlenie) w zakładkach map
+			v.maps.hoverObject = -1;
+			int mx, my;
+			SDL_GetMouseState(&mx, &my);
+			float sc = ImGui::GetIO().DisplayFramebufferScale.x;
+			glm::vec3 ro, rd;
+			if (v.mapTab() && v.maps.hasTemplate() && !ImGui::GetIO().WantCaptureMouse &&
+			    v.sceneRay(float(mx) * sc, float(my) * sc, w, h, int(v.uiRight * sc), ro, rd))
+				v.maps.hoverObject = v.maps.pickObject(ro, rd);
+		}
 		if (!renderFrame(w, h)) SDL_Delay(16); // np. okno zminimalizowane
 	}
 

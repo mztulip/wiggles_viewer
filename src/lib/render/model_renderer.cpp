@@ -170,7 +170,7 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	u.horizon = opt.horizon;
 	u.lightDirAmb = glm::vec4(opt.lightDir, opt.ambient);
 	u.tint = glm::vec4(1.f);
-	u.params = glm::vec4(t, opt.horizonZOffset, opt.base, 0.f);
+	u.params = glm::vec4(t, opt.horizonZOffset, opt.base, opt.highlight);
 	u.flags = glm::ivec4(int(opt.lighting), opt.alphaTest ? 1 : 0, opt.gameLights ? 1 : 0, 0);
 	// Przebiegi: 0 nieprzezroczyste (wszystko poza trybami 0 i 2; tryb 3 tylko alfa ≥ 0,5), 1 miękkie brzegi
 	// trybu 3 (w shaderze tryb 103: tylko alfa < 0,5), 2 blask trybu 2.

@@ -61,6 +61,17 @@ public:
 	// change_particlesource na obiekcie stojącym w tym punkcie (porównania ze zrzutami gry). false: nieznany typ.
 	bool addEmitter(const ParticleSource& s, float x, float y, float zWorld);
 	float floorDrop(float x, float y) const;
+	// Wskazywanie (przeglądarka). Promień w układzie sceny (przed macierzą world, jednostki modelu): o + t·d.
+	// pickObject: obiekt z najbliższym trójkątem bieżącej klatki na promieniu (bbox w układzie obiektu jako test
+	// wstępny); −1 = brak. pickTerrain: pole terenu trafione promieniem (marsz po mapie wysokości), false = brak.
+	int pickObject(const glm::vec3& o, const glm::vec3& d) const;
+	bool pickTerrain(const glm::vec3& o, const glm::vec3& d, int& tx, int& ty) const;
+	int hoverObject = -1, selectedObject = -1; // podświetlane przy rysowaniu
+	const Model3db* objectModel(int i) const;
+	std::string objectAnimation(int i) const;
+	const TemplateObject& objectSource(int i) const { return objects_[size_t(i)].src; }
+	int currentMeshOf(int i) const { return currentMesh(objects_[size_t(i)]); }
+	static glm::mat4 objectMatrixOf(const TemplateObject& o) { return objectMatrix(o); }
 	// Źródło cząsteczek obiektu ze skryptu (change_particlesource): nowe albo zmienione w slocie; podąża za obiektem.
 	void setObjectParticle(int obj, int slot, const ParticleSource& s);
 	void enableObjectParticle(int obj, int slot, bool on); // set_particlesource // bloki od punktu do litej skały pod nim (podłoże cząsteczek)
@@ -176,6 +187,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	std::map<std::string, ClassModel> gameModels_;
 	std::map<int, std::pair<int, int>> links_; // dziecko -> (rodzic, punkt)
 	int currentMesh(const PlacedObject& o) const; // indeks meshu bieżącej klatki animacji
+	bool objectShown(const PlacedObject& o) const; // jak przy rysowaniu: detale, obiekty edytora, mgła
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
 
 	ModelSlot* model(const std::string& file);
