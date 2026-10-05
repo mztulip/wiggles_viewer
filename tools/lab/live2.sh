@@ -10,7 +10,8 @@
 #   tools/lab/live2.sh list [filtr]        lista szablonów (bieżący oznaczony *)
 #   tools/lab/live2.sh view X Y [ZOOM DX DY]   kamera jak set_view, współrzędne względem lewego górnego rogu szablonu
 #   tools/lab/live2.sh tcl 'skrypt'        Tcl w działającej grze (jak live.sh; bez znaku ":" w skrypcie)
-#   tools/lab/live2.sh shot out.png        zrzut okna gry
+#   tools/lab/live2.sh shot out.png        zrzut prosto z bufora klatki gry (glgrab.so); .png, .jpg albo .ppm
+#   tools/lab/live2.sh shot-all KATALOG [filtr]   po kolei wszystkie szablony (z filtrem) i zrzut każdego: KATALOG/<szablon>.png
 #   tools/lab/live2.sh stop                zamknij grę
 #
 # Jak to działa: userstartup.tcl definiuje w grze procedurę ow_show. Ta usuwa obiekty Tcl poprzedniego
@@ -20,12 +21,15 @@
 # Wymiar szablonu skrypt czyta z pliku .pmp (pierwsze 8 bajtów: szerokość i wysokość, u32).
 # Gra rusza w zoom 1,0–2,5 (rozdział 6.1). W grze nie przesuwaj kamery myszą zbyt daleko: poza szablonem jest pusta mapa.
 # Nie działa równocześnie z live.sh (ten sam port WebTraq 8082).
-# Wymaga: laboratorium (setup_lab.sh), zamontowana płyta, curl, ImageMagick, xdotool (zrzut okna).
+# Zrzuty: biblioteka tools/lab/glgrab.c (budowana przy starcie do ../lab/glgrab.so, ładowana przez LD_PRELOAD)
+# przechwytuje eglSwapBuffers gry i na prośbę zapisuje tylny bufor OpenGL; działa też przy zasłoniętym oknie.
+# Wymaga: laboratorium (setup_lab.sh), zamontowana płyta, curl, ImageMagick, gcc.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LAB="$(cd "$HERE/../../../lab" && pwd)"
 export WINEPREFIX="$LAB/prefix" WINEDEBUG=-all
 STATE="$LAB/live2.state"
+GRAB="$LAB/grab"
 TPL="$LAB/Wiggles/Data/Templates"
 KEY='HKCU\Software\SekOst\Wiggles\Performance'
 URL=http://127.0.0.1:8082
@@ -59,6 +63,16 @@ show() {
 	echo "$T  (${w}×${h} bloków, mgła świata $fog)"
 	tcl "ow_show $T $w $h $fog" | sed 's/^/  /'
 	state_set cur "$T"
+}
+
+# Zrzut z bufora klatki: prośba z docelową ścieżką PPM dla glgrab.so, potem konwersja według rozszerzenia.
+grab() {
+	local out="$1" ppm="$GRAB/klatka.ppm"
+	curl -s -m 2 -o /dev/null "$URL/index" || { echo "gra nie działa ($0 start)"; return 1; }
+	rm -f "$ppm"; echo "$ppm" > "$GRAB/grab.request"
+	for i in $(seq 1 150); do [ -f "$ppm" ] && break; sleep 0.1; done # do 15 s (wczytywanie dużego szablonu)
+	[ -f "$ppm" ] || { rm -f "$GRAB/grab.request"; echo "brak klatki (gra uruchomiona bez glgrab.so? $0 stop, potem start)"; return 1; }
+	case "$out" in *.ppm) mv "$ppm" "$out" ;; *) magick "$ppm" "$out" && rm -f "$ppm" ;; esac && echo "zapisano $out"
 }
 
 USERSTARTUP='# wygenerowane przez tools/lab/live2.sh
@@ -97,6 +111,12 @@ case "${1:-}" in
 		US="$LAB/Wiggles/Data/userstartup.tcl"
 		printf '%s' "$USERSTARTUP" > "$US"
 		wine reg add "$KEY" /v WebServer /d 1 /f >/dev/null; wineserver -w
+		# biblioteka zrzutów z bufora klatki (przebudowa, gdy źródło nowsze)
+		if [ ! -f "$LAB/glgrab.so" ] || [ "$HERE/glgrab.c" -nt "$LAB/glgrab.so" ]; then
+			gcc -shared -fPIC -O2 -o "$LAB/glgrab.so" "$HERE/glgrab.c" -ldl || { echo "nie udało się zbudować glgrab.so"; exit 1; }
+		fi
+		mkdir -p "$GRAB"; rm -f "$GRAB/grab.request"
+		export LD_PRELOAD="$LAB/glgrab.so" OW_GRAB_DIR="$GRAB"
 		cd "$LAB/Wiggles"
 		setsid wine explorer /desktop=OWLab2,1024x768 'C:\Wiggles\Wiggles.exe' ${OW_ARGS:-} >/dev/null 2>&1 &
 		echo -n "czekam na grę"
@@ -120,13 +140,16 @@ case "${1:-}" in
 		templates "${2:-}" | while read -r t; do [ "$t" = "$cur" ] && echo "* $t" || echo "  $t"; done ;;
 	view) tcl "ow_view ${2:?x} ${3:?y} ${4:-1.6} ${5:--0.25} ${6:-0.1}" ;;
 	tcl) S="${2:?skrypt albo -}"; [ "$S" = - ] && S="$(cat)"; tcl "$S" ;;
-	shot)
-		# tylko okno gry (nigdy cały ekran użytkownika)
-		W="$(xdotool search --name '^OWLab2' 2>/dev/null | head -1)"
-		[ -n "$W" ] || { echo "nie znaleziono okna OWLab2"; exit 1; }
-		xwininfo -id "$W" | grep -q IsViewable || { echo "okno gry jest niewidoczne (inny pulpit albo zminimalizowane): pokaż je i powtórz"; exit 1; }
-		# menedżer okien może rozciągnąć okno; gra rysuje 1024×768 w jego lewym górnym rogu
-		import -window "$W" -crop 1024x768+0+0 +repage "${2:?plik.png}" && echo "zapisano $2" ;;
+	shot) grab "${2:?plik.png}" ;;
+	shot-all)
+		OUT="${2:?katalog}"; mkdir -p "$OUT"
+		mapfile -t L < <(templates "${3:-}")
+		echo "${#L[@]} szablonów -> $OUT"
+		for t in "${L[@]}"; do
+			show "$t" | head -1
+			sleep "${OW_SETTLE:-3}" # gra dorysowuje teren i obiekty po podmianie
+			grab "$OUT/$t.png" >/dev/null || echo "  błąd zrzutu $t"
+		done ;;
 	stop)
 		wineserver -k 2>/dev/null
 		rm -f "$LAB/Wiggles/Data/userstartup.tcl"

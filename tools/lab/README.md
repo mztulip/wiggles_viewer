@@ -27,7 +27,8 @@ tools/lab/live2.sh prev                    # poprzedni
 tools/lab/live2.sh list lava               # lista szablonów pasujących do filtra (* = bieżący)
 tools/lab/live2.sh view 8 2 1.6            # kamera względem lewego górnego rogu szablonu: x y [zoom dx dy]
 tools/lab/live2.sh tcl 'get_view'          # dowolny Tcl w działającej grze (bez znaku ":" w skrypcie)
-tools/lab/live2.sh shot plik.png           # zrzut samego obrazu gry (1024×768)
+tools/lab/live2.sh shot plik.png           # zrzut prosto z bufora klatki gry (1024×768; .png, .jpg albo .ppm)
+tools/lab/live2.sh shot-all zrzuty/ lava_unq   # wszystkie szablony pasujące do filtra po kolei: zrzuty/<szablon>.png
 tools/lab/live2.sh stop                    # zamknij grę
 ```
 
@@ -40,7 +41,9 @@ Co robi podmiana szablonu (procedura `ow_show` w grze, zdefiniowana przez `users
 
 Wymiar szablonu skrypt czyta z pliku `.pmp`, który podaje pierwsza linia `.tcl` (`map_template data/templates/X.pmp`): pierwsze 8 bajtów to szerokość i wysokość w blokach.
 
-Ograniczenia: `shot` działa tylko przy widocznym oknie (inaczej zgłasza błąd, nie robi zrzutu całego ekranu). Myszą w grze nie odjeżdżaj daleko, bo poza szablonem jest pusta mapa.
+**Zrzuty z bufora klatki** ([`glgrab.c`](glgrab.c)): `start` buduje `../lab/glgrab.so` i uruchamia grę z `LD_PRELOAD`. Biblioteka przechwytuje `eglSwapBuffers` (Wine 11 rysuje OpenGL przez EGL; wywołania GLX też obsługuje) i na prośbę (plik `../lab/grab/grab.request` ze ścieżką) zapisuje tylny bufor OpenGL tuż przed pokazaniem klatki. Obraz jest piksel w piksel taki, jaki rysuje gra, bez ramek okna i rozciągania przez menedżer okien, i **działa także przy zasłoniętym albo schowanym oknie** (gra rysuje dalej). `shot` czeka na klatkę do 15 s (wczytywanie dużego szablonu); `shot-all` po każdej podmianie czeka 3 s (`OW_SETTLE=5` wydłuża). Gra uruchomiona bez `glgrab.so` (starszym `live2.sh`) nie odpowie na `shot`: `stop`, potem `start`.
+
+Ograniczenia: myszą w grze nie odjeżdżaj daleko, bo poza szablonem jest pusta mapa. Szablony większe niż 112×80 bloków nie zmieszczą się w mapie `map create 128 96`.
 
 ## `capture.sh`: pojedynczy zrzut
 
