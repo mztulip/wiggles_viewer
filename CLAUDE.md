@@ -45,6 +45,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 ## Zasady
 - Kod i dokumentacja są w tym repozytorium (`openwiggles_git/`). Materiały referencyjne (`../ref/`, zipy) leżą w katalogu nadrzędnym i nie trafiają do repo.
 - **Commity i PR-y bez żadnej wzmianki o AI** (żadnych `Co-Authored-By` ani „Generated with…”).
+- **Styl kodu: `.clang-format`** (klamry `{}` w osobnych liniach, styl Allman; wcięcia tabulatorami). Po zmianach: `clang-format -i` na zmienionych plikach z `src/` (shadery z `--assume-filename=x.cpp`), nigdy na `third_party/`.
 - C++17, Vulkan 1.2 (domyślnie) i OpenGL 4.5 za warstwą `rhi`, SDL2, Dear ImGui, osadzony Tcl (8.3 jak w oryginale albo 8.6; decyzja w TODO, faza 5).
 - **Bez CMake.** Budowanie odbywa się własnymi skryptami bash (`build.sh`).
 - Repo nie może zawierać danych z oryginalnej gry (także wyników sondy z treścią skryptów; te zostają w `../lab/`).

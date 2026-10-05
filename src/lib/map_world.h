@@ -15,7 +15,8 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 class BlockDb;
@@ -27,7 +28,8 @@ void blitTemplate(Pmp& world, L2m& worldLayer, const Pmp& tpl, const L2m* tplLay
 // Plik szablonu wskazany w skrypcie: "gng_021.pmp" albo "data/templates/gng_021.pmp".
 std::optional<std::vector<uint8_t>> readTemplateData(const Vfs& vfs, const std::string& name);
 
-struct ScenarioPlacement {
+struct ScenarioPlacement
+{
 	std::string script; // plik w Data/Templates, np. "urw_gng_021_a.tcl"
 	int x = 0, y = 0;   // w blokach
 };
@@ -36,11 +38,13 @@ struct ScenarioPlacement {
 // Zimennik/Diggles-Unity (MIT, Runtime/Engine/DigglesCameraController.cs): cel = (x, y, 14) bloków,
 // R = zoom·16 − 10, oko = cel + R·(cos dx·sin(−dy), sin dx, cos dx·cos dy),
 // góra = (sin dx·sin(−dy), −cos dx, sin dx·cos dy), poziomy pół-kąt widzenia = 0,3·proporcje.
-struct GameView {
+struct GameView
+{
 	float x = 0, y = 0, zoom = 1.38f, dx = -0.355f, dy = 0.f;
 };
 
-struct Scenario {
+struct Scenario
+{
 	int width = 0, height = 0; // z map create (0 = nie podano)
 	std::optional<GameView> view;
 	std::vector<ScenarioPlacement> placements;
@@ -57,7 +61,8 @@ struct Scenario {
 // call data/gamesave/... (rekurencyjnie): map create W H, call templates/X.tcl + MapTemplateSet x y.
 Scenario parseScenario(const Vfs& vfs, const std::string& gamePath);
 
-struct BuiltWorld {
+struct BuiltWorld
+{
 	Pmp grid;          // przycięty do użytego obszaru (+ margines)
 	L2m layer;
 	std::vector<TemplateObject> objects; // pozycje względem przyciętego świata

@@ -11,11 +11,13 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 class Vfs;
 }
 
-class SoundView {
+class SoundView
+{
 public:
 	void init(const ow::Vfs* vfs) { vfs_ = vfs; }
 	void ui();
@@ -37,7 +39,8 @@ public:
 	std::function<void(const std::string& object, const std::string& anim, int frame)> onOpenAnim;
 
 private:
-	struct Loaded {
+	struct Loaded
+	{
 		std::string path, error;
 		ow::SoundPcm pcm;
 		ow::AudioOut::Clip clip;

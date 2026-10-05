@@ -15,19 +15,28 @@
 #include <utility>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-struct Vec2f { float x, y; };
-struct Vec3f { float x, y, z; };
+struct Vec2f
+{
+	float x, y;
+};
+struct Vec3f
+{
+	float x, y, z;
+};
 
-struct Material3db {
+struct Material3db
+{
 	std::string name; // nazwa tekstury bez rozszerzenia
 	std::string path; // oryginalna ścieżka z serwera twórców (nieużywana)
 	uint32_t unknown = 0;
 };
 
 // Fragment klatki z jednym materiałem. Pola to indeksy do pul modelu.
-struct MeshLink {
+struct MeshLink
+{
 	uint16_t material = 0;
 	uint16_t flags = 0; // 🔶 zwykle 1; także 2, 3, 5, 6
 	uint16_t triangles = 0;
@@ -36,7 +45,8 @@ struct MeshLink {
 	uint16_t normals = 0; // pula indeksów normalnych
 };
 
-struct Mesh3db {
+struct Mesh3db
+{
 	std::vector<MeshLink> links;
 	Vec3f bboxMin{}, bboxMax{};
 	// ✅ Punkty zaczepienia: 32 × u32, indeks rekordu w Model3db::unknown20 dla punktu 0..31 (głowa = 4,
@@ -47,7 +57,8 @@ struct Mesh3db {
 	uint16_t cmapIndex = 0xFFFF; // ✅ indeks w Model3db::cmaps albo 0xFFFF
 };
 
-struct Animation3db {
+struct Animation3db
+{
 	std::string name;
 	std::vector<uint32_t> frames; // indeksy do Model3db::meshes
 	uint16_t unknownFlags = 0;
@@ -57,17 +68,20 @@ struct Animation3db {
 	Vec3f rotate{}; // 🔶 obrót na cykl (radiany)
 };
 
-struct Object3db {
+struct Object3db
+{
 	std::string name;
 	std::vector<uint32_t> animations; // indeksy do Model3db::animations
 };
 
-struct CMap3db {
+struct CMap3db
+{
 	uint16_t width = 0, height = 0, unknown1 = 0, unknown2 = 0;
 	std::vector<uint8_t> pixels;
 };
 
-struct Model3db {
+struct Model3db
+{
 	std::string version; // "3DDB 1.0"
 	std::string name;
 	std::vector<Material3db> materials;
@@ -93,11 +107,12 @@ struct Model3db {
 	const Object3db* findObject(const std::string& name) const;
 	// Punkt zaczepienia `link` (0..31) w klatce (meshu) `mesh`, w jednostkach modelu (jak wierzchołki).
 	// x, y = dequant(u16); z = 2·dequant(u16) (gra skaluje z punktów podwójnie). false = brak punktu.
-	bool linkOffset(uint32_t mesh, int link, Vec3f& out) const {
+	bool linkOffset(uint32_t mesh, int link, Vec3f& out) const
+	{
 		if (mesh >= meshes.size() || link < 0 || link >= 32) return false;
 		const auto& t = meshes[mesh].unknown80;
 		uint32_t slot = uint32_t(t[size_t(link) * 4]) | uint32_t(t[size_t(link) * 4 + 1]) << 8 |
-		                uint32_t(t[size_t(link) * 4 + 2]) << 16 | uint32_t(t[size_t(link) * 4 + 3]) << 24;
+		    uint32_t(t[size_t(link) * 4 + 2]) << 16 | uint32_t(t[size_t(link) * 4 + 3]) << 24;
 		if (slot >= unknown20.size()) return false;
 		const auto& r = unknown20[slot];
 		auto u = [&](int o) { return uint16_t(r[size_t(o)] | (r[size_t(o) + 1] << 8)); };

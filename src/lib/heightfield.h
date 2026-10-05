@@ -5,12 +5,14 @@
 #include <cstdint>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 struct Pmp;
 class BlockDb;
 
-struct Heightfield {
+struct Heightfield
+{
 	static constexpr int kSamplesPerBlock = 8;
 	static constexpr float kSampleUnits = 25.f;  // 200 jednostek na blok / 8
 	static constexpr float kLevelUnits = 100.f;  // jeden poziom głębokości
@@ -21,7 +23,8 @@ struct Heightfield {
 	std::vector<uint32_t> blockId; // ID bloku dla każdej próbki (do tekstur i podglądu)
 	std::vector<uint8_t> ground;   // rodzaj gruntu próbki: 0 = A (skała), 1 = B (ziemia), 2 = C (piasek)
 
-	uint8_t at(int x, int y) const {
+	uint8_t at(int x, int y) const
+	{
 		x = x < 0 ? 0 : (x >= width ? width - 1 : x);
 		y = y < 0 ? 0 : (y >= height ? height - 1 : y);
 		return value[size_t(y) * width + x];

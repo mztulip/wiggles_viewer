@@ -1,0 +1,62 @@
+# Styl kodu OpenWiggles: klamry w osobnych liniach (Allman), wcięcia tabulatorami.
+# Formatowanie: clang-format -i $(find src -name '*.cpp' -o -name '*.h')   (bez third_party)
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++17
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: None
+IndentCaseLabels: false
+ColumnLimit: 0
+SortIncludes: Never
+ReflowComments: false
+PointerAlignment: Left
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+# Krótkie metody w klasach, lambdy i pojedyncze instrukcje bez klamr zostają w jednej linii.
+# Wyjątek: klamra otwierająca ciało lambdy zostaje w linii z nagłówkiem lambdy.
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLambdasOnASingleLine: All
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+FixNamespaceComments: false
+KeepEmptyLines:
+  AtStartOfBlock: false
+MaxEmptyLinesToKeep: 2
+AlignTrailingComments:
+  Kind: Leave
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignOperands: DontAlign
+AlignAfterOpenBracket: DontAlign
+BinPackArguments: true
+BinPackParameters: true
+SpaceBeforeCpp11BracedList: false
+Cpp11BracedListStyle: true
+# Makra shaderów (src/shaders/common.glsl), żeby TEX(n)/UBO(n) zostawały w linii z deklaracją.
+Macros:
+  - 'TEX(n)=[[n]]'
+  - 'UBO(n)=[[n]]'

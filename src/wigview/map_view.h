@@ -30,12 +30,14 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 class Vfs;
 class TextureCache;
 } // namespace ow
 
-class MapView {
+class MapView
+{
 public:
 	static constexpr float kBlock = 200.f; // jednostek modelu na blok szablonu
 
@@ -44,12 +46,14 @@ public:
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	bool loadSavePath(const std::string& path);  // zapis gry .sav z dowolnego miejsca na dysku
 	void step(int d);                           // poprzedni/następny szablon (strzałki)
-	void select(const std::string& file) {      // wczytaj (odroczone) i przewiń listę do szablonu
+	void select(const std::string& file)
+	{      // wczytaj (odroczone) i przewiń listę do szablonu
 		list_ = ListMode::Templates;
 		pending_ = [this, file] { return loadTemplate(file); };
 		scrollToSel_ = true;
 	}
-	void selectScenario(const std::string& file) {
+	void selectScenario(const std::string& file)
+	{
 		bool sav = file.size() > 4 && (file.compare(file.size() - 4, 4, ".sav") == 0 || file.compare(file.size() - 4, 4, ".SAV") == 0);
 		list_ = sav ? ListMode::Saves : ListMode::Scenarios;
 		pending_ = [this, file] { return loadScenario(file); };
@@ -59,7 +63,8 @@ public:
 	// wykonuje je między klatkami, rysując postęp (progress).
 	bool hasPending() const { return bool(pending_); }
 	const std::string& loadingName() const { return file_; }
-	void runPending() {
+	void runPending()
+	{
 		auto f = std::move(pending_);
 		pending_ = nullptr;
 		f();
@@ -77,7 +82,7 @@ public:
 	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
 	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).
 	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset,
-	            const glm::vec3& focus = glm::vec3(0.f));
+	    const glm::vec3& focus = glm::vec3(0.f));
 	// Strefa horyzontu (kolor tła otworów i zanikanie modeli za skałą). Prawo gry (FUN_004750b0):
 	// co klatkę najbliższy obiekt Info_Fog_*, którego odległość 2D od ogniska kamery < size;
 	// bez takiego obiektu strefy nie ma. focus w jednostkach modelu (układ gry).
@@ -122,11 +127,13 @@ public:
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
 	// Odkrycie mgły wokół punktu (krasnale gracza). 🔶 Koło zamiast promieni z rozdziału 10.3.
-	void revealFog(int cx, int cy, int r) {
+	void revealFog(int cx, int cy, int r)
+	{
 		if (!pmp_ || saveFog_.empty()) return;
 		bool ch = false;
 		for (int y = cy - r; y <= cy + r; ++y)
-			for (int x = cx - r; x <= cx + r; ++x) {
+			for (int x = cx - r; x <= cx + r; ++x)
+			{
 				if (x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height) || (x - cx) * (x - cx) + (y - cy) * (y - cy) > r * r) continue;
 				uint8_t& b = saveFog_[size_t(y) * pmp_->width + size_t(x)];
 				if (b != 0xFF) b = 0xFF, ch = true;
@@ -138,13 +145,15 @@ public:
 	const ow::L2m* layer() const { return l2m_ ? &*l2m_ : nullptr; }
 	const std::vector<uint8_t>& fluidTypes() const { return fluidType_; }
 	const std::vector<float>& fluidFills() const { return fluidFill_; }
-	void setFluidState(const std::vector<uint8_t>& type, const std::vector<float>& fill) {
+	void setFluidState(const std::vector<uint8_t>& type, const std::vector<float>& fill)
+	{
 		fluidType_ = type, fluidFill_ = fill;
 		fluidSim_.setState(type, fill);
 		buildFluids();
 	}
 	const float* objectRot(int i) const { return objects_[size_t(i)].src.rot; }
-	float fluidFill(int x, int y) const {
+	float fluidFill(int x, int y) const
+	{
 		if (!pmp_ || fluidFill_.empty() || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return 0.f;
 		return fluidFill_[size_t(y) * pmp_->width + size_t(x)];
 	}
@@ -152,8 +161,16 @@ public:
 
 	// Podgląd nieodkrytego terenu (docs/silnik/10_nieodkryty_teren.md). Bez symulacji obiektów-odkrywców: stan pól
 	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
-	enum class FogMode { Off, Explored, ViewGrey, ViewBlack, FromSave };
-	void setFog(FogMode mode, int radius = 10, int viewByte = 0xFF) {
+	enum class FogMode
+	{
+		Off,
+		Explored,
+		ViewGrey,
+		ViewBlack,
+		FromSave
+	};
+	void setFog(FogMode mode, int radius = 10, int viewByte = 0xFF)
+	{
 		fogMode_ = mode;
 		fogRadius_ = radius;
 		fogByte_ = viewByte;
@@ -162,12 +179,14 @@ public:
 	}
 
 private:
-	struct ModelSlot {
+	struct ModelSlot
+	{
 		std::unique_ptr<ow::Model3db> model;
 		std::unique_ptr<ow::ModelRenderer> renderer;
 		bool failed = false;
 	};
-	struct PlacedObject {
+	struct PlacedObject
+	{
 		ow::TemplateObject src;
 		const ow::ClassModel* cls = nullptr;
 		ModelSlot* slot = nullptr;
@@ -189,7 +208,8 @@ private:
 	bool finishLoad(const ow::Scenario& sc, int margin, std::string world, ow::BuiltWorld* prebuilt = nullptr);
 	bool loadSave(const std::string& file);                                    // nazwa pliku w Data/Gamesave
 	bool loadSaveData(const std::string& name, const std::vector<uint8_t>& data);
-	void report(float f, const char* stage) const {
+	void report(float f, const char* stage) const
+	{
 		if (progress) progress(f, stage);
 	}
 	std::function<bool()> pending_;
@@ -212,7 +232,8 @@ private:
 	float groundRow_ = 0.f; // wiersz gruntu panoramy (bloki)
 	ow::PanoramaRenderer panorama_;
 	// Cząsteczki obiektów z class_particle (docs/silnik/12_czasteczki.md).
-	struct MapEmitter {
+	struct MapEmitter
+	{
 		ow::ParticleEmitter emitter;
 		int x = 0, y = 0; // pole obiektu (nieodkryty teren)
 	};
@@ -234,10 +255,17 @@ private:
 	bool panoramaReady_ = false;
 	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
-	enum class ListMode { Templates, Scenarios, Saves };
+	enum class ListMode
+	{
+		Templates,
+		Scenarios,
+		Saves
+	};
 	ListMode list_ = ListMode::Templates;
-	const std::vector<std::string>& currentList() const {
-		return list_ == ListMode::Templates ? files_ : list_ == ListMode::Scenarios ? scenarios_ : saves_;
+	const std::vector<std::string>& currentList() const
+	{
+		return list_ == ListMode::Templates ? files_ : list_ == ListMode::Scenarios ? scenarios_
+		                                                                            : saves_;
 	}
 	bool scenarioMode_ = false;
 	std::vector<std::string> scenarios_, saves_;
@@ -246,7 +274,8 @@ private:
 	std::optional<ow::GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
 	int skyTiles_ = 0, lightBegin_ = ow::Scenario::kNoSky;
-	struct ZoneObject {
+	struct ZoneObject
+	{
 		float x, y;
 		ow::HorizonZone zone;
 		std::string className;

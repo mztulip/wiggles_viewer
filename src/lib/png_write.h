@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 // rgba: width*height*4, wiersze od góry. Zwraca gotowy plik PNG w pamięci.
 std::vector<uint8_t> encodePng(int width, int height, const std::vector<uint8_t>& rgba);

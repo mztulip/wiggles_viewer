@@ -7,11 +7,14 @@
 #include <cmath>
 #include <cstring>
 
-namespace ow {
+namespace ow
+{
 
-std::optional<std::vector<uint8_t>> gunzip(const std::vector<uint8_t>& data, std::string& err) {
+std::optional<std::vector<uint8_t>> gunzip(const std::vector<uint8_t>& data, std::string& err)
+{
 	z_stream zs{};
-	if (inflateInit2(&zs, 16 + MAX_WBITS) != Z_OK) {
+	if (inflateInit2(&zs, 16 + MAX_WBITS) != Z_OK)
+	{
 		err = "inflateInit2";
 		return std::nullopt;
 	}
@@ -20,12 +23,14 @@ std::optional<std::vector<uint8_t>> gunzip(const std::vector<uint8_t>& data, std
 	zs.next_in = const_cast<Bytef*>(data.data());
 	zs.avail_in = uInt(data.size());
 	int r = Z_OK;
-	while (r != Z_STREAM_END) {
+	while (r != Z_STREAM_END)
+	{
 		if (zs.total_out >= out.size()) out.resize(out.size() * 2);
 		zs.next_out = out.data() + zs.total_out;
 		zs.avail_out = uInt(out.size() - zs.total_out);
 		r = inflate(&zs, Z_NO_FLUSH);
-		if (r != Z_OK && r != Z_STREAM_END) {
+		if (r != Z_OK && r != Z_STREAM_END)
+		{
 			err = std::string("inflate: ") + (zs.msg ? zs.msg : std::to_string(r));
 			inflateEnd(&zs);
 			return std::nullopt;
@@ -36,10 +41,12 @@ std::optional<std::vector<uint8_t>> gunzip(const std::vector<uint8_t>& data, std
 	return out;
 }
 
-namespace {
+namespace
+{
 
 // Czytnik archiwum zapisu: liczby little-endian bez wyrównania, napisy z długością (z zerem na końcu).
-class SaveReader {
+class SaveReader
+{
 public:
 	explicit SaveReader(const std::vector<uint8_t>& d) : r_(d) {}
 	size_t pos() const { return r_.pos(); }
@@ -48,29 +55,34 @@ public:
 	uint8_t u8() { return r_.u8(); }
 	int32_t i32() { return int32_t(r_.u32()); }
 	float f32() { return r_.f32(); }
-	double f64() {
+	double f64()
+	{
 		double v;
 		r_.readInto(&v, 8);
 		return v;
 	}
-	int32_t count(const char* what) {
+	int32_t count(const char* what)
+	{
 		int32_t n = i32();
 		if (n < 0 || n > (4 << 20)) throw ParseError(std::string("nieprawidłowa liczba: ") + what + " = " + std::to_string(n));
 		return n;
 	}
-	bool flag(const char* what) {
+	bool flag(const char* what)
+	{
 		uint8_t b = u8();
 		if (b > 1) throw ParseError(std::string("nieprawidłowy bajt obecności: ") + what);
 		return b == 1;
 	}
-	void marker(int32_t expected) {
+	void marker(int32_t expected)
+	{
 		size_t at = pos();
 		int32_t v = i32();
 		if (v != expected)
 			throw ParseError("oczekiwano znacznika " + std::to_string(expected) + ", jest " + std::to_string(v) + " (bajt " +
-			                 std::to_string(at) + ")");
+			    std::to_string(at) + ")");
 	}
-	std::string str() {
+	std::string str()
+	{
 		int32_t n = i32();
 		if (n <= 0 || n > (1 << 20)) throw ParseError("nieprawidłowa długość napisu " + std::to_string(n));
 		auto b = r_.bytes(size_t(n));
@@ -78,7 +90,8 @@ public:
 		return std::string(b.begin(), b.end() - 1);
 	}
 	void skipIntVector() { skipI32(size_t(count("wektor liczb"))); }
-	void skipStringVector() {
+	void skipStringVector()
+	{
 		int32_t n = count("wektor napisów");
 		for (int32_t i = 0; i < n; ++i) str();
 	}
@@ -87,7 +100,8 @@ private:
 	BinReader r_;
 };
 
-void skipSupportPayload(SaveReader& r) {
+void skipSupportPayload(SaveReader& r)
+{
 	r.skip(32);     // nazwa klasy/zasobu
 	r.skipI32(4);   // cztery odwołania do obiektów
 	r.skipI32(9);
@@ -97,37 +111,46 @@ void skipSupportPayload(SaveReader& r) {
 	r.skip(8);
 }
 
-void skipRouteVector(SaveReader& r) {
+void skipRouteVector(SaveReader& r)
+{
 	r.skipIntVector();
 	r.skipI32(2);
 }
 
-void skipActionVariant(SaveReader& r) {
+void skipActionVariant(SaveReader& r)
+{
 	int32_t v = r.i32();
-	if (v == 0) {
+	if (v == 0)
+	{
 		r.skipI32(8);
 		r.skipI32(size_t(r.count("wpisy akcji")) * 10);
 		r.skipI32(3);
 		r.skipI32(16 * 3);
 		r.skipI32(4 + 1 + 1 + 1 + 8);
 		r.flag("akcja 0");
-	} else if (v == 1) {
+	}
+	else if (v == 1)
+	{
 		r.skipI32(3 + 2 + 1 + 1);
 		r.flag("akcja 1");
 		r.skipI32(2);
-	} else if (v == 2) {
+	}
+	else if (v == 2)
+	{
 		r.skipI32(1 + 1 + 1 + 3 + 1);
 		r.flag("akcja 2");
 		r.skipI32(1);
 		r.skipIntVector();
 		r.skipStringVector();
 		r.skipI32(1);
-	} else
+	}
+	else
 		throw ParseError("nieznany wariant akcji " + std::to_string(v));
 }
 
 // Ciało obiektu (wersja 0xA5). Pozycja i obrót są na początku; resztę pomijamy zgodnie z kolejnością pól.
-SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
+SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared)
+{
 	SaveObject o;
 	o.id = id;
 	o.className = r.str();
@@ -146,13 +169,16 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	r.skipStringVector();
 	r.skipI32(16);
 	int32_t tcl = r.i32();  // zmienne Tcl obiektu
-	if (tcl == 1) {
+	if (tcl == 1)
+	{
 		int32_t n = r.count("zmienne Tcl");
-		for (int32_t i = 0; i < n; ++i) {
+		for (int32_t i = 0; i < n; ++i)
+		{
 			std::string k = r.str();
 			o.tclVars.emplace_back(k, r.str());
 		}
-	} else if (tcl != 0)
+	}
+	else if (tcl != 0)
 		throw ParseError("nieprawidłowa obecność zmiennych Tcl");
 	r.skipI32(1);           // ID obiektu stanu
 	o.instanceName = r.str(); // nazwa instancji (krasnale: imię)
@@ -173,22 +199,27 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 	r.skipI32(1 + 8 + 5);
 	r.skip(1);
 	r.skipI32(4 + 6 + 1);
-	if (o.type == 1 || o.type == 11) { // powiązania aktora
+	if (o.type == 1 || o.type == 11)
+	{ // powiązania aktora
 		r.skipI32(9);
 		r.skipStringVector();
 		r.flag("powiązania aktora");
 	}
-	if (o.type == 1) { // indeks nazwany
+	if (o.type == 1)
+	{ // indeks nazwany
 		r.skipI32(1);
-		for (int32_t s = r.i32(); s != -1; s = r.i32()) {
+		for (int32_t s = r.i32(); s != -1; s = r.i32())
+		{
 			if (s != 1) throw ParseError("nieprawidłowy wpis indeksu nazwanego");
 			r.str();
 			r.skipI32(1);
 		}
 	}
-	if (o.type == 5 || o.type == 6 || o.type == 7 || o.type == 10) { // stan pracy budynku lub pojazdu
+	if (o.type == 5 || o.type == 6 || o.type == 7 || o.type == 10)
+	{ // stan pracy budynku lub pojazdu
 		int32_t n = r.count("stan ruchomy");
-		for (int32_t i = 0; i < n; ++i) {
+		for (int32_t i = 0; i < n; ++i)
+		{
 			r.skipI32(2);
 			r.str();
 			r.str();
@@ -205,7 +236,8 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 		r.skip(2);
 	}
 	if (o.type == 1) r.skipI32(4);
-	if (r.flag("historia powiązań")) {
+	if (r.flag("historia powiązań"))
+	{
 		int32_t n = r.count("historia powiązań");
 		for (int32_t i = 0; i < n; ++i) skipRouteVector(r);
 	}
@@ -227,9 +259,11 @@ SaveObject parseObjectBody(SaveReader& r, int id, const std::string& declared) {
 }
 
 // Tablica obiektów menedżera (3 grupy po 2): klasa, 7 × i32, 3 B, napis Tcl, i32.
-void skipManagerArray(SaveReader& r) {
+void skipManagerArray(SaveReader& r)
+{
 	int32_t n = r.count("tablica menedżera");
-	for (int32_t i = 0; i < n; ++i) {
+	for (int32_t i = 0; i < n; ++i)
+	{
 		r.str();
 		r.skipI32(7);
 		r.skip(3);
@@ -240,10 +274,12 @@ void skipManagerArray(SaveReader& r) {
 
 // Sekcje po ciałach obiektów (kolejność i rozmiary za Diggles-Unity,
 // Tools/SaveFormatResearch/parse_a5_object_bodies.py; B3-support-class-spatial.md §2–3).
-void parseDecorations(SaveReader& r, SaveGame& s) {
+void parseDecorations(SaveReader& r, SaveGame& s)
+{
 	r.skipI32(18 * 512); // tablice atrybutów graczy
 	r.skipI32(2);
-	for (int g = 0; g < 3; ++g) {
+	for (int g = 0; g < 3; ++g)
+	{
 		skipManagerArray(r);
 		skipManagerArray(r);
 		r.skipIntVector();
@@ -257,7 +293,8 @@ void parseDecorations(SaveReader& r, SaveGame& s) {
 	r.skip(1);
 	r.skipIntVector();
 	r.skipIntVector();
-	for (int32_t idx = r.i32(); idx != -1; idx = r.i32()) {
+	for (int32_t idx = r.i32(); idx != -1; idx = r.i32())
+	{
 		if (idx < 0 || idx >= 0x3000) throw ParseError("nieprawidłowy indeks tabeli klas");
 		SaveDeco d;
 		d.proxy = true;
@@ -282,9 +319,11 @@ void parseDecorations(SaveReader& r, SaveGame& s) {
 	}
 	// Kubełki przestrzenne: ceil(W/8)·ceil(H/8), w każdym liczba i rekordy.
 	int buckets = ((s.width + 7) / 8) * ((s.height + 7) / 8);
-	for (int b = 0; b < buckets; ++b) {
+	for (int b = 0; b < buckets; ++b)
+	{
 		int32_t n = r.count("kubełek");
-		for (int32_t i = 0; i < n; ++i) {
+		for (int32_t i = 0; i < n; ++i)
+		{
 			SaveDeco d;
 			for (float& v : d.pos) v = r.f32();
 			for (float& v : d.rot) v = r.f32();
@@ -299,7 +338,8 @@ void parseDecorations(SaveReader& r, SaveGame& s) {
 
 } // namespace
 
-SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
+SaveGame parseSaveGame(const std::vector<uint8_t>& fileData)
+{
 	std::string err;
 	auto data = gunzip(fileData, err);
 	if (!data) throw ParseError("zapis nie jest strumieniem gzip: " + err);
@@ -334,7 +374,8 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 	size_t n = size_t(s.width) * size_t(s.height);
 	s.tiles.resize(n);
 	s.tilesOffset = r.pos();
-	for (SaveTile& t : s.tiles) {
+	for (SaveTile& t : s.tiles)
+	{
 		size_t start = r.pos();
 		t.block = uint32_t(r.i32());
 		r.skip(1 + 4 + 4 + 1 + 1); // koszt nawigacji, kopanie (8 graczy), stan podłogi, flagi szablonu
@@ -371,26 +412,33 @@ SaveGame parseSaveGame(const std::vector<uint8_t>& fileData) {
 	for (int32_t id = r.i32(); id != -1; id = r.i32()) decl.emplace_back(id, r.str());
 	if (!r.str().empty()) throw ParseError("brak pustego separatora po deklaracjach obiektów");
 	int32_t support = r.count("rekordy pomocnicze");
-	for (int32_t i = 0; i < support; ++i) {
+	for (int32_t i = 0; i < support; ++i)
+	{
 		r.skip(4 + 8 + 8 + 4 + 4);
 		skipSupportPayload(r);
 	}
 	size_t k = 0;
-	for (int32_t id = r.i32(); id != -1; id = r.i32()) {
+	for (int32_t id = r.i32(); id != -1; id = r.i32())
+	{
 		while (k < decl.size() && decl[k].first < id) ++k;
 		if (k >= decl.size() || decl[k].first != id) throw ParseError("ciało obiektu " + std::to_string(id) + " bez deklaracji");
 		s.objects.push_back(parseObjectBody(r, id, decl[k].second));
 	}
-	try {
+	try
+	{
 		parseDecorations(r, s);
-	} catch (const std::exception&) {
+	}
+	catch (const std::exception&)
+	{
 		s.decoError = true; // dekoracje są dodatkiem: zapis bez nich nadal się wyświetla
 	}
 	return s;
 }
 
-bool writeSavePatch(const SaveGame& base, const SavePatch& p, const std::string& path, std::string& err) {
-	if (base.raw.empty()) {
+bool writeSavePatch(const SaveGame& base, const SavePatch& p, const std::string& path, std::string& err)
+{
+	if (base.raw.empty())
+	{
 		err = "brak bazowego zapisu";
 		return false;
 	}
@@ -401,13 +449,16 @@ bool writeSavePatch(const SaveGame& base, const SavePatch& p, const std::string&
 	put(base.timeOffset, &p.gameTime, 8);
 	put(base.viewOffset, p.view, 20);
 	if (p.tiles.size() == base.tiles.size())
-		for (size_t i = 0; i < p.tiles.size(); ++i) {
+		for (size_t i = 0; i < p.tiles.size(); ++i)
+		{
 			const auto& t = p.tiles[i];
 			size_t o = base.tilesOffset + i * 53;
 			put(o, &t.block, 4);
 			put(o + 15, &t.cell, 2);
 			// Typ .pmp -> rodzaj gruntu zapisu (4→0 A, 3→1 B, 2 i 0→2 C, 5→3 otwór), bit 0x80 bez zmian.
-			uint8_t ty = t.pmpType & 0x7F, mat = ty == 4 ? 0 : ty == 3 ? 1 : ty == 5 ? 3 : 2;
+			uint8_t ty = t.pmpType & 0x7F, mat = ty == 4 ? 0 : ty == 3 ? 1
+			    : ty == 5                                              ? 3
+			                                                           : 2;
 			uint8_t st0 = d[o + 17];
 			st0 = uint8_t((st0 & ~0x83) | mat | (t.pmpType & 0x80));
 			put(o + 17, &st0, 1);
@@ -417,14 +468,16 @@ bool writeSavePatch(const SaveGame& base, const SavePatch& p, const std::string&
 			put(o + 25, &t.fluidFill, 4);
 			put(o + 45, &t.fog, 1);
 		}
-	for (const auto& o : base.objects) {
+	for (const auto& o : base.objects)
+	{
 		auto it = p.objects.find(o.id);
 		if (it == p.objects.end()) continue;
 		put(o.posOffset, it->second.pos, 12);
 		put(o.rotOffset, it->second.rot, 12);
 	}
 	gzFile f = gzopen(path.c_str(), "wb7"); // GameSaveCompression = 7 jak w rejestrze gry
-	if (!f) {
+	if (!f)
+	{
 		err = "nie można utworzyć " + path;
 		return false;
 	}

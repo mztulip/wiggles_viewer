@@ -18,9 +18,11 @@
 #include <string>
 #include <vector>
 
-namespace ow::i18n {
+namespace ow::i18n
+{
 
-struct Language {
+struct Language
+{
 	std::string code; // np. "pl", "en", "de" (pole Language z nagłówka .po)
 	std::string name; // nazwa w tym języku, np. "English" (pole X-Language-Name)
 	int translated = 0;
@@ -42,7 +44,8 @@ const char* tr(const char* source);
 
 } // namespace ow::i18n
 
-namespace ow {
+namespace ow
+{
 using i18n::tr;
 }
 

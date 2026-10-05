@@ -6,9 +6,11 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-struct Image {
+struct Image
+{
 	int width = 0, height = 0;
 	std::vector<uint8_t> rgba; // width*height*4
 	bool hasAlpha = false;     // czy plik zawierał kanał alfa

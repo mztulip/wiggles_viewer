@@ -3,16 +3,19 @@
 #include "lib/binreader.h"
 #include "lib/vfs.h"
 
-namespace ow {
+namespace ow
+{
 
-void BlockDb::load(const Vfs& vfs, int quality) {
+void BlockDb::load(const Vfs& vfs, int quality)
+{
 	std::string path = "Data/BlockDB" + std::to_string(quality < 0 ? 0 : (quality > 2 ? 2 : quality)) + ".BDB";
 	auto data = vfs.read(path);
 	if (!data) throw ParseError("brak " + path);
 	loadData(*data);
 }
 
-void BlockDb::loadData(const std::vector<uint8_t>& data) {
+void BlockDb::loadData(const std::vector<uint8_t>& data)
+{
 	BinReader r(data);
 	uint32_t version = r.u32();
 	r.u32();
@@ -24,7 +27,8 @@ void BlockDb::loadData(const std::vector<uint8_t>& data) {
 	if (version != 11 || blocks != kBlocks) throw ParseError("nieznany nagłówek BlockDB");
 
 	cells_.resize(size_t(blocks) * 3);
-	for (auto& c : cells_) {
+	for (auto& c : cells_)
+	{
 		c.vertCount = r.u16();
 		c.descriptor = r.u32();
 	}
@@ -37,7 +41,8 @@ void BlockDb::loadData(const std::vector<uint8_t>& data) {
 	r.readInto(palette_.data(), size_t(nPalette) * sizeof(BdbPaletteEntry));
 
 	size_t bulkSize = 0;
-	for (auto& c : cells_) {
+	for (auto& c : cells_)
+	{
 		c.bulkOffset = uint32_t(bulkSize);
 		bulkSize += size_t(c.vertCount) * 3;
 	}
@@ -45,7 +50,8 @@ void BlockDb::loadData(const std::vector<uint8_t>& data) {
 	if (!r.atEnd()) throw ParseError("nadmiarowe dane na końcu BlockDB");
 
 	// Walidacja odwołań (renderer im ufa).
-	for (const auto& c : cells_) {
+	for (const auto& c : cells_)
+	{
 		if (!c.vertCount) continue;
 		if (c.descriptor >= descriptors_.size()) throw ParseError("deskryptor poza zakresem");
 		const auto& d = descriptors_[c.descriptor];
@@ -58,7 +64,8 @@ void BlockDb::loadData(const std::vector<uint8_t>& data) {
 	}
 }
 
-bool BlockDb::subMesh(uint32_t block, int sub, BdbSubMesh& out) const {
+bool BlockDb::subMesh(uint32_t block, int sub, BdbSubMesh& out) const
+{
 	if (block >= records_.size() || sub < 0 || sub > 2) return false;
 	const Cell& c = cells_[size_t(block) * 3 + size_t(sub)];
 	if (!c.vertCount) return false;

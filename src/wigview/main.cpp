@@ -58,9 +58,11 @@
 
 using namespace ow;
 
-namespace {
+namespace
+{
 
-struct Args {
+struct Args
+{
 	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -80,13 +82,16 @@ struct Args {
 // Przycięcie kątów set_view przy dużym oddaleniu, ustalone obserwacją gry (docs/silnik/06_kamera.md §6.3):
 // gra pokazuje kąty |dx|, |dy| ≤ 2,23 / (R − 15,6), R = 16·zoom − 10 bloków.
 // Pomiary: zoom 2,5 → 0,15; 2,25 → 0,23; 2,0 → 0,35; 1,7 i mniej bez przycięcia. 🔶 dopasowanie empiryczne.
-float gameViewAngleLimit(float R) {
+float gameViewAngleLimit(float R)
+{
 	constexpr float kA = 2.23f, kB = 15.6f;
 	return R > kB + 1e-3f ? kA / (R - kB) : 1e9f;
 }
 
-bool parseArgs(int argc, char** argv, Args& a) {
-	for (int i = 1; i < argc; ++i) {
+bool parseArgs(int argc, char** argv, Args& a)
+{
+	for (int i = 1; i < argc; ++i)
+	{
 		std::string k = argv[i];
 		auto next = [&]() -> const char* { return i + 1 < argc ? argv[++i] : ""; };
 		if (k == "--game") a.game = next();
@@ -98,24 +103,32 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--sound") a.sound = next();
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
-		else if (k == "--center") {
+		else if (k == "--center")
+		{
 			a.camX = float(std::atof(next()));
 			a.camY = float(std::atof(next()));
-		} else if (k == "--center-z") a.camZ = float(std::atof(next()));
+		}
+		else if (k == "--center-z") a.camZ = float(std::atof(next()));
 		else if (k == "--dist") a.camDist = float(std::atof(next()));
 		else if (k == "--lang") a.lang = next();
-		else if (k == "--renderer") {
+		else if (k == "--renderer")
+		{
 			std::string r = next();
-			if (!rhi::parseBackend(r, a.renderer)) {
+			if (!rhi::parseBackend(r, a.renderer))
+			{
 				std::fprintf(stderr, "nieznany renderer %s (vulkan, opengl)\n", r.c_str());
 				return false;
 			}
 			a.rendererForced = true;
-		} else if (k == "--fow") {
+		}
+		else if (k == "--fow")
+		{
 			a.fowMode = std::atoi(next());
 			if (i + 1 < argc && argv[i + 1][0] != '-') a.fowRadius = std::atoi(next());
 			if (i + 1 < argc && argv[i + 1][0] != '-') a.fowByte = std::atoi(next());
-		} else if (k == "--view") {
+		}
+		else if (k == "--view")
+		{
 			GameView g;
 			g.x = float(std::atof(next()));
 			g.y = float(std::atof(next()));
@@ -133,12 +146,14 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--flip") a.flip = std::atoi(next());
 		else if (k == "--screenshot") a.screenshot = next();
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
-		else {
+		else
+		{
 			std::fprintf(stderr, "nieznany parametr: %s\n", k.c_str());
 			return false;
 		}
 	}
-	if (a.game.empty()) {
+	if (a.game.empty())
+	{
 		if (const char* e = std::getenv("OW_GAME")) a.game = e;
 		else if (const char* h = std::getenv("HOME"))
 			a.game = std::string(h) + "/.wine/drive_c/Program Files (x86)/Innonics/Wiggles";
@@ -146,11 +161,13 @@ bool parseArgs(int argc, char** argv, Args& a) {
 	return true;
 }
 
-bool endsWithI(const std::string& s, const std::string& suf) {
+bool endsWithI(const std::string& s, const std::string& suf)
+{
 	return s.size() >= suf.size() && Vfs::lower(s.substr(s.size() - suf.size())) == suf;
 }
 
-struct Viewer {
+struct Viewer
+{
 	std::unique_ptr<rhi::Device> device; // backend renderowania (Vulkan albo OpenGL)
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
@@ -202,28 +219,33 @@ struct Viewer {
 	int texSel = -1;
 	char texFilter[64] = "";
 
-	const Animation3db* currentAnim() const {
+	const Animation3db* currentAnim() const
+	{
 		if (!model || model->objects.empty()) return nullptr;
 		const auto& o = model->objects[size_t(object)];
 		if (o.animations.empty()) return nullptr;
 		return &model->animations[o.animations[size_t(anim)]];
 	}
-	int frameCount() const {
+	int frameCount() const
+	{
 		auto a = currentAnim();
 		return a ? int(a->frames.size()) : 0;
 	}
-	int currentMesh() const {
+	int currentMesh() const
+	{
 		auto a = currentAnim();
 		if (!a || a->frames.empty()) return -1;
 		int f = std::clamp(int(frame), 0, int(a->frames.size()) - 1);
 		return int(a->frames[size_t(f)]);
 	}
 
-	void frameCamera() {
+	void frameCamera()
+	{
 		auto a = currentAnim();
 		if (!a || a->frames.empty()) return;
 		glm::vec3 mn(1e9f), mx(-1e9f);
-		for (uint32_t f : a->frames) {
+		for (uint32_t f : a->frames)
+		{
 			const auto& m = model->meshes[f];
 			mn = glm::min(mn, glm::vec3(m.bboxMin.x, m.bboxMin.y, m.bboxMin.z));
 			mx = glm::max(mx, glm::vec3(m.bboxMax.x, m.bboxMax.y, m.bboxMax.z));
@@ -234,30 +256,37 @@ struct Viewer {
 		pan = glm::vec3(0.f);
 	}
 
-	void selectAnim(int i) {
+	void selectAnim(int i)
+	{
 		anim = i;
 		frame = 0;
 		frameCamera();
 	}
-	void selectObject(int i) {
+	void selectObject(int i)
+	{
 		object = i;
 		selectAnim(0);
 	}
 
-	bool loadModel(const std::string& file) {
+	bool loadModel(const std::string& file)
+	{
 		loadError.clear();
 		renderer.setModel(nullptr, nullptr);
 		model.reset();
 		modelFile = file;
 		Uint64 t0 = SDL_GetPerformanceCounter();
 		auto data = vfs.read("Data/3db/" + file);
-		if (!data) {
+		if (!data)
+		{
 			loadError = tr("nie można odczytać pliku");
 			return false;
 		}
-		try {
+		try
+		{
 			model = std::make_unique<Model3db>(parseModel3db(*data));
-		} catch (const std::exception& e) {
+		}
+		catch (const std::exception& e)
+		{
 			loadError = e.what();
 			return false;
 		}
@@ -268,7 +297,8 @@ struct Viewer {
 		return true;
 	}
 
-	glm::mat4 modelMatrix() const {
+	glm::mat4 modelMatrix() const
+	{
 		glm::mat4 m(1.f);
 		if (flipY) m = glm::scale(m, glm::vec3(1.f, -1.f, 1.f)); // (x, y, z) gry -> (x, -y, z) OpenGL
 		return glm::translate(m, -center);
@@ -279,8 +309,10 @@ struct Viewer {
 	ow::GameView gameCamView;
 
 	// Widok mapy jak w grze: kamera z przodu (+z w układzie gry), lekko z góry.
-	void frameMap(bool resetAngles = true) {
-		if (resetAngles) {
+	void frameMap(bool resetAngles = true)
+	{
+		if (resetAngles)
+		{
 			yaw = 0.f; // kamera z przodu (+z), jak w grze
 			pitch = 10.f;
 		}
@@ -289,7 +321,8 @@ struct Viewer {
 		dist = radius * 2.4f;
 		pan = glm::vec3(0.f);
 		gameCam = false;
-		if (const auto& gv = maps.gameView()) {
+		if (const auto& gv = maps.gameView())
+		{
 			gameCam = true;
 			gameCamView = *gv;
 			center = glm::vec3(gv->x, gv->y, 14.f) * MapView::kBlock; // cel kamery gry (z = 14 bloków)
@@ -297,7 +330,8 @@ struct Viewer {
 	}
 
 	// Podgląd cząsteczek: emiter w początku układu, kamera z przodu.
-	void frameParticles() {
+	void frameParticles()
+	{
 		yaw = 0.f;
 		pitch = 10.f;
 		center = particles.center();
@@ -307,9 +341,11 @@ struct Viewer {
 		gameCam = false;
 	}
 
-	glm::mat4 viewProj(int w, int h) const {
+	glm::mat4 viewProj(int w, int h) const
+	{
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
-		if (gameCam && mapTab()) {
+		if (gameCam && mapTab())
+		{
 			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
 			const auto& g = gameCamView;
 			float Rb = g.zoom * 16.f - 10.f;
@@ -328,15 +364,17 @@ struct Viewer {
 		}
 		glm::mat4 proj = glm::perspective(glm::radians(40.f), aspect, radius * 0.01f, radius * 50.f + dist);
 		glm::vec3 eye = glm::vec3(std::cos(glm::radians(pitch)) * std::sin(glm::radians(yaw)),
-		                          std::sin(glm::radians(pitch)),
-		                          std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw))) * dist;
+		                    std::sin(glm::radians(pitch)),
+		                    std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw))) *
+		    dist;
 		glm::mat4 view = glm::lookAt(eye + pan, pan, glm::vec3(0, 1, 0));
 		return proj * view;
 	}
 
 	// x0: lewa krawędź obszaru 3D w pikselach (na prawo od panelu UI).
 	// Klatki A i B oraz współczynnik t dla bieżącego czasu animacji.
-	bool currentFrames(uint32_t& a, uint32_t& b, float& t) const {
+	bool currentFrames(uint32_t& a, uint32_t& b, float& t) const
+	{
 		auto an = currentAnim();
 		if (!an || an->frames.empty()) return false;
 		int n = int(an->frames.size());
@@ -349,7 +387,8 @@ struct Viewer {
 	}
 
 	// Kolor czyszczenia klatki: w zakładce Mapy kolor strefy horyzontu (jak w grze).
-	glm::vec3 clearColor() {
+	glm::vec3 clearColor()
+	{
 		glm::vec3 clear = bg;
 		if (mapTab()) maps.updateZone(center + pan * glm::vec3(1, -1, 1));
 		if (mapTab())
@@ -357,16 +396,24 @@ struct Viewer {
 		return clear;
 	}
 
-	void renderScene(int w, int h, int x0 = 0) {
+	void renderScene(int w, int h, int x0 = 0)
+	{
 		x0 = std::clamp(x0, 0, w - 1);
 		device->setViewport(x0, 0, w - x0, h);
-		if (mapTab()) {
+		if (mapTab())
+		{
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
-		} else if (activeTab == 4) {
+		}
+		else if (activeTab == 4)
+		{
 			particles.render(viewProj(w - x0, h) * modelMatrix());
-		} else if (activeTab == 5) {
+		}
+		else if (activeTab == 5)
+		{
 			// Dźwięki: bez sceny 3D
-		} else {
+		}
+		else
+		{
 			uint32_t a, b;
 			float t;
 			if (currentFrames(a, b, t)) renderer.drawFrames(a, b, t, viewProj(w - x0, h), modelMatrix(), draw);
@@ -374,7 +421,8 @@ struct Viewer {
 		device->setViewport(0, 0, w, h);
 	}
 
-	void update(float dt) {
+	void update(float dt)
+	{
 		if (playing) maps.update(dt);
 		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
@@ -382,33 +430,42 @@ struct Viewer {
 		float prev = frame;
 		bool wrapped = false;
 		frame += dt * fps;
-		if (frame >= float(n)) {
-			if (loop) {
+		if (frame >= float(n))
+		{
+			if (loop)
+			{
 				frame = std::fmod(frame, float(n));
 				wrapped = true;
-			} else {
+			}
+			else
+			{
 				frame = float(n - 1);
 				playing = false;
 			}
 		}
-		if (animSounds && activeTab == 0) {
+		if (animSounds && activeTab == 0)
+		{
 			// Klatki przekroczone w tym kroku: (prev, frame], z przejściem przez koniec pętli.
 			int a = int(prev), b = int(frame);
-			if (wrapped) {
+			if (wrapped)
+			{
 				for (int f = a + 1; f < n; ++f) playFrameSounds(f);
 				for (int f = 0; f <= b; ++f) playFrameSounds(f);
-			} else
+			}
+			else
 				for (int f = a + 1; f <= b; ++f) playFrameSounds(f);
 		}
 	}
 
 	// Klucz animacji w sound anim: "<obiekt>.<animacja>" małymi literami (docs/silnik/15_dzwiek.md).
-	std::string animSoundKey() const {
+	std::string animSoundKey() const
+	{
 		auto a = currentAnim();
 		if (!a) return {};
 		return Vfs::lower(model->objects[size_t(object)].name + "." + a->name);
 	}
-	std::vector<int> animSoundRefs() {
+	std::vector<int> animSoundRefs()
+	{
 		auto it = sounds.index().byAnim.find(animSoundKey());
 		if (it == sounds.index().byAnim.end()) return {};
 		std::vector<int> v;
@@ -417,15 +474,18 @@ struct Viewer {
 		std::stable_sort(v.begin(), v.end(), [&](int x, int y) { return sounds.index().refs[size_t(x)].frame < sounds.index().refs[size_t(y)].frame; });
 		return v;
 	}
-	void playFrameSounds(int f) {
-		for (int i : animSoundRefs()) {
+	void playFrameSounds(int f)
+	{
+		for (int i : animSoundRefs())
+		{
 			const auto& r = sounds.index().refs[size_t(i)];
 			if (r.frame == f) sounds.playName(r.name, r.volume > 0 ? r.volume : 1.f);
 		}
 	}
 	void openAnim(const std::string& obj, const std::string& animName, int fr);
 
-	void refreshTexFiles() {
+	void refreshTexFiles()
+	{
 		texFiles.clear();
 		texSel = -1;
 		if (texDir < 0 || size_t(texDir) >= texDirs.size()) return;
@@ -433,7 +493,8 @@ struct Viewer {
 			if (endsWithI(f, ".tga")) texFiles.push_back(f);
 	}
 
-	void stepModel(int d) {
+	void stepModel(int d)
+	{
 		if (modelFiles.empty()) return;
 		int i = 0;
 		for (size_t k = 0; k < modelFiles.size(); ++k)
@@ -444,7 +505,8 @@ struct Viewer {
 		scrollToSel = true;
 	}
 	void stepTexture(int d);
-	void stepAnim(int d) {
+	void stepAnim(int d)
+	{
 		if (!model || model->objects.empty()) return;
 		int n = int(model->objects[size_t(object)].animations.size());
 		if (n == 0) return;
@@ -454,8 +516,17 @@ struct Viewer {
 	void exportGlb(bool allAnims);
 
 	// --- Wyszukiwarka (Ctrl+F) ---
-	enum class HitKind { Model, Object, Texture, Template, Scenario, Sound };
-	struct SearchEntry {
+	enum class HitKind
+	{
+		Model,
+		Object,
+		Texture,
+		Template,
+		Scenario,
+		Sound
+	};
+	struct SearchEntry
+	{
 		HitKind kind;
 		std::string label;   // to, co widzi użytkownik
 		std::string lower;   // label małymi literami, do dopasowania
@@ -477,13 +548,16 @@ struct Viewer {
 	void uiTextures();
 };
 
-bool passFilter(const char* filter, const std::string& s) {
+bool passFilter(const char* filter, const std::string& s)
+{
 	return !*filter || Vfs::lower(s).find(Vfs::lower(filter)) != std::string::npos;
 }
 
-void Viewer::uiModel() {
+void Viewer::uiModel()
+{
 	ImGui::BeginChild("modele", ImVec2(180, 0), ImGuiChildFlags_Borders);
-	for (const auto& f : modelFiles) {
+	for (const auto& f : modelFiles)
+	{
 		if (ImGui::Selectable(f.c_str(), f == modelFile)) loadModel(f);
 		if (f == modelFile && scrollToSel) ImGui::SetScrollHereY(0.5f);
 	}
@@ -492,20 +566,23 @@ void Viewer::uiModel() {
 
 	ImGui::BeginChild("szczegoly", ImVec2(0, 0));
 	if (!loadError.empty()) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), tr("Błąd: %s"), loadError.c_str());
-	if (!model) {
+	if (!model)
+	{
 		ImGui::TextDisabled(tr("Wybierz model z listy."));
 		ImGui::EndChild();
 		return;
 	}
 	ImGui::Text(tr("%s  (%s)  wczytano w %.0f ms"), model->name.c_str(), modelFile.c_str(), loadMs);
 	ImGui::Text(tr("materiały %zu  klatki %zu  obiekty %zu  animacje %zu"), model->materials.size(),
-	            model->meshes.size(), model->objects.size(), model->animations.size());
+	    model->meshes.size(), model->objects.size(), model->animations.size());
 
-	if (ImGui::CollapsingHeader(tr("Obiekty i animacje"), ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Obiekty i animacje"), ImGuiTreeNodeFlags_DefaultOpen))
+	{
 		ImGui::SetNextItemWidth(-1);
 		ImGui::InputTextWithHint("##of", tr("filtr obiektów"), objFilter, sizeof objFilter);
 		ImGui::BeginChild("obiekty", ImVec2(0, 140), ImGuiChildFlags_Borders);
-		for (int i = 0; i < int(model->objects.size()); ++i) {
+		for (int i = 0; i < int(model->objects.size()); ++i)
+		{
 			const auto& o = model->objects[size_t(i)];
 			if (!passFilter(objFilter, o.name)) continue;
 			char label[160];
@@ -516,9 +593,11 @@ void Viewer::uiModel() {
 		ImGui::SetNextItemWidth(-1);
 		ImGui::InputTextWithHint("##af", tr("filtr animacji"), animFilter, sizeof animFilter);
 		ImGui::BeginChild("animacje", ImVec2(0, 180), ImGuiChildFlags_Borders);
-		if (!model->objects.empty()) {
+		if (!model->objects.empty())
+		{
 			const auto& o = model->objects[size_t(object)];
-			for (int i = 0; i < int(o.animations.size()); ++i) {
+			for (int i = 0; i < int(o.animations.size()); ++i)
+			{
 				const auto& a = model->animations[o.animations[size_t(i)]];
 				if (!passFilter(animFilter, a.name)) continue;
 				char label[160];
@@ -530,7 +609,8 @@ void Viewer::uiModel() {
 		ImGui::EndChild();
 	}
 
-	if (ImGui::CollapsingHeader(tr("Odtwarzanie"), ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Odtwarzanie"), ImGuiTreeNodeFlags_DefaultOpen))
+	{
 		int n = frameCount();
 		if (ImGui::Button(playing ? tr("Pauza###graj") : tr("Graj###graj"))) playing = !playing;
 		ImGui::SameLine();
@@ -542,7 +622,8 @@ void Viewer::uiModel() {
 		ImGui::SameLine();
 		ImGui::Checkbox(tr("Interpolacja"), &interpolate);
 		int f = int(frame);
-		if (ImGui::SliderInt(tr("Klatka"), &f, 0, std::max(0, n - 1))) {
+		if (ImGui::SliderInt(tr("Klatka"), &f, 0, std::max(0, n - 1)))
+		{
 			frame = float(f);
 			playing = false;
 		}
@@ -554,10 +635,12 @@ void Viewer::uiModel() {
 	}
 
 	std::vector<int> refs = animSoundRefs();
-	if (ImGui::CollapsingHeader(tr("Dźwięki animacji"), refs.empty() ? 0 : ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Dźwięki animacji"), refs.empty() ? 0 : ImGuiTreeNodeFlags_DefaultOpen))
+	{
 		ImGui::Checkbox(tr("Odtwarzaj dźwięki klatek podczas animacji"), &animSounds);
 		if (refs.empty()) ImGui::TextDisabled(tr("Brak sound anim dla %s"), animSoundKey().c_str());
-		for (size_t k = 0; k < refs.size(); ++k) {
+		for (size_t k = 0; k < refs.size(); ++k)
+		{
 			const auto& r = sounds.index().refs[size_t(refs[k])];
 			ImGui::PushID(int(k));
 			if (ImGui::SmallButton(tr("graj"))) sounds.playName(r.name, r.volume > 0 ? r.volume : 1.f);
@@ -566,10 +649,12 @@ void Viewer::uiModel() {
 			ImGui::Text(tr("klatka %d: %s%s"), r.frame, r.name.c_str(), r.kind == SoundRef::AnimNoSeq ? tr("  (poza sekwencjami)") : "");
 			if (ImGui::IsItemHovered())
 				ImGui::SetTooltip("%s:%d\n%s\n%s", r.script.c_str(), r.line, r.text.c_str(),
-				                  f != sounds.index().fileOfName.end() ? f->second.c_str() : tr("(brak sound bind)"));
-			if (f != sounds.index().fileOfName.end()) {
+				    f != sounds.index().fileOfName.end() ? f->second.c_str() : tr("(brak sound bind)"));
+			if (f != sounds.index().fileOfName.end())
+			{
 				ImGui::SameLine();
-				if (ImGui::SmallButton(tr("plik"))) {
+				if (ImGui::SmallButton(tr("plik")))
+				{
 					for (const auto& path : sounds.files())
 						if (soundFileKey(path) == f->second) sounds.select(path);
 					forceTab = activeTab = 5;
@@ -578,7 +663,8 @@ void Viewer::uiModel() {
 			ImGui::PopID();
 		}
 	}
-	if (ImGui::CollapsingHeader(tr("Widok"), ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(tr("Widok"), ImGuiTreeNodeFlags_DefaultOpen))
+	{
 		const char* modes[] = {tr("Bez światła"), tr("Bajt jako jasność (stare)"), tr("Normalne SPHERE.DAT"), tr("Podgląd normalnych")};
 		int m = int(draw.lighting);
 		if (ImGui::Combo(tr("Oświetlenie"), &m, modes, 4)) draw.lighting = LightingMode(m);
@@ -592,7 +678,8 @@ void Viewer::uiModel() {
 		if (ImGui::Button(tr("Wyśrodkuj"))) frameCamera();
 	}
 
-	if (ImGui::CollapsingHeader(tr("Eksport glTF"))) {
+	if (ImGui::CollapsingHeader(tr("Eksport glTF")))
+	{
 		ImGui::SetNextItemWidth(-60);
 		ImGui::InputText(tr("Katalog"), exportDir, sizeof exportDir);
 		if (ImGui::Button(tr("Bieżąca animacja"))) exportGlb(false);
@@ -602,8 +689,10 @@ void Viewer::uiModel() {
 		if (!exportMsg.empty()) ImGui::TextWrapped("%s", exportMsg.c_str());
 	}
 
-	if (ImGui::CollapsingHeader(tr("Informacje"))) {
-		if (auto a = currentAnim()) {
+	if (ImGui::CollapsingHeader(tr("Informacje")))
+	{
+		if (auto a = currentAnim())
+		{
 			ImGui::Text(tr("animacja: %s"), a->name.c_str());
 			ImGui::Text(tr("flagi %u  f %.4g"), a->unknownFlags, a->unknownF);
 			ImGui::Text(tr("ruch (%.3f %.3f %.3f)"), a->move.x, a->move.y, a->move.z);
@@ -611,15 +700,17 @@ void Viewer::uiModel() {
 			ImGui::TextWrapped(tr("źródło: %s"), a->sourceFile.c_str());
 		}
 		int mi = currentMesh();
-		if (mi >= 0) {
+		if (mi >= 0)
+		{
 			const auto& mesh = model->meshes[size_t(mi)];
 			ImGui::Text(tr("mesh #%d  linki %zu"), mi, mesh.links.size());
 			ImGui::Text(tr("bbox (%.1f %.1f %.1f) - (%.1f %.1f %.1f)"), mesh.bboxMin.x, mesh.bboxMin.y, mesh.bboxMin.z,
-			            mesh.bboxMax.x, mesh.bboxMax.y, mesh.bboxMax.z);
+			    mesh.bboxMax.x, mesh.bboxMax.y, mesh.bboxMax.z);
 		}
 		ImGui::Text(tr("klatki w GPU: %zu"), renderer.cachedFrames());
 		ImGui::SeparatorText(tr("Materiały"));
-		for (const auto& mat : model->materials) {
+		for (const auto& mat : model->materials)
+		{
 			const auto& t = textures->get(mat.name);
 			if (t.path.empty()) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), tr("%s  (brak)"), mat.name.c_str());
 			else ImGui::Text("%s  %dx%d", mat.name.c_str(), t.width, t.height);
@@ -628,10 +719,12 @@ void Viewer::uiModel() {
 	ImGui::EndChild();
 }
 
-void Viewer::uiTextures() {
+void Viewer::uiTextures()
+{
 	ImGui::BeginChild("katalogi", ImVec2(140, 0), ImGuiChildFlags_Borders);
 	for (int i = 0; i < int(texDirs.size()); ++i)
-		if (ImGui::Selectable(texDirs[size_t(i)].c_str(), i == texDir)) {
+		if (ImGui::Selectable(texDirs[size_t(i)].c_str(), i == texDir))
+		{
 			texDir = i;
 			refreshTexFiles();
 		}
@@ -641,14 +734,16 @@ void Viewer::uiTextures() {
 	ImGui::SetNextItemWidth(-1);
 	ImGui::InputTextWithHint("##tf", tr("filtr"), texFilter, sizeof texFilter);
 	for (int i = 0; i < int(texFiles.size()); ++i)
-		if (passFilter(texFilter, texFiles[size_t(i)])) {
+		if (passFilter(texFilter, texFiles[size_t(i)]))
+		{
 			if (ImGui::Selectable(texFiles[size_t(i)].c_str(), i == texSel)) texSel = i;
 			if (i == texSel && scrollToSel) ImGui::SetScrollHereY(0.5f);
 		}
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("podglad");
-	if (texSel >= 0) {
+	if (texSel >= 0)
+	{
 		std::string p = "Data/Texture/" + texDirs[size_t(texDir)] + "/" + texFiles[size_t(texSel)];
 		const auto& t = textures->getPath(p);
 		ImGui::Text("%s  %dx%d  %s", p.c_str(), t.width, t.height, t.hasAlpha ? "RGBA" : "RGB");
@@ -659,12 +754,14 @@ void Viewer::uiTextures() {
 	ImGui::EndChild();
 }
 
-void Viewer::buildSearchIndex(bool withObjects) {
+void Viewer::buildSearchIndex(bool withObjects)
+{
 	auto add = [&](HitKind k, std::string label, std::string file, int index) {
 		SearchEntry e{k, label, Vfs::lower(label), std::move(file), index};
 		searchIndex.push_back(std::move(e));
 	};
-	if (!searchIndexed) {
+	if (!searchIndexed)
+	{
 		for (auto& f : modelFiles) add(HitKind::Model, f, f, -1);
 		for (int d = 0; d < int(texDirs.size()); ++d)
 			for (auto& f : vfs.list("Data/Texture/" + texDirs[size_t(d)]))
@@ -672,7 +769,8 @@ void Viewer::buildSearchIndex(bool withObjects) {
 		for (auto& f : maps.files()) add(HitKind::Template, f, f, -1);
 		for (auto& f : maps.scenarios()) add(HitKind::Scenario, f, f, -1);
 		// Dźwięki: ścieżka i nazwy logiczne (sound bind), żeby dało się szukać po nazwie ze skryptu.
-		for (auto& f : sounds.files()) {
+		for (auto& f : sounds.files())
+		{
 			std::string label = f.substr(5);
 			auto names = sounds.index().namesForFile(soundFileKey(f));
 			for (size_t k = 0; k < names.size(); ++k) label += (k ? ", " : "  [") + names[k] + (k + 1 == names.size() ? "]" : "");
@@ -680,38 +778,49 @@ void Viewer::buildSearchIndex(bool withObjects) {
 		}
 		searchIndexed = true;
 	}
-	if (withObjects && !objectsIndexed) {
+	if (withObjects && !objectsIndexed)
+	{
 		// Obiekty wymagają wczytania wszystkich modeli (jednorazowo, ok. 1 s w wersji release).
-		for (auto& f : modelFiles) {
+		for (auto& f : modelFiles)
+		{
 			auto data = vfs.read("Data/3db/" + f);
 			if (!data) continue;
-			try {
+			try
+			{
 				Model3db m = parseModel3db(*data);
 				for (size_t i = 0; i < m.objects.size(); ++i)
 					add(HitKind::Object, m.objects[i].name + "  (" + f + ")", f, int(i));
-			} catch (...) {}
+			}
+			catch (...)
+			{}
 		}
 		objectsIndexed = true;
 	}
 }
 
-void Viewer::updateSearchHits() {
+void Viewer::updateSearchHits()
+{
 	searchHits.clear();
 	std::vector<std::string> terms;
 	{
 		std::string t = Vfs::lower(searchText), cur;
-		for (char c : t + " ") {
-			if (c == ' ') {
+		for (char c : t + " ")
+		{
+			if (c == ' ')
+			{
 				if (!cur.empty()) terms.push_back(cur);
 				cur.clear();
-			} else cur += c;
+			}
+			else cur += c;
 		}
 	}
 	if (terms.empty()) return;
-	for (int i = 0; i < int(searchIndex.size()); ++i) {
+	for (int i = 0; i < int(searchIndex.size()); ++i)
+	{
 		bool ok = true;
 		for (auto& t : terms)
-			if (searchIndex[size_t(i)].lower.find(t) == std::string::npos) {
+			if (searchIndex[size_t(i)].lower.find(t) == std::string::npos)
+			{
 				ok = false;
 				break;
 			}
@@ -719,7 +828,8 @@ void Viewer::updateSearchHits() {
 	}
 	// Kolejność: modele, szablony, obiekty, tekstury (tekstur jest najwięcej, często w kilku rozdzielczościach).
 	auto rank = [&](int i) {
-		switch (searchIndex[size_t(i)].kind) {
+		switch (searchIndex[size_t(i)].kind)
+		{
 		case HitKind::Model: return 0;
 		case HitKind::Scenario: return 1;
 		case HitKind::Template: return 1;
@@ -733,8 +843,10 @@ void Viewer::updateSearchHits() {
 	searchSel = std::clamp(searchSel, 0, std::max(0, int(searchHits.size()) - 1));
 }
 
-void Viewer::openHit(const SearchEntry& e) {
-	switch (e.kind) {
+void Viewer::openHit(const SearchEntry& e)
+{
+	switch (e.kind)
+	{
 	case HitKind::Model:
 	case HitKind::Object:
 		forceTab = 0;
@@ -765,8 +877,10 @@ void Viewer::openHit(const SearchEntry& e) {
 	scrollToSel = true;
 }
 
-void Viewer::uiSearch() {
-	if (searchRequest) {
+void Viewer::uiSearch()
+{
+	if (searchRequest)
+	{
 		ImGui::OpenPopup("Szukaj");
 		searchRequest = false;
 		searchOpen = true;
@@ -774,7 +888,8 @@ void Viewer::uiSearch() {
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + vp->WorkSize.x * 0.5f, vp->WorkPos.y + 60), ImGuiCond_Always, ImVec2(0.5f, 0.f));
 	ImGui::SetNextWindowSize(ImVec2(std::min(720.f, vp->WorkSize.x - 40), 480), ImGuiCond_Always);
-	if (!ImGui::BeginPopupModal("Szukaj", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize)) {
+	if (!ImGui::BeginPopupModal("Szukaj", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+	{
 		searchOpen = false;
 		return;
 	}
@@ -784,7 +899,8 @@ void Viewer::uiSearch() {
 	if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
 	ImGui::SetNextItemWidth(-1);
 	if (ImGui::InputTextWithHint("##q", tr("szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze, dźwięki (kilka słów = wszystkie muszą pasować)"),
-	                             searchText, sizeof searchText)) {
+	        searchText, sizeof searchText))
+	{
 		searchSel = 0;
 		buildSearchIndex(std::string(searchText).size() >= 2);
 		updateSearchHits();
@@ -800,18 +916,19 @@ void Viewer::uiSearch() {
 		ImGui::TextDisabled(tr("Obiekty w modelach zostaną zindeksowane po wpisaniu 2 znaków."));
 	else
 		ImGui::TextDisabled(tr("%zu wyników%s   (strzałki, Enter otwiera, Esc zamyka)"), searchHits.size(),
-		                    searchHits.size() >= 500 ? "+" : "");
+		    searchHits.size() >= 500 ? "+" : "");
 	ImGui::BeginChild("wyniki", ImVec2(0, 0), ImGuiChildFlags_Borders);
-	for (int i = 0; i < int(searchHits.size()); ++i) {
+	for (int i = 0; i < int(searchHits.size()); ++i)
+	{
 		const auto& e = searchIndex[size_t(searchHits[size_t(i)])];
 		ImGui::PushID(i);
 		bool sel = i == searchSel;
-		if (ImGui::Selectable("##hit", sel, ImGuiSelectableFlags_AllowDoubleClick)) {
+		if (ImGui::Selectable("##hit", sel, ImGuiSelectableFlags_AllowDoubleClick))
+		{
 			searchSel = i;
 			if (ImGui::IsMouseDoubleClicked(0)) open = true;
 		}
-		if (sel && (ImGui::IsKeyPressed(ImGuiKey_DownArrow) || ImGui::IsKeyPressed(ImGuiKey_UpArrow) ||
-		            ImGui::IsKeyPressed(ImGuiKey_PageDown) || ImGui::IsKeyPressed(ImGuiKey_PageUp)))
+		if (sel && (ImGui::IsKeyPressed(ImGuiKey_DownArrow) || ImGui::IsKeyPressed(ImGuiKey_UpArrow) || ImGui::IsKeyPressed(ImGuiKey_PageDown) || ImGui::IsKeyPressed(ImGuiKey_PageUp)))
 			ImGui::SetScrollHereY(0.5f);
 		ImGui::SameLine(8);
 		ImGui::TextColored(kColor[int(e.kind)], "%-8s", kKind[int(e.kind)]);
@@ -820,30 +937,36 @@ void Viewer::uiSearch() {
 		ImGui::PopID();
 	}
 	ImGui::EndChild();
-	if (open && searchSel >= 0 && searchSel < int(searchHits.size())) {
+	if (open && searchSel >= 0 && searchSel < int(searchHits.size()))
+	{
 		openHit(searchIndex[size_t(searchHits[size_t(searchSel)])]);
 		close = true;
 	}
-	if (close) {
+	if (close)
+	{
 		ImGui::CloseCurrentPopup();
 		searchOpen = false;
 	}
 	ImGui::EndPopup();
 }
 
-void Viewer::ui() {
+void Viewer::ui()
+{
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
 	// Zakładka Dźwięki nie ma sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
-	if ((activeTab == 5) != wideTab) {
+	if ((activeTab == 5) != wideTab)
+	{
 		wideTab = activeTab == 5;
 		if (ImGuiWindow* w = ImGui::FindWindowByName("wigview")) uiWidth = w->Size.x, uiHeight = w->Size.y;
 		else uiHeight = vp->WorkSize.y - 16; // pierwsza klatka, okno jeszcze nie istnieje
-		if (wideTab) {
+		if (wideTab)
+		{
 			narrowWidth = uiWidth;
 			ImGui::SetNextWindowSize(ImVec2(std::max(uiWidth, std::min(1250.f, vp->WorkSize.x - 16)), uiHeight));
-		} else if (narrowWidth > 0) ImGui::SetNextWindowSize(ImVec2(narrowWidth, uiHeight));
+		}
+		else if (narrowWidth > 0) ImGui::SetNextWindowSize(ImVec2(narrowWidth, uiHeight));
 	}
 	ImGui::Begin("wigview");
 	if (ImGui::Button(tr("Szukaj (Ctrl+F)"))) searchRequest = true;
@@ -858,9 +981,11 @@ void Viewer::ui() {
 		float w = ImGui::GetFontSize() * 7.f;
 		ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - w));
 		ImGui::SetNextItemWidth(w);
-		if (ImGui::BeginCombo("##jezyk", cur)) {
+		if (ImGui::BeginCombo("##jezyk", cur))
+		{
 			for (const auto& l : langs)
-				if (ImGui::Selectable(l.name.c_str(), l.code == i18n::language())) {
+				if (ImGui::Selectable(l.name.c_str(), l.code == i18n::language()))
+				{
 					i18n::setLanguage(l.code);
 					ImGui::MarkIniSettingsDirty();
 				}
@@ -868,37 +993,44 @@ void Viewer::ui() {
 		}
 		ImGui::SetItemTooltip("Język / Language");
 	}
-	if (ImGui::BeginTabBar("tabs")) {
+	if (ImGui::BeginTabBar("tabs"))
+	{
 		auto tabFlags = [&](int k) { return forceTab == k ? ImGuiTabItemFlags_SetSelected : 0; };
-		if (ImGui::BeginTabItem(tr("Modele###modele"), nullptr, tabFlags(0))) {
+		if (ImGui::BeginTabItem(tr("Modele###modele"), nullptr, tabFlags(0)))
+		{
 			activeTab = 0;
 			uiModel();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem(tr("Tekstury###tekstury"), nullptr, tabFlags(1))) {
+		if (ImGui::BeginTabItem(tr("Tekstury###tekstury"), nullptr, tabFlags(1)))
+		{
 			activeTab = 1;
 			uiTextures();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem(tr("Mapy###mapy"), nullptr, tabFlags(2))) {
+		if (ImGui::BeginTabItem(tr("Mapy###mapy"), nullptr, tabFlags(2)))
+		{
 			if (!mapTab()) frameMap();
 			activeTab = 2;
 			if (maps.ui(false)) frameMap();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem(tr("Zapisy###zapisy"), nullptr, tabFlags(3))) {
+		if (ImGui::BeginTabItem(tr("Zapisy###zapisy"), nullptr, tabFlags(3)))
+		{
 			if (!mapTab()) frameMap();
 			activeTab = 3;
 			if (maps.ui(true)) frameMap();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem(tr("Cząsteczki###czasteczki"), nullptr, tabFlags(4))) {
+		if (ImGui::BeginTabItem(tr("Cząsteczki###czasteczki"), nullptr, tabFlags(4)))
+		{
 			if (activeTab != 4) frameParticles();
 			activeTab = 4;
 			if (particles.ui()) frameParticles();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem(tr("Dźwięki###dzwieki"), nullptr, tabFlags(5))) {
+		if (ImGui::BeginTabItem(tr("Dźwięki###dzwieki"), nullptr, tabFlags(5)))
+		{
 			activeTab = 5;
 			sounds.ui();
 			ImGui::EndTabItem();
@@ -912,7 +1044,8 @@ void Viewer::ui() {
 	ImGui::End();
 }
 
-void Viewer::stepTexture(int d) {
+void Viewer::stepTexture(int d)
+{
 	std::vector<int> visible;
 	for (int i = 0; i < int(texFiles.size()); ++i)
 		if (passFilter(texFilter, texFiles[size_t(i)])) visible.push_back(i);
@@ -926,16 +1059,19 @@ void Viewer::stepTexture(int d) {
 	scrollToSel = true;
 }
 
-std::string safeFileName(std::string s) {
+std::string safeFileName(std::string s)
+{
 	for (auto& c : s)
 		if (!(std::isalnum((unsigned char)c) || c == '_' || c == '-')) c = '_';
 	return s;
 }
 
 // Animacja z odwołania sound anim: obiekt szukany we wszystkich modelach (indeks obiektów wyszukiwarki).
-void Viewer::openAnim(const std::string& obj, const std::string& animName, int fr) {
+void Viewer::openAnim(const std::string& obj, const std::string& animName, int fr)
+{
 	buildSearchIndex(true);
-	for (const auto& e : searchIndex) {
+	for (const auto& e : searchIndex)
+	{
 		if (e.kind != HitKind::Object || Vfs::lower(e.label.substr(0, e.label.find("  ("))) != Vfs::lower(obj)) continue;
 		forceTab = activeTab = 0;
 		if (modelFile != e.file) loadModel(e.file);
@@ -952,14 +1088,16 @@ void Viewer::openAnim(const std::string& obj, const std::string& animName, int f
 	std::fprintf(stderr, "nie znaleziono obiektu %s w modelach\n", obj.c_str());
 }
 
-void Viewer::exportGlb(bool allAnims) {
+void Viewer::exportGlb(bool allAnims)
+{
 	if (!model || model->objects.empty()) return;
 	GltfExportOptions opt;
 	opt.fps = fps;
 	opt.interpolate = interpolate;
 	const auto& o = model->objects[size_t(object)];
 	std::string name = safeFileName(model->name) + "_" + safeFileName(o.name);
-	if (!allAnims) {
+	if (!allAnims)
+	{
 		opt.animations = {anim};
 		if (auto a = currentAnim()) name += "_" + safeFileName(a->name);
 	}
@@ -967,18 +1105,21 @@ void Viewer::exportGlb(bool allAnims) {
 	std::string err;
 	GltfExportStats st;
 	Uint64 t0 = SDL_GetPerformanceCounter();
-	if (exportGltf(*model, vfs, sphere, object, opt, path, err, &st)) {
+	if (exportGltf(*model, vfs, sphere, object, opt, path, err, &st))
+	{
 		double ms = double(SDL_GetPerformanceCounter() - t0) * 1000.0 / double(SDL_GetPerformanceFrequency());
 		char buf[512];
 		std::snprintf(buf, sizeof buf, tr("Zapisano %s\n%zu animacji, %zu klatek, %zu tekstur, %.1f MB, %.0f ms%s"),
-		              path.c_str(), st.animations, st.frames, st.textures, st.bytes / 1048576.0, ms,
-		              st.incompatibleFrames ? tr("\n(część klatek o innej topologii zastąpiona poprzednią)") : "");
+		    path.c_str(), st.animations, st.frames, st.textures, st.bytes / 1048576.0, ms,
+		    st.incompatibleFrames ? tr("\n(część klatek o innej topologii zastąpiona poprzednią)") : "");
 		exportMsg = buf;
-	} else exportMsg = tr("Błąd eksportu: ") + err;
+	}
+	else exportMsg = tr("Błąd eksportu: ") + err;
 	std::printf("%s\n", exportMsg.c_str());
 }
 
-int findIndex(const std::vector<std::string>& v, const std::string& name) {
+int findIndex(const std::vector<std::string>& v, const std::string& name)
+{
 	for (size_t i = 0; i < v.size(); ++i)
 		if (Vfs::lower(v[i]) == Vfs::lower(name)) return int(i);
 	return -1;
@@ -988,7 +1129,8 @@ int findIndex(const std::vector<std::string>& v, const std::string& name) {
 
 // Język interfejsu w wigview.ini (sekcja [OpenWiggles][Ustawienia]); --lang ma pierwszeństwo.
 bool gLangFromArgs = false;
-void addSettingsHandler() {
+void addSettingsHandler()
+{
 	ImGuiSettingsHandler h;
 	h.TypeName = "OpenWiggles";
 	h.TypeHash = ImHashStr("OpenWiggles");
@@ -1003,7 +1145,8 @@ void addSettingsHandler() {
 	ImGui::AddSettingsHandler(&h);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
 	Args args;
 	if (!parseArgs(argc, argv, args)) return 2;
 	{
@@ -1011,7 +1154,8 @@ int main(int argc, char** argv) {
 		i18n::loadBuiltin(&warnings);
 		for (const auto& w : warnings) std::fprintf(stderr, "tłumaczenia: %s\n", w.c_str());
 		gLangFromArgs = !args.lang.empty();
-		if (gLangFromArgs && !i18n::setLanguage(args.lang)) {
+		if (gLangFromArgs && !i18n::setLanguage(args.lang))
+		{
 			std::fprintf(stderr, "nieznany język %s; dostępne:", args.lang.c_str());
 			for (const auto& l : i18n::languages()) std::fprintf(stderr, " %s", l.code.c_str());
 			std::fprintf(stderr, "\n");
@@ -1023,7 +1167,8 @@ int main(int argc, char** argv) {
 	auto viewer = std::make_unique<Viewer>();
 	Viewer& v = *viewer;
 	v.vfs.addRoot(args.game);
-	if (!v.vfs.exists("Data/3db")) {
+	if (!v.vfs.exists("Data/3db"))
+	{
 		std::fprintf(stderr, "Nie znaleziono Data/3db w '%s'. Podaj --game <katalog gry>.\n", args.game.c_str());
 		return 1;
 	}
@@ -1033,7 +1178,8 @@ int main(int argc, char** argv) {
 		if (v.vfs.resolve("Data/Texture/" + d) && std::filesystem::is_directory(*v.vfs.resolve("Data/Texture/" + d)))
 			v.texDirs.push_back(d);
 
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
+	{
 		std::fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
 		return 1;
 	}
@@ -1046,15 +1192,18 @@ int main(int argc, char** argv) {
 		order.push_back(args.renderer);
 		rhi::Backend other = args.renderer == rhi::Backend::Vulkan ? rhi::Backend::OpenGL : rhi::Backend::Vulkan;
 		if (!args.rendererForced && rhi::backendCompiled(other)) order.push_back(other);
-		for (rhi::Backend b : order) {
-			if (!rhi::backendCompiled(b)) {
+		for (rhi::Backend b : order)
+		{
+			if (!rhi::backendCompiled(b))
+			{
 				std::fprintf(stderr, "Backend %s nie jest wkompilowany\n", rhi::backendName(b));
 				continue;
 			}
 			rhi::prepareWindow(b);
 			win = SDL_CreateWindow("wigview - OpenWiggles " OW_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			                       args.width, args.height, rhi::windowFlags(b) | SDL_WINDOW_RESIZABLE);
-			if (!win) {
+			    args.width, args.height, rhi::windowFlags(b) | SDL_WINDOW_RESIZABLE);
+			if (!win)
+			{
 				std::fprintf(stderr, "SDL_CreateWindow (%s): %s\n", rhi::backendName(b), SDL_GetError());
 				continue;
 			}
@@ -1065,7 +1214,8 @@ int main(int argc, char** argv) {
 			SDL_DestroyWindow(win);
 			win = nullptr;
 		}
-		if (!v.device) {
+		if (!v.device)
+		{
 			std::fprintf(stderr, "Nie udało się uruchomić żadnego backendu renderowania\n");
 			return 1;
 		}
@@ -1074,7 +1224,8 @@ int main(int argc, char** argv) {
 	}
 	rhi::Device& dev = *v.device;
 
-	if (!v.renderer.init(dev, err)) {
+	if (!v.renderer.init(dev, err))
+	{
 		std::fprintf(stderr, "Shader: %s\n", err.c_str());
 		return 1;
 	}
@@ -1084,7 +1235,8 @@ int main(int argc, char** argv) {
 	v.particles.init(dev, &v.vfs, v.textures.get());
 	v.sounds.init(&v.vfs);
 	v.sounds.onOpenAnim = [&v](const std::string& obj, const std::string& anim, int fr) { v.openAnim(obj, anim, fr); };
-	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
+	if (auto sd = v.vfs.read("Data/SPHERE.DAT"))
+	{
 		v.sphere = parseSphereDat(*sd);
 		v.renderer.setSphere(v.sphere);
 	}
@@ -1096,21 +1248,25 @@ int main(int argc, char** argv) {
 	v.flipY = args.flip != 0;
 	v.interpolate = args.ipol != 0;
 
-	if (!args.model.empty()) {
+	if (!args.model.empty())
+	{
 		int i = findIndex(v.modelFiles, args.model);
 		if (i < 0) i = findIndex(v.modelFiles, args.model + ".3db");
-		if (i < 0) {
+		if (i < 0)
+		{
 			std::fprintf(stderr, "Nie ma modelu %s\n", args.model.c_str());
 			return 1;
 		}
-		if (!v.loadModel(v.modelFiles[size_t(i)])) {
+		if (!v.loadModel(v.modelFiles[size_t(i)]))
+		{
 			std::fprintf(stderr, "Błąd modelu: %s\n", v.loadError.c_str());
 			return 1;
 		}
 		if (!args.object.empty())
 			for (size_t k = 0; k < v.model->objects.size(); ++k)
 				if (Vfs::lower(v.model->objects[k].name) == Vfs::lower(args.object)) v.selectObject(int(k));
-		if (!args.anim.empty()) {
+		if (!args.anim.empty())
+		{
 			const auto& o = v.model->objects[size_t(v.object)];
 			for (size_t k = 0; k < o.animations.size(); ++k)
 				if (Vfs::lower(v.model->animations[o.animations[k]].name) == Vfs::lower(args.anim)) v.selectAnim(int(k));
@@ -1118,32 +1274,39 @@ int main(int argc, char** argv) {
 		v.frame = std::clamp(args.frame, 0.f, float(std::max(0, v.frameCount() - 1)) + 0.999f);
 	}
 
-	if (args.particle >= 0) {
+	if (args.particle >= 0)
+	{
 		v.particles.select(args.particle);
 		v.particles.prewarm(36); // 3 s przy 12 klatkach symulacji na sekundę
 		v.activeTab = v.forceTab = 4;
 		v.frameParticles();
 	}
-	if (!args.sound.empty()) {
+	if (!args.sound.empty())
+	{
 		v.sounds.setAutoplay(args.screenshot.empty());
 		v.sounds.select(args.sound);
 		v.activeTab = v.forceTab = 5;
 	}
-	if (!args.templ.empty() || !args.scenario.empty()) {
-		if (!args.scenario.empty()) {
+	if (!args.templ.empty() || !args.scenario.empty())
+	{
+		if (!args.scenario.empty())
+		{
 			std::string t = args.scenario;
 			bool hasExt = t.size() > 4 && Vfs::lower(t.substr(t.size() - 4)) == ".tcl";
 			bool path = t.find('/') != std::string::npos && Vfs::lower(t).size() > 4 && Vfs::lower(t.substr(t.size() - 4)) == ".sav";
 			if (!hasExt && !path && !v.vfs.exists("Data/Gamesave/" + t)) t += ".tcl";
 			if (!(path ? v.maps.loadSavePath(t) : v.maps.loadScenario(t))) std::fprintf(stderr, "scenariusz %s: %s\n", t.c_str(), v.maps.error().c_str());
-		} else {
+		}
+		else
+		{
 			std::string t = args.templ;
 			if (!v.vfs.exists("Data/Templates/" + t)) t += ".tcl";
 			if (!v.maps.loadTemplate(t)) std::fprintf(stderr, "szablon %s: %s\n", t.c_str(), v.maps.error().c_str());
 		}
 		v.activeTab = v.forceTab = v.maps.showingSave() ? 3 : 2;
 		v.frameMap();
-		if (args.viewSet) {
+		if (args.viewSet)
+		{
 			v.yaw = args.yaw;
 			v.pitch = args.pitch;
 		}
@@ -1151,7 +1314,8 @@ int main(int argc, char** argv) {
 		if (args.camZ >= 0) v.center.z = args.camZ * MapView::kBlock;
 		if (args.camDist > 0) v.dist = args.camDist * MapView::kBlock;
 		if (args.fowMode >= 0) v.maps.setFog(MapView::FogMode(std::clamp(args.fowMode, 0, 4)), args.fowRadius, args.fowByte);
-		if (args.gameView) {
+		if (args.gameView)
+		{
 			GameView g = *args.gameView;
 			g.x -= float(v.maps.origin()[0]);
 			g.y -= float(v.maps.origin()[1]);
@@ -1168,7 +1332,7 @@ int main(int argc, char** argv) {
 	ImGui::StyleColorsDark();
 	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
 	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-	                      "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
+	         "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
 		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
 	dev.imguiInit();
 	v.refreshTexFiles();
@@ -1177,7 +1341,8 @@ int main(int argc, char** argv) {
 	// readback != nullptr: kopia obrazu klatki (RGBA, wiersz 0 = góra) do zrzutu ekranu.
 	auto renderFrame = [&](int w, int h, std::vector<uint8_t>* readback = nullptr) {
 		bool withUi = args.screenshot.empty() || args.ui;
-		if (withUi) {
+		if (withUi)
+		{
 			dev.imguiNewFrame();
 			ImGui_ImplSDL2_NewFrame();
 			ImGui::NewFrame();
@@ -1210,7 +1375,8 @@ int main(int argc, char** argv) {
 	static Uint64 loadStart = 0;
 	auto drawProgress = [&](float f, const char* stage) {
 		Uint64 now = SDL_GetTicks64();
-		if (logProgress) {
+		if (logProgress)
+		{
 			static std::string lastStage;
 			if (lastStage.empty()) loadStart = now; // pierwszy etap wczytywania
 			if (lastStage != stage) std::fprintf(stderr, "[wczytywanie] %6llu ms  %3.0f%%  %s\n", (unsigned long long)(now - loadStart), f * 100.f, stage);
@@ -1227,8 +1393,7 @@ int main(int argc, char** argv) {
 		ImVec2 ds = ImGui::GetIO().DisplaySize;
 		ImGui::SetNextWindowPos(ImVec2(ds.x * 0.5f, ds.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 		ImGui::SetNextWindowSize(ImVec2(420, 0));
-		ImGui::Begin(tr("Wczytywanie###wczytywanie"), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-		                                         ImGuiWindowFlags_NoSavedSettings);
+		ImGui::Begin(tr("Wczytywanie###wczytywanie"), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 		ImGui::TextUnformatted(v.maps.loadingName().c_str());
 		ImGui::TextDisabled("%s", tr(stage));
 		ImGui::ProgressBar(std::clamp(f, 0.f, 1.f), ImVec2(-1, 0));
@@ -1251,19 +1416,24 @@ int main(int argc, char** argv) {
 		SDL_Quit();
 	};
 
-	if (!args.search.empty()) {
+	if (!args.search.empty())
+	{
 		std::snprintf(v.searchText, sizeof v.searchText, "%s", args.search.c_str());
 		v.buildSearchIndex(true);
 		v.updateSearchHits();
 		v.searchRequest = true;
 	}
 
-	if (!args.screenshot.empty()) {
+	if (!args.screenshot.empty())
+	{
 		int w, h;
 		// Kilka klatek, żeby okno zdążyło się zmapować (inaczej zawartość bufora jest niezdefiniowana).
-		for (int i = 0; i < 5; ++i) {
+		for (int i = 0; i < 5; ++i)
+		{
 			SDL_Event e;
-			while (SDL_PollEvent(&e)) {}
+			while (SDL_PollEvent(&e))
+			{
+			}
 			drawableSize(w, h);
 			renderFrame(w, h);
 			SDL_Delay(30);
@@ -1271,8 +1441,8 @@ int main(int argc, char** argv) {
 		std::vector<uint8_t> px;
 		renderFrame(w, h, &px);
 		std::printf("model %s obiekt %d anim %d klatka %d mesh %d  środek (%.1f %.1f %.1f) r=%.1f dist=%.1f\n",
-		            v.modelFile.c_str(), v.object, v.anim, int(v.frame), v.currentMesh(), v.center.x, v.center.y,
-		            v.center.z, v.radius, v.dist);
+		    v.modelFile.c_str(), v.object, v.anim, int(v.frame), v.currentMesh(), v.center.x, v.center.y,
+		    v.center.z, v.radius, v.dist);
 		bool ok = px.size() == size_t(w) * h * 4 && writePng(args.screenshot, w, h, px);
 		std::printf("%s %s\n", ok ? "zapisano" : "BŁĄD zapisu", args.screenshot.c_str());
 		shutdown();
@@ -1282,22 +1452,27 @@ int main(int argc, char** argv) {
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
-	while (running) {
+	while (running)
+	{
 		SDL_Event e;
-		while (SDL_PollEvent(&e)) {
+		while (SDL_PollEvent(&e))
+		{
 			ImGui_ImplSDL2_ProcessEvent(&e);
 			ImGuiIO& io = ImGui::GetIO();
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
-			if (!io.WantCaptureMouse) {
+			if (!io.WantCaptureMouse)
+			{
 				if ((e.type == SDL_MOUSEMOTION && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK))) ||
 				    e.type == SDL_MOUSEWHEEL)
 					v.gameCam = false; // przejście na kamerę orbitalną
-				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK)) {
+				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK))
+				{
 					v.yaw -= float(e.motion.xrel) * 0.4f;
 					v.pitch = std::clamp(v.pitch + float(e.motion.yrel) * 0.4f, -89.f, 89.f);
 				}
-				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_RMASK)) {
+				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_RMASK))
+				{
 					float s = v.dist * 0.0015f;
 					glm::vec3 right(std::cos(glm::radians(v.yaw)), 0, -std::sin(glm::radians(v.yaw)));
 					v.pan += -right * float(e.motion.xrel) * s + glm::vec3(0, 1, 0) * float(e.motion.yrel) * s;
@@ -1309,9 +1484,11 @@ int main(int argc, char** argv) {
 				v.searchRequest = true;
 			if (v.searchOpen || v.searchRequest) continue; // klawisze obsługuje okno wyszukiwania
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE && !io.WantTextInput) running = false;
-			if (!io.WantTextInput && e.type == SDL_KEYDOWN) {
+			if (!io.WantTextInput && e.type == SDL_KEYDOWN)
+			{
 				int n = v.frameCount();
-				switch (e.key.keysym.sym) {
+				switch (e.key.keysym.sym)
+				{
 				case SDLK_i: v.interpolate = !v.interpolate; break;
 				case SDLK_UP:
 					if (v.activeTab == 0) v.stepModel(-1);
@@ -1333,13 +1510,20 @@ int main(int argc, char** argv) {
 					if (v.activeTab == 5) v.sounds.togglePlay();
 					else v.playing = !v.playing;
 					break;
-				case SDLK_LEFT: v.playing = false; v.frame = std::max(0.f, float(int(v.frame) - 1)); break;
-				case SDLK_RIGHT: v.playing = false; v.frame = float(std::min(n - 1, int(v.frame) + 1)); break;
+				case SDLK_LEFT:
+					v.playing = false;
+					v.frame = std::max(0.f, float(int(v.frame) - 1));
+					break;
+				case SDLK_RIGHT:
+					v.playing = false;
+					v.frame = float(std::min(n - 1, int(v.frame) + 1));
+					break;
 				default: break;
 				}
 			}
 		}
-		if (v.maps.hasPending()) { // wczytanie wybrane w UI w poprzedniej klatce
+		if (v.maps.hasPending())
+		{ // wczytanie wybrane w UI w poprzedniej klatce
 			lastProgress = 0;
 			v.maps.runPending();
 			v.frameMap();

@@ -3,18 +3,22 @@
 #include <fstream>
 #include <zlib.h>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 
-void be32(std::vector<uint8_t>& v, uint32_t x) {
+void be32(std::vector<uint8_t>& v, uint32_t x)
+{
 	v.push_back(uint8_t(x >> 24));
 	v.push_back(uint8_t(x >> 16));
 	v.push_back(uint8_t(x >> 8));
 	v.push_back(uint8_t(x));
 }
 
-void chunk(std::vector<uint8_t>& out, const char* type, const std::vector<uint8_t>& data) {
+void chunk(std::vector<uint8_t>& out, const char* type, const std::vector<uint8_t>& data)
+{
 	be32(out, uint32_t(data.size()));
 	size_t start = out.size();
 	out.insert(out.end(), type, type + 4);
@@ -25,7 +29,8 @@ void chunk(std::vector<uint8_t>& out, const char* type, const std::vector<uint8_
 
 } // namespace
 
-std::vector<uint8_t> encodePng(int w, int h, const std::vector<uint8_t>& rgba) {
+std::vector<uint8_t> encodePng(int w, int h, const std::vector<uint8_t>& rgba)
+{
 	std::vector<uint8_t> out = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
 
 	std::vector<uint8_t> ihdr;
@@ -37,7 +42,8 @@ std::vector<uint8_t> encodePng(int w, int h, const std::vector<uint8_t>& rgba) {
 	// Każdy wiersz poprzedzony bajtem filtra 0 (brak filtra).
 	std::vector<uint8_t> raw;
 	raw.reserve(size_t(h) * (size_t(w) * 4 + 1));
-	for (int y = 0; y < h; ++y) {
+	for (int y = 0; y < h; ++y)
+	{
 		raw.push_back(0);
 		raw.insert(raw.end(), rgba.begin() + size_t(y) * w * 4, rgba.begin() + size_t(y + 1) * w * 4);
 	}
@@ -50,7 +56,8 @@ std::vector<uint8_t> encodePng(int w, int h, const std::vector<uint8_t>& rgba) {
 	return out;
 }
 
-bool writePng(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba) {
+bool writePng(const std::string& path, int w, int h, const std::vector<uint8_t>& rgba)
+{
 	auto png = encodePng(w, h, rgba);
 	std::ofstream f(path, std::ios::binary);
 	if (!f) return false;

@@ -16,9 +16,11 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-struct SaveObject {
+struct SaveObject
+{
 	int id = 0;
 	std::string className;
 	int type = 0;            // typ obiektu silnika (−1..12; 0 = dekoracja, 1 = postać, 5 = budynek…)
@@ -34,7 +36,8 @@ struct SaveObject {
 
 // Dekoracja spoza listy obiektów: lekki obiekt zastępczy („tabela klas”) albo „nasiono” dekoracji
 // w kubełku przestrzennym (docs/formaty/sav.md, sekcje po ciałach obiektów).
-struct SaveDeco {
+struct SaveDeco
+{
 	std::string className;
 	float pos[3] = {0, 0, 0}; // jak SaveObject::pos (z w skali skryptu)
 	float rot[3] = {0, 0, 0};
@@ -42,7 +45,8 @@ struct SaveDeco {
 	bool proxy = false;       // true = tabela klas, false = kubełek przestrzenny
 };
 
-struct SaveTile {
+struct SaveTile
+{
 	uint32_t block = 0;   // ID kształtu w BlockDB
 	uint8_t material = 0; // rodzaj gruntu: 0 A skała, 1 B ziemia, 2 C piasek, 3 otwór do tła
 	uint8_t flags = 0;    // młodszy bajt stanu terenu (bit 0x80 jak w typie pola .pmp)
@@ -53,7 +57,8 @@ struct SaveTile {
 	uint8_t fog[8] = {};  // bajt nieodkrytego terenu dla każdego gracza
 };
 
-struct SaveGame {
+struct SaveGame
+{
 	int version = 0;
 	std::string header; // np. "V1.0.844r"
 	double gameTime = 0;
@@ -72,10 +77,12 @@ struct SaveGame {
 };
 
 // Zmiany do naniesienia na wczytany zapis. Pola i obiekty, których nie ma w łacie, zostają jak w bazie.
-struct SavePatch {
+struct SavePatch
+{
 	double gameTime = 0;
 	float view[5] = {0, 0, 1.38f, 0, 0}; // x y zoom dx dy
-	struct Tile {
+	struct Tile
+	{
 		uint32_t block;
 		uint8_t pmpType;  // typ pola .pmp (z bitem 0x80); zamieniany na rodzaj gruntu zapisu
 		uint16_t cell;    // detal .l2m
@@ -84,7 +91,8 @@ struct SavePatch {
 		uint8_t fog;      // bajt nieodkrytego terenu gracza 0
 	};
 	std::vector<Tile> tiles; // width·height albo puste (teren bez zmian)
-	struct Object {
+	struct Object
+	{
 		float pos[3], rot[3];
 	};
 	std::unordered_map<int, Object> objects; // ID obiektu z zapisu -> pozycja i obrót

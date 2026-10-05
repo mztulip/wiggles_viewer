@@ -18,12 +18,14 @@
 #include <utility>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 struct Pmp;
 class BlockDb;
 
-struct TerrainVertex {
+struct TerrainVertex
+{
 	float pos[3];
 	float normal[3];
 	// Grunty narożników bloku TL, TR, BL, BR (0 = A skała, 1 = B ziemia, 2 = C piasek). Grunt pola leży
@@ -37,7 +39,8 @@ struct TerrainVertex {
 	float uv[2];
 };
 
-struct TerrainMesh {
+struct TerrainMesh
+{
 	int width = 0, height = 0; // w blokach
 	std::vector<TerrainVertex> vertices;
 	std::vector<uint32_t> indices;

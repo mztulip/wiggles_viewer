@@ -14,9 +14,11 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-class Vfs {
+class Vfs
+{
 public:
 	// Dodaje katalog (np. ".../Wiggles"). Ścieżki w grze są względne do niego, np. "Data/3db/baby.3db".
 	void addRoot(const std::filesystem::path& dir);

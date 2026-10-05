@@ -6,7 +6,8 @@
 #include <cstdint>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 // 256 × vec3 f32. Pusty wektor przy złym rozmiarze danych.
 std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data);

@@ -7,9 +7,11 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ow {
+namespace ow
+{
 
-TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vector<Vec3f>& sphere) {
+TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vector<Vec3f>& sphere)
+{
 	constexpr float B = 200.f;
 	TerrainMesh m;
 	m.width = int(pmp.width);
@@ -19,9 +21,11 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 	// Węzły otwarte do tła (typ 5), z sondą [self, S, E, SE] jak w grze.
 	m.openNode.assign(size_t(m.width) * m.height, 0);
 	for (int y = 0; y < m.height; ++y)
-		for (int x = 0; x < m.width; ++x) {
+		for (int x = 0; x < m.width; ++x)
+		{
 			const int probe[4][2] = {{x, y}, {x, y + 1}, {x + 1, y}, {x + 1, y + 1}};
-			for (auto& p : probe) {
+			for (auto& p : probe)
+			{
 				if (p[0] >= m.width || p[1] >= m.height) continue;
 				uint8_t t = pmp.type(p[0], p[1]) & 0x7F;
 				if (!t) continue;
@@ -42,16 +46,19 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 	};
 
 	for (int by = 0; by < m.height; ++by)
-		for (int bx = 0; bx < m.width; ++bx) {
+		for (int bx = 0; bx < m.width; ++bx)
+		{
 			bool o00 = open(bx, by), o10 = open(bx + 1, by), o01 = open(bx, by + 1), o11 = open(bx + 1, by + 1);
 			if (o00 && o10 && o01 && o11) continue; // cały blok otwarty do tła: nie rysujemy
 			uint32_t id = pmp.block(bx, by);
 			uint32_t first = uint32_t(m.indices.size());
-			for (int sub = 0; sub < 3; ++sub) {
+			for (int sub = 0; sub < 3; ++sub)
+			{
 				BdbSubMesh sm;
 				if (!db.subMesh(id, sub, sm)) continue;
 				uint32_t base = uint32_t(m.vertices.size());
-				for (uint16_t i = 0; i < sm.vertCount; ++i) {
+				for (uint16_t i = 0; i < sm.vertCount; ++i)
+				{
 					const BdbPaletteEntry& p = db.palette(sm.paletteIndex(i));
 					TerrainVertex v;
 					v.pos[0] = (float(bx) + p.x) * B;
@@ -73,10 +80,9 @@ TerrainMesh buildTerrainMesh(const Pmp& pmp, const BlockDb& db, const std::vecto
 						y = std::clamp(y, 0, m.height - 1);
 						return float(pmp.layer2[size_t(y) * m.width + x]);
 					};
-					v.base = 16.f * ((1 - lx) * (1 - ly) * zone(bx, by) + lx * (1 - ly) * zone(bx + 1, by) +
-					                 (1 - lx) * ly * zone(bx, by + 1) + lx * ly * zone(bx + 1, by + 1)) + 64.f;
+					v.base = 16.f * ((1 - lx) * (1 - ly) * zone(bx, by) + lx * (1 - ly) * zone(bx + 1, by) + (1 - lx) * ly * zone(bx, by + 1) + lx * ly * zone(bx + 1, by + 1)) + 64.f;
 					v.alpha = (1 - lx) * (1 - ly) * (o00 ? 0.f : 1.f) + lx * (1 - ly) * (o10 ? 0.f : 1.f) +
-					          (1 - lx) * ly * (o01 ? 0.f : 1.f) + lx * ly * (o11 ? 0.f : 1.f);
+					    (1 - lx) * ly * (o01 ? 0.f : 1.f) + lx * ly * (o11 ? 0.f : 1.f);
 					m.vertices.push_back(v);
 				}
 				for (uint32_t i = 0; i < sm.indexCount; ++i) m.indices.push_back(base + sm.indices[i]);

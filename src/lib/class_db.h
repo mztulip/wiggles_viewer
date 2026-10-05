@@ -15,11 +15,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-struct ClassModel {
+struct ClassModel
+{
 	std::string object;    // nazwa obiektu w .3db
 	std::string animation; // nazwa animacji (domyślnie "standard")
 	std::string modelHint; // plik .3db, w którym najpewniej leży obiekt (może być pusty)
@@ -37,20 +39,23 @@ struct ClassModel {
 // horizon_set <pozycja> r g b głębokość zasięg. Kolor wypełnia otwory w tylnej ścianie
 // (typ pola 5), a modele za skałą (z < 0 bloków) przechodzą w ten kolor ∝ |z|/głębokość.
 // Opis: Zimennik/Diggles-Unity (MIT), Docs/BACKDROP_PARALLAX_RE.md §3–4.
-struct HorizonZone {
+struct HorizonZone
+{
 	float r = 0, g = 0, b = 0;
 	float depth = 32, size = 15;
 };
 
 // Źródło światła klasy: class_light {ox oy oz} R {r g b} (przesunięcie względem obiektu, promień
 // w blokach, kolor 0..1). Klasa może mieć kilka.
-struct ClassLight {
+struct ClassLight
+{
 	float offset[3] = {0, 0, 0};
 	float radius = 0;
 	float color[3] = {0, 0, 0};
 };
 
-class ClassDb {
+class ClassDb
+{
 public:
 	void load(const Vfs& vfs);
 	// Klucz bez rozróżniania wielkości liter. nullptr, gdy nie znamy klasy.

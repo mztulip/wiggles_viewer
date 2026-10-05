@@ -10,12 +10,14 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 class Vfs;
 class TextureCache;
 } // namespace ow
 
-class ParticleView {
+class ParticleView
+{
 public:
 	static constexpr float kBlock = 200.f; // jednostek modelu na blok
 
@@ -28,7 +30,8 @@ public:
 	glm::vec3 center() const { return glm::vec3(0.f, -1.5f * kBlock, 0.f); }
 	float radius() const { return 2.5f * kBlock; }
 	void select(int type);
-	void prewarm(int frames) {
+	void prewarm(int frames)
+	{
 		for (int i = 0; i < frames; ++i) emitter_.step();
 	}
 	int selected() const { return sel_; }

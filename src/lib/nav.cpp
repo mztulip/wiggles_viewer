@@ -7,9 +7,11 @@
 #include <cstdlib>
 #include <queue>
 
-namespace ow {
+namespace ow
+{
 
-bool NavGrid::openBlock(const BlockDb& db, uint32_t block) {
+bool NavGrid::openBlock(const BlockDb& db, uint32_t block)
+{
 	if (block == 59) return true;
 	const BlockRecord* r = db.record(block);
 	if (!r) return false;
@@ -19,7 +21,8 @@ bool NavGrid::openBlock(const BlockDb& db, uint32_t block) {
 	return open >= 16;
 }
 
-void NavGrid::build(const Pmp& grid, const BlockDb& db) {
+void NavGrid::build(const Pmp& grid, const BlockDb& db)
+{
 	w_ = int(grid.width);
 	h_ = int(grid.height);
 	open_.assign(size_t(w_) * h_, 0);
@@ -27,12 +30,14 @@ void NavGrid::build(const Pmp& grid, const BlockDb& db) {
 		for (int x = 0; x < w_; ++x) open_[size_t(y) * w_ + x] = openBlock(db, grid.blocks[size_t(y) * w_ + x]);
 }
 
-void NavGrid::updateTile(const Pmp& grid, const BlockDb& db, int x, int y) {
+void NavGrid::updateTile(const Pmp& grid, const BlockDb& db, int x, int y)
+{
 	if (x < 0 || y < 0 || x >= w_ || y >= h_) return;
 	open_[size_t(y) * w_ + x] = openBlock(db, grid.blocks[size_t(y) * w_ + x]);
 }
 
-std::vector<std::pair<int, int>> NavGrid::path(int sx, int sy, int tx, int ty, int maxNodes) const {
+std::vector<std::pair<int, int>> NavGrid::path(int sx, int sy, int tx, int ty, int maxNodes) const
+{
 	std::vector<std::pair<int, int>> out;
 	if (!open(sx, sy) || !open(tx, ty)) return out;
 	auto id = [&](int x, int y) { return y * w_ + x; };
@@ -42,7 +47,8 @@ std::vector<std::pair<int, int>> NavGrid::path(int sx, int sy, int tx, int ty, i
 	cost[size_t(id(sx, sy))] = 0;
 	q.push({0, id(sx, sy)});
 	int visited = 0;
-	while (!q.empty() && visited++ < maxNodes) {
+	while (!q.empty() && visited++ < maxNodes)
+	{
 		int cur = q.top().second;
 		q.pop();
 		int x = cur % w_, y = cur / w_;
@@ -57,24 +63,28 @@ std::vector<std::pair<int, int>> NavGrid::path(int sx, int sy, int tx, int ty, i
 			q.push({nc + 10 * (std::abs(nx - tx) + std::abs(ny - ty)), n});
 		};
 		bool stand = standable(x, y), climb = climbable(x, y);
-		if (!stand && !climb) { // w powietrzu: tylko spadanie
+		if (!stand && !climb)
+		{ // w powietrzu: tylko spadanie
 			relax(x, y + 1, 5);
 			continue;
 		}
-		for (int d : {-1, 1}) {
+		for (int d : {-1, 1})
+		{
 			if (stand && standable(x + d, y)) relax(x + d, y, 10);
 			if (stand && standable(x + d, y - 1) && open(x, y - 1)) relax(x + d, y - 1, 14); // stopień w górę
 			if (stand && standable(x + d, y + 1) && open(x + d, y)) relax(x + d, y + 1, 14); // stopień w dół
 			if (open(x + d, y) && !standable(x + d, y)) relax(x + d, y, 12);                // zejście z krawędzi
 		}
-		if (climb || stand) {
+		if (climb || stand)
+		{
 			if (climbable(x, y - 1) || standable(x, y - 1)) relax(x, y - 1, 20); // wspinanie w górę
 			if (open(x, y + 1)) relax(x, y + 1, 15);                              // w dół
 		}
 	}
 	int t = id(tx, ty);
 	if (cost[size_t(t)] < 0) return out;
-	for (int n = t; n >= 0; n = from[size_t(n)]) {
+	for (int n = t; n >= 0; n = from[size_t(n)])
+	{
 		out.push_back({n % w_, n / w_});
 		if (n == id(sx, sy)) break;
 	}

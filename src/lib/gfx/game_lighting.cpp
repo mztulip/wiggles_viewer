@@ -2,12 +2,15 @@
 
 #include <algorithm>
 
-namespace ow {
+namespace ow
+{
 
-void uploadScene(rhi::Device& dev, const std::vector<GameLight>* lights, const GameFog* fog) {
+void uploadScene(rhi::Device& dev, const std::vector<GameLight>* lights, const GameFog* fog)
+{
 	SceneUniforms u{};
 	int n = lights ? std::min<int>(int(lights->size()), kMaxGameLights) : 0;
-	for (int i = 0; i < n; ++i) {
+	for (int i = 0; i < n; ++i)
+	{
 		u.lightPos[i] = (*lights)[size_t(i)].posRadius;
 		u.lightCol[i] = (*lights)[size_t(i)].color;
 	}

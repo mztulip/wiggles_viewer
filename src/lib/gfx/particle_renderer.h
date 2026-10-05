@@ -10,11 +10,13 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class TextureCache;
 
-class ParticleRenderer {
+class ParticleRenderer
+{
 public:
 	~ParticleRenderer();
 	bool init(rhi::Device& dev, std::string& err, TextureCache& textures);

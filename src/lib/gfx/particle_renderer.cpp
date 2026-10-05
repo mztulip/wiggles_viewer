@@ -6,20 +6,28 @@
 #include <algorithm>
 #include <cmath>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 constexpr float kUnitsPerBlock = 200.f;
-int gridSlot(int grid) { return grid <= 4 ? 0 : grid <= 8 ? 1 : 2; }
+int gridSlot(int grid)
+{
+	return grid <= 4 ? 0 : grid <= 8 ? 1
+	                                 : 2;
+}
 } // namespace
 
-ParticleRenderer::~ParticleRenderer() {
+ParticleRenderer::~ParticleRenderer()
+{
 	if (!dev_) return;
 	for (auto t : tex_)
 		if (t) dev_->destroyTexture(t);
 }
 
-bool ParticleRenderer::init(rhi::Device& dev, std::string& err, TextureCache& textures) {
+bool ParticleRenderer::init(rhi::Device& dev, std::string& err, TextureCache& textures)
+{
 	dev_ = &dev;
 	rhi::PipelineDesc d;
 	d.shader = "particle";
@@ -29,7 +37,8 @@ bool ParticleRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	d.depth = rhi::DepthTest::LessEqual;
 	d.depthWrite = false;
 	if (!(pipe_ = dev.createPipeline(d, err))) return false;
-	for (int i = 0; i < kParticleTextures; ++i) {
+	for (int i = 0; i < kParticleTextures; ++i)
+	{
 		auto data = textures.vfs().read(std::string("Data/Texture/Misc/") + particleTextureFile(i));
 		if (!data || !loadTga(*data, img_[i])) continue;
 		rhi::TextureDesc td;
@@ -39,7 +48,8 @@ bool ParticleRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	return true;
 }
 
-const std::vector<bool>& ParticleRenderer::usableCells(int tex, int grid) {
+const std::vector<bool>& ParticleRenderer::usableCells(int tex, int grid)
+{
 	tex = tex >= 0 && tex < kParticleTextures ? tex : 0;
 	auto& u = usable_[tex][gridSlot(grid)];
 	const Image& img = img_[tex];
@@ -47,7 +57,8 @@ const std::vector<bool>& ParticleRenderer::usableCells(int tex, int grid) {
 	u.assign(size_t(grid * grid), false);
 	int cw = img.width / grid, ch = img.height / grid;
 	for (int v = 0; v < grid; ++v)
-		for (int c = 0; c < grid; ++c) {
+		for (int c = 0; c < grid; ++c)
+		{
 			int lit = 0;
 			for (int y = v * ch; y < (v + 1) * ch; ++y)
 				for (int x = c * cw; x < (c + 1) * cw; ++x) lit += img.rgba[(size_t(y) * img.width + x) * 4 + 3] > 24;
@@ -56,7 +67,8 @@ const std::vector<bool>& ParticleRenderer::usableCells(int tex, int grid) {
 	return u;
 }
 
-void ParticleRenderer::draw(const std::vector<ParticleSprite>& sprites, const ParticleType& type, const glm::mat4& gameToClip) {
+void ParticleRenderer::draw(const std::vector<ParticleSprite>& sprites, const ParticleType& type, const glm::mat4& gameToClip)
+{
 	if (!pipe_ || sprites.empty()) return;
 	rhi::Handle tex = texture(type.tex);
 	if (!tex) return;
@@ -67,14 +79,16 @@ void ParticleRenderer::draw(const std::vector<ParticleSprite>& sprites, const Pa
 	int g = std::max(1, type.grid);
 	verts_.clear();
 	verts_.reserve(sprites.size() * 6 * 9);
-	for (const auto& s : sprites) {
+	for (const auto& s : sprites)
+	{
 		glm::vec3 c = glm::vec3(s.pos[0], s.pos[1], s.pos[2]) * kUnitsPerBlock;
 		float h = s.size * 0.5f * kUnitsPerBlock;
 		int u = s.cell % g, v = s.cell / g;
 		float u0 = float(u) / g, u1 = float(u + 1) / g, v0 = float(v) / g, v1 = float(v + 1) / g; // v0 = góra komórki
 		glm::vec3 p[4] = {c - right * h + up * h, c + right * h + up * h, c + right * h - up * h, c - right * h - up * h};
 		float uv[4][2] = {{u0, v0}, {u1, v0}, {u1, v1}, {u0, v1}};
-		for (int k : {0, 1, 2, 0, 2, 3}) {
+		for (int k : {0, 1, 2, 0, 2, 3})
+		{
 			verts_.insert(verts_.end(), {p[k].x, p[k].y, p[k].z, uv[k][0], uv[k][1], s.rgba[0], s.rgba[1], s.rgba[2], s.rgba[3]});
 		}
 	}

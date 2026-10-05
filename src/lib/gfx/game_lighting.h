@@ -21,11 +21,13 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 constexpr int kMaxGameLights = 32;
 
-struct GameLight {
+struct GameLight
+{
 	glm::vec4 posRadius; // x, y, z (bloki), promień R (bloki)
 	glm::vec4 color;     // współczynniki c (już × 31 × 0,5)
 };
@@ -33,14 +35,16 @@ struct GameLight {
 // Kod GLSL tego prawa: src/shaders/game_lighting.glsl.
 
 // Tekstura nieodkrytego terenu (kNull = brak mgły) i rozmiar w polach.
-struct GameFog {
+struct GameFog
+{
 	rhi::Handle texture = rhi::kNull;
 	int width = 0, height = 0;
 };
 constexpr int kFogTextureSlot = 5; // sampler uFow (wiązanie 8)
 
 // Blok uniformów "Scene" (wiązanie 1, std140), wspólny dla terenu i modeli w jednej klatce.
-struct SceneUniforms {
+struct SceneUniforms
+{
 	glm::vec4 lightPos[kMaxGameLights];
 	glm::vec4 lightCol[kMaxGameLights];
 	glm::ivec4 counts{0};   // x = liczba lamp

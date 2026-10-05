@@ -9,11 +9,13 @@
 #include <string>
 #include <unordered_map>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-class TextureCache {
+class TextureCache
+{
 public:
 	explicit TextureCache(const Vfs& vfs) : vfs_(vfs) {}
 	// Urządzenie, na którym powstają tekstury (ustawić przed pierwszym get/getPath).
@@ -21,7 +23,8 @@ public:
 	rhi::Device* device() const { return device_; }
 	~TextureCache() { clear(); }
 
-	struct Entry {
+	struct Entry
+	{
 		rhi::Handle id = rhi::kNull;
 		int width = 0, height = 0;
 		bool hasAlpha = false;

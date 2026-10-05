@@ -7,10 +7,12 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 // .PMP: siatka w × h bloków. Struktura pewna, znaczenie części pól jeszcze nie (🔶).
-struct Pmp {
+struct Pmp
+{
 	uint32_t width = 0, height = 0;
 	std::vector<uint8_t> types;     // w*h, 🔶 rodzaj pola (02 korytarz, 04 jaskinia, …)
 	std::vector<uint32_t> blocks;   // w*h, ID bloku w BlockDB (0..118687)
@@ -21,14 +23,16 @@ struct Pmp {
 };
 
 // .l2m ("M2L\0"): druga warstwa, u16 na blok. 🔶 Znaczenie wartości nieznane. Plik może być pusty.
-struct L2m {
+struct L2m
+{
 	uint32_t width = 0, height = 0;
 	std::vector<uint16_t> values;
 };
 
 // Obiekt utworzony przez szablon: new <klasa> "<nazwa>" "<x y z>" "<rx ry rz>".
 // Pozycja w blokach, względem lewego górnego rogu szablonu (bez xoffset/yoffset).
-struct TemplateObject {
+struct TemplateObject
+{
 	std::string className;
 	std::string name;
 	float pos[3] = {0, 0, 0};
@@ -43,7 +47,8 @@ struct TemplateObject {
 	std::string instanceName; // z zapisu: nazwa obiektu (imię krasnala)
 };
 
-struct TemplateScript {
+struct TemplateScript
+{
 	std::string pmpFile; // jak w skrypcie, np. "gng_021.pmp"
 	std::string l2mFile; // np. "urw_gng_021_a.l2m"
 	std::vector<TemplateObject> objects;

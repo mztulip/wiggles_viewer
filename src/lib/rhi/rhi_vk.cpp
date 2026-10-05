@@ -26,16 +26,19 @@
 #include <functional>
 #include <unordered_map>
 
-namespace ow::rhi {
+namespace ow::rhi
+{
 
-namespace {
+namespace
+{
 
 constexpr int kFrames = 2;
 constexpr size_t kUniformRing = 8u << 20, kVertexRing = 8u << 20;
 constexpr VkDeviceSize kUboRange = 2048; // zakres dynamicznych bloków uniformów (shadery mają mniejsze)
 constexpr uint32_t kSetsPerPool = 4096;
 
-struct VkTex {
+struct VkTex
+{
 	VkImage image = VK_NULL_HANDLE;
 	VkDeviceMemory memory = VK_NULL_HANDLE;
 	VkImageView view = VK_NULL_HANDLE;
@@ -43,31 +46,37 @@ struct VkTex {
 	VkDescriptorSet imgui = VK_NULL_HANDLE;
 	int width = 0, height = 0;
 };
-struct VkBuf {
+struct VkBuf
+{
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VkDeviceMemory memory = VK_NULL_HANDLE;
 	void* mapped = nullptr;
 	BufferKind kind = BufferKind::Vertex;
 };
-struct VkPipe {
+struct VkPipe
+{
 	VkPipeline pipeline = VK_NULL_HANDLE;
 };
 
-struct SetKey {
+struct SetKey
+{
 	std::array<Handle, kTextureSlots> tex{};
 	Handle staticBuf = kNull;
 	int frame = 0;
 	bool operator==(const SetKey& o) const { return tex == o.tex && staticBuf == o.staticBuf && frame == o.frame; }
 };
-struct SetKeyHash {
-	size_t operator()(const SetKey& k) const {
+struct SetKeyHash
+{
+	size_t operator()(const SetKey& k) const
+	{
 		size_t h = size_t(k.frame) * 1315423911u ^ k.staticBuf;
 		for (Handle t : k.tex) h = h * 16777619u ^ t;
 		return h;
 	}
 };
 
-class VkDevice_ final : public Device {
+class VkDevice_ final : public Device
+{
 public:
 	VkDevice_(SDL_Window* w, bool vsync, bool offscreen) : window_(w), vsync_(vsync), offscreen_(offscreen) {}
 	~VkDevice_() override { destroyAll(); }
@@ -77,33 +86,38 @@ public:
 	Backend backend() const override { return Backend::Vulkan; }
 	std::string description() const override { return description_; }
 
-	Handle createTexture(const TextureDesc& d, const uint8_t* rgba) override {
+	Handle createTexture(const TextureDesc& d, const uint8_t* rgba) override
+	{
 		Handle h = next_++;
 		textures_[h] = makeTexture(d, rgba);
 		return h;
 	}
-	void updateTexture(Handle h, const TextureDesc& d, const uint8_t* rgba) override {
+	void updateTexture(Handle h, const TextureDesc& d, const uint8_t* rgba) override
+	{
 		auto it = textures_.find(h);
 		if (it == textures_.end()) return;
 		retireTexture(it->second);
 		it->second = makeTexture(d, rgba);
 		setsDirty_ = true; // zestawy deskryptorów wskazują stary obraz
 	}
-	void destroyTexture(Handle h) override {
+	void destroyTexture(Handle h) override
+	{
 		auto it = textures_.find(h);
 		if (it == textures_.end()) return;
 		retireTexture(it->second);
 		textures_.erase(it);
 		setsDirty_ = true;
 	}
-	Handle createBuffer(BufferKind kind, const void* data, size_t size) override {
+	Handle createBuffer(BufferKind kind, const void* data, size_t size) override
+	{
 		VkBuf b = makeBuffer(kind, std::max<size_t>(size, 16));
 		if (data && size) std::memcpy(b.mapped, data, size);
 		Handle h = next_++;
 		buffers_[h] = b;
 		return h;
 	}
-	void destroyBuffer(Handle h) override {
+	void destroyBuffer(Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it == buffers_.end()) return;
 		VkBuf b = it->second;
@@ -114,19 +128,22 @@ public:
 	Handle createPipeline(const PipelineDesc& d, std::string& err) override;
 
 	bool beginFrame(int width, int height, float r, float g, float b) override;
-	void setViewport(int x, int y, int w, int h) override {
+	void setViewport(int x, int y, int w, int h) override
+	{
 		VkViewport vp{float(x), float(y + h), float(w), -float(h), 0.f, 1.f};
 		vkCmdSetViewport(cmd(), 0, 1, &vp);
 		VkRect2D sc{{std::max(x, 0), std::max(y, 0)}, {uint32_t(std::max(w, 1)), uint32_t(std::max(h, 1))}};
 		vkCmdSetScissor(cmd(), 0, 1, &sc);
 	}
-	void bindPipeline(Handle h) override {
+	void bindPipeline(Handle h) override
+	{
 		auto it = pipelines_.find(h);
 		if (it == pipelines_.end()) return;
 		vkCmdBindPipeline(cmd(), VK_PIPELINE_BIND_POINT_GRAPHICS, it->second.pipeline);
 		descDirty_ = true;
 	}
-	void setUniforms(int binding, const void* data, size_t size) override {
+	void setUniforms(int binding, const void* data, size_t size) override
+	{
 		if (binding < 0 || binding > 1 || size > kUboRange) return;
 		Frame& f = frames_[frame_];
 		size_t off = (f.uniformOff + uboAlign_ - 1) / uboAlign_ * uboAlign_;
@@ -136,23 +153,27 @@ public:
 		f.uniformOff = off + size;
 		descDirty_ = true;
 	}
-	void bindUniformBuffer(int binding, Handle h) override {
+	void bindUniformBuffer(int binding, Handle h) override
+	{
 		if (binding != kBindStatic) return;
 		cur_.staticBuf = h;
 		descDirty_ = true;
 	}
-	void bindTexture(int slot, Handle h) override {
+	void bindTexture(int slot, Handle h) override
+	{
 		if (slot < 0 || slot >= kTextureSlots) return;
 		cur_.tex[size_t(slot)] = h;
 		descDirty_ = true;
 	}
-	void bindVertexBuffer(int binding, Handle h) override {
+	void bindVertexBuffer(int binding, Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it == buffers_.end()) return;
 		VkDeviceSize off = 0;
 		vkCmdBindVertexBuffers(cmd(), uint32_t(binding), 1, &it->second.buffer, &off);
 	}
-	void setVertexData(int binding, const void* data, size_t size) override {
+	void setVertexData(int binding, const void* data, size_t size) override
+	{
 		Frame& f = frames_[frame_];
 		if (f.vertexOff + size > kVertexRing) return;
 		std::memcpy(static_cast<uint8_t*>(f.vertex.mapped) + f.vertexOff, data, size);
@@ -160,33 +181,39 @@ public:
 		vkCmdBindVertexBuffers(cmd(), uint32_t(binding), 1, &f.vertex.buffer, &off);
 		f.vertexOff = (f.vertexOff + size + 15) & ~size_t(15);
 	}
-	void bindIndexBuffer(Handle h) override {
+	void bindIndexBuffer(Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it == buffers_.end()) return;
 		vkCmdBindIndexBuffer(cmd(), it->second.buffer, 0,
-		                     it->second.kind == BufferKind::Index32 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+		    it->second.kind == BufferKind::Index32 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 	}
-	void drawIndexed(uint32_t count, uint32_t first) override {
+	void drawIndexed(uint32_t count, uint32_t first) override
+	{
 		flushDescriptors();
 		vkCmdDrawIndexed(cmd(), count, 1, first, 0, 0);
 	}
-	void draw(uint32_t count) override {
+	void draw(uint32_t count) override
+	{
 		flushDescriptors();
 		vkCmdDraw(cmd(), count, 1, 0, 0);
 	}
 	void endFrame(std::vector<uint8_t>* readback) override;
-	void waitIdle() override {
+	void waitIdle() override
+	{
 		if (device_) vkDeviceWaitIdle(device_);
 	}
 
 	void imguiInit() override;
 	void imguiNewFrame() override { ImGui_ImplVulkan_NewFrame(); }
 	void imguiRender(ImDrawData* data) override { ImGui_ImplVulkan_RenderDrawData(data, cmd()); }
-	void imguiShutdown() override {
+	void imguiShutdown() override
+	{
 		if (!imguiReady_) return;
 		vkDeviceWaitIdle(device_);
 		for (auto& [h, t] : textures_)
-			if (t.imgui) {
+			if (t.imgui)
+			{
 				ImGui_ImplVulkan_RemoveTexture(t.imgui);
 				t.imgui = VK_NULL_HANDLE;
 			}
@@ -194,17 +221,19 @@ public:
 		ImGui_ImplSDL2_Shutdown();
 		imguiReady_ = false;
 	}
-	uint64_t imguiTexture(Handle h) override {
+	uint64_t imguiTexture(Handle h) override
+	{
 		auto it = textures_.find(h);
 		if (it == textures_.end() || !imguiReady_) return 0;
 		if (!it->second.imgui)
 			it->second.imgui = ImGui_ImplVulkan_AddTexture(it->second.sampler, it->second.view,
-			                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		return uint64_t(uintptr_t(it->second.imgui));
 	}
 
 private:
-	struct Frame {
+	struct Frame
+	{
 		VkCommandPool pool = VK_NULL_HANDLE;
 		VkCommandBuffer cmd = VK_NULL_HANDLE;
 		VkFence fence = VK_NULL_HANDLE;
@@ -213,7 +242,8 @@ private:
 		size_t uniformOff = 0, vertexOff = 0;
 		std::vector<std::function<void()>> deletions; // do wykonania po zakończeniu tej klatki na GPU
 	};
-	struct Swapchain {
+	struct Swapchain
+	{
 		VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 		VkFormat format = VK_FORMAT_UNDEFINED;
 		VkExtent2D extent{0, 0};
@@ -227,23 +257,26 @@ private:
 	};
 
 	VkCommandBuffer cmd() const { return frames_[frame_].cmd; }
-	void later(std::function<void()> fn) {
+	void later(std::function<void()> fn)
+	{
 		if (inFrame_) frames_[frame_].deletions.push_back(std::move(fn));
 		else frames_[(frame_ + kFrames - 1) % kFrames].deletions.push_back(std::move(fn));
 	}
 
-	uint32_t memoryType(uint32_t bits, VkMemoryPropertyFlags flags) const {
+	uint32_t memoryType(uint32_t bits, VkMemoryPropertyFlags flags) const
+	{
 		for (uint32_t i = 0; i < memProps_.memoryTypeCount; ++i)
 			if ((bits & (1u << i)) && (memProps_.memoryTypes[i].propertyFlags & flags) == flags) return i;
 		return UINT32_MAX;
 	}
-	VkBuf makeBuffer(BufferKind kind, size_t size) {
+	VkBuf makeBuffer(BufferKind kind, size_t size)
+	{
 		VkBuf b;
 		b.kind = kind;
 		VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 		bi.size = size;
 		bi.usage = kind == BufferKind::Uniform ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-		           : kind == BufferKind::Vertex ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+		    : kind == BufferKind::Vertex       ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 		                                       : VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		bi.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		vkCreateBuffer(device_, &bi, nullptr, &b.buffer);
@@ -257,13 +290,15 @@ private:
 		vkMapMemory(device_, b.memory, 0, VK_WHOLE_SIZE, 0, &b.mapped);
 		return b;
 	}
-	void freeBuffer(const VkBuf& b) {
+	void freeBuffer(const VkBuf& b)
+	{
 		if (b.mapped) vkUnmapMemory(device_, b.memory);
 		if (b.buffer) vkDestroyBuffer(device_, b.buffer, nullptr);
 		if (b.memory) vkFreeMemory(device_, b.memory, nullptr);
 	}
 
-	VkSampler sampler(const TextureDesc& d, uint32_t mips) {
+	VkSampler sampler(const TextureDesc& d, uint32_t mips)
+	{
 		uint32_t key = (d.repeatU ? 1u : 0u) | (d.repeatV ? 2u : 0u) | (mips << 2);
 		auto it = samplers_.find(key);
 		if (it != samplers_.end()) return it->second;
@@ -281,7 +316,8 @@ private:
 	}
 
 	// Polecenia jednorazowe (wysyłka tekstur): osobny bufor poleceń, czekamy na wykonanie.
-	void oneShot(const std::function<void(VkCommandBuffer)>& fn) {
+	void oneShot(const std::function<void(VkCommandBuffer)>& fn)
+	{
 		VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
 		ai.commandPool = uploadPool_;
 		ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -302,8 +338,9 @@ private:
 	}
 
 	static void barrier(VkCommandBuffer c, VkImage img, VkImageLayout from, VkImageLayout to, uint32_t baseMip, uint32_t mips,
-	                    VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage,
-	                    VkPipelineStageFlags dstStage, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) {
+	    VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage,
+	    VkPipelineStageFlags dstStage, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT)
+	{
 		VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
 		b.oldLayout = from;
 		b.newLayout = to;
@@ -316,7 +353,8 @@ private:
 	}
 
 	VkTex makeTexture(const TextureDesc& d, const uint8_t* rgba);
-	void retireTexture(const VkTex& t) {
+	void retireTexture(const VkTex& t)
+	{
 		VkTex c = t;
 		if (c.imgui && imguiReady_) ImGui_ImplVulkan_RemoveTexture(c.imgui);
 		later([this, c] {
@@ -331,7 +369,8 @@ private:
 	void destroySwapchain();
 	void flushDescriptors();
 	VkDescriptorSet descriptorSet(const SetKey& key);
-	void resetDescriptorCache() {
+	void resetDescriptorCache()
+	{
 		vkDeviceWaitIdle(device_);
 		for (VkDescriptorPool p : descPools_) vkResetDescriptorPool(device_, p, 0);
 		poolUsed_ = 0;
@@ -380,17 +419,21 @@ private:
 	size_t readbackSize_ = 0;
 };
 
-bool VkDevice_::init(std::string& err) {
+bool VkDevice_::init(std::string& err)
+{
 	unsigned extCount = 0;
 	std::vector<const char*> exts;
-	if (!offscreen_) {
-		if (!SDL_Vulkan_GetInstanceExtensions(window_, &extCount, nullptr)) {
+	if (!offscreen_)
+	{
+		if (!SDL_Vulkan_GetInstanceExtensions(window_, &extCount, nullptr))
+		{
 			err = std::string("SDL_Vulkan_GetInstanceExtensions: ") + SDL_GetError();
 			return false;
 		}
 		exts.resize(extCount);
 		SDL_Vulkan_GetInstanceExtensions(window_, &extCount, exts.data());
-	} else
+	}
+	else
 		finalLayout_ = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
 	VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};
@@ -403,15 +446,18 @@ bool VkDevice_::init(std::string& err) {
 	ici.ppEnabledExtensionNames = exts.data();
 	// Warstwa walidacji na żądanie: OW_VK_VALIDATION=1.
 	const char* validation = "VK_LAYER_KHRONOS_validation";
-	if (const char* v = std::getenv("OW_VK_VALIDATION"); v && *v == '1') {
+	if (const char* v = std::getenv("OW_VK_VALIDATION"); v && *v == '1')
+	{
 		ici.enabledLayerCount = 1;
 		ici.ppEnabledLayerNames = &validation;
 	}
-	if (VkResult r = vkCreateInstance(&ici, nullptr, &instance_); r != VK_SUCCESS) {
+	if (VkResult r = vkCreateInstance(&ici, nullptr, &instance_); r != VK_SUCCESS)
+	{
 		err = "vkCreateInstance: " + std::to_string(int(r));
 		return false;
 	}
-	if (!offscreen_ && !SDL_Vulkan_CreateSurface(window_, instance_, &surface_)) {
+	if (!offscreen_ && !SDL_Vulkan_CreateSurface(window_, instance_, &surface_))
+	{
 		err = std::string("SDL_Vulkan_CreateSurface: ") + SDL_GetError();
 		return false;
 	}
@@ -421,20 +467,24 @@ bool VkDevice_::init(std::string& err) {
 	std::vector<VkPhysicalDevice> devs(n);
 	vkEnumeratePhysicalDevices(instance_, &n, devs.data());
 	int bestScore = -1;
-	for (VkPhysicalDevice pd : devs) {
+	for (VkPhysicalDevice pd : devs)
+	{
 		uint32_t qn = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(pd, &qn, nullptr);
 		std::vector<VkQueueFamilyProperties> qs(qn);
 		vkGetPhysicalDeviceQueueFamilyProperties(pd, &qn, qs.data());
-		for (uint32_t i = 0; i < qn; ++i) {
+		for (uint32_t i = 0; i < qn; ++i)
+		{
 			VkBool32 present = offscreen_ ? VK_TRUE : VK_FALSE;
 			if (!offscreen_) vkGetPhysicalDeviceSurfaceSupportKHR(pd, i, surface_, &present);
 			if (!(qs[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) || !present) continue;
 			VkPhysicalDeviceProperties p;
 			vkGetPhysicalDeviceProperties(pd, &p);
 			int score = p.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? 3
-			            : p.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU ? 2 : 1;
-			if (score > bestScore) {
+			    : p.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU     ? 2
+			                                                                 : 1;
+			if (score > bestScore)
+			{
 				bestScore = score;
 				phys_ = pd;
 				queueFamily_ = i;
@@ -442,7 +492,8 @@ bool VkDevice_::init(std::string& err) {
 			break;
 		}
 	}
-	if (!phys_) {
+	if (!phys_)
+	{
 		err = "brak karty z obsługą Vulkana i wyświetlania w tym oknie";
 		return false;
 	}
@@ -451,7 +502,7 @@ bool VkDevice_::init(std::string& err) {
 	vkGetPhysicalDeviceMemoryProperties(phys_, &memProps_);
 	uboAlign_ = size_t(std::max<VkDeviceSize>(props.limits.minUniformBufferOffsetAlignment, 16));
 	description_ = std::string("Vulkan ") + std::to_string(VK_API_VERSION_MAJOR(props.apiVersion)) + "." +
-	               std::to_string(VK_API_VERSION_MINOR(props.apiVersion)) + " / " + props.deviceName;
+	    std::to_string(VK_API_VERSION_MINOR(props.apiVersion)) + " / " + props.deviceName;
 	VkPhysicalDeviceFeatures have;
 	vkGetPhysicalDeviceFeatures(phys_, &have);
 	fillModeNonSolid_ = have.fillModeNonSolid == VK_TRUE;
@@ -470,17 +521,20 @@ bool VkDevice_::init(std::string& err) {
 	dci.enabledExtensionCount = offscreen_ ? 0 : 1;
 	dci.ppEnabledExtensionNames = &devExt;
 	dci.pEnabledFeatures = &feats;
-	if (VkResult r = vkCreateDevice(phys_, &dci, nullptr, &device_); r != VK_SUCCESS) {
+	if (VkResult r = vkCreateDevice(phys_, &dci, nullptr, &device_); r != VK_SUCCESS)
+	{
 		err = "vkCreateDevice: " + std::to_string(int(r));
 		return false;
 	}
 	vkGetDeviceQueue(device_, queueFamily_, 0, &queue_);
 
 	// Format głębi.
-	for (VkFormat f : {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM}) {
+	for (VkFormat f : {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM})
+	{
 		VkFormatProperties fp;
 		vkGetPhysicalDeviceFormatProperties(phys_, f, &fp);
-		if (fp.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+		if (fp.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		{
 			depthFormat_ = f;
 			break;
 		}
@@ -488,15 +542,18 @@ bool VkDevice_::init(std::string& err) {
 	// Format obrazu okna (bez sRGB, jak w OpenGL).
 	uint32_t fn = 0;
 	std::vector<VkSurfaceFormatKHR> fmts;
-	if (!offscreen_) {
+	if (!offscreen_)
+	{
 		vkGetPhysicalDeviceSurfaceFormatsKHR(phys_, surface_, &fn, nullptr);
 		fmts.resize(fn);
 		vkGetPhysicalDeviceSurfaceFormatsKHR(phys_, surface_, &fn, fmts.data());
-	} else
+	}
+	else
 		fmts.push_back({VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
 	sc_.format = fmts.empty() ? VK_FORMAT_B8G8R8A8_UNORM : fmts[0].format;
 	for (auto& f : fmts)
-		if (f.format == VK_FORMAT_B8G8R8A8_UNORM || f.format == VK_FORMAT_R8G8B8A8_UNORM) {
+		if (f.format == VK_FORMAT_B8G8R8A8_UNORM || f.format == VK_FORMAT_R8G8B8A8_UNORM)
+		{
 			sc_.format = f.format;
 			break;
 		}
@@ -539,13 +596,14 @@ bool VkDevice_::init(std::string& err) {
 
 	// Układ deskryptorów wspólny dla wszystkich potoków.
 	VkDescriptorSetLayoutBinding b[3 + kTextureSlots]{};
-	for (int i = 0; i < 3 + kTextureSlots; ++i) {
+	for (int i = 0; i < 3 + kTextureSlots; ++i)
+	{
 		b[i].binding = uint32_t(i);
 		b[i].descriptorCount = 1;
 		b[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 		b[i].descriptorType = i < 2 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
-		                      : i == 2 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-		                               : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		    : i == 2                ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+		                            : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 	VkDescriptorSetLayoutCreateInfo dli{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
 	dli.bindingCount = 3 + kTextureSlots;
@@ -560,7 +618,8 @@ bool VkDevice_::init(std::string& err) {
 	cpi.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	cpi.queueFamilyIndex = queueFamily_;
 	vkCreateCommandPool(device_, &cpi, nullptr, &uploadPool_);
-	for (Frame& f : frames_) {
+	for (Frame& f : frames_)
+	{
 		vkCreateCommandPool(device_, &cpi, nullptr, &f.pool);
 		VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
 		ai.commandPool = f.pool;
@@ -589,7 +648,8 @@ bool VkDevice_::init(std::string& err) {
 	return createSwapchain(w, h, err);
 }
 
-VkTex VkDevice_::makeTexture(const TextureDesc& d, const uint8_t* rgba) {
+VkTex VkDevice_::makeTexture(const TextureDesc& d, const uint8_t* rgba)
+{
 	VkTex t;
 	t.width = std::max(d.width, 1);
 	t.height = std::max(d.height, 1);
@@ -622,17 +682,18 @@ VkTex VkDevice_::makeTexture(const TextureDesc& d, const uint8_t* rgba) {
 	else std::memset(staging.mapped, 255, bytes);
 	oneShot([&](VkCommandBuffer c) {
 		barrier(c, t.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, mips, 0,
-		        VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+		    VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 		VkBufferImageCopy copy{};
 		copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
 		copy.imageExtent = {uint32_t(t.width), uint32_t(t.height), 1};
 		vkCmdCopyBufferToImage(c, staging.buffer, t.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 		// Mipmapy: kolejne poziomy pomniejszane z poprzedniego (filtr liniowy).
 		int mw = t.width, mh = t.height;
-		for (uint32_t m = 1; m < mips; ++m) {
+		for (uint32_t m = 1; m < mips; ++m)
+		{
 			barrier(c, t.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m - 1, 1,
-			        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			        VK_PIPELINE_STAGE_TRANSFER_BIT);
+			    VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+			    VK_PIPELINE_STAGE_TRANSFER_BIT);
 			VkImageBlit blit{};
 			blit.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, m - 1, 0, 1};
 			blit.srcOffsets[1] = {mw, mh, 1};
@@ -641,14 +702,14 @@ VkTex VkDevice_::makeTexture(const TextureDesc& d, const uint8_t* rgba) {
 			blit.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, m, 0, 1};
 			blit.dstOffsets[1] = {mw, mh, 1};
 			vkCmdBlitImage(c, t.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, t.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			               1, &blit, VK_FILTER_LINEAR);
+			    1, &blit, VK_FILTER_LINEAR);
 			barrier(c, t.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m - 1, 1,
-			        VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-			        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+			    VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+			    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 		}
 		barrier(c, t.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mips - 1, 1,
-		        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+		    VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+		    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 	});
 	freeBuffer(staging);
 
@@ -662,11 +723,13 @@ VkTex VkDevice_::makeTexture(const TextureDesc& d, const uint8_t* rgba) {
 	return t;
 }
 
-Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
+Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err)
+{
 	size_t vn = 0, fn = 0;
 	const uint32_t* vs = shaderSpirv(d.shader, "vert", vn);
 	const uint32_t* fs = shaderSpirv(d.shader, "frag", fn);
-	if (!vs || !fs) {
+	if (!vs || !fs)
+	{
 		err = "brak SPIR-V shadera " + d.shader;
 		return kNull;
 	}
@@ -691,9 +754,10 @@ Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
 	std::vector<VkVertexInputBindingDescription> binds;
 	for (uint32_t i = 0; i < d.strides.size(); ++i) binds.push_back({i, d.strides[i], VK_VERTEX_INPUT_RATE_VERTEX});
 	std::vector<VkVertexInputAttributeDescription> attrs;
-	for (const VertexAttrib& a : d.attribs) {
+	for (const VertexAttrib& a : d.attribs)
+	{
 		static const VkFormat fmt[5] = {VK_FORMAT_UNDEFINED, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT,
-		                                VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT};
+		    VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT};
 		attrs.push_back({a.location, a.binding, fmt[std::min<uint32_t>(a.components, 4)], a.offset});
 	}
 	VkPipelineVertexInputStateCreateInfo vin{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
@@ -718,15 +782,20 @@ Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
 	ds.depthCompareOp = d.depth == DepthTest::LessEqual ? VK_COMPARE_OP_LESS_OR_EQUAL : VK_COMPARE_OP_LESS;
 	VkPipelineColorBlendAttachmentState cb{};
 	cb.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	if (d.blend == Blend::Alpha) {
+	if (d.blend == Blend::Alpha)
+	{
 		cb.blendEnable = VK_TRUE;
 		cb.srcColorBlendFactor = cb.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 		cb.dstColorBlendFactor = cb.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-	} else if (d.blend == Blend::Additive) {
+	}
+	else if (d.blend == Blend::Additive)
+	{
 		cb.blendEnable = VK_TRUE;
 		cb.srcColorBlendFactor = cb.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		cb.dstColorBlendFactor = cb.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	} else if (d.blend == Blend::Modulate2x) {
+	}
+	else if (d.blend == Blend::Modulate2x)
+	{
 		cb.blendEnable = VK_TRUE;
 		cb.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
 		cb.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
@@ -759,7 +828,8 @@ Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
 	VkResult r = vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pi, nullptr, &p.pipeline);
 	vkDestroyShaderModule(device_, vm, nullptr);
 	vkDestroyShaderModule(device_, fm, nullptr);
-	if (r != VK_SUCCESS) {
+	if (r != VK_SUCCESS)
+	{
 		err = d.shader + ": vkCreateGraphicsPipelines " + std::to_string(int(r));
 		return kNull;
 	}
@@ -768,8 +838,10 @@ Handle VkDevice_::createPipeline(const PipelineDesc& d, std::string& err) {
 	return h;
 }
 
-bool VkDevice_::createSwapchain(int width, int height, std::string& err) {
-	if (offscreen_) {
+bool VkDevice_::createSwapchain(int width, int height, std::string& err)
+{
+	if (offscreen_)
+	{
 		// Jeden obraz w pamięci karty zamiast swapchaina.
 		destroySwapchain();
 		VkExtent2D ext{uint32_t(std::max(width, 1)), uint32_t(std::max(height, 1))};
@@ -820,7 +892,7 @@ bool VkDevice_::createSwapchain(int width, int height, std::string& err) {
 	ci.imageExtent = ext;
 	ci.imageArrayLayers = 1;
 	ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-	                (caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // TRANSFER_SRC: zrzuty ekranu
+	    (caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // TRANSFER_SRC: zrzuty ekranu
 	ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	ci.preTransform = caps.currentTransform;
 	ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -830,7 +902,8 @@ bool VkDevice_::createSwapchain(int width, int height, std::string& err) {
 	ci.clipped = VK_TRUE;
 	ci.oldSwapchain = sc_.swapchain;
 	VkSwapchainKHR sw = VK_NULL_HANDLE;
-	if (VkResult r = vkCreateSwapchainKHR(device_, &ci, nullptr, &sw); r != VK_SUCCESS) {
+	if (VkResult r = vkCreateSwapchainKHR(device_, &ci, nullptr, &sw); r != VK_SUCCESS)
+	{
 		err = "vkCreateSwapchainKHR: " + std::to_string(int(r));
 		return false;
 	}
@@ -846,7 +919,8 @@ bool VkDevice_::createSwapchain(int width, int height, std::string& err) {
 }
 
 // Głębia, widoki i bufory ramek dla obrazów sc_.images (swapchain albo obraz pozaekranowy).
-bool VkDevice_::finishTargets(VkExtent2D ext, uint32_t count, std::string& err) {
+bool VkDevice_::finishTargets(VkExtent2D ext, uint32_t count, std::string& err)
+{
 	(void)err;
 	VkImageCreateInfo di{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
 	di.imageType = VK_IMAGE_TYPE_2D;
@@ -871,7 +945,8 @@ bool VkDevice_::finishTargets(VkExtent2D ext, uint32_t count, std::string& err) 
 	dvi.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
 	vkCreateImageView(device_, &dvi, nullptr, &sc_.depthView);
 
-	for (VkImage img : sc_.images) {
+	for (VkImage img : sc_.images)
+	{
 		VkImageViewCreateInfo vi{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
 		vi.image = img;
 		vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -900,7 +975,8 @@ bool VkDevice_::finishTargets(VkExtent2D ext, uint32_t count, std::string& err) 
 	return true;
 }
 
-void VkDevice_::destroySwapchain() {
+void VkDevice_::destroySwapchain()
+{
 	if (!device_) return;
 	vkDeviceWaitIdle(device_);
 	for (auto fb : sc_.framebuffers) vkDestroyFramebuffer(device_, fb, nullptr);
@@ -915,7 +991,8 @@ void VkDevice_::destroySwapchain() {
 	sc_.depthView = VK_NULL_HANDLE;
 	sc_.depth = VK_NULL_HANDLE;
 	sc_.depthMem = VK_NULL_HANDLE;
-	if (offscreen_) {
+	if (offscreen_)
+	{
 		for (VkImage img : sc_.images) vkDestroyImage(device_, img, nullptr);
 		if (offscreenMem_) vkFreeMemory(device_, offscreenMem_, nullptr);
 		offscreenMem_ = VK_NULL_HANDLE;
@@ -928,7 +1005,8 @@ void VkDevice_::destroySwapchain() {
 	if (old) vkDestroySwapchainKHR(device_, old, nullptr);
 }
 
-bool VkDevice_::beginFrame(int width, int height, float r, float g, float b) {
+bool VkDevice_::beginFrame(int width, int height, float r, float g, float b)
+{
 	if (width <= 0 || height <= 0) return false;
 	Frame& f = frames_[frame_];
 	vkWaitForFences(device_, 1, &f.fence, VK_TRUE, UINT64_MAX);
@@ -941,7 +1019,8 @@ bool VkDevice_::beginFrame(int width, int height, float r, float g, float b) {
 	VkResult res = VK_SUCCESS;
 	image_ = 0;
 	if (!offscreen_) res = vkAcquireNextImageKHR(device_, sc_.swapchain, UINT64_MAX, f.acquired, VK_NULL_HANDLE, &image_);
-	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (res == VK_ERROR_OUT_OF_DATE_KHR)
+	{
 		createSwapchain(width, height, err);
 		return false;
 	}
@@ -971,18 +1050,22 @@ bool VkDevice_::beginFrame(int width, int height, float r, float g, float b) {
 	return true;
 }
 
-VkDescriptorSet VkDevice_::descriptorSet(const SetKey& key) {
+VkDescriptorSet VkDevice_::descriptorSet(const SetKey& key)
+{
 	auto it = setCache_.find(key);
 	if (it != setCache_.end()) return it->second;
-	if (poolIndex_ >= descPools_.size() || poolUsed_ >= kSetsPerPool) {
-		if (poolUsed_ >= kSetsPerPool) {
+	if (poolIndex_ >= descPools_.size() || poolUsed_ >= kSetsPerPool)
+	{
+		if (poolUsed_ >= kSetsPerPool)
+		{
 			++poolIndex_;
 			poolUsed_ = 0;
 		}
-		if (poolIndex_ >= descPools_.size()) {
+		if (poolIndex_ >= descPools_.size())
+		{
 			VkDescriptorPoolSize sizes[3] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, kSetsPerPool * 2},
-			                                 {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, kSetsPerPool},
-			                                 {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kSetsPerPool * kTextureSlots}};
+			    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, kSetsPerPool},
+			    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, kSetsPerPool * kTextureSlots}};
 			VkDescriptorPoolCreateInfo pi{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
 			pi.maxSets = kSetsPerPool;
 			pi.poolSizeCount = 3;
@@ -1006,24 +1089,31 @@ VkDescriptorSet VkDevice_::descriptorSet(const SetKey& key) {
 	if (sb == buffers_.end()) sb = buffers_.find(zeroStatic_);
 	VkDescriptorBufferInfo stat = {sb->second.buffer, 0, VK_WHOLE_SIZE};
 	VkDescriptorImageInfo img[kTextureSlots];
-	for (int i = 0; i < kTextureSlots; ++i) {
+	for (int i = 0; i < kTextureSlots; ++i)
+	{
 		auto t = textures_.find(key.tex[size_t(i)]);
 		if (t == textures_.end()) t = textures_.find(white_);
 		img[i] = {t->second.sampler, t->second.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 	}
 	VkWriteDescriptorSet w[3 + kTextureSlots]{};
-	for (int i = 0; i < 3 + kTextureSlots; ++i) {
+	for (int i = 0; i < 3 + kTextureSlots; ++i)
+	{
 		w[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		w[i].dstSet = set;
 		w[i].dstBinding = uint32_t(i);
 		w[i].descriptorCount = 1;
-		if (i < 2) {
+		if (i < 2)
+		{
 			w[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 			w[i].pBufferInfo = &dyn;
-		} else if (i == 2) {
+		}
+		else if (i == 2)
+		{
 			w[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			w[i].pBufferInfo = &stat;
-		} else {
+		}
+		else
+		{
 			w[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			w[i].pImageInfo = &img[i - 3];
 		}
@@ -1033,35 +1123,39 @@ VkDescriptorSet VkDevice_::descriptorSet(const SetKey& key) {
 	return set;
 }
 
-void VkDevice_::flushDescriptors() {
+void VkDevice_::flushDescriptors()
+{
 	if (!descDirty_) return;
 	VkDescriptorSet set = descriptorSet(cur_);
 	vkCmdBindDescriptorSets(cmd(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeLayout_, 0, 1, &set, 2, dynOff_);
 	descDirty_ = false;
 }
 
-void VkDevice_::endFrame(std::vector<uint8_t>* readback) {
+void VkDevice_::endFrame(std::vector<uint8_t>* readback)
+{
 	Frame& f = frames_[frame_];
 	VkCommandBuffer c = f.cmd;
 	vkCmdEndRenderPass(c);
 	bool copy = readback != nullptr;
 	size_t bytes = size_t(sc_.extent.width) * sc_.extent.height * 4;
-	if (copy) {
-		if (readbackSize_ < bytes) {
+	if (copy)
+	{
+		if (readbackSize_ < bytes)
+		{
 			if (readbackBuf_.buffer) freeBuffer(readbackBuf_);
 			readbackBuf_ = makeBuffer(BufferKind::Vertex, bytes);
 			readbackSize_ = bytes;
 		}
 		VkImage img = sc_.images[image_];
 		barrier(c, img, finalLayout_, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 1,
-		        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		        VK_PIPELINE_STAGE_TRANSFER_BIT);
+		    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		    VK_PIPELINE_STAGE_TRANSFER_BIT);
 		VkBufferImageCopy region{};
 		region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
 		region.imageExtent = {sc_.extent.width, sc_.extent.height, 1};
 		vkCmdCopyImageToBuffer(c, img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readbackBuf_.buffer, 1, &region);
 		barrier(c, img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, finalLayout_, 0, 1, VK_ACCESS_TRANSFER_READ_BIT,
-		        0, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+		    0, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 	}
 	vkEndCommandBuffer(c);
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1074,21 +1168,24 @@ void VkDevice_::endFrame(std::vector<uint8_t>* readback) {
 	si.signalSemaphoreCount = offscreen_ ? 0 : 1;
 	si.pSignalSemaphores = &sc_.rendered[image_];
 	vkQueueSubmit(queue_, 1, &si, f.fence);
-	if (!offscreen_) {
-	VkPresentInfoKHR pi{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-	pi.waitSemaphoreCount = 1;
-	pi.pWaitSemaphores = &sc_.rendered[image_];
-	pi.swapchainCount = 1;
-	pi.pSwapchains = &sc_.swapchain;
-	pi.pImageIndices = &image_;
-	vkQueuePresentKHR(queue_, &pi);
+	if (!offscreen_)
+	{
+		VkPresentInfoKHR pi{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+		pi.waitSemaphoreCount = 1;
+		pi.pWaitSemaphores = &sc_.rendered[image_];
+		pi.swapchainCount = 1;
+		pi.pSwapchains = &sc_.swapchain;
+		pi.pImageIndices = &image_;
+		vkQueuePresentKHR(queue_, &pi);
 	}
-	if (copy) {
+	if (copy)
+	{
 		vkWaitForFences(device_, 1, &f.fence, VK_TRUE, UINT64_MAX);
 		readback->resize(bytes);
 		const uint8_t* src = static_cast<const uint8_t*>(readbackBuf_.mapped);
 		bool bgra = sc_.format == VK_FORMAT_B8G8R8A8_UNORM || sc_.format == VK_FORMAT_B8G8R8A8_SRGB;
-		for (size_t i = 0; i < bytes; i += 4) {
+		for (size_t i = 0; i < bytes; i += 4)
+		{
 			(*readback)[i + 0] = src[i + (bgra ? 2 : 0)];
 			(*readback)[i + 1] = src[i + 1];
 			(*readback)[i + 2] = src[i + (bgra ? 0 : 2)];
@@ -1099,7 +1196,8 @@ void VkDevice_::endFrame(std::vector<uint8_t>* readback) {
 	frame_ = (frame_ + 1) % kFrames;
 }
 
-void VkDevice_::imguiInit() {
+void VkDevice_::imguiInit()
+{
 	ImGui_ImplSDL2_InitForVulkan(window_);
 	ImGui_ImplVulkan_InitInfo ii{};
 	ii.ApiVersion = VK_API_VERSION_1_2;
@@ -1118,19 +1216,23 @@ void VkDevice_::imguiInit() {
 	imguiReady_ = true;
 }
 
-void VkDevice_::destroyAll() {
-	if (!device_) {
+void VkDevice_::destroyAll()
+{
+	if (!device_)
+	{
 		if (surface_) vkDestroySurfaceKHR(instance_, surface_, nullptr);
 		surface_ = VK_NULL_HANDLE;
 		if (instance_) vkDestroyInstance(instance_, nullptr);
 		return;
 	}
 	vkDeviceWaitIdle(device_);
-	for (Frame& f : frames_) {
+	for (Frame& f : frames_)
+	{
 		for (auto& fn : f.deletions) fn();
 		f.deletions.clear();
 	}
-	for (auto& [h, t] : textures_) {
+	for (auto& [h, t] : textures_)
+	{
 		vkDestroyImageView(device_, t.view, nullptr);
 		vkDestroyImage(device_, t.image, nullptr);
 		vkFreeMemory(device_, t.memory, nullptr);
@@ -1140,7 +1242,8 @@ void VkDevice_::destroyAll() {
 	for (auto& [k, s] : samplers_) vkDestroySampler(device_, s, nullptr);
 	for (auto p : descPools_) vkDestroyDescriptorPool(device_, p, nullptr);
 	if (readbackBuf_.buffer) freeBuffer(readbackBuf_);
-	for (Frame& f : frames_) {
+	for (Frame& f : frames_)
+	{
 		freeBuffer(f.uniform);
 		freeBuffer(f.vertex);
 		vkDestroyFence(device_, f.fence, nullptr);
@@ -1159,7 +1262,8 @@ void VkDevice_::destroyAll() {
 
 } // namespace
 
-std::unique_ptr<Device> createDeviceVK(SDL_Window* window, bool vsync, bool offscreen, std::string& err) {
+std::unique_ptr<Device> createDeviceVK(SDL_Window* window, bool vsync, bool offscreen, std::string& err)
+{
 	auto d = std::make_unique<VkDevice_>(window, vsync, offscreen);
 	if (!d->init(err)) return nullptr;
 	return d;

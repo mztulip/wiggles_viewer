@@ -19,18 +19,21 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-struct GltfExportOptions {
+struct GltfExportOptions
+{
 	std::vector<int> animations; // indeksy w Object3db::animations; pusty = wszystkie
 	float fps = 10.f; // tempo animacji gry (docs/silnik/11_obiekty_tcl_i_petla.md §11.6)
 	float scale = 0.01f;     // jednostki modelu -> metry (krasnal ~2 m)
 	bool interpolate = true; // LINEAR (jak gra) albo STEP
 };
 
-struct GltfExportStats {
+struct GltfExportStats
+{
 	size_t animations = 0, frames = 0, primitives = 0, textures = 0;
 	size_t incompatibleFrames = 0; // klatki o innej topologii niż klatka 0 animacji (zastąpione poprzednią)
 	size_t bytes = 0;
@@ -38,7 +41,7 @@ struct GltfExportStats {
 
 // Eksportuje obiekt objectIndex do pliku .glb. sphere: 256 normalnych z SPHERE.DAT.
 bool exportGltf(const Model3db& model, const Vfs& vfs, const std::vector<Vec3f>& sphere, int objectIndex,
-                const GltfExportOptions& opt, const std::string& outPath, std::string& err,
-                GltfExportStats* stats = nullptr);
+    const GltfExportOptions& opt, const std::string& outPath, std::string& err,
+    GltfExportStats* stats = nullptr);
 
 } // namespace ow

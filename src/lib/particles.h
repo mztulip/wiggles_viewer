@@ -16,18 +16,59 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-enum class ParticleShape { Point, Box, Disc, Cone, Sphere, MeshVerts };
-enum class ParticleAtlas { Fixed, Random, Flipbook };
-enum class ParticleColour { White, Constant, Warm, Grey };
-enum class ParticleSizeCurve { Constant, Grow, Shrink, Pulse };
-enum class ParticleCount { Fixed, Jitter, Single, Gated };
-enum class ParticleMotion { Standard, Ground, Swirl, Spiral, Flock, Inert };
+enum class ParticleShape
+{
+	Point,
+	Box,
+	Disc,
+	Cone,
+	Sphere,
+	MeshVerts
+};
+enum class ParticleAtlas
+{
+	Fixed,
+	Random,
+	Flipbook
+};
+enum class ParticleColour
+{
+	White,
+	Constant,
+	Warm,
+	Grey
+};
+enum class ParticleSizeCurve
+{
+	Constant,
+	Grow,
+	Shrink,
+	Pulse
+};
+enum class ParticleCount
+{
+	Fixed,
+	Jitter,
+	Single,
+	Gated
+};
+enum class ParticleMotion
+{
+	Standard,
+	Ground,
+	Swirl,
+	Spiral,
+	Flock,
+	Inert
+};
 
-struct ParticleType {
+struct ParticleType
+{
 	int id = 0;
 	const char* name = "";  // opis po polsku (tłumaczony tr() w UI)
 	int tex = 0;            // atlas 0..5 (particleTextureFile)
@@ -68,7 +109,8 @@ constexpr float kParticleSizeScale = 0.12f;
 
 // Źródło cząsteczek z Tcl: class_particle / change_particlesource / create_particlesource.
 // Wartości w układzie gry (relpos: przesunięcie od obiektu w blokach, y w dół, z w skali skryptu).
-struct ParticleSource {
+struct ParticleSource
+{
 	int type = 0;
 	float rel[3] = {0, 0, 0};
 	float dir[3] = {0, 0, 0};    // prędkość początkowa (bloki na klatkę)
@@ -78,14 +120,16 @@ struct ParticleSource {
 };
 
 // Jedna cząsteczka gotowa do narysowania (układ gry, bloki: x, y w dół, z świata).
-struct ParticleSprite {
+struct ParticleSprite
+{
 	float pos[3];
 	float size;       // bok kwadratu w blokach
 	int cell;         // komórka atlasu v·grid + u
 	float rgba[4];    // kolor × jasność; alfa wygasza
 };
 
-class ParticleEmitter {
+class ParticleEmitter
+{
 public:
 	void configure(const ParticleType& type, const ParticleSource& src, uint32_t seed = 1);
 	// Punkt zaczepienia (obiekt) w układzie gry: x, y (bloki, y w dół), z świata (bloki).
@@ -100,7 +144,8 @@ public:
 	const ParticleSource& source() const { return src_; }
 
 private:
-	struct P {
+	struct P
+	{
 		float pos[3], vel[3], base, size;
 		int age, cell;
 		float rgba[4];
@@ -125,7 +170,8 @@ private:
 };
 
 // Użycie typu w skryptach gry (do listy w przeglądarce).
-struct ParticleUsage {
+struct ParticleUsage
+{
 	int type = -1;          // −1: typ podany zmienną
 	std::string file;       // ścieżka skryptu względem Data/
 	int line = 0;

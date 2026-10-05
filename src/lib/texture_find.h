@@ -8,7 +8,8 @@
 #include <optional>
 #include <string>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 

@@ -13,31 +13,38 @@
 #include <cstring>
 #include <unordered_map>
 
-namespace ow::rhi {
+namespace ow::rhi
+{
 
-namespace {
+namespace
+{
 
 constexpr size_t kUniformRing = 8u << 20, kVertexRing = 8u << 20, kZeroBlock = 8192;
 
-struct GlTexture {
+struct GlTexture
+{
 	GLuint id = 0;
 };
-struct GlBuffer {
+struct GlBuffer
+{
 	GLuint id = 0;
 	BufferKind kind = BufferKind::Vertex;
 };
-struct GlPipeline {
+struct GlPipeline
+{
 	GLuint program = 0;
 	PipelineDesc desc;
 };
 
-GLuint compileStage(GLenum type, const char* src, const std::string& what, std::string& err) {
+GLuint compileStage(GLenum type, const char* src, const std::string& what, std::string& err)
+{
 	GLuint s = gl::CreateShader(type);
 	gl::ShaderSource(s, 1, &src, nullptr);
 	gl::CompileShader(s);
 	GLint ok = 0;
 	gl::GetShaderiv(s, GL_COMPILE_STATUS, &ok);
-	if (!ok) {
+	if (!ok)
+	{
 		GLint len = 0;
 		gl::GetShaderiv(s, GL_INFO_LOG_LENGTH, &len);
 		std::vector<char> log(size_t(len) + 1);
@@ -49,10 +56,12 @@ GLuint compileStage(GLenum type, const char* src, const std::string& what, std::
 	return s;
 }
 
-class GlDevice final : public Device {
+class GlDevice final : public Device
+{
 public:
 	GlDevice(SDL_Window* w, SDL_GLContext ctx) : window_(w), ctx_(ctx) {}
-	~GlDevice() override {
+	~GlDevice() override
+	{
 		for (auto& [h, t] : textures_) gl::DeleteTextures(1, &t.id);
 		for (auto& [h, b] : buffers_) gl::DeleteBuffers(1, &b.id);
 		for (auto& [h, p] : pipelines_) gl::DeleteProgram(p.program);
@@ -62,8 +71,10 @@ public:
 		SDL_GL_DeleteContext(ctx_);
 	}
 
-	bool init(std::string& err) {
-		if (const char* missing = gl::load(SDL_GL_GetProcAddress)) {
+	bool init(std::string& err)
+	{
+		if (const char* missing = gl::load(SDL_GL_GetProcAddress))
+		{
 			err = std::string("brak funkcji OpenGL: ") + missing;
 			return false;
 		}
@@ -87,12 +98,14 @@ public:
 	}
 
 	Backend backend() const override { return Backend::OpenGL; }
-	std::string description() const override {
+	std::string description() const override
+	{
 		return std::string("OpenGL ") + (const char*)gl::GetString(GL_VERSION) + " / " +
-		       (const char*)gl::GetString(GL_RENDERER);
+		    (const char*)gl::GetString(GL_RENDERER);
 	}
 
-	Handle createTexture(const TextureDesc& d, const uint8_t* rgba) override {
+	Handle createTexture(const TextureDesc& d, const uint8_t* rgba) override
+	{
 		GlTexture t;
 		gl::GenTextures(1, &t.id);
 		Handle h = next_++;
@@ -100,7 +113,8 @@ public:
 		updateTexture(h, d, rgba);
 		return h;
 	}
-	void updateTexture(Handle h, const TextureDesc& d, const uint8_t* rgba) override {
+	void updateTexture(Handle h, const TextureDesc& d, const uint8_t* rgba) override
+	{
 		auto it = textures_.find(h);
 		if (it == textures_.end()) return;
 		gl::ActiveTexture(GL_TEXTURE0);
@@ -113,14 +127,16 @@ public:
 		gl::TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, d.mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		if (d.mipmaps) gl::GenerateMipmap(GL_TEXTURE_2D);
 	}
-	void destroyTexture(Handle h) override {
+	void destroyTexture(Handle h) override
+	{
 		auto it = textures_.find(h);
 		if (it == textures_.end()) return;
 		gl::DeleteTextures(1, &it->second.id);
 		textures_.erase(it);
 	}
 
-	Handle createBuffer(BufferKind kind, const void* data, size_t size) override {
+	Handle createBuffer(BufferKind kind, const void* data, size_t size) override
+	{
 		GlBuffer b;
 		b.kind = kind;
 		gl::GenBuffers(1, &b.id);
@@ -131,24 +147,28 @@ public:
 		buffers_[h] = b;
 		return h;
 	}
-	void destroyBuffer(Handle h) override {
+	void destroyBuffer(Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it == buffers_.end()) return;
 		gl::DeleteBuffers(1, &it->second.id);
 		buffers_.erase(it);
 	}
 
-	Handle createPipeline(const PipelineDesc& d, std::string& err) override {
+	Handle createPipeline(const PipelineDesc& d, std::string& err) override
+	{
 		const char* vs = shaderGlsl(d.shader, "vert");
 		const char* fs = shaderGlsl(d.shader, "frag");
-		if (!vs || !fs) {
+		if (!vs || !fs)
+		{
 			err = "brak shadera " + d.shader;
 			return kNull;
 		}
 		GLuint v = compileStage(GL_VERTEX_SHADER, vs, d.shader + ".vert", err);
 		if (!v) return kNull;
 		GLuint f = compileStage(GL_FRAGMENT_SHADER, fs, d.shader + ".frag", err);
-		if (!f) {
+		if (!f)
+		{
 			gl::DeleteShader(v);
 			return kNull;
 		}
@@ -160,7 +180,8 @@ public:
 		gl::DeleteShader(f);
 		GLint ok = 0;
 		gl::GetProgramiv(p, GL_LINK_STATUS, &ok);
-		if (!ok) {
+		if (!ok)
+		{
 			GLint len = 0;
 			gl::GetProgramiv(p, GL_INFO_LOG_LENGTH, &len);
 			std::vector<char> log(size_t(len) + 1);
@@ -174,7 +195,8 @@ public:
 		return h;
 	}
 
-	bool beginFrame(int width, int height, float r, float g, float b) override {
+	bool beginFrame(int width, int height, float r, float g, float b) override
+	{
 		if (width <= 0 || height <= 0) return false;
 		fbW_ = width;
 		fbH_ = height;
@@ -198,9 +220,11 @@ public:
 	}
 	void setViewport(int x, int y, int w, int h) override { gl::Viewport(x, fbH_ - y - h, w, h); }
 
-	void bindPipeline(Handle h) override {
+	void bindPipeline(Handle h) override
+	{
 		auto it = pipelines_.find(h);
-		if (it == pipelines_.end()) {
+		if (it == pipelines_.end())
+		{
 			pipe_ = nullptr;
 			return;
 		}
@@ -210,12 +234,14 @@ public:
 		gl::BindVertexArray(vao_);
 		gl::Disable(GL_CULL_FACE);
 		if (d.depth == DepthTest::Off) gl::Disable(GL_DEPTH_TEST);
-		else {
+		else
+		{
 			gl::Enable(GL_DEPTH_TEST);
 			gl::DepthFunc(d.depth == DepthTest::LessEqual ? GL_LEQUAL : GL_LESS);
 		}
 		gl::DepthMask(d.depthWrite ? GL_TRUE : GL_FALSE);
-		switch (d.blend) {
+		switch (d.blend)
+		{
 		case Blend::None: gl::Disable(GL_BLEND); break;
 		case Blend::Alpha:
 			gl::Enable(GL_BLEND);
@@ -233,10 +259,12 @@ public:
 		gl::PolygonMode(GL_FRONT_AND_BACK, d.wireframe ? GL_LINE : GL_FILL);
 	}
 
-	void setUniforms(int binding, const void* data, size_t size) override {
+	void setUniforms(int binding, const void* data, size_t size) override
+	{
 		size_t off = (uniformOff_ + uboAlign_ - 1) / uboAlign_ * uboAlign_;
 		gl::BindBuffer(GL_UNIFORM_BUFFER, uniformRing_);
-		if (off + size > kUniformRing) { // przepełnienie: nowy bufor (stary zostaje dla GPU)
+		if (off + size > kUniformRing)
+		{ // przepełnienie: nowy bufor (stary zostaje dla GPU)
 			gl::BufferData(GL_UNIFORM_BUFFER, GLsizeiptr(kUniformRing), nullptr, GL_STREAM_DRAW);
 			off = 0;
 		}
@@ -244,24 +272,29 @@ public:
 		gl::BindBufferRange(GL_UNIFORM_BUFFER, GLuint(binding), uniformRing_, GLintptr(off), GLsizeiptr(size));
 		uniformOff_ = off + size;
 	}
-	void bindUniformBuffer(int binding, Handle h) override {
+	void bindUniformBuffer(int binding, Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it != buffers_.end()) gl::BindBufferBase(GL_UNIFORM_BUFFER, GLuint(binding), it->second.id);
 	}
-	void bindTexture(int slot, Handle h) override {
+	void bindTexture(int slot, Handle h) override
+	{
 		auto it = textures_.find(h == kNull ? white_ : h);
 		if (it == textures_.end()) it = textures_.find(white_);
 		gl::ActiveTexture(GLenum(GL_TEXTURE0 + kBindFirstTexture + slot));
 		gl::BindTexture(GL_TEXTURE_2D, it->second.id);
 		gl::ActiveTexture(GL_TEXTURE0);
 	}
-	void bindVertexBuffer(int binding, Handle h) override {
+	void bindVertexBuffer(int binding, Handle h) override
+	{
 		auto it = buffers_.find(h);
 		vbuf_[binding] = {it == buffers_.end() ? 0u : it->second.id, 0};
 	}
-	void setVertexData(int binding, const void* data, size_t size) override {
+	void setVertexData(int binding, const void* data, size_t size) override
+	{
 		gl::BindBuffer(GL_ARRAY_BUFFER, vertexRing_);
-		if (vertexOff_ + size > kVertexRing) {
+		if (vertexOff_ + size > kVertexRing)
+		{
 			gl::BufferData(GL_ARRAY_BUFFER, GLsizeiptr(kVertexRing), nullptr, GL_STREAM_DRAW);
 			vertexOff_ = 0;
 		}
@@ -269,26 +302,31 @@ public:
 		vbuf_[binding] = {vertexRing_, vertexOff_};
 		vertexOff_ = (vertexOff_ + size + 15) & ~size_t(15);
 	}
-	void bindIndexBuffer(Handle h) override {
+	void bindIndexBuffer(Handle h) override
+	{
 		auto it = buffers_.find(h);
 		if (it == buffers_.end()) return;
 		gl::BindVertexArray(vao_);
 		gl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, it->second.id);
 		index32_ = it->second.kind == BufferKind::Index32;
 	}
-	void drawIndexed(uint32_t count, uint32_t first) override {
+	void drawIndexed(uint32_t count, uint32_t first) override
+	{
 		if (!applyAttribs()) return;
 		gl::DrawElements(GL_TRIANGLES, GLsizei(count), index32_ ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT,
-		                 (const void*)(uintptr_t(first) * (index32_ ? 4 : 2)));
+		    (const void*)(uintptr_t(first) * (index32_ ? 4 : 2)));
 	}
-	void draw(uint32_t count) override {
+	void draw(uint32_t count) override
+	{
 		if (!applyAttribs()) return;
 		gl::DrawArrays(GL_TRIANGLES, 0, GLsizei(count));
 	}
 
-	void endFrame(std::vector<uint8_t>* readback) override {
+	void endFrame(std::vector<uint8_t>* readback) override
+	{
 		gl::PolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		if (readback) {
+		if (readback)
+		{
 			std::vector<uint8_t> px(size_t(fbW_) * fbH_ * 4);
 			gl::PixelStorei(GL_PACK_ALIGNMENT, 1);
 			gl::ReadPixels(0, 0, fbW_, fbH_, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
@@ -300,43 +338,50 @@ public:
 	}
 	void waitIdle() override { gl::Finish(); }
 
-	void imguiInit() override {
+	void imguiInit() override
+	{
 		ImGui_ImplSDL2_InitForOpenGL(window_, ctx_);
 		ImGui_ImplOpenGL3_Init("#version 330 core");
 	}
 	void imguiNewFrame() override { ImGui_ImplOpenGL3_NewFrame(); }
-	void imguiRender(ImDrawData* data) override {
+	void imguiRender(ImDrawData* data) override
+	{
 		gl::PolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		gl::Viewport(0, 0, fbW_, fbH_);
 		ImGui_ImplOpenGL3_RenderDrawData(data);
 	}
-	void imguiShutdown() override {
+	void imguiShutdown() override
+	{
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
 	}
-	uint64_t imguiTexture(Handle h) override {
+	uint64_t imguiTexture(Handle h) override
+	{
 		auto it = textures_.find(h);
 		return it == textures_.end() ? 0 : it->second.id;
 	}
 
 private:
-	bool applyAttribs() {
+	bool applyAttribs()
+	{
 		if (!pipe_) return false;
 		gl::BindVertexArray(vao_);
 		for (GLuint i = 0; i < 16; ++i) gl::DisableVertexAttribArray(i);
 		const PipelineDesc& d = pipe_->desc;
-		for (const VertexAttrib& a : d.attribs) {
+		for (const VertexAttrib& a : d.attribs)
+		{
 			auto vb = vbuf_[a.binding];
 			if (!vb.buffer) return false;
 			gl::BindBuffer(GL_ARRAY_BUFFER, vb.buffer);
 			gl::VertexAttribPointer(a.location, GLint(a.components), GL_FLOAT, GL_FALSE, GLsizei(d.strides[a.binding]),
-			                        (const void*)(uintptr_t(vb.offset + a.offset)));
+			    (const void*)(uintptr_t(vb.offset + a.offset)));
 			gl::EnableVertexAttribArray(a.location);
 		}
 		return true;
 	}
 
-	struct VBind {
+	struct VBind
+	{
 		GLuint buffer = 0;
 		size_t offset = 0;
 	};
@@ -356,9 +401,11 @@ private:
 
 } // namespace
 
-std::unique_ptr<Device> createDeviceGL(SDL_Window* window, bool vsync, std::string& err) {
+std::unique_ptr<Device> createDeviceGL(SDL_Window* window, bool vsync, std::string& err)
+{
 	SDL_GLContext ctx = SDL_GL_CreateContext(window);
-	if (!ctx) {
+	if (!ctx)
+	{
 		err = std::string("SDL_GL_CreateContext: ") + SDL_GetError();
 		return nullptr;
 	}

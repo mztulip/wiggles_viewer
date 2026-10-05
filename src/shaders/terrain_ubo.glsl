@@ -1,4 +1,5 @@
-UBO(0) uniform Draw {
+UBO(0) uniform Draw
+{
 	mat4 uViewProj;
 	mat4 uWorld;
 	vec4 uLightDirAmb; // kierunek światła podglądu, w = ambient

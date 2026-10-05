@@ -14,27 +14,34 @@
 #include <map>
 #include <sstream>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 
 constexpr int kArrayBuffer = 34962, kElementArrayBuffer = 34963;
 constexpr int kFloat = 5126, kUShort = 5123;
 
-std::string jstr(const std::string& s) {
+std::string jstr(const std::string& s)
+{
 	std::string out = "\"";
-	for (unsigned char c : s) {
+	for (unsigned char c : s)
+	{
 		if (c == '"' || c == '\\') out += '\\', out += char(c);
-		else if (c < 0x20) {
+		else if (c < 0x20)
+		{
 			char buf[8];
 			std::snprintf(buf, sizeof buf, "\\u%04x", c);
 			out += buf;
-		} else out += char(c);
+		}
+		else out += char(c);
 	}
 	return out + "\"";
 }
 
-std::string jnum(float f) {
+std::string jnum(float f)
+{
 	if (!std::isfinite(f)) f = 0.f;
 	char buf[32];
 	std::snprintf(buf, sizeof buf, "%.9g", double(f));
@@ -42,12 +49,14 @@ std::string jnum(float f) {
 }
 
 // Buduje JSON i bufor binarny glTF.
-class GltfBuilder {
+class GltfBuilder
+{
 public:
 	std::vector<uint8_t> bin;
 	std::vector<std::string> bufferViews, accessors, images, textures, materials, meshes, nodes, animations;
 
-	int addView(const void* data, size_t bytes, int target = 0) {
+	int addView(const void* data, size_t bytes, int target = 0)
+	{
 		while (bin.size() % 4) bin.push_back(0);
 		size_t off = bin.size();
 		const auto* p = static_cast<const uint8_t*>(data);
@@ -60,14 +69,17 @@ public:
 		return int(bufferViews.size()) - 1;
 	}
 
-	int addVec3(const std::vector<float>& v, bool minmax, int target = kArrayBuffer) {
+	int addVec3(const std::vector<float>& v, bool minmax, int target = kArrayBuffer)
+	{
 		int view = addView(v.data(), v.size() * 4, target);
 		std::ostringstream o;
 		o << "{\"bufferView\":" << view << ",\"componentType\":" << kFloat << ",\"count\":" << v.size() / 3
 		  << ",\"type\":\"VEC3\"";
-		if (minmax) {
+		if (minmax)
+		{
 			float mn[3] = {1e30f, 1e30f, 1e30f}, mx[3] = {-1e30f, -1e30f, -1e30f};
-			for (size_t i = 0; i < v.size(); ++i) {
+			for (size_t i = 0; i < v.size(); ++i)
+			{
 				mn[i % 3] = std::min(mn[i % 3], v[i]);
 				mx[i % 3] = std::max(mx[i % 3], v[i]);
 			}
@@ -79,29 +91,33 @@ public:
 		return int(accessors.size()) - 1;
 	}
 
-	int addVec2(const std::vector<float>& v) {
+	int addVec2(const std::vector<float>& v)
+	{
 		int view = addView(v.data(), v.size() * 4, kArrayBuffer);
 		accessors.push_back("{\"bufferView\":" + std::to_string(view) + ",\"componentType\":" +
-		                    std::to_string(kFloat) + ",\"count\":" + std::to_string(v.size() / 2) +
-		                    ",\"type\":\"VEC2\"}");
+		    std::to_string(kFloat) + ",\"count\":" + std::to_string(v.size() / 2) +
+		    ",\"type\":\"VEC2\"}");
 		return int(accessors.size()) - 1;
 	}
 
-	int addIndices(const std::vector<uint16_t>& idx) {
+	int addIndices(const std::vector<uint16_t>& idx)
+	{
 		int view = addView(idx.data(), idx.size() * 2, kElementArrayBuffer);
 		accessors.push_back("{\"bufferView\":" + std::to_string(view) + ",\"componentType\":" +
-		                    std::to_string(kUShort) + ",\"count\":" + std::to_string(idx.size()) +
-		                    ",\"type\":\"SCALAR\"}");
+		    std::to_string(kUShort) + ",\"count\":" + std::to_string(idx.size()) +
+		    ",\"type\":\"SCALAR\"}");
 		return int(accessors.size()) - 1;
 	}
 
 	// Dane animacji (bez targetu bufferView). type: SCALAR, VEC3.
-	int addAnimData(const std::vector<float>& v, const char* type, int comps, bool minmax) {
+	int addAnimData(const std::vector<float>& v, const char* type, int comps, bool minmax)
+	{
 		int view = addView(v.data(), v.size() * 4);
 		std::ostringstream o;
 		o << "{\"bufferView\":" << view << ",\"componentType\":" << kFloat << ",\"count\":" << v.size() / comps
 		  << ",\"type\":\"" << type << "\"";
-		if (minmax && !v.empty()) {
+		if (minmax && !v.empty())
+		{
 			auto [mn, mx] = std::minmax_element(v.begin(), v.end());
 			o << ",\"min\":[" << jnum(*mn) << "],\"max\":[" << jnum(*mx) << "]";
 		}
@@ -110,7 +126,8 @@ public:
 		return int(accessors.size()) - 1;
 	}
 
-	std::vector<uint8_t> glb(const std::string& sceneJson) const {
+	std::vector<uint8_t> glb(const std::string& sceneJson) const
+	{
 		std::ostringstream j;
 		auto arr = [&](const char* name, const std::vector<std::string>& v) {
 			if (v.empty()) return;
@@ -156,9 +173,11 @@ public:
 } // namespace
 
 bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sphere, int objectIndex,
-                const GltfExportOptions& opt, const std::string& outPath, std::string& err, GltfExportStats* stats) {
+    const GltfExportOptions& opt, const std::string& outPath, std::string& err, GltfExportStats* stats)
+{
 	GltfExportStats st;
-	if (objectIndex < 0 || size_t(objectIndex) >= m.objects.size()) {
+	if (objectIndex < 0 || size_t(objectIndex) >= m.objects.size())
+	{
 		err = "brak obiektu";
 		return false;
 	}
@@ -166,12 +185,14 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	std::vector<int> anims = opt.animations;
 	if (anims.empty())
 		for (size_t i = 0; i < obj.animations.size(); ++i) anims.push_back(int(i));
-	if (anims.empty()) {
+	if (anims.empty())
+	{
 		err = "obiekt nie ma animacji";
 		return false;
 	}
 	for (int a : anims)
-		if (a < 0 || size_t(a) >= obj.animations.size()) {
+		if (a < 0 || size_t(a) >= obj.animations.size())
+		{
 			err = "indeks animacji poza zakresem";
 			return false;
 		}
@@ -200,27 +221,31 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 		bool ok = false;
 		if (auto p = findTexture(vfs, mat.name))
 			if (auto data = vfs.read(*p)) ok = loadTga(*data, img);
-		if (ok) {
+		if (ok)
+		{
 			bool alpha = false;
 			for (size_t i = 3; i < img.rgba.size(); i += 4)
-				if (img.rgba[i] < 255) {
+				if (img.rgba[i] < 255)
+				{
 					alpha = true;
 					break;
 				}
 			auto png = encodePng(img.width, img.height, img.rgba);
 			int view = g.addView(png.data(), png.size());
 			g.images.push_back("{\"name\":" + jstr(name) + ",\"bufferView\":" + std::to_string(view) +
-			                   ",\"mimeType\":\"image/png\"}");
+			    ",\"mimeType\":\"image/png\"}");
 			g.textures.push_back("{\"sampler\":0,\"source\":" + std::to_string(g.images.size() - 1) + "}");
 			json = "{\"name\":" + jstr(name) + ",\"doubleSided\":true" +
-			       (alpha ? ",\"alphaMode\":\"MASK\",\"alphaCutoff\":0.5" : "") +
-			       ",\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":" +
-			       std::to_string(g.textures.size() - 1) + "},\"metallicFactor\":0,\"roughnessFactor\":1}}";
+			    (alpha ? ",\"alphaMode\":\"MASK\",\"alphaCutoff\":0.5" : "") +
+			    ",\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":" +
+			    std::to_string(g.textures.size() - 1) + "},\"metallicFactor\":0,\"roughnessFactor\":1}}";
 			++st.textures;
-		} else {
+		}
+		else
+		{
 			json = "{\"name\":" + jstr(name) +
-			       ",\"doubleSided\":true,\"pbrMetallicRoughness\":{\"baseColorFactor\":[1,0,1,1],"
-			       "\"metallicFactor\":0,\"roughnessFactor\":1}}";
+			    ",\"doubleSided\":true,\"pbrMetallicRoughness\":{\"baseColorFactor\":[1,0,1,1],"
+			    "\"metallicFactor\":0,\"roughnessFactor\":1}}";
 		}
 		g.materials.push_back(json);
 		return materialIndex[matId] = int(g.materials.size()) - 1;
@@ -229,7 +254,8 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	std::vector<int> animNodes;
 	bool multi = anims.size() > 1;
 
-	for (size_t ai = 0; ai < anims.size(); ++ai) {
+	for (size_t ai = 0; ai < anims.size(); ++ai)
+	{
 		const Animation3db& an = m.animations[obj.animations[size_t(anims[ai])]];
 		if (an.frames.empty()) continue;
 		const uint32_t base = an.frames[0];
@@ -238,9 +264,11 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 
 		// Dla każdej klatki: którą klatkę faktycznie użyć (inna topologia -> poprzednia zgodna).
 		std::vector<uint32_t> useFrame(an.frames.size(), base);
-		for (size_t f = 1; f < an.frames.size(); ++f) {
+		for (size_t f = 1; f < an.frames.size(); ++f)
+		{
 			if (sameTopology(m, base, an.frames[f])) useFrame[f] = an.frames[f];
-			else {
+			else
+			{
 				useFrame[f] = useFrame[f - 1];
 				++st.incompatibleFrames;
 			}
@@ -248,7 +276,8 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 
 		std::ostringstream prims;
 		size_t primCount = 0;
-		for (size_t li = 0; li < baseMesh.links.size(); ++li) {
+		for (size_t li = 0; li < baseMesh.links.size(); ++li)
+		{
 			const MeshLink& L = baseMesh.links[li];
 			const auto& pts = m.points[L.points];
 			const auto& tris = m.triangles[L.triangles];
@@ -258,7 +287,8 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 			size_t n = pts.size();
 
 			std::vector<float> P(n * 3), N(n * 3), UV(n * 2);
-			for (size_t i = 0; i < n; ++i) {
+			for (size_t i = 0; i < n; ++i)
+			{
 				Vec3f p = pos(pts[i]), q = nrm(i < nb.size() ? nb[i] : 0);
 				P[i * 3] = p.x, P[i * 3 + 1] = p.y, P[i * 3 + 2] = p.z;
 				N[i * 3] = q.x, N[i * 3 + 1] = q.y, N[i * 3 + 2] = q.z;
@@ -269,12 +299,14 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 			int aIdx = g.addIndices(tris);
 
 			std::ostringstream targets;
-			for (size_t t = 0; t < nTargets; ++t) {
+			for (size_t t = 0; t < nTargets; ++t)
+			{
 				const MeshLink& Lt = m.meshes[useFrame[t + 1]].links[li];
 				const auto& pt = m.points[Lt.points];
 				const auto& nt = m.normals[Lt.normals];
 				std::vector<float> dP(n * 3), dN(n * 3);
-				for (size_t i = 0; i < n; ++i) {
+				for (size_t i = 0; i < n; ++i)
+				{
 					Vec3f p = pos(pt[i]), q = nrm(i < nt.size() ? nt[i] : 0);
 					dP[i * 3] = p.x - P[i * 3], dP[i * 3 + 1] = p.y - P[i * 3 + 1], dP[i * 3 + 2] = p.z - P[i * 3 + 2];
 					dN[i * 3] = q.x - N[i * 3], dN[i * 3 + 1] = q.y - N[i * 3 + 1], dN[i * 3 + 2] = q.z - N[i * 3 + 2];
@@ -296,7 +328,8 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 		std::string animName = cp1252ToUtf8(an.name);
 		std::ostringstream mesh;
 		mesh << "{\"name\":" << jstr(animName) << ",\"primitives\":[" << prims.str() << "]";
-		if (nTargets) {
+		if (nTargets)
+		{
 			mesh << ",\"weights\":[";
 			for (size_t t = 0; t < nTargets; ++t) mesh << (t ? "," : "") << "0";
 			mesh << "]";
@@ -307,7 +340,7 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 
 		bool visible = !multi || animNodes.empty();
 		g.nodes.push_back("{\"name\":" + jstr(animName) + ",\"mesh\":" + std::to_string(meshIdx) +
-		                  (visible ? "" : ",\"scale\":[0,0,0]") + "}");
+		    (visible ? "" : ",\"scale\":[0,0,0]") + "}");
 		int node = int(g.nodes.size()) - 1;
 		animNodes.push_back(node);
 
@@ -315,9 +348,11 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 		std::ostringstream samplers, channels;
 		int ns = 0;
 		const char* interp = opt.interpolate ? "LINEAR" : "STEP";
-		if (nTargets) {
+		if (nTargets)
+		{
 			std::vector<float> times(an.frames.size()), w(an.frames.size() * nTargets, 0.f);
-			for (size_t f = 0; f < an.frames.size(); ++f) {
+			for (size_t f = 0; f < an.frames.size(); ++f)
+			{
 				times[f] = float(f) / opt.fps;
 				if (f) w[f * nTargets + (f - 1)] = 1.f;
 			}
@@ -326,7 +361,8 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 			samplers << "{\"input\":" << in << ",\"output\":" << out << ",\"interpolation\":\"" << interp << "\"}";
 			channels << "{\"sampler\":" << ns++ << ",\"target\":{\"node\":" << node << ",\"path\":\"weights\"}}";
 		}
-		if (multi) {
+		if (multi)
+		{
 			// Widoczność: pokaż własny węzeł, ukryj domyślnie widoczny węzeł pierwszej animacji.
 			std::vector<float> t0 = {0.f}, one = {1, 1, 1}, zero = {0, 0, 0};
 			int in = g.addAnimData(t0, "SCALAR", 1, true);
@@ -343,11 +379,12 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 		}
 		if (ns)
 			g.animations.push_back("{\"name\":" + jstr(animName) + ",\"samplers\":[" + samplers.str() +
-			                       "],\"channels\":[" + channels.str() + "]}");
+			    "],\"channels\":[" + channels.str() + "]}");
 		++st.animations;
 	}
 
-	if (animNodes.empty()) {
+	if (animNodes.empty())
+	{
 		err = "brak geometrii do eksportu";
 		return false;
 	}
@@ -358,11 +395,12 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	root << "]}";
 	g.nodes.push_back(root.str());
 	std::string scene = "\"scene\":0,\"scenes\":[{\"name\":" + jstr(cp1252ToUtf8(m.name)) + ",\"nodes\":[" +
-	                    std::to_string(g.nodes.size() - 1) + "]}]";
+	    std::to_string(g.nodes.size() - 1) + "]}]";
 
 	auto glb = g.glb(scene);
 	std::ofstream f(outPath, std::ios::binary);
-	if (!f || !f.write(reinterpret_cast<const char*>(glb.data()), std::streamsize(glb.size()))) {
+	if (!f || !f.write(reinterpret_cast<const char*>(glb.data()), std::streamsize(glb.size())))
+	{
 		err = "nie można zapisać " + outPath;
 		return false;
 	}

@@ -16,27 +16,30 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class TextureCache;
 
-class TerrainRenderer {
+class TerrainRenderer
+{
 public:
 	~TerrainRenderer();
 	bool init(rhi::Device& dev, std::string& err);
 	// layer2 i world (np. "urw", "kris", "lava", "swf") opcjonalne: nakładki detali.
 	void build(const TerrainMesh& mesh, TextureCache& textures, const L2m* layer2 = nullptr,
-	           const std::string& world = "urw");
+	    const std::string& world = "urw");
 	void clear();
 	bool empty() const { return groups_.empty(); }
 	bool showDetail = true;
 	// world: macierz układu sceny (jak dla obiektów). lightDir w tym samym układzie co normalne po world.
 	// gameLighting: oświetlenie jak w grze (game_lighting.h); lampy i mgłę klatki wysyła uploadScene.
 	void draw(const glm::mat4& viewProj, const glm::mat4& world, const glm::vec3& lightDir, float ambient,
-	          bool wireframe, bool gameLighting = false);
+	    bool wireframe, bool gameLighting = false);
 
 private:
-	struct Group {
+	struct Group
+	{
 		rhi::Handle texture = rhi::kNull;                     // podkład: Gnd_A; nakładka: tekstura detalu
 		rhi::Handle textureB = rhi::kNull, textureC = rhi::kNull; // podkład: Gnd_B, Gnd_C
 		rhi::Handle ebo = rhi::kNull;

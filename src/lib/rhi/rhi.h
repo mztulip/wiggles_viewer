@@ -24,9 +24,14 @@
 struct SDL_Window;
 struct ImDrawData;
 
-namespace ow::rhi {
+namespace ow::rhi
+{
 
-enum class Backend { Vulkan, OpenGL };
+enum class Backend
+{
+	Vulkan,
+	OpenGL
+};
 const char* backendName(Backend b);
 bool backendCompiled(Backend b);
 // "vulkan" / "opengl" -> Backend; false dla nieznanej nazwy.
@@ -38,21 +43,41 @@ constexpr Handle kNull = 0;
 constexpr int kBindDraw = 0, kBindFrame = 1, kBindStatic = 2, kBindFirstTexture = 3;
 constexpr int kTextureSlots = 6;
 
-struct TextureDesc {
+struct TextureDesc
+{
 	int width = 0, height = 0;
 	bool mipmaps = true;
 	bool repeatU = true, repeatV = true; // inaczej przycięcie do krawędzi
 };
 
-enum class BufferKind { Vertex, Index16, Index32, Uniform };
-enum class Blend { None, Alpha, Modulate2x, Additive }; // Modulate2x: cel · źródło · 2; Additive: cel + źródło
-enum class DepthTest { Off, Less, LessEqual };
+enum class BufferKind
+{
+	Vertex,
+	Index16,
+	Index32,
+	Uniform
+};
+enum class Blend
+{
+	None,
+	Alpha,
+	Modulate2x,
+	Additive
+}; // Modulate2x: cel · źródło · 2; Additive: cel + źródło
+enum class DepthTest
+{
+	Off,
+	Less,
+	LessEqual
+};
 
-struct VertexAttrib {
+struct VertexAttrib
+{
 	uint32_t location, binding, components, offset; // składowe float
 };
 
-struct PipelineDesc {
+struct PipelineDesc
+{
 	std::string shader;            // src/shaders/<shader>.vert + .frag
 	std::vector<uint32_t> strides; // krok wierzchołka dla każdego wiązania bufora
 	std::vector<VertexAttrib> attribs;
@@ -62,7 +87,8 @@ struct PipelineDesc {
 	bool wireframe = false;
 };
 
-class Device {
+class Device
+{
 public:
 	virtual ~Device() = default;
 	virtual Backend backend() const = 0;

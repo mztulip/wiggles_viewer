@@ -21,18 +21,22 @@
 
 using namespace ow;
 
-static int testModels(const Vfs& vfs) {
+static int testModels(const Vfs& vfs)
+{
 	int failed = 0;
 	size_t uvMismatch = 0, nrmMismatch = 0, links = 0;
 	uint64_t nrmHist[8] = {};
-	for (const auto& f : vfs.list("Data/3db")) {
+	for (const auto& f : vfs.list("Data/3db"))
+	{
 		auto data = vfs.read("Data/3db/" + f);
-		try {
+		try
+		{
 			Model3db m = parseModel3db(*data);
 			size_t frames = 0;
 			for (auto& a : m.animations) frames += a.frames.size();
 			for (auto& mesh : m.meshes)
-				for (auto& l : mesh.links) {
+				for (auto& l : mesh.links)
+				{
 					++links;
 					size_t nv = m.points[l.points].size();
 					if (m.texcoords[l.texcoords].size() != nv) ++uvMismatch;
@@ -41,9 +45,11 @@ static int testModels(const Vfs& vfs) {
 			for (auto& pool : m.normals)
 				for (uint8_t b : pool) ++nrmHist[b / 32];
 			std::printf("OK   %-24s mat=%3zu mesh=%5zu obj=%4zu anim=%4zu klatek=%6zu cien=%3zu cmap=%2zu\n",
-			            f.c_str(), m.materials.size(), m.meshes.size(), m.objects.size(),
-			            m.animations.size(), frames, m.shadows.size(), m.cmaps.size());
-		} catch (const ParseError& e) {
+			    f.c_str(), m.materials.size(), m.meshes.size(), m.objects.size(),
+			    m.animations.size(), frames, m.shadows.size(), m.cmaps.size());
+		}
+		catch (const ParseError& e)
+		{
 			std::printf("FAIL %-24s %s\n", f.c_str(), e.what());
 			++failed;
 		}
@@ -55,17 +61,21 @@ static int testModels(const Vfs& vfs) {
 	return failed;
 }
 
-static int testTextures(const Vfs& vfs) {
+static int testTextures(const Vfs& vfs)
+{
 	int failed = 0, ok = 0;
 	std::map<std::string, int> kinds;
-	for (const auto& dir : vfs.list("Data/Texture")) {
+	for (const auto& dir : vfs.list("Data/Texture"))
+	{
 		std::string d = "Data/Texture/" + dir;
-		for (const auto& f : vfs.list(d)) {
+		for (const auto& f : vfs.list(d))
+		{
 			if (Vfs::lower(f).size() < 4 || Vfs::lower(f).substr(f.size() - 4) != ".tga") continue;
 			auto data = vfs.read(d + "/" + f);
 			Image img;
 			std::string err;
-			if (!data || !loadTga(*data, img, &err)) {
+			if (!data || !loadTga(*data, img, &err))
+			{
 				std::printf("FAIL %s/%s: %s\n", d.c_str(), f.c_str(), err.c_str());
 				++failed;
 				continue;
@@ -80,7 +90,8 @@ static int testTextures(const Vfs& vfs) {
 }
 
 // Szablony map: PMP, L2M, skrypty .tcl i przypisanie klas obiektów do modeli.
-static int testTemplates(const Vfs& vfs) {
+static int testTemplates(const Vfs& vfs)
+{
 	int failed = 0, pmpOk = 0, l2mOk = 0, scripts = 0;
 	size_t objects = 0, resolved = 0;
 	std::map<std::string, int> unknownClasses, missingObjects;
@@ -94,10 +105,14 @@ static int testTemplates(const Vfs& vfs) {
 		auto it = modelObjects.find(Vfs::lower(file));
 		if (it != modelObjects.end()) return it->second;
 		auto& set = modelObjects[Vfs::lower(file)];
-		if (auto data = vfs.read("Data/3db/" + file)) {
-			try {
+		if (auto data = vfs.read("Data/3db/" + file))
+		{
+			try
+			{
 				for (auto& o : parseModel3db(*data).objects) set.insert(Vfs::lower(o.name));
-			} catch (...) {}
+			}
+			catch (...)
+			{}
 		}
 		return set;
 	};
@@ -107,40 +122,51 @@ static int testTemplates(const Vfs& vfs) {
 		return false;
 	};
 
-	for (const auto& f : vfs.list("Data/Templates")) {
+	for (const auto& f : vfs.list("Data/Templates"))
+	{
 		auto low = Vfs::lower(f);
 		auto data = vfs.read("Data/Templates/" + f);
 		if (!data) continue;
-		try {
-			if (low.size() > 4 && low.substr(low.size() - 4) == ".pmp") {
+		try
+		{
+			if (low.size() > 4 && low.substr(low.size() - 4) == ".pmp")
+			{
 				parsePmp(*data);
 				++pmpOk;
-			} else if (low.size() > 4 && low.substr(low.size() - 4) == ".l2m") {
+			}
+			else if (low.size() > 4 && low.substr(low.size() - 4) == ".l2m")
+			{
 				parseL2m(*data);
 				++l2mOk;
-			} else if (low.size() > 4 && low.substr(low.size() - 4) == ".tcl") {
+			}
+			else if (low.size() > 4 && low.substr(low.size() - 4) == ".tcl")
+			{
 				auto t = parseTemplateScript(std::string(data->begin(), data->end()));
 				++scripts;
-				for (auto& o : t.objects) {
+				for (auto& o : t.objects)
+				{
 					++objects;
 					const ClassModel* cm = classes.find(o.className);
-					if (!cm) {
+					if (!cm)
+					{
 						unknownClasses[o.className]++;
 						continue;
 					}
 					bool ok = (!cm->modelHint.empty() && objectsOf(cm->modelHint).count(Vfs::lower(cm->object))) ||
-					          anyModelHas(cm->object);
+					    anyModelHas(cm->object);
 					if (ok) ++resolved;
 					else missingObjects[cm->object]++;
 				}
 			}
-		} catch (const ParseError& e) {
+		}
+		catch (const ParseError& e)
+		{
 			std::printf("FAIL %s: %s\n", f.c_str(), e.what());
 			++failed;
 		}
 	}
 	std::printf("szablony: PMP %d, L2M %d, skrypty %d, obiekty %zu, z modelem %zu (%.1f%%)\n", pmpOk, l2mOk, scripts,
-	            objects, resolved, objects ? 100.0 * resolved / objects : 0.0);
+	    objects, resolved, objects ? 100.0 * resolved / objects : 0.0);
 	int shown = 0;
 	for (auto& [k, v] : unknownClasses)
 		if (shown++ < 10) std::printf("  nieznana klasa: %s (%d)\n", k.c_str(), v);
@@ -152,21 +178,26 @@ static int testTemplates(const Vfs& vfs) {
 }
 
 // Zapisy .sav: czytnik musi przejść teren i wszystkie ciała obiektów (docs/formaty/sav.md).
-int testSaves(const Vfs& vfs) {
+int testSaves(const Vfs& vfs)
+{
 	int failed = 0, count = 0;
-	for (const auto& f : vfs.list("Data/Gamesave")) {
+	for (const auto& f : vfs.list("Data/Gamesave"))
+	{
 		if (Vfs::lower(f).size() < 4 || Vfs::lower(f).substr(Vfs::lower(f).size() - 4) != ".sav") continue;
 		++count;
 		auto data = vfs.read("Data/Gamesave/" + f);
-		try {
+		try
+		{
 			SaveGame s = parseSaveGame(*data);
 			size_t proxies = 0;
 			for (const auto& d : s.decos) proxies += d.proxy;
 			std::printf("  %-40s %s  %dx%d  obiekty %zu  dekoracje %zu+%zu%s  kamera (%.1f %.1f zoom %.2f)\n", f.c_str(),
-			            s.header.c_str(), s.width, s.height, s.objects.size(), proxies, s.decos.size() - proxies,
-			            s.decoError ? " (BŁĄD sekcji dekoracji)" : "", s.viewX, s.viewY, s.viewZoom);
+			    s.header.c_str(), s.width, s.height, s.objects.size(), proxies, s.decos.size() - proxies,
+			    s.decoError ? " (BŁĄD sekcji dekoracji)" : "", s.viewX, s.viewY, s.viewZoom);
 			if (s.decoError) ++failed;
-		} catch (const std::exception& e) {
+		}
+		catch (const std::exception& e)
+		{
 			std::printf("  %-40s BŁĄD: %s\n", f.c_str(), e.what());
 			++failed;
 		}
@@ -176,17 +207,20 @@ int testSaves(const Vfs& vfs) {
 }
 
 // Dźwięki: każdy plik musi się zdekodować; indeks odwołań (docs/silnik/15_dzwiek.md) w liczbach.
-int testSounds(const Vfs& vfs) {
+int testSounds(const Vfs& vfs)
+{
 	int failed = 0;
 	double seconds = 0;
 	std::map<std::string, int> formats;
 	std::vector<std::string> files = listSoundFiles(vfs), keys;
-	for (const auto& f : files) {
+	for (const auto& f : files)
+	{
 		keys.push_back(soundFileKey(f));
 		auto data = vfs.read(f);
 		SoundPcm pcm;
 		std::string err;
-		if (!data || !decodeSound(*data, pcm, err)) {
+		if (!data || !decodeSound(*data, pcm, err))
+		{
 			std::printf("  %-50s BŁĄD: %s\n", f.c_str(), data ? err.c_str() : "odczyt");
 			++failed;
 			continue;
@@ -199,33 +233,38 @@ int testSounds(const Vfs& vfs) {
 	int kinds[8] = {};
 	for (const auto& r : idx.refs) kinds[r.kind]++;
 	int withRefs = 0, bound = 0;
-	for (const auto& k : keys) {
+	for (const auto& k : keys)
+	{
 		withRefs += !idx.refsForFile(k).empty();
 		bound += !idx.namesForFile(k).empty();
 	}
 	std::set<std::string> keySet(keys.begin(), keys.end());
 	int missing = 0;
 	for (const auto& [name, file] : idx.fileOfName)
-		if (!keySet.count(file)) {
+		if (!keySet.count(file))
+		{
 			if (missing < 10) std::printf("  sound bind %s -> brak pliku %s\n", name.c_str(), file.c_str());
 			++missing;
 		}
 	std::printf("odwołania: bind %d, anim %d, animnoseq %d, play %d, playglobal %d, muzyka %d, dialogi %d, wzmianki %d\n",
-	            kinds[SoundRef::Bind], kinds[SoundRef::Anim], kinds[SoundRef::AnimNoSeq], kinds[SoundRef::Play],
-	            kinds[SoundRef::PlayGlobal], kinds[SoundRef::Music], kinds[SoundRef::Clip], kinds[SoundRef::Mention]);
+	    kinds[SoundRef::Bind], kinds[SoundRef::Anim], kinds[SoundRef::AnimNoSeq], kinds[SoundRef::Play],
+	    kinds[SoundRef::PlayGlobal], kinds[SoundRef::Music], kinds[SoundRef::Clip], kinds[SoundRef::Mention]);
 	std::printf("dźwięki: %zu (%.0f min), z nazwą logiczną %d, z jakimkolwiek odwołaniem %d, nazwy bez pliku %d, błędy %d\n",
-	            files.size(), seconds / 60, bound, withRefs, missing, failed);
+	    files.size(), seconds / 60, bound, withRefs, missing, failed);
 	return failed;
 }
 
-int main(int argc, char** argv) {
-	if (argc < 2) {
+int main(int argc, char** argv)
+{
+	if (argc < 2)
+	{
 		std::fprintf(stderr, "użycie: %s <katalog gry>\n", argv[0]);
 		return 2;
 	}
 	Vfs vfs;
 	vfs.addRoot(argv[1]);
-	if (!vfs.exists("Data/3db")) {
+	if (!vfs.exists("Data/3db"))
+	{
 		std::fprintf(stderr, "brak Data/3db w %s\n", argv[1]);
 		return 2;
 	}

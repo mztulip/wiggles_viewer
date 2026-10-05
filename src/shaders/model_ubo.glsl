@@ -1,4 +1,5 @@
-UBO(0) uniform Draw {
+UBO(0) uniform Draw
+{
 	mat4 uViewProj;
 	mat4 uModel;
 	mat4 uGameModel;

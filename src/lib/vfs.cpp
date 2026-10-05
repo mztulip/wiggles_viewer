@@ -6,33 +6,42 @@
 
 namespace fs = std::filesystem;
 
-namespace ow {
+namespace ow
+{
 
-std::string Vfs::lower(std::string s) {
+std::string Vfs::lower(std::string s)
+{
 	for (auto& c : s)
 		if (c >= 'A' && c <= 'Z') c = char(c - 'A' + 'a');
 	return s;
 }
 
-void Vfs::addRoot(const fs::path& dir) { roots_.insert(roots_.begin(), dir); }
+void Vfs::addRoot(const fs::path& dir)
+{
+	roots_.insert(roots_.begin(), dir);
+}
 
-const std::unordered_map<std::string, std::string>& Vfs::dirIndex(const fs::path& dir) const {
+const std::unordered_map<std::string, std::string>& Vfs::dirIndex(const fs::path& dir) const
+{
 	auto key = dir.string();
 	auto it = cache_.find(key);
 	if (it != cache_.end()) return it->second;
 	auto& idx = cache_[key];
 	std::error_code ec;
-	for (auto& e : fs::directory_iterator(dir, ec)) {
+	for (auto& e : fs::directory_iterator(dir, ec))
+	{
 		auto name = e.path().filename().string();
 		idx.emplace(lower(name), name);
 	}
 	return idx;
 }
 
-std::optional<fs::path> Vfs::resolveIn(const fs::path& root, const std::string& gamePath) const {
+std::optional<fs::path> Vfs::resolveIn(const fs::path& root, const std::string& gamePath) const
+{
 	fs::path cur = root;
 	size_t i = 0;
-	while (i <= gamePath.size()) {
+	while (i <= gamePath.size())
+	{
 		size_t j = gamePath.find_first_of("/\\", i);
 		if (j == std::string::npos) j = gamePath.size();
 		std::string part = gamePath.substr(i, j - i);
@@ -46,13 +55,15 @@ std::optional<fs::path> Vfs::resolveIn(const fs::path& root, const std::string& 
 	return cur;
 }
 
-std::optional<fs::path> Vfs::resolve(const std::string& gamePath) const {
+std::optional<fs::path> Vfs::resolve(const std::string& gamePath) const
+{
 	for (const auto& r : roots_)
 		if (auto p = resolveIn(r, gamePath)) return p;
 	return std::nullopt;
 }
 
-std::optional<std::vector<uint8_t>> Vfs::read(const std::string& gamePath) const {
+std::optional<std::vector<uint8_t>> Vfs::read(const std::string& gamePath) const
+{
 	auto p = resolve(gamePath);
 	if (!p) return std::nullopt;
 	std::error_code ec;
@@ -68,10 +79,12 @@ std::optional<std::vector<uint8_t>> Vfs::read(const std::string& gamePath) const
 	return data;
 }
 
-std::vector<std::string> Vfs::list(const std::string& gameDir) const {
+std::vector<std::string> Vfs::list(const std::string& gameDir) const
+{
 	std::set<std::string> seen;
 	std::vector<std::string> out;
-	for (const auto& r : roots_) {
+	for (const auto& r : roots_)
+	{
 		auto d = resolveIn(r, gameDir);
 		if (!d) continue;
 		for (const auto& [low, real] : dirIndex(*d))

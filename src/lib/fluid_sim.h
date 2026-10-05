@@ -11,11 +11,13 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class BlockDb;
 
-struct FluidSource {
+struct FluidSource
+{
 	int x = 0, y = 0;     // pole źródła (obcięte ku zeru: obiekt + {0 −1 0})
 	uint8_t type = 1;     // 1 woda, 2 siarka, 3 lawa
 	float perTick = 0;    // vpf · 128 (jednostki objętości na takt)
@@ -26,7 +28,8 @@ struct FluidSource {
 // Źródło z obiektu szablonu: klasy Wasser / Sulfur / Lava i Editor_Set_Info {volume V} {vpf R}.
 bool fluidSourceFromObject(const std::string& className, const std::string& info, const float pos[3], FluidSource& out);
 
-class FluidSim {
+class FluidSim
+{
 public:
 	// blocks: ID bloków pola po polu (np. Pmp::blocks); muszą żyć dłużej niż symulacja.
 	void init(int width, int height, const std::vector<uint32_t>* blocks, const BlockDb* db);
@@ -36,7 +39,12 @@ public:
 	void tick();
 	const std::vector<uint8_t>& type() const { return type_; }
 	const std::vector<float>& fill() const { return fill_; }
-	bool changed() { bool c = changed_; changed_ = false; return c; }
+	bool changed()
+	{
+		bool c = changed_;
+		changed_ = false;
+		return c;
+	}
 	bool empty() const { return sources_.empty() && !any_; }
 
 private:

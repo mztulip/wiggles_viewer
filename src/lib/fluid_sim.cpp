@@ -7,27 +7,37 @@
 #include <cmath>
 #include <sstream>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 
-struct Medium {
+struct Medium
+{
 	float relaxation, momentum, minCapacity, minAperture;
 };
 // woda / lawa z wodą, siarka, lawa (WATER_PHASE1_RE.md §4, tabela współczynników)
-Medium medium(uint8_t type) {
+Medium medium(uint8_t type)
+{
 	if (type == 2) return {1.4f, 0.3f, 32.f, 8.f};
 	if (type == 3) return {1.3f, 0.125f, 128.f, 16.f};
 	return {1.5f, 0.5f, 32.f, 8.f};
 }
 
-float pressure(float h) { return h <= 8.f ? h : (h - 8.f) * 8.f + 8.f; }
+float pressure(float h)
+{
+	return h <= 8.f ? h : (h - 8.f) * 8.f + 8.f;
+}
 
 } // namespace
 
-bool fluidSourceFromObject(const std::string& className, const std::string& info, const float pos[3], FluidSource& out) {
+bool fluidSourceFromObject(const std::string& className, const std::string& info, const float pos[3], FluidSource& out)
+{
 	std::string c = Vfs::lower(className);
-	uint8_t type = c == "wasser" ? 1 : c == "sulfur" ? 2 : c == "lava" ? 3 : 0;
+	uint8_t type = c == "wasser" ? 1 : c == "sulfur" ? 2
+	    : c == "lava"                                ? 3
+	                                                 : 0;
 	if (!type) return false;
 	// {volume 1000} {vpf 5}: pary w nawiasach klamrowych
 	float volume = -1, vpf = 0;
@@ -35,7 +45,8 @@ bool fluidSourceFromObject(const std::string& className, const std::string& info
 	for (char ch : info) flat += (ch == '{' || ch == '}') ? ' ' : ch;
 	std::istringstream in(flat);
 	std::string k, v;
-	while (in >> k >> v) {
+	while (in >> k >> v)
+	{
 		if (k == "volume") volume = std::strtof(v.c_str(), nullptr);
 		else if (k == "vpf") vpf = std::strtof(v.c_str(), nullptr);
 	}
@@ -48,7 +59,8 @@ bool fluidSourceFromObject(const std::string& className, const std::string& info
 	return true;
 }
 
-void FluidSim::init(int width, int height, const std::vector<uint32_t>* blocks, const BlockDb* db) {
+void FluidSim::init(int width, int height, const std::vector<uint32_t>* blocks, const BlockDb* db)
+{
 	w_ = width, h_ = height;
 	blocks_ = blocks, db_ = db;
 	size_t n = size_t(w_) * h_;
@@ -61,17 +73,20 @@ void FluidSim::init(int width, int height, const std::vector<uint32_t>* blocks, 
 	any_ = false;
 }
 
-void FluidSim::setState(const std::vector<uint8_t>& type, const std::vector<float>& fill) {
+void FluidSim::setState(const std::vector<uint8_t>& type, const std::vector<float>& fill)
+{
 	if (type.size() != type_.size() || fill.size() != fill_.size()) return;
 	type_ = type, fill_ = fill;
 	any_ = std::any_of(fill_.begin(), fill_.end(), [](float f) { return f > 0.001f; });
 }
 
-void FluidSim::update(float dt) {
+void FluidSim::update(float dt)
+{
 	if (empty()) return;
 	acc_ += dt;
 	int n = 0;
-	while (acc_ >= 0.1f && n++ < 3) {
+	while (acc_ >= 0.1f && n++ < 3)
+	{
 		acc_ -= 0.1f;
 		tick();
 	}
@@ -79,7 +94,8 @@ void FluidSim::update(float dt) {
 }
 
 // Transfer z sąsiada n (pole wyżej albo z lewej) do bieżącego c. Deskryptor należy do c.
-void FluidSim::transfer(int n, int c, bool vertical) {
+void FluidSim::transfer(int n, int c, bool vertical)
+{
 	uint8_t t = type_[size_t(n)] ? type_[size_t(n)] : type_[size_t(c)];
 	if (!t) return;
 	FluidShape dn = db_->fluid((*blocks_)[size_t(n)]), dc = db_->fluid((*blocks_)[size_t(c)]);
@@ -105,11 +121,14 @@ void FluidSim::transfer(int n, int c, bool vertical) {
 	changed_ = true;
 }
 
-void FluidSim::tick() {
+void FluidSim::tick()
+{
 	if (!db_ || !blocks_ || w_ == 0) return;
 	// Źródła: dolewają vpf·128 do swojego pola, do wyczerpania objętości.
-	for (auto& s : sources_) {
-		if (s.delay > 0) {
+	for (auto& s : sources_)
+	{
+		if (s.delay > 0)
+		{
 			s.delay -= 0.1f;
 			continue;
 		}
@@ -131,14 +150,16 @@ void FluidSim::tick() {
 	for (int y = 0; y < h_; ++y)
 		for (int x = 0; x < w_; ++x)
 			if (fill_[size_t(y) * w_ + x] > 0.f) x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);
-	if (x1 < 0) {
+	if (x1 < 0)
+	{
 		any_ = false;
 		return;
 	}
 	x0 = std::max(0, x0 - 1), y0 = std::max(0, y0 - 1), x1 = std::min(w_ - 1, x1 + 1), y1 = std::min(h_ - 1, y1 + 1);
 	snap_ = fill_;
 	for (int y = y0; y <= y1; ++y)
-		for (int x = x0; x <= x1; ++x) {
+		for (int x = x0; x <= x1; ++x)
+		{
 			int c = y * w_ + x;
 			if (y > 0 && (fill_[size_t(c - w_)] > 0.f || fill_[size_t(c)] > 0.f)) transfer(c - w_, c, true);
 			if (x > 0 && (fill_[size_t(c - 1)] > 0.f || fill_[size_t(c)] > 0.f)) transfer(c - 1, c, false);

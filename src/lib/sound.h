@@ -12,10 +12,12 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 // Zdekodowany dźwięk w formacie źródłowym (próbki z przeplotem kanałów).
-struct SoundPcm {
+struct SoundPcm
+{
 	int rate = 0, channels = 0;
 	std::vector<int16_t> samples;
 	std::string format; // opis źródła, np. "WAV PCM 8 bit mono 22050 Hz"
@@ -30,7 +32,8 @@ std::vector<int16_t> toOutputFormat(const SoundPcm& pcm);
 
 // Wyjście audio: mikser kilku głosów (np. odtwarzany plik i dźwięki klatek animacji naraz).
 // Głos to współdzielony bufor 44100 Hz stereo, pozycja, głośność, pętla i pauza.
-class AudioOut {
+class AudioOut
+{
 public:
 	using Clip = std::shared_ptr<const std::vector<int16_t>>;
 
@@ -50,7 +53,8 @@ public:
 	double position(int id) const;  // sekundy od początku klipu; −1 gdy głos nie istnieje
 
 private:
-	struct Voice {
+	struct Voice
+	{
 		int id = 0;
 		Clip clip;
 		size_t pos = 0; // indeks ramki (para próbek L/P)

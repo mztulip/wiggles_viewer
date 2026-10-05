@@ -12,12 +12,14 @@
 #include <cstdint>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class BlockDb;
 struct Pmp;
 
-class NavGrid {
+class NavGrid
+{
 public:
 	void build(const Pmp& grid, const BlockDb& db);
 	void updateTile(const Pmp& grid, const BlockDb& db, int x, int y);

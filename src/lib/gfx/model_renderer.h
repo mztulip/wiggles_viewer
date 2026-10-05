@@ -19,18 +19,21 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class TextureCache;
 
-enum class LightingMode : int {
+enum class LightingMode : int
+{
 	Unlit = 0,        // sama tekstura
 	Brightness = 1,   // tekstura × bajt/255 (stara, błędna interpretacja; do porównań)
 	SphereNormal = 2, // tekstura × oświetlenie z normalnej SPHERE.DAT[bajt]
 	ShowNormal = 3,   // podgląd normalnej jako kolor
 };
 
-struct ModelDrawOptions {
+struct ModelDrawOptions
+{
 	LightingMode lighting = LightingMode::SphereNormal;
 	bool wireframe = false;
 	bool alphaTest = true;
@@ -49,7 +52,8 @@ struct ModelDrawOptions {
 	float base = 128.f;
 };
 
-class ModelRenderer {
+class ModelRenderer
+{
 public:
 	~ModelRenderer();
 	bool init(rhi::Device& dev, std::string& err);
@@ -59,12 +63,13 @@ public:
 	// 256 znormalizowanych wektorów z Data/SPHERE.DAT (może być pusty: wtedy normalna = 0,1,0).
 	void setSphere(const std::vector<Vec3f>& sphere);
 
-	void drawFrame(uint32_t meshIndex, const glm::mat4& viewProj, const glm::mat4& model, const ModelDrawOptions& opt) {
+	void drawFrame(uint32_t meshIndex, const glm::mat4& viewProj, const glm::mat4& model, const ModelDrawOptions& opt)
+	{
 		drawFrames(meshIndex, meshIndex, 0.f, viewProj, model, opt);
 	}
 	// Rysuje klatkę pośrednią między meshA i meshB (t w [0,1]).
 	void drawFrames(uint32_t meshA, uint32_t meshB, float t, const glm::mat4& viewProj, const glm::mat4& model,
-	                const ModelDrawOptions& opt);
+	    const ModelDrawOptions& opt);
 	// Czy dwie klatki mają zgodną topologię (można je interpolować)?
 	bool canInterpolate(uint32_t meshA, uint32_t meshB) const;
 
@@ -72,7 +77,8 @@ public:
 	void clearCache();
 
 private:
-	struct GpuLink {
+	struct GpuLink
+	{
 		rhi::Handle vbo = rhi::kNull, ebo = rhi::kNull;
 		uint32_t count = 0;
 		uint16_t material = 0;

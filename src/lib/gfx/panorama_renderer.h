@@ -25,11 +25,13 @@
 #include <glm/glm.hpp>
 #include <string>
 
-namespace ow {
+namespace ow
+{
 
 class TextureCache;
 
-class PanoramaRenderer {
+class PanoramaRenderer
+{
 public:
 	~PanoramaRenderer();
 	bool init(rhi::Device& dev, std::string& err, TextureCache& textures);

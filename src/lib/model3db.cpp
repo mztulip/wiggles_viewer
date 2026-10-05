@@ -4,11 +4,14 @@
 
 #include <algorithm>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 
-Vec3f readVec3(BinReader& r) {
+Vec3f readVec3(BinReader& r)
+{
 	Vec3f v;
 	v.x = r.f32();
 	v.y = r.f32();
@@ -16,14 +19,19 @@ Vec3f readVec3(BinReader& r) {
 	return v;
 }
 
-template <size_t N> void readArray(BinReader& r, std::array<uint8_t, N>& out) { r.readInto(out.data(), N); }
+template <size_t N>
+void readArray(BinReader& r, std::array<uint8_t, N>& out)
+{
+	r.readInto(out.data(), N);
+}
 
 static_assert(sizeof(Vec2f) == 8 && sizeof(MeshLink) == 12 && sizeof(std::array<uint16_t, 3>) == 6,
-              "struktury czytane bezpośrednio z pliku muszą mieć rozmiar zgodny z formatem");
+    "struktury czytane bezpośrednio z pliku muszą mieć rozmiar zgodny z formatem");
 
 } // namespace
 
-bool sameTopology(const Model3db& m, uint32_t meshA, uint32_t meshB) {
+bool sameTopology(const Model3db& m, uint32_t meshA, uint32_t meshB)
+{
 	if (meshA >= m.meshes.size() || meshB >= m.meshes.size()) return false;
 	const auto& la = m.meshes[meshA].links;
 	const auto& lb = m.meshes[meshB].links;
@@ -35,13 +43,15 @@ bool sameTopology(const Model3db& m, uint32_t meshA, uint32_t meshB) {
 	return true;
 }
 
-const Object3db* Model3db::findObject(const std::string& n) const {
+const Object3db* Model3db::findObject(const std::string& n) const
+{
 	for (const auto& o : objects)
 		if (o.name == n) return &o;
 	return nullptr;
 }
 
-Model3db parseModel3db(const std::vector<uint8_t>& data) {
+Model3db parseModel3db(const std::vector<uint8_t>& data)
+{
 	BinReader r(data);
 	Model3db m;
 
@@ -50,14 +60,16 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 	m.name = r.str32();
 
 	m.materials.resize(r.u16());
-	for (auto& mat : m.materials) {
+	for (auto& mat : m.materials)
+	{
 		mat.name = r.str32();
 		mat.path = r.str32();
 		mat.unknown = r.u32();
 	}
 
 	m.meshes.resize(r.u32());
-	for (auto& mesh : m.meshes) {
+	for (auto& mesh : m.meshes)
+	{
 		r.readArray(mesh.links, r.u16()); // 6 × u16 w kolejności pól MeshLink
 		mesh.bboxMin = readVec3(r);
 		mesh.bboxMax = readVec3(r);
@@ -68,13 +80,15 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 	}
 
 	m.objects.resize(r.u16());
-	for (auto& o : m.objects) {
+	for (auto& o : m.objects)
+	{
 		o.name = r.str32();
 		r.readArray(o.animations, r.u16());
 	}
 
 	m.animations.resize(r.u16());
-	for (auto& a : m.animations) {
+	for (auto& a : m.animations)
+	{
 		a.name = r.str32();
 		r.readArray(a.frames, r.u16());
 		a.unknownFlags = r.u16();
@@ -88,7 +102,8 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 	for (auto& s : m.shadows) readArray(r, s);
 
 	m.cmaps.resize(r.u16());
-	for (auto& c : m.cmaps) {
+	for (auto& c : m.cmaps)
+	{
 		c.width = r.u16();
 		c.height = r.u16();
 		c.unknown1 = r.u16();
@@ -123,7 +138,8 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 	for (size_t i = 0; i < m.triangles.size(); ++i)
 		for (uint16_t idx : m.triangles[i]) maxIndex[i] = std::max(maxIndex[i], int(idx));
 	for (const auto& mesh : m.meshes)
-		for (const auto& l : mesh.links) {
+		for (const auto& l : mesh.links)
+		{
 			if (l.material >= m.materials.size() || l.triangles >= m.triangles.size() ||
 			    l.texcoords >= m.texcoords.size() || l.points >= m.points.size() ||
 			    l.normals >= m.normals.size())
@@ -131,7 +147,8 @@ Model3db parseModel3db(const std::vector<uint8_t>& data) {
 			if (maxIndex[l.triangles] >= int(m.points[l.points].size()))
 				throw ParseError("indeks trójkąta poza zakresem punktów");
 		}
-	for (const auto& mesh : m.meshes) {
+	for (const auto& mesh : m.meshes)
+	{
 		if (mesh.shadowIndex != 0xFFFF && mesh.shadowIndex >= m.shadows.size()) throw ParseError("indeks cienia poza zakresem");
 		if (mesh.cmapIndex != 0xFFFF && mesh.cmapIndex >= m.cmaps.size()) throw ParseError("indeks cmapy poza zakresem");
 	}

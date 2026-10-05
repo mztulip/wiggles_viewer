@@ -24,17 +24,21 @@
 
 struct Tcl_Interp;
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-namespace script {
+namespace script
+{
 
-struct Method {
+struct Method
+{
 	std::string args, body;
 };
 
-struct ScriptClass {
+struct ScriptClass
+{
 	std::string name, category, type, flags;
 	int epoch = 0;
 	bool scripting = true; // class_disablescripting wyłącza
@@ -49,13 +53,15 @@ struct ScriptClass {
 	std::string defaultAnim;
 };
 
-struct Event {
+struct Event
+{
 	std::string name;
 	std::map<std::string, std::string> params; // -subject1, -num1, … (bez myślnika)
 	double time = 0;
 };
 
-struct Timer {
+struct Timer
+{
 	int object = 0;
 	std::string event;
 	double fireTime = 0, interval = 0;
@@ -64,7 +70,8 @@ struct Timer {
 };
 
 // Operacje na świecie, których silnik potrzebuje od gry (implementuje src/game).
-struct Host {
+struct Host
+{
 	virtual ~Host() = default;
 	virtual int createObject(const std::string& cls, const std::string& name, const float pos[3], const float rot[3]) = 0;
 	virtual void deleteObject(int id) = 0;
@@ -78,7 +85,8 @@ struct Host {
 	virtual float getRotY(int) { return 0.f; }
 	virtual float hmap(float, float) { return 0.f; }          // get_hmap: głębokość tylnej ściany (skala skryptu)
 	virtual bool underwater(const float[3]) { return false; }
-	virtual bool findPlace(const float c[3], float /*promień*/, float out[3]) { // wolne miejsce do stania
+	virtual bool findPlace(const float c[3], float /*promień*/, float out[3])
+	{ // wolne miejsce do stania
 		out[0] = c[0], out[1] = c[1], out[2] = c[2];
 		return true;
 	}
@@ -89,7 +97,8 @@ struct Host {
 	virtual bool linkOffset(int, int, float[3]) { return false; } // get_linkpos
 };
 
-struct ScriptObject {
+struct ScriptObject
+{
 	int id = 0;
 	ScriptClass* cls = nullptr;
 	std::string name;
@@ -108,7 +117,8 @@ struct ScriptObject {
 	std::string actionDone;   // kod do wykonania po akcji
 };
 
-class Engine {
+class Engine
+{
 public:
 	explicit Engine(const Vfs& vfs);
 	~Engine();
@@ -175,7 +185,8 @@ public:
 	std::string cwd_; // katalog bieżący względem katalogu gry (cd/pwd/glob), na starcie katalog gry
 	std::string mainGlobals_; // migawka zmiennych głównego interpretera dla interpreterów obiektów
 	int mainGlobalCount_ = -1;
-	struct AttribDef {
+	struct AttribDef
+	{
 		double min = 0, max = 1e9, def = 0;
 	};
 	std::map<std::string, AttribDef> attribDefs_; // def_attrib nazwa min max domyślna

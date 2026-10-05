@@ -7,18 +7,21 @@
 #include <cmath>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-namespace {
+namespace
+{
 
 // Shadery: src/shaders/panorama.vert/.frag i carpet.vert/.frag.
 
-struct Layer {
+struct Layer
+{
 	float depth, scale, offU, offV;
 };
 // Stałe z .rdata Wiggles.exe (BACKDROP_PARALLAX_RE §2.1).
-const Layer kLayers[6] = {{21100, 0.53f, 0, 0.75f}, {20500, 0.04f, 0, 1.0f},  {11300, 0.11f, 0, 0.5f},
-                          {1000, 1.12f, 0, -4.9f},  {200, 6.68f, 0.7f, -33.0f}, {100, 18.0f, 1.0f, -90.25f}};
+const Layer kLayers[6] = {{21100, 0.53f, 0, 0.75f}, {20500, 0.04f, 0, 1.0f}, {11300, 0.11f, 0, 0.5f},
+    {1000, 1.12f, 0, -4.9f}, {200, 6.68f, 0.7f, -33.0f}, {100, 18.0f, 1.0f, -90.25f}};
 constexpr float kKu = 0.00075f, kKv = 0.0015f, kUvBias = 5.0f;
 constexpr int kGrid = 9;
 // Dywan łąki (FUN_00480720).
@@ -30,7 +33,8 @@ constexpr int kChunks = int(2 * kCarpetSpan / kChunk) + 1;
 
 } // namespace
 
-PanoramaRenderer::~PanoramaRenderer() {
+PanoramaRenderer::~PanoramaRenderer()
+{
 	if (!dev_) return;
 	for (auto t : tex_)
 		if (t) dev_->destroyTexture(t);
@@ -38,7 +42,8 @@ PanoramaRenderer::~PanoramaRenderer() {
 	if (carpetEbo_) dev_->destroyBuffer(carpetEbo_);
 }
 
-bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& textures) {
+bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& textures)
+{
 	dev_ = &dev;
 	rhi::PipelineDesc d;
 	d.shader = "panorama";
@@ -54,7 +59,8 @@ bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	c.attribs = {{0, 0, 3, 0}, {1, 0, 2, 3 * sizeof(float)}};
 	if (!(pipeCarpet_ = dev.createPipeline(c, err))) return false;
 	// Warstwy 0..5 i dywan (6): U zawijane; V zawijane tylko w warstwie 0 (BACKDROP_PARALLAX_RE §5).
-	for (int i = 0; i < 7; ++i) {
+	for (int i = 0; i < 7; ++i)
+	{
 		std::string path = "Data/Texture/Misc/Panorama_layer_" + std::to_string(i) + ".tga";
 		Image img;
 		auto data = textures.vfs().read(path);
@@ -66,7 +72,8 @@ bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	}
 	std::vector<uint16_t> idx;
 	for (int r = 0; r + 1 < kGrid; ++r)
-		for (int c2 = 0; c2 + 1 < kGrid; ++c2) {
+		for (int c2 = 0; c2 + 1 < kGrid; ++c2)
+		{
 			uint16_t a = uint16_t(r * kGrid + c2), b = uint16_t(a + 1), e = uint16_t(a + kGrid), f = uint16_t(e + 1);
 			idx.insert(idx.end(), {a, e, b, b, e, f});
 		}
@@ -74,7 +81,8 @@ bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	idx.clear();
 	for (int k = 0; k < kChunks; ++k)
 		for (int r = 0; r < 3; ++r)
-			for (int c2 = 0; c2 < 3; ++c2) {
+			for (int c2 = 0; c2 < 3; ++c2)
+			{
 				uint16_t a = uint16_t(k * 16 + r * 4 + c2), b = uint16_t(a + 1), e = uint16_t(a + 4), f = uint16_t(e + 1);
 				idx.insert(idx.end(), {a, e, b, b, e, f});
 			}
@@ -82,13 +90,15 @@ bool PanoramaRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	return true;
 }
 
-void PanoramaRenderer::drawCarpet(const glm::mat4& gameToClip, float focusX, float groundRow) {
+void PanoramaRenderer::drawCarpet(const glm::mat4& gameToClip, float focusX, float groundRow)
+{
 	std::vector<float> v;
 	v.reserve(kChunks * 16 * 5);
 	float x0 = std::floor(focusX / kChunk) * kChunk - kCarpetSpan;
 	for (int k = 0; k < kChunks; ++k)
 		for (int r = 0; r < 4; ++r)
-			for (int c = 0; c < 4; ++c) {
+			for (int c = 0; c < 4; ++c)
+			{
 				v.push_back(x0 + float(k) * kChunk + float(c) * kChunk / 3.f);
 				v.push_back(groundRow - kCarpetDrop - kRowLift[r]);
 				v.push_back(kRowZ[r]);
@@ -104,14 +114,17 @@ void PanoramaRenderer::drawCarpet(const glm::mat4& gameToClip, float focusX, flo
 	dev_->drawIndexed(uint32_t(kChunks * 9 * 6));
 }
 
-void PanoramaRenderer::draw(const glm::mat4& ndcToGame) {
+void PanoramaRenderer::draw(const glm::mat4& ndcToGame)
+{
 	// Promienie siatki 9×9 w układzie gry.
-	struct Ray {
+	struct Ray
+	{
 		float ndcX, ndcY, xNear, yNear, slopeX, slopeY;
 	};
 	Ray rays[kGrid * kGrid];
 	for (int r = 0; r < kGrid; ++r)
-		for (int c = 0; c < kGrid; ++c) {
+		for (int c = 0; c < kGrid; ++c)
+		{
 			float x = -1.f + 2.f * float(c) / (kGrid - 1), y = 1.f - 2.f * float(r) / (kGrid - 1);
 			glm::vec4 n = ndcToGame * glm::vec4(x, y, -1.f, 1.f), f = ndcToGame * glm::vec4(x, y, 1.f, 1.f);
 			glm::vec3 near = glm::vec3(n) / n.w, far = glm::vec3(f) / f.w, d = far - near;
@@ -122,10 +135,12 @@ void PanoramaRenderer::draw(const glm::mat4& ndcToGame) {
 	if (!dev_ || !pipe_) return;
 	dev_->bindPipeline(pipe_);
 	float verts[kGrid * kGrid * 4];
-	for (int l = 0; l < 6; ++l) {
+	for (int l = 0; l < 6; ++l)
+	{
 		const Layer& L = kLayers[l];
 		float dp = L.depth - 1.f;
-		for (int i = 0; i < kGrid * kGrid; ++i) {
+		for (int i = 0; i < kGrid * kGrid; ++i)
+		{
 			const Ray& ry = rays[i];
 			float uCore = kKu * (ry.slopeX * dp - ry.xNear) + kUvBias;
 			float vCore = -kKv * (ry.slopeY * dp - ry.yNear) + kUvBias;

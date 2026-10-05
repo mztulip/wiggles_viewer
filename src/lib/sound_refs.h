@@ -17,12 +17,24 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
 class Vfs;
 
-struct SoundRef {
-	enum Kind { Bind, Anim, AnimNoSeq, Play, PlayGlobal, Music, Clip, Mention };
+struct SoundRef
+{
+	enum Kind
+	{
+		Bind,
+		Anim,
+		AnimNoSeq,
+		Play,
+		PlayGlobal,
+		Music,
+		Clip,
+		Mention
+	};
 	Kind kind = Mention;
 	std::string script;  // ścieżka skryptu względem Data/
 	int line = 0;        // numer linii (od 1)
@@ -36,7 +48,8 @@ struct SoundRef {
 	bool seqSkippable = false; // linia sekwencji z '-': pomijana, gdy gracz przerwie sekwencję
 };
 
-struct SoundIndex {
+struct SoundIndex
+{
 	std::vector<SoundRef> refs;
 	std::unordered_map<std::string, std::vector<int>> byFile;   // klucz pliku -> Bind/Music/Clip
 	std::unordered_map<std::string, std::vector<int>> byName;   // nazwa logiczna -> Anim/Play/Mention

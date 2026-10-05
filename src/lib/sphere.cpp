@@ -2,9 +2,11 @@
 
 #include <cstring>
 
-namespace ow {
+namespace ow
+{
 
-std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data) {
+std::vector<Vec3f> parseSphereDat(const std::vector<uint8_t>& data)
+{
 	std::vector<Vec3f> v;
 	if (data.size() != 256 * sizeof(Vec3f)) return v;
 	v.resize(256);

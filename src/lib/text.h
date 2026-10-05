@@ -3,7 +3,8 @@
 
 #include <string>
 
-namespace ow {
+namespace ow
+{
 
 std::string cp1252ToUtf8(const std::string& s);
 

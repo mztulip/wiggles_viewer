@@ -2,14 +2,17 @@
 
 #include "lib/binreader.h"
 
-namespace ow {
+namespace ow
+{
 
-bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err) {
+bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err)
+{
 	auto fail = [&](const std::string& m) {
 		if (err) *err = m;
 		return false;
 	};
-	try {
+	try
+	{
 		BinReader r(data);
 		uint8_t idLen = r.u8();
 		uint8_t cmapType = r.u8();
@@ -38,16 +41,21 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err) {
 		out.rgba.assign(size_t(w) * h * 4, 255);
 
 		auto decode = [&](const uint8_t* p, uint8_t* d) {
-			if (gray) {
+			if (gray)
+			{
 				d[0] = d[1] = d[2] = p[0];
 				d[3] = bpp == 16 ? p[1] : 255;
-			} else if (bpp == 16) { // ARRRRRGG GGGBBBBB
+			}
+			else if (bpp == 16)
+			{ // ARRRRRGG GGGBBBBB
 				uint16_t v = uint16_t(p[0] | (p[1] << 8));
 				d[0] = uint8_t(((v >> 10) & 31) * 255 / 31);
 				d[1] = uint8_t(((v >> 5) & 31) * 255 / 31);
 				d[2] = uint8_t((v & 31) * 255 / 31);
 				d[3] = (desc & 0x0f) ? ((v & 0x8000) ? 255 : 0) : 255;
-			} else { // BGR(A)
+			}
+			else
+			{ // BGR(A)
 				d[0] = p[2];
 				d[1] = p[1];
 				d[2] = p[0];
@@ -58,21 +66,29 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err) {
 		std::vector<uint8_t> px(size_t(w) * h * 4);
 		size_t n = size_t(w) * h, i = 0;
 		uint8_t raw[4];
-		while (i < n) {
-			if (rle) {
+		while (i < n)
+		{
+			if (rle)
+			{
 				uint8_t hdr = r.u8();
 				size_t count = (hdr & 0x7f) + 1;
 				if (i + count > n) return fail("uszkodzone dane RLE");
-				if (hdr & 0x80) {
+				if (hdr & 0x80)
+				{
 					for (int b = 0; b < bytes; ++b) raw[b] = r.u8();
 					for (size_t k = 0; k < count; ++k) decode(raw, &px[(i++) * 4]);
-				} else {
-					for (size_t k = 0; k < count; ++k) {
+				}
+				else
+				{
+					for (size_t k = 0; k < count; ++k)
+					{
 						for (int b = 0; b < bytes; ++b) raw[b] = r.u8();
 						decode(raw, &px[(i++) * 4]);
 					}
 				}
-			} else {
+			}
+			else
+			{
 				for (int b = 0; b < bytes; ++b) raw[b] = r.u8();
 				decode(raw, &px[(i++) * 4]);
 			}
@@ -81,9 +97,11 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err) {
 		// Bit 5 deskryptora: początek u góry. Domyślnie TGA jest zapisany od dołu.
 		bool topDown = desc & 0x20;
 		bool rightToLeft = desc & 0x10;
-		for (int y = 0; y < h; ++y) {
+		for (int y = 0; y < h; ++y)
+		{
 			int sy = topDown ? y : h - 1 - y;
-			for (int x = 0; x < w; ++x) {
+			for (int x = 0; x < w; ++x)
+			{
 				int sx = rightToLeft ? w - 1 - x : x;
 				const uint8_t* s = &px[(size_t(sy) * w + sx) * 4];
 				uint8_t* d = &out.rgba[(size_t(y) * w + x) * 4];
@@ -94,7 +112,9 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err) {
 			}
 		}
 		return true;
-	} catch (const ParseError& e) {
+	}
+	catch (const ParseError& e)
+	{
 		return fail(std::string("uszkodzony TGA: ") + e.what());
 	}
 }

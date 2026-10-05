@@ -7,13 +7,16 @@
 #include <string>
 #include <vector>
 
-namespace ow {
+namespace ow
+{
 
-struct ParseError : std::runtime_error {
+struct ParseError : std::runtime_error
+{
 	using std::runtime_error::runtime_error;
 };
 
-class BinReader {
+class BinReader
+{
 public:
 	BinReader(const uint8_t* data, size_t size) : data_(data), size_(size) {}
 	explicit BinReader(const std::vector<uint8_t>& v) : BinReader(v.data(), v.size()) {}
@@ -23,14 +26,21 @@ public:
 	size_t remaining() const { return size_ - pos_; }
 	bool atEnd() const { return pos_ == size_; }
 
-	void need(size_t n) const {
+	void need(size_t n) const
+	{
 		if (n > remaining())
 			throw ParseError("koniec danych: potrzeba " + std::to_string(n) + " B na pozycji " +
-			                 std::to_string(pos_) + " (rozmiar " + std::to_string(size_) + ")");
+			    std::to_string(pos_) + " (rozmiar " + std::to_string(size_) + ")");
 	}
-	void skip(size_t n) { need(n); pos_ += n; }
+	void skip(size_t n)
+	{
+		need(n);
+		pos_ += n;
+	}
 
-	template <typename T> T read() {
+	template <typename T>
+	T read()
+	{
 		need(sizeof(T));
 		T v;
 		std::memcpy(&v, data_ + pos_, sizeof(T)); // zakładamy hosta little-endian (x86, ARM)
@@ -43,7 +53,8 @@ public:
 	float f32() { return read<float>(); }
 
 	// Ciąg poprzedzony długością u32, bez terminatora.
-	std::string str32() {
+	std::string str32()
+	{
 		uint32_t n = u32();
 		need(n);
 		std::string s(reinterpret_cast<const char*>(data_ + pos_), n);
@@ -51,18 +62,22 @@ public:
 		return s;
 	}
 	// Kopiuje n bajtów prosto do dst (szybkie czytanie całych tablic).
-	void readInto(void* dst, size_t n) {
+	void readInto(void* dst, size_t n)
+	{
 		need(n);
 		std::memcpy(dst, data_ + pos_, n);
 		pos_ += n;
 	}
 	// Tablica elementów typu T (POD, little-endian) zapisanych jeden po drugim.
-	template <typename T> void readArray(std::vector<T>& out, size_t count) {
+	template <typename T>
+	void readArray(std::vector<T>& out, size_t count)
+	{
 		if (count > remaining() / sizeof(T)) need(count * sizeof(T)); // błąd przed alokacją
 		out.resize(count);
 		if (count) readInto(out.data(), count * sizeof(T));
 	}
-	std::vector<uint8_t> bytes(size_t n) {
+	std::vector<uint8_t> bytes(size_t n)
+	{
 		need(n);
 		std::vector<uint8_t> v(data_ + pos_, data_ + pos_ + n);
 		pos_ += n;

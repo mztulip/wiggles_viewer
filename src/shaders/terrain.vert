@@ -16,7 +16,8 @@ layout(location = 3) out float vAlpha;
 layout(location = 4) out vec3 vGameDiffuse;
 layout(location = 5) out vec3 vGameSpec;
 layout(location = 6) out vec2 vUV;
-void main() {
+void main()
+{
 	vGameDiffuse = vec3(1.0);
 	vGameSpec = vec3(0.0);
 	if (uFlags.x == 1) gameLighting(aPos / 200.0, aNormal, aBase, vGameDiffuse, vGameSpec);
