@@ -51,10 +51,11 @@ src/shaders (GLSL, osadzane przez build.sh)    third_party (imgui, dr_mp3)
 
 | Program | Kod | Co tam jest |
 |---|---|---|
-| `wigview` | [main.cpp](../src/apps/wigview/main.cpp) | okno, kamera, zakładki Modele i Tekstury, wyszukiwarka Ctrl+F, opcje wiersza poleceń (opis na początku pliku) |
+| `wigview` | [main.cpp](../src/apps/wigview/main.cpp) | okno, kamera, zakładki Modele i Tekstury, wyszukiwarka Ctrl+F, miniatury (`--thumbnails`), opcje wiersza poleceń (opis na początku pliku) |
 | | [map_view](../src/apps/wigview/map_view.h) ([.cpp](../src/apps/wigview/map_view.cpp)) | zakładki Mapy i Zapisy: panel ImGui nad `MapScene` (listy, siatka 2D, przełączniki) |
 | | [particle_view](../src/apps/wigview/particle_view.h) | zakładka Cząsteczki |
 | | [sound_view](../src/apps/wigview/sound_view.h) ([.cpp](../src/apps/wigview/sound_view.cpp)) | zakładka Dźwięki |
+| | [files_view](../src/apps/wigview/files_view.h) ([.cpp](../src/apps/wigview/files_view.cpp)) | zakładka Pliki: drzewo `Data/`, statystyka typów, podgląd tekstu i hex, przejście do zakładki typu (`Viewer::openFile`) |
 | `openwiggles` (gra) | [main.cpp](../src/apps/game/main.cpp) | `Game` (pętla, kamera, krasnale, kopanie), `ScriptHost` (most skrypty ↔ `MapScene`), zapis `.ows` ([rozdział 14](silnik/14_gra.md)) |
 | `test3db` | [test3db.cpp](../src/tools/test3db.cpp) | parsery na wszystkich danych gry: modele, tekstury, szablony, zapisy, dźwięki |
 | `export_gltf` | [export_gltf.cpp](../src/tools/export_gltf.cpp) | eksport modelu do `.glb` z wiersza poleceń |

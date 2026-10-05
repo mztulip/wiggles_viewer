@@ -23,6 +23,7 @@
 // --thumbnails KATALOG: miniatury wszystkich obiektów (z --model tylko tego modelu) w animacji „standard”
 //                      (albo pierwszej), klatka 0: KATALOG/<model>/<obiekt>.png i KATALOG/index.html; rozmiar z --size
 //                      (domyślnie 256x256), kończy działanie.
+// --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 // --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
@@ -42,6 +43,7 @@
 #include "lib/png_write.h"
 #include "lib/tga.h"
 #include "lib/vfs.h"
+#include "apps/wigview/files_view.h"
 #include "apps/wigview/map_view.h"
 #include "apps/wigview/particle_view.h"
 #include "apps/wigview/sound_view.h"
@@ -73,7 +75,7 @@ namespace
 
 struct Args
 {
-	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound, texture;
+	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound, texture, file;
 	int textureChannel = 0;
 	bool shadowCmap = false;
 	std::vector<std::string> overlays;
@@ -118,6 +120,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--template") a.templ = next();
 		else if (k == "--particle") a.particle = std::atoi(next());
 		else if (k == "--sound") a.sound = next();
+		else if (k == "--file") a.file = next();
 		else if (k == "--texture") a.texture = next();
 		else if (k == "--texture-channel") a.textureChannel = std::atoi(next());
 		else if (k == "--shadow-cmap") a.shadowCmap = true;
@@ -200,6 +203,10 @@ struct Viewer
 	MapView maps;
 	ParticleView particles;
 	SoundView sounds;
+	FilesView files;
+	// Plik z zakładki Pliki w zakładce, która umie go pokazać; doIt = false: tylko sprawdzenie, czy taka jest.
+	bool openFile(const std::string& gamePath, bool doIt);
+	bool sceneless() const { return activeTab == 1 || activeTab == 5 || activeTab == 6; } // zakładki bez sceny 3D
 	bool animSounds = false; // zakładka Modele: odtwarzaj dźwięki klatek (sound anim) podczas animacji
 	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
 	char exportDir[512] = ".";
@@ -442,9 +449,9 @@ struct Viewer
 		{
 			particles.render(viewProj(w - x0, h) * modelMatrix());
 		}
-		else if (activeTab == 1 || activeTab == 5)
+		else if (sceneless())
 		{
-			// Tekstury i Dźwięki: bez sceny 3D
+			// Tekstury, Dźwięki i Pliki: bez sceny 3D
 		}
 		else
 		{
@@ -1070,6 +1077,58 @@ void Viewer::openHit(const SearchEntry& e)
 	scrollToSel = true;
 }
 
+bool Viewer::openFile(const std::string& gamePath, bool doIt)
+{
+	auto hit = [&](HitKind k, const std::string& file, int index) {
+		SearchEntry e;
+		e.kind = k, e.file = file, e.index = index;
+		openHit(e);
+	};
+	std::string lp = Vfs::lower(gamePath);
+	size_t slash = gamePath.rfind('/');
+	std::string dir = gamePath.substr(0, slash), name = gamePath.substr(slash + 1), ldir = Vfs::lower(dir);
+	std::string ext = name.rfind('.') == std::string::npos ? "" : Vfs::lower(name.substr(name.rfind('.') + 1));
+	if (ldir == "data/3db" && ext == "3db")
+	{
+		if (doIt) hit(HitKind::Model, name, 0);
+		return true;
+	}
+	if (ext == "tga" && ldir.size() > 5)
+		for (int i = 0; i < int(texDirs.size()); ++i)
+			if (Vfs::lower(texDirs[size_t(i)]) == ldir.substr(5))
+			{
+				if (doIt) hit(HitKind::Texture, name, i);
+				return true;
+			}
+	if ((ext == "wav" || ext == "mp3") && (lp.rfind("data/sound/", 0) == 0 || lp.rfind("data/music/", 0) == 0))
+	{
+		if (doIt) hit(HitKind::Sound, gamePath, 0);
+		return true;
+	}
+	// Szablon: <nazwa>.tcl w Data/Templates (części .pmp, .l2m, .ent otwierają ten sam szablon).
+	if (ldir == "data/templates" && (ext == "tcl" || ext == "pmp" || ext == "l2m" || ext == "ent"))
+	{
+		std::string base = Vfs::lower(name.substr(0, name.rfind('.')));
+		for (const auto& f : maps.files())
+			if (Vfs::lower(f.substr(0, f.rfind('.'))) == base)
+			{
+				if (doIt) hit(HitKind::Template, f, 0);
+				return true;
+			}
+		return false;
+	}
+	if ((ldir == "data/gamesave" && (ext == "tcl" || ext == "sav")) || lp == "data/systeminit.tcl")
+	{
+		if (doIt)
+		{
+			hit(HitKind::Scenario, name, 0);
+			if (ext == "sav") forceTab = activeTab = 3;
+		}
+		return true;
+	}
+	return false;
+}
+
 void Viewer::uiSearch()
 {
 	if (searchRequest)
@@ -1148,10 +1207,10 @@ void Viewer::ui()
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
-	// Zakładki Tekstury i Dźwięki nie mają sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
-	if ((activeTab == 1 || activeTab == 5) != wideTab)
+	// Zakładki Tekstury, Dźwięki i Pliki nie mają sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
+	if (sceneless() != wideTab)
 	{
-		wideTab = activeTab == 1 || activeTab == 5;
+		wideTab = sceneless();
 		if (ImGuiWindow* w = ImGui::FindWindowByName("wigview")) uiWidth = w->Size.x, uiHeight = w->Size.y;
 		else uiHeight = vp->WorkSize.y - 16; // pierwsza klatka, okno jeszcze nie istnieje
 		if (wideTab)
@@ -1226,6 +1285,12 @@ void Viewer::ui()
 		{
 			activeTab = 5;
 			sounds.ui();
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem(tr("Pliki###pliki"), nullptr, tabFlags(6)))
+		{
+			activeTab = 6;
+			files.ui();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -1496,6 +1561,9 @@ int main(int argc, char** argv)
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
 	v.particles.init(dev, &v.vfs, v.textures.get());
 	v.sounds.init(&v.vfs);
+	v.files.init(&v.vfs);
+	v.files.canOpen = [&v](const std::string& p) { return v.openFile(p, false); };
+	v.files.open = [&v](const std::string& p) { return v.openFile(p, true); };
 	v.sounds.onOpenAnim = [&v](const std::string& obj, const std::string& anim, int fr) { v.openAnim(obj, anim, fr); };
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT"))
 	{
@@ -1556,6 +1624,11 @@ int main(int argc, char** argv)
 		v.texChannel = std::clamp(args.textureChannel, 0, 5);
 		v.activeTab = v.forceTab = 1;
 	}
+	if (!args.file.empty())
+	{
+		v.files.select(args.file);
+		v.activeTab = v.forceTab = 6;
+	}
 	if (!args.sound.empty())
 	{
 		v.sounds.setAutoplay(!args.batch());
@@ -1609,6 +1682,9 @@ int main(int argc, char** argv)
 	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 	         "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
 		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
+	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+	         "/usr/share/fonts/noto/NotoSansMono-Regular.ttf", "C:\\Windows\\Fonts\\consola.ttf"})
+		if (std::filesystem::exists(f) && (v.files.mono = ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 14.f))) break;
 	dev.imguiInit();
 	if (v.texFiles.empty()) v.refreshTexFiles(); // --texture mogło już wybrać katalog i plik
 

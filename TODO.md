@@ -110,7 +110,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 
 ## Faza 3: wigview, czyli przeglądarka assetów
 - [x] Okno SDL2 + ImGui (dziś Vulkan albo OpenGL 4.5 przez `rhi`), lista modeli `Data/3db`, polski font
-- [ ] Drzewo całego `Data/` (inne typy plików)
+- [x] Drzewo całego `Data/` (inne typy plików): zakładka Pliki z nakładkami modów, statystyka typów w katalogu (14 171 plików), opis typu z odnośnikiem do specyfikacji, podgląd tekstu (CP1250/CP1252) i hex, filtr ścieżek, „Otwórz w zakładce” dla modeli, tekstur, dźwięków, szablonów, scenariuszy i zapisów; `--file ŚCIEŻKA`
 - [x] Podgląd tekstur TGA (lista katalogów i plików, filtr, rozmiar): katalogi `Texture/`, `Ground/` i `GUI/` (z podkatalogami)
 - [x] Tekstury: zoom (suwak, Ctrl+kółko, „Dopasuj”, „1:1”), podgląd kanałów (RGBA, RGB, alfa, R, G, B), tło szachownicy, wartość piksela pod kursorem; `--texture GUI/bordermask.tga --texture-channel 2`
 - [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
