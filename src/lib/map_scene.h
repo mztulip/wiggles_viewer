@@ -1,7 +1,7 @@
-// Zakładka "Mapy" w wigview: przeglądarka szablonów map (Data/Templates).
-//
-// Siatka .PMP w 2D (typ pola, ID bloku, warstwy, głębokość), teren ze szczegółowych siatek
-// bloków BlockDB oraz obiekty z MapTemplateSet w 3D z modelami .3db.
+// Scena mapy: świat złożony z szablonów, scenariusza albo zapisu gry (.sav), z terenem, obiektami .3db,
+// oświetleniem gry, nieodkrytym terenem, płynami i cząsteczkami, oraz jej rysowanie.
+// Używają jej gra (src/apps/game) i przeglądarka (src/apps/wigview, zakładki Mapy i Zapisy: MapView
+// dokłada panel ImGui z listami plików i siatką 2D).
 //
 // Układ współrzędnych: pozycje obiektów w szablonie są w blokach; 1 blok = 200 jednostek
 // modelu (wzorzec: OBJ z save_map gry). Oś Y w dół, jak w modelach.
@@ -9,14 +9,14 @@
 
 #include "lib/blockdb.h"
 #include "lib/class_db.h"
-#include "lib/gfx/panorama_renderer.h"
+#include "lib/render/panorama_renderer.h"
 #include "lib/fluid_sim.h"
-#include "lib/gfx/fluid_renderer.h"
-#include "lib/gfx/particle_renderer.h"
-#include "lib/gfx/terrain_renderer.h"
+#include "lib/render/fluid_renderer.h"
+#include "lib/render/particle_renderer.h"
+#include "lib/render/terrain_renderer.h"
 #include "lib/heightfield.h"
 #include "lib/terrain_mesh.h"
-#include "lib/gfx/model_renderer.h"
+#include "lib/render/model_renderer.h"
 #include "lib/map_template.h"
 #include "lib/map_world.h"
 #include "lib/save_game.h"
@@ -34,62 +34,31 @@ namespace ow
 {
 class Vfs;
 class TextureCache;
-} // namespace ow
 
-class MapView
+class MapScene
 {
 public:
 	static constexpr float kBlock = 200.f; // jednostek modelu na blok szablonu
 
-	void init(ow::rhi::Device& dev, const ow::Vfs* vfs, ow::TextureCache* textures, const std::vector<ow::Vec3f>* sphere);
+	void init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, const std::vector<Vec3f>* sphere);
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	bool loadSavePath(const std::string& path);  // zapis gry .sav z dowolnego miejsca na dysku
-	void step(int d);                           // poprzedni/następny szablon (strzałki)
-	void select(const std::string& file)
-	{      // wczytaj (odroczone) i przewiń listę do szablonu
-		list_ = ListMode::Templates;
-		pending_ = [this, file] { return loadTemplate(file); };
-		scrollToSel_ = true;
-	}
-	void selectScenario(const std::string& file)
-	{
-		bool sav = file.size() > 4 && (file.compare(file.size() - 4, 4, ".sav") == 0 || file.compare(file.size() - 4, 4, ".SAV") == 0);
-		list_ = sav ? ListMode::Saves : ListMode::Scenarios;
-		pending_ = [this, file] { return loadScenario(file); };
-		scrollToSel_ = true;
-	}
-	// Wczytywanie odroczone: wybór w UI (w trakcie klatki ImGui) tylko zleca wczytanie, a pętla główna
-	// wykonuje je między klatkami, rysując postęp (progress).
-	bool hasPending() const { return bool(pending_); }
-	const std::string& loadingName() const { return file_; }
-	void runPending()
-	{
-		auto f = std::move(pending_);
-		pending_ = nullptr;
-		f();
-	}
+
 	// Postęp wczytywania: ułamek 0..1 i nazwa etapu. Ustawiany przez pętlę główną (rysuje pasek).
 	std::function<void(float, const char*)> progress;
-	const std::vector<std::string>& scenarios() const { return scenarios_; }
-	const std::vector<std::string>& files() const { return files_; }
-
-	// Rysuje panel UI (lista, siatka 2D, informacje). Zwraca true, gdy kamera powinna się wycentrować.
-	// savesTab: zakładka Zapisy (lista zapisów gry) zamiast Mapy (szablony i scenariusze).
-	bool ui(bool savesTab);
-	bool showingSave() const { return list_ == ListMode::Saves; }
 	void update(float dt);
 	// gameZOffset: wartość do dodania do z po macierzy world, żeby otrzymać z gry (jednostki modelu).
 	// focus: środek kadru w jednostkach modelu (wybór najbliższych lamp przy oświetleniu gry).
-	void render(const glm::mat4& viewProj, const glm::mat4& world, const ow::ModelDrawOptions& opt, float gameZOffset,
+	void render(const glm::mat4& viewProj, const glm::mat4& world, const ModelDrawOptions& opt, float gameZOffset,
 	    const glm::vec3& focus = glm::vec3(0.f));
 	// Strefa horyzontu (kolor tła otworów i zanikanie modeli za skałą). Prawo gry (FUN_004750b0):
 	// co klatkę najbliższy obiekt Info_Fog_*, którego odległość 2D od ogniska kamery < size;
 	// bez takiego obiektu strefy nie ma. focus w jednostkach modelu (układ gry).
 	void updateZone(const glm::vec3& focus);
-	const ow::HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
+	const HorizonZone* zone() const { return showZone_ && zone_ ? &*zone_ : nullptr; }
 	// Kamera startowa scenariusza (set_view), we współrzędnych przyciętego świata.
-	const std::optional<ow::GameView>& gameView() const { return gameView_; }
+	const std::optional<GameView>& gameView() const { return gameView_; }
 	const int* origin() const { return worldOrigin_; } // lewy górny róg przyciętego świata (bloki)
 
 	// Obszar sceny do ustawienia kamery (w jednostkach modelu, Y w dół).
@@ -99,8 +68,8 @@ public:
 	const std::string& current() const { return file_; }
 	const std::string& error() const { return error_; }
 
-	// --- Interfejs gry (src/game): obiekty sterowane z zewnątrz i zmiany terenu. 🔶 Tymczasowo w MapView;
-	// docelowo wspólna scena w bibliotece (TODO). Indeksy obiektów ważne do następnego wczytania mapy.
+	// --- Interfejs gry (src/apps/game): obiekty sterowane z zewnątrz i zmiany terenu.
+	// Indeksy obiektów ważne do następnego wczytania mapy.
 	int objectCount() const { return int(objects_.size()); }
 	const std::string& objectClass(int i) const { return objects_[size_t(i)].src.className; }
 	const float* objectPos(int i) const { return objects_[size_t(i)].src.pos; }
@@ -121,8 +90,8 @@ public:
 	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
 	void linkObject(int child, int parent, int link);
 	int addObject(const std::string& className, float x, float y, float zScript);
-	const ow::Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
-	const ow::BlockDb& blockDb() const { return blocks_; }
+	const Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
+	const BlockDb& blockDb() const { return blocks_; }
 	void setBlock(int x, int y, uint32_t block, uint8_t type);
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
@@ -140,9 +109,9 @@ public:
 			}
 		if (ch) fogDirty_ = true;
 	}
-	const ow::SaveGame* baseSave() const { return baseSave_.get(); } // wczytany zapis .sav (baza zapisu łatą)
+	const SaveGame* baseSave() const { return baseSave_.get(); } // wczytany zapis .sav (baza zapisu łatą)
 	const std::vector<uint8_t>& fogBytes() const { return saveFog_; } // nieodkryty teren gracza 0 (z zapisu)
-	const ow::L2m* layer() const { return l2m_ ? &*l2m_ : nullptr; }
+	const L2m* layer() const { return l2m_ ? &*l2m_ : nullptr; }
 	const std::vector<uint8_t>& fluidTypes() const { return fluidType_; }
 	const std::vector<float>& fluidFills() const { return fluidFill_; }
 	void setFluidState(const std::vector<uint8_t>& type, const std::vector<float>& fill)
@@ -157,7 +126,7 @@ public:
 		if (!pmp_ || fluidFill_.empty() || x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return 0.f;
 		return fluidFill_[size_t(y) * pmp_->width + size_t(x)];
 	}
-	const std::optional<ow::GameView>& view() const { return gameView_; }
+	const std::optional<GameView>& view() const { return gameView_; }
 
 	// Podgląd nieodkrytego terenu (docs/silnik/10_nieodkryty_teren.md). Bez symulacji obiektów-odkrywców: stan pól
 	// ustawiany według trybu, wokół ogniska kamery prostokąt ±fogRadius pól z bajtem fogByte.
@@ -178,110 +147,94 @@ public:
 		if (mode == FogMode::Off) buildFluids(); // bez mgły wszystkie pola z płynem
 	}
 
-private:
+protected: // dostęp dla panelu przeglądarki (MapView)
+	// Poziom szczegółów obiektu z szablonu: 0 high, 1 medium, 2 low, 3 off, 4 brak.
+	static int detailIndex(const std::string& d);
 	struct ModelSlot
 	{
-		std::unique_ptr<ow::Model3db> model;
-		std::unique_ptr<ow::ModelRenderer> renderer;
+		std::unique_ptr<Model3db> model;
+		std::unique_ptr<ModelRenderer> renderer;
 		bool failed = false;
 	};
 	struct PlacedObject
 	{
-		ow::TemplateObject src;
-		const ow::ClassModel* cls = nullptr;
+		TemplateObject src;
+		const ClassModel* cls = nullptr;
 		ModelSlot* slot = nullptr;
 		int animation = -1; // indeks w Model3db::animations
 		int animMode = -1;  // nadpisanie trybu animacji (interfejs gry): 1 raz, 2 pętla
 		float animStart = 0.f;
 	};
 	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
-	std::map<std::string, ow::ClassModel> gameModels_;
+	std::map<std::string, ClassModel> gameModels_;
 	std::map<int, std::pair<int, int>> links_; // dziecko -> (rodzic, punkt)
 	int currentMesh(const PlacedObject& o) const; // indeks meshu bieżącej klatki animacji
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
 
 	ModelSlot* model(const std::string& file);
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.
-	bool resolve(const ow::ClassModel& cm, ModelSlot*& slot, int& animation);
-	void uiGrid();
-	static glm::mat4 objectMatrix(const ow::TemplateObject& o);
-	bool finishLoad(const ow::Scenario& sc, int margin, std::string world, ow::BuiltWorld* prebuilt = nullptr);
+	bool resolve(const ClassModel& cm, ModelSlot*& slot, int& animation);
+	static glm::mat4 objectMatrix(const TemplateObject& o);
+	bool finishLoad(const Scenario& sc, int margin, std::string world, BuiltWorld* prebuilt = nullptr);
 	bool loadSave(const std::string& file);                                    // nazwa pliku w Data/Gamesave
 	bool loadSaveData(const std::string& name, const std::vector<uint8_t>& data);
 	void report(float f, const char* stage) const
 	{
 		if (progress) progress(f, stage);
 	}
-	std::function<bool()> pending_;
-	void refreshSaves();
-	void uiSaves(bool& recenter);
 
-	ow::rhi::Device* dev_ = nullptr;
-	const ow::Vfs* vfs_ = nullptr;
-	ow::TextureCache* textures_ = nullptr;
-	const std::vector<ow::Vec3f>* sphere_ = nullptr;
-	ow::ClassDb classes_;
-	ow::BlockDb blocks_;
+	rhi::Device* dev_ = nullptr;
+	const Vfs* vfs_ = nullptr;
+	TextureCache* textures_ = nullptr;
+	const std::vector<Vec3f>* sphere_ = nullptr;
+	ClassDb classes_;
+	BlockDb blocks_;
 	std::string blocksError_;
-	ow::TerrainRenderer terrain_;
-	std::optional<ow::Heightfield> heights_;
+	TerrainRenderer terrain_;
+	std::optional<Heightfield> heights_;
 	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false, gameLighting_ = true;
 	bool showPanorama_ = true, hasOpenAir_ = false; // panorama tylko, gdy scenariusz ma niebo (set_light_begin)
 	bool showCarpet_ = true;
 	bool previewLamp_ = true; // lampa podglądu dla szablonów bez własnych świateł
 	float groundRow_ = 0.f; // wiersz gruntu panoramy (bloki)
-	ow::PanoramaRenderer panorama_;
+	PanoramaRenderer panorama_;
 	// Cząsteczki obiektów z class_particle (docs/silnik/12_czasteczki.md).
 	struct MapEmitter
 	{
-		ow::ParticleEmitter emitter;
+		ParticleEmitter emitter;
 		int x = 0, y = 0; // pole obiektu (nieodkryty teren)
 	};
-	ow::ParticleRenderer particles_;
+	ParticleRenderer particles_;
 	bool particlesReady_ = false, showParticles_ = true;
 	std::vector<MapEmitter> emitters_;
-	std::vector<ow::ParticleSprite> sprites_;
+	std::vector<ParticleSprite> sprites_;
 	float particleAcc_ = 0.f;
 	void buildEmitters();
 	// Płyny (docs/silnik/13_plyny.md): na razie tylko stan z zapisu gry.
-	ow::FluidRenderer fluids_;
+	FluidRenderer fluids_;
 	bool fluidsReady_ = false, showFluids_ = true;
 	std::vector<uint8_t> fluidType_;
 	std::vector<float> fluidFill_;
 	int fluidCells_ = 0;
-	ow::FluidSim fluidSim_; // przepływ (docs/silnik/13_plyny.md §13.5)
+	FluidSim fluidSim_; // przepływ (docs/silnik/13_plyny.md §13.5)
 	void buildFluids();
 	void initFluidSim();
 	bool panoramaReady_ = false;
-	std::vector<ow::GameLight> allLights_; // lampy wszystkich obiektów (class_light)
+	std::vector<GameLight> allLights_; // lampy wszystkich obiektów (class_light)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
-	enum class ListMode
-	{
-		Templates,
-		Scenarios,
-		Saves
-	};
-	ListMode list_ = ListMode::Templates;
-	const std::vector<std::string>& currentList() const
-	{
-		return list_ == ListMode::Templates ? files_ : list_ == ListMode::Scenarios ? scenarios_
-		                                                                            : saves_;
-	}
 	bool scenarioMode_ = false;
-	std::vector<std::string> scenarios_, saves_;
-	char savePath_[512] = "";
 	std::string scenarioInfo_;
-	std::optional<ow::GameView> gameView_;
+	std::optional<GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
-	int skyTiles_ = 0, lightBegin_ = ow::Scenario::kNoSky;
+	int skyTiles_ = 0, lightBegin_ = Scenario::kNoSky;
 	struct ZoneObject
 	{
 		float x, y;
-		ow::HorizonZone zone;
+		HorizonZone zone;
 		std::string className;
 	};
 	std::vector<ZoneObject> zoneObjects_;
-	std::optional<ow::HorizonZone> zone_;
+	std::optional<HorizonZone> zone_;
 	std::string zoneClass_;
 	// Nieodkryty teren: bajt na pole (gracz lokalny), tekstura narożników (szarość, czerń, skala lamp).
 	FogMode fogMode_ = FogMode::Off;
@@ -292,28 +245,23 @@ private:
 	int fogFocus_[2] = {-99999, -99999};
 	std::vector<uint8_t> fog_;
 	std::vector<uint8_t> saveFog_; // bajty mgły gracza 0 z wczytanego zapisu (FogMode::FromSave)
-	ow::GameFog gameFog_;
+	GameFog gameFog_;
 	void updateFog(const glm::vec3& focus);
 	uint8_t fogAt(int x, int y) const;
 	bool objectVisibleInFog(const PlacedObject& o) const;
-	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::map<std::string, ModelSlot> models_;
 	std::map<std::string, std::pair<std::string, int>> objectIndex_; // obiekt -> (plik, indeks), wypełniane leniwie
 
 	std::string file_, error_;
-	std::optional<ow::TemplateScript> script_;
-	std::optional<ow::Pmp> pmp_;
-	std::optional<ow::L2m> l2m_;
-	std::shared_ptr<ow::SaveGame> baseSave_;
+	std::optional<TemplateScript> script_;
+	std::optional<Pmp> pmp_;
+	std::optional<L2m> l2m_;
+	std::shared_ptr<SaveGame> baseSave_;
 	std::vector<PlacedObject> objects_;
 	glm::vec3 center_{0.f};
 	float radius_ = 500.f;
 	float time_ = 0.f;
-
-	char filter_[64] = "";
-	bool scrollToSel_ = false;
-	int gridLayer_ = 0; // 0 typ, 1 ID bloku, 2 warstwa2, 3 l2m
-	float cellPx_ = 22.f;
 	bool showDetail_[5] = {true, true, true, true, true}; // high, medium, low, off, brak
-	bool showUnresolved_ = true;
 };
+
+} // namespace ow

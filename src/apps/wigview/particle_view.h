@@ -2,9 +2,9 @@
 // Opis typów i symulacji: src/lib/particles.h, docs/silnik/12_czasteczki.md.
 #pragma once
 
-#include "lib/gfx/particle_renderer.h"
+#include "lib/render/particle_renderer.h"
 #include "lib/particles.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 
 #include <glm/glm.hpp>
 #include <string>

@@ -7,8 +7,8 @@
 // Data/Ground/Msk_*; tu uproszczenia (triplanar, płynne wagi).
 #pragma once
 
-#include "lib/gfx/game_lighting.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/game_lighting.h"
+#include "lib/render/rhi/rhi.h"
 #include "lib/map_template.h"
 #include "lib/terrain_mesh.h"
 

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "lib/blockdb.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 
 #include <glm/glm.hpp>
 #include <string>

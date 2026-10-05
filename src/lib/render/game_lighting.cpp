@@ -1,4 +1,4 @@
-#include "lib/gfx/game_lighting.h"
+#include "lib/render/game_lighting.h"
 
 #include <algorithm>
 

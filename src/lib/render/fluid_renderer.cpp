@@ -1,6 +1,6 @@
-#include "lib/gfx/fluid_renderer.h"
+#include "lib/render/fluid_renderer.h"
 
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/texture_cache.h"
 #include "lib/tga.h"
 #include "lib/vfs.h"
 

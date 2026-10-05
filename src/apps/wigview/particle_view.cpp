@@ -1,6 +1,6 @@
-#include "wigview/particle_view.h"
+#include "apps/wigview/particle_view.h"
 
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/texture_cache.h"
 #include "lib/i18n.h"
 #include "lib/vfs.h"
 

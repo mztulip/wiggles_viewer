@@ -1,4 +1,4 @@
-#include "lib/gfx/gl.h"
+#include "lib/render/gl.h"
 
 namespace gl
 {

@@ -27,15 +27,15 @@
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/i18n.h"
-#include "lib/gfx/model_renderer.h"
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/model_renderer.h"
+#include "lib/render/texture_cache.h"
 #include "lib/gltf_export.h"
 #include "lib/model3db.h"
 #include "lib/png_write.h"
 #include "lib/vfs.h"
-#include "wigview/map_view.h"
-#include "wigview/particle_view.h"
-#include "wigview/sound_view.h"
+#include "apps/wigview/map_view.h"
+#include "apps/wigview/particle_view.h"
+#include "apps/wigview/sound_view.h"
 
 #include <ow_version.h> // generowany przez build.sh: OW_VERSION (commit), OW_VERSION_DATE
 

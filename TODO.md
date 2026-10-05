@@ -37,7 +37,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól
 - [ ] 🔧 Kopanie: kształty bloków z tablicy sąsiadów BlockDB (zszywanie krawędzi), twardość materiału, czas kopania; przebudowa tylko zmienionego kawałka terenu
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
-- [ ] 🔧 Scena i rysowanie map są w wigview (`MapView`); przenieść do biblioteki (wspólna scena dla gry i przeglądarki)
+- [x] Scena i rysowanie map w bibliotece (`lib/map_scene.h`, `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
 
 ## Faza 0: rozpoznanie
@@ -66,7 +66,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Ewentualnie: bufory w pamięci karty (staging) dla kart dyskretnych; dynamic rendering
 
 ## Faza 1: szkielet projektu i build
-- [x] Struktura katalogów: `src/lib` (libwiggles), `src/wigview`, `src/tools`, `third_party/` (`src/openwiggles` później)
+- [x] Struktura katalogów: `src/lib` (libwiggles, renderery w `src/lib/render/`), `src/apps/wigview`, `src/apps/game`, `src/tools`, `third_party/`; `build.sh` pilnuje, żeby biblioteka nie zależała od programów
 - [x] `build.sh` (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
 - [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad (Tcl później)
 - [x] Ścieżka do gry: `--game`, zmienna `OW_GAME`, domyślnie instalacja w `~/.wine`

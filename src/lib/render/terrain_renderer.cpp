@@ -1,7 +1,7 @@
-#include "lib/gfx/terrain_renderer.h"
+#include "lib/render/terrain_renderer.h"
 
-#include "lib/gfx/game_lighting.h"
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/game_lighting.h"
+#include "lib/render/texture_cache.h"
 #include "lib/vfs.h"
 
 #include <algorithm>

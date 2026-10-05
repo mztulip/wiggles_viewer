@@ -10,7 +10,7 @@
 //  - oś Y odwrócona ujemną wysokością viewportu (Vulkan 1.1+), głębia przeliczana w shaderach (OW_CLIP).
 #ifdef OW_RHI_VK
 
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 
 #include <SDL.h>
 #include <SDL_vulkan.h>

@@ -16,7 +16,7 @@
 //   oba · k.
 #pragma once
 
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 
 #include <glm/glm.hpp>
 #include <vector>

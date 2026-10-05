@@ -1,6 +1,6 @@
-#include "lib/gfx/particle_renderer.h"
+#include "lib/render/particle_renderer.h"
 
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/texture_cache.h"
 #include "lib/vfs.h"
 
 #include <algorithm>

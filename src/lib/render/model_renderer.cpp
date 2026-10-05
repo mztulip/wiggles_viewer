@@ -1,6 +1,6 @@
-#include "lib/gfx/model_renderer.h"
+#include "lib/render/model_renderer.h"
 
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/texture_cache.h"
 
 #include <cstring>
 #include <glm/gtc/type_ptr.hpp>

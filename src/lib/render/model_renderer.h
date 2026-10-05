@@ -10,8 +10,8 @@
 // jednostkowych). Tryby LightingMode pozwalają porównać różne interpretacje.
 #pragma once
 
-#include "lib/gfx/game_lighting.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/game_lighting.h"
+#include "lib/render/rhi/rhi.h"
 #include "lib/model3db.h"
 #include "lib/sphere.h"
 

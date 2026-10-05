@@ -32,15 +32,18 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 
 ## Budowanie i weryfikacja
 - `./build.sh [debug|release] [vulkan|opengl|both] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake). Domyślnie oba backendy renderowania w `build/<tryb>/`; jeden backend w `build/<tryb>-vulkan|opengl/`
-- Renderowanie przez warstwę `src/lib/rhi/` (Vulkan `rhi_vk.cpp`, OpenGL 4.5 `rhi_gl.cpp`); shadery tylko w `src/shaders/` (GLSL 450, makra `UBO`/`TEX`/`OW_CLIP` z `common.glsl`). **Nie wołać OpenGL ani Vulkana bezpośrednio z rendererów.** Nowa funkcja renderowania = obie ścieżki; po zmianie porównać zrzuty `--renderer vulkan` i `--renderer opengl` (`magick compare -metric AE`)
+- Renderowanie przez warstwę `src/lib/render/rhi/` (Vulkan `rhi_vk.cpp`, OpenGL 4.5 `rhi_gl.cpp`); shadery tylko w `src/shaders/` (GLSL 450, makra `UBO`/`TEX`/`OW_CLIP` z `common.glsl`). **Nie wołać OpenGL ani Vulkana bezpośrednio z rendererów.** Nowa funkcja renderowania = obie ścieżki; po zmianie porównać zrzuty `--renderer vulkan` i `--renderer opengl` (`magick compare -metric AE`)
 - glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
 - `build/release/wigview --model X --anim Y --frame N --screenshot out.png` renderuje bez UI, a `--template T --ui --screenshot out.png` szablon razem z interfejsem. Tak można samemu obejrzeć wynik (Read na PNG). Porównania z grą: `--scenario S --view x y zoom dx dy` (kamera jak `set_view`), `--game ../lab/Wiggles` dla szablonów testowych z laboratorium, `--fow N` (nieodkryty teren)
 - **Użytkownik uruchamia `build/debug/wigview`**: po zmianach budować debug i release
 - **Napisy interfejsu przez `tr("…")`** (po polsku, `src/lib/i18n.h`). Po dodaniu lub zmianie napisów uruchom `tools/i18n_update.py` i uzupełnij `lang/en.po` (`--check` musi przejść). Opis: [lang/README.md](lang/README.md)
 - Wersja programu (commit) jest w `build/gen/ow_version.h`, generowanym przez `build.sh`; wigview pokazuje ją w rogu ekranu i w tytule okna (zrzuty użytkownika da się przypisać do wersji)
-- **Priorytet: jak najszybciej grywalna gra** (`openwiggles`, `src/game`). Najpierw działające przybliżenie, oznaczone 🔶, a punkt „dopracować” idzie do TODO (sekcja „Droga do grywalności”)
-- Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `sound` (dekodowanie i mikser SDL), `sound_refs` (odwołania do dźwięków w skryptach), `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
+- **Priorytet: jak najszybciej grywalna gra** (`openwiggles`, `src/apps/game`). Najpierw działające przybliżenie, oznaczone 🔶, a punkt „dopracować” idzie do TODO (sekcja „Droga do grywalności”)
+- Kod:
+  - `src/lib` (libwiggles): formaty i dane (vfs, tga, model3db, blockdb, szablony, zapisy, `sound`, `sound_refs`), `script/` (silnik Tcl), `map_scene` (scena mapy wspólna dla gry i przeglądarki), `render/` (renderery modeli, terenu, cząsteczek, płynów, panoramy; `render/rhi/` warstwa Vulkan/OpenGL)
+  - `src/apps/wigview` (przeglądarka: tylko UI) i `src/apps/game` (gra `openwiggles`), `src/tools` (test3db, export_gltf, owscript), `src/shaders`
+  - **`src/lib` nie dołącza niczego z `src/apps`** (sprawdza to `build.sh`). Kod potrzebny grze i przeglądarce trafia do biblioteki
 
 ## Zasady
 - Kod i dokumentacja są w tym repozytorium (`openwiggles_git/`). Materiały referencyjne (`../ref/`, zipy) leżą w katalogu nadrzędnym i nie trafiają do repo.

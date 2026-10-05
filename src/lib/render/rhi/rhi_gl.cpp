@@ -1,8 +1,8 @@
 // Backend OpenGL 4.5 core interfejsu rhi.h.
 #ifdef OW_RHI_GL
 
-#include "lib/gfx/gl.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/gl.h"
+#include "lib/render/rhi/rhi.h"
 
 #include <SDL.h>
 #include <imgui.h>

@@ -69,7 +69,7 @@ struct Timer
 	int userid = 0;
 };
 
-// Operacje na świecie, których silnik potrzebuje od gry (implementuje src/game).
+// Operacje na świecie, których silnik potrzebuje od gry (implementuje src/apps/game).
 struct Host
 {
 	virtual ~Host() = default;

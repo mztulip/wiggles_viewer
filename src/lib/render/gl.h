@@ -1,4 +1,4 @@
-// Minimalny loader OpenGL 4.5 core (zamiast glad), używany przez backend src/lib/rhi/rhi_gl.cpp. Funkcje są w przestrzeni nazw gl::,
+// Minimalny loader OpenGL 4.5 core (zamiast glad), używany przez backend src/lib/render/rhi/rhi_gl.cpp. Funkcje są w przestrzeni nazw gl::,
 // żeby nie kolidowały z symbolami libGL, np. gl::GenBuffers(...).
 // Ładowanie: gl::load(SDL_GL_GetProcAddress) po utworzeniu kontekstu.
 #pragma once

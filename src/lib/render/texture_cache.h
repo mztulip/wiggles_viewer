@@ -1,7 +1,7 @@
 // Tekstury wczytywane z Vfs i wyszukiwane po nazwie materiału (findTexture), na urządzeniu rhi.
 #pragma once
 
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 #include "lib/texture_find.h"
 #include "lib/tga.h"
 

@@ -1,6 +1,6 @@
 # 14. Gra: pierwsza grywalna wersja
 
-Program `openwiggles` (`src/game/main.cpp`) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
+Program `openwiggles` (`src/apps/game/main.cpp`) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
 
 ## 14.1 Start
 
@@ -51,7 +51,7 @@ W grze kopanie wybiera kształty sąsiednich bloków z tablicy sąsiadów BlockD
 
 ## 14.5 Krasnale ze skryptami gry
 
-Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` (`src/game/main.cpp`):
+Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` (`src/apps/game/main.cpp`):
 
 | Komenda | U nas |
 |---|---|

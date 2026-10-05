@@ -2,7 +2,7 @@
 
 Specyfikacja wystarczająca do napisania własnego loadera i przeglądarki. Dotyczy wszystkich 43 plików `Data/3db/*.3db` z gry Wiggles / Diggles (wersja 1.0 build 844). Każde pole oznaczone ✅ jest zweryfikowane na wszystkich plikach; 🔶 oznacza pole, którego znaczenia nie znamy (trzeba je tylko poprawnie przeczytać lub pominąć).
 
-Źródła: struktura pliku pochodzi z [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) (narzędzia w Pythonie i C# z [forum Wiggles](https://wiggles.ruka.at/forum/)). Dekwantyzację pozycji, znaczenie bajtu normalnej, orientację osi, interpolację i walidację ustaliliśmy sami. Implementacja wzorcowa: `src/lib/model3db.cpp`, renderer: `src/lib/gfx/model_renderer.cpp`.
+Źródła: struktura pliku pochodzi z [djunkles/Diggles3db](https://github.com/djunkles/Diggles3db) (narzędzia w Pythonie i C# z [forum Wiggles](https://wiggles.ruka.at/forum/)). Dekwantyzację pozycji, znaczenie bajtu normalnej, orientację osi, interpolację i walidację ustaliliśmy sami. Implementacja wzorcowa: `src/lib/model3db.cpp`, renderer: `src/lib/render/model_renderer.cpp`.
 
 ---
 

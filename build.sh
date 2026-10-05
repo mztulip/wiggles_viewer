@@ -187,8 +187,16 @@ link() { # link <wyjście> <obiekty i biblioteki...>
 	fi
 }
 
+# Biblioteka nie może zależeć od programów: src/lib nie dołącza niczego z src/apps.
+check_layers() {
+	local bad
+	bad="$(grep -rn '#include "apps/' src/lib || true)"
+	[ -z "$bad" ] || { log "BŁĄD: src/lib dołącza kod programów (src/apps):"; log "$bad"; exit 1; }
+}
+
 build_lib() {
 	log "[libwiggles]"
+	check_layers
 	compile -- $(find src/lib -name '*.cpp' | sort)
 	archive "$OUT/libwiggles.a" "${OBJS[@]}"
 }
@@ -207,15 +215,14 @@ build_imgui() {
 build_wigview() {
 	build_lib; build_imgui
 	log "[wigview]"
-	compile -- $(find src/wigview -name '*.cpp' | sort)
+	compile -- $(find src/apps/wigview -name '*.cpp' | sort)
 	link "$OUT/wigview" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
 build_game() {
 	build_lib; build_imgui
 	log "[openwiggles]"
-	# 🔶 scena i rysowanie map z wigview (map_view.cpp), do przeniesienia do biblioteki
-	compile -- $(find src/game -name '*.cpp' | sort) src/wigview/map_view.cpp
+	compile -- $(find src/apps/game -name '*.cpp' | sort)
 	link "$OUT/openwiggles" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 

@@ -1,4 +1,4 @@
-#include "wigview/sound_view.h"
+#include "apps/wigview/sound_view.h"
 
 #include "lib/i18n.h"
 #include "lib/vfs.h"

@@ -1,4 +1,4 @@
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/texture_cache.h"
 
 #include "lib/vfs.h"
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "lib/particles.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 #include "lib/tga.h"
 
 #include <glm/glm.hpp>

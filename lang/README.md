@@ -33,8 +33,8 @@ Interfejs OpenWiggles (na razie przeglądarka `wigview`) jest po polsku, a pozos
   *An empty `msgstr` or an entry marked `#, fuzzy` counts as untranslated, so the Polish text is shown.*
 - Nazwy z gry i plików (`Info_Fog_*`, `set_light_begin`, `.l2m`, `Data/Gamesave`) zostawiamy bez zmian.
   *Keep game and file names (`Info_Fog_*`, `set_light_begin`, `.l2m`, `Data/Gamesave`) unchanged.*
-- Font interfejsu to DejaVu Sans (łaciński, cyrylica, grecki). Pismo spoza tego zakresu (np. chińskie) wymaga dodania fontu w `src/wigview/main.cpp`.
-  *The UI font is DejaVu Sans (Latin, Cyrillic, Greek); other scripts (e.g. Chinese) need an extra font in `src/wigview/main.cpp`.*
+- Font interfejsu to DejaVu Sans (łaciński, cyrylica, grecki). Pismo spoza tego zakresu (np. chińskie) wymaga dodania fontu w `src/apps/wigview/main.cpp`.
+  *The UI font is DejaVu Sans (Latin, Cyrillic, Greek); other scripts (e.g. Chinese) need an extra font in `src/apps/wigview/main.cpp`.*
 
 ## Dla programistów / For developers
 

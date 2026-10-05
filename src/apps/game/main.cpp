@@ -11,22 +11,22 @@
 // WASD / strzałki / środkowy przycisk myszy przesuwają kamerę, kółko przybliża, N = nowy krasnal
 // przy kursorze, Esc wychodzi.
 //
-// 🔶 Tymczasowo: scena i rysowanie z wigview (MapView), ruch po siatce pól (lib/nav.h), kopanie
+// Scena i rysowanie: MapScene (lib/map_scene.h). 🔶 Tymczasowo: ruch po siatce pól (lib/nav.h), kopanie
 // zamienia blok na pusty (59). Zachowania krasnali z Tcl (Scripts/classes/zwerg) jeszcze nie działają.
 #include "lib/blockdb.h"
-#include "lib/gfx/model_renderer.h"
-#include "lib/gfx/texture_cache.h"
+#include "lib/render/model_renderer.h"
+#include "lib/render/texture_cache.h"
 #include "lib/i18n.h"
 #include "lib/map_template.h"
 #include "lib/model3db.h"
 #include "lib/nav.h"
 #include "lib/png_write.h"
-#include "lib/rhi/rhi.h"
+#include "lib/render/rhi/rhi.h"
 #include "lib/script/engine.h"
 #include "lib/sphere.h"
 #include "lib/vfs.h"
 #include "ow_version.h"
-#include "wigview/map_view.h"
+#include "lib/map_scene.h"
 
 #include <SDL.h>
 #include <imgui.h>
@@ -55,7 +55,7 @@ using namespace ow;
 namespace
 {
 
-constexpr float kBlock = MapView::kBlock;
+constexpr float kBlock = MapScene::kBlock;
 constexpr float kGnomeZ = 8.0f;      // głębokość krasnala w skali skryptu (świat 11 bloków), jak w scenariuszach
 constexpr float kWalkSpeed = 1.6f;   // pola na sekundę (🔶)
 constexpr float kClimbSpeed = 0.9f;
@@ -168,7 +168,7 @@ struct Unit
 };
 
 struct Game;
-// Most między silnikiem skryptów a sceną: ID obiektu skryptu = indeks obiektu MapView + 1.
+// Most między silnikiem skryptów a sceną: ID obiektu skryptu = indeks obiektu MapScene + 1.
 // Metody zdefiniowane po Game (korzystają z krasnali i nawigacji).
 struct ScriptHost : script::Host
 {
@@ -255,7 +255,7 @@ struct Game
 	ScriptHost host;
 	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
 	// ID obiektów skryptów: obiekty z zapisu mają ID z zapisu (zmienne Tcl się do nich odwołują),
-	// pozostałe od 100000. idx(id) = indeks obiektu MapView.
+	// pozostałe od 100000. idx(id) = indeks obiektu MapScene.
 	std::unordered_map<int, int> idToIdx;
 	std::vector<int> idxToId;
 	int nextScriptId = 100000;
@@ -295,7 +295,7 @@ struct Game
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
-	MapView maps;
+	MapScene maps;
 	ModelDrawOptions draw;
 	NavGrid nav;
 	GameView cam;
@@ -1370,7 +1370,7 @@ int main(int argc, char** argv)
 	}
 	else if (!g.loadSource(src))
 		std::fprintf(stderr, "mapa: %s\n", g.maps.error().c_str());
-	if (args.reveal) g.maps.setFog(MapView::FogMode::Off);
+	if (args.reveal) g.maps.setFog(MapScene::FogMode::Off);
 	if (args.view) g.cam = *args.view;
 	for (float t = 0; t < args.warmup; t += 0.1f) g.update(0.1f);
 	if (!args.saveTo.empty())
