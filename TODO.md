@@ -109,7 +109,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)
 - [x] `MESSAGES.TXT` (`lmsg`, `locale` jak w grze, `--locale`), `QUOTES.TXT`, `LOCALE.TXT` ([teksty.md](docs/formaty/teksty.md)); CP1250 w `text.h`
 - [x] `texlevels.txt` i `TEXMAPS.BIN` opisane; gra rysuje z `TEXMAPS.BIN` (ARGB4444)
-- [ ] 🔬 Wierność tekstur: opcjonalna kwantyzacja do ARGB4444 jak `TEXMAPS.BIN`; przypisanie `TextureQuality` do poziomów `texlevels.txt`
+- [x] Wierność tekstur: kwantyzacja do ARGB4444 jak `TEXMAPS.BIN` i przypisanie `TextureQuality` do poziomów `texlevels.txt`: niepotrzebne, to były mechanizmy oryginału dla słabych kart graficznych (mniej pamięci, mniejsze tekstury); używamy pełnych 8-bitowych TGA (decyzja)
 
 ## Faza 3: wigview, czyli przeglądarka assetów
 - [x] Okno SDL2 + ImGui (dziś Vulkan albo OpenGL 4.5 przez `rhi`), lista modeli `Data/3db`, polski font
