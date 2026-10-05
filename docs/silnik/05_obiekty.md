@@ -62,7 +62,7 @@ Model nie ma skali. Jego jednostki (1/200 bloku) pasują wprost do świata.
 
 Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 - klatka to osobny mesh (animacja wierzchołkowa);
-- 🔶 interpolacja: w rejestrze jest `AnimInterpolation=1` i opcja exe `AnimIpol`, więc liniowe przejścia między klatkami najpewniej istnieją; Diggles-Unity twierdzi jednak, że gra nie interpoluje. Do rozstrzygnięcia zrzutami (rozdział 11.6);
+- interpolacja: w rejestrze jest `AnimInterpolation=1` i opcja exe `AnimIpol`, a Diggles-Unity twierdzi, że gra nie interpoluje. **Decyzja projektu:** interpolujemy liniowo zawsze (płynniejszy obraz), bez rozstrzygania, jak robi to oryginał (rozdział 11.6);
 - prędkość 🔶: **10 klatek/s** według stałej gry podanej przez Diggles-Unity (`klatka = start + round((teraz − t0)·10 + 0,05)`, rozdział 11.6). Wcześniej przyjmowaliśmy 20 kl./s na oko;
 - obiekty w trybie `ANIM_STILL` pokazują klatkę 0; przy `animrandom` każda instancja zaczyna od losowej klatki;
 - ✅ **ruch i obrót postaci z animacji:** pola `move` i `rotate` animacji to przesunięcie (jednostki modelu, 200 = blok) i obrót (radiany) **na klatkę** ([3db.md](../formaty/3db.md) §3.5). Krasnal: chód `gehen_loop` 16,22 jednostki na klatkę → 0,81 bloku/s przy 10 kl./s, bieg `laufen_schnell_loop` 34,29 → 1,71 bloku/s; w grze zmierzone 0,85 i 1,59 bloku/s ([BAZA_WIEDZY §8.8](../BAZA_WIEDZY.md)), co potwierdza także tempo 10 kl./s. Obrót `drehen_links` daje razem 90°.
@@ -74,7 +74,7 @@ Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 | geometria | dla każdego linku klatki: pozycje (po dekwantyzacji), UV, indeks normalnej; trójkąty z puli |
 | tekstura | materiał linku → plik TGA ([3db.md](../formaty/3db.md) §6); filtrowanie liniowe, zawijanie REPEAT |
 | tryb rysowania | **z pola `flags` linku** ✅: 1 zwykły, 2 addytywnie (blaski), 3 mieszanie alfa (postacie), 5 mapowanie otoczenia (kryształy, chrom), 8 bez oświetlenia (lawa), 0 niewidoczny; tabela i rzadkie tryby w [3db.md](../formaty/3db.md) „Tryb rysowania linku” |
-| przezroczystość | w trybie 1 **alpha test** alfa ≥ 0,5 (liście, włosy, kraty), bez mieszania (🔶; nasz renderer dziś tak rysuje wszystkie tryby) |
+| przezroczystość | w trybie 1 **alpha test** alfa ≥ 0,5 (liście, włosy, kraty), bez mieszania 🔶. Tryb 3: rdzeń (alfa ≥ 0,5) jak 1, a miękkie brzegi i blask trybu 2 w osobnej fazie po wszystkich obiektach sceny, bez zapisu głębi, od najdalszego (rozdział 9.2); inaczej miękki brzeg zasłania obiekty rysowane później |
 | culling | wyłączony: modele mają cienkie, dwustronne elementy |
 | głębia | test i zapis (poza klasami `nozwrite`) |
 | oświetlenie | per wierzchołek, prawo z rozdziału 7, z jasnością bazową B w punkcie (x, y) obiektu |

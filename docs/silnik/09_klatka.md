@@ -20,13 +20,17 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
      dywan łąki: geometria świata, bez głębi, mieszanie alfa (8.3)
 5. teren, podkład: test i zapis głębi, bez cullingu, alpha test > 126 (otwory), bez mieszania (4)
 6. teren, detale: te same trójkąty, głębia LEQUAL bez zapisu, mieszanie DST_COLOR·SRC_COLOR (×2) (4.4)
-7. modele: pomiń obiekty ukryte przez nieodkryty teren (10.5);
+7. modele, faza nieprzezroczysta: pomiń obiekty ukryte przez nieodkryty teren (10.5);
      dla pozostałych klatka animacji z interpolacją (5.4),
+     tryb rysowania z flags linku (5.5): pomiń tryb 0 i 2, tryb 3 tylko alfa ≥ 0,5,
      test i zapis głębi, bez cullingu, alpha test ≥ 0,5,
      oświetlenie dwustronne (7.5), zanikanie w kolor strefy dla z < 0 (8.1)
    (teren i modele: po oświetleniu szara mgła i czerń z rozdziału 10.5)
-8. ramka ekranu (9.4), gdy włączona w ustawieniach
-9. interfejs (🔶 kolejność 8 i 9 nie jest sprawdzona)
+8. modele, faza przezroczysta (🔶 nasz podział): obiekty od najdalszego (najmniejsze z),
+     miękkie brzegi trybu 3 (alfa < 0,5) mieszaniem alfa i blask trybu 2 addytywnie, bez zapisu głębi
+9. płyny (13), potem cząsteczki: addytywnie, test głębi bez zapisu (12)
+10. ramka ekranu (9.4), gdy włączona w ustawieniach
+11. interfejs (🔶 kolejność 10 i 11 nie jest sprawdzona)
 ```
 
 ## 9.3 Stany renderu w tabeli
@@ -37,7 +41,10 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 | dywan łąki | nie | nie | nie | SRC_ALPHA, 1−SRC_ALPHA | nie | nie |
 | teren podkład | LESS | tak | nie | nie | alfa otworu > 126/255 | tak (7.1) + nieodkryty teren (10.5) |
 | teren detale | LEQUAL | nie | nie | DST_COLOR, SRC_COLOR | jak podkład | (dziedziczy z podkładu) |
-| modele | LESS | tak (poza `nozwrite`) | nie | wg `flags` linku: 1 brak, 2 addytywne, 3 SRC_ALPHA/1−SRC_ALPHA ([5.5](05_obiekty.md)) | alfa tekstury ≥ 0,5 (tryb 1) | tak, dwustronnie (7.5) + nieodkryty teren (10.5); tryb 8 bez oświetlenia, 5 mapowanie otoczenia |
+| modele, faza nieprzezroczysta | LESS | tak (poza `nozwrite`) | nie | wg `flags` linku: 1 brak, 2 addytywne, 3 SRC_ALPHA/1−SRC_ALPHA ([5.5](05_obiekty.md)) | alfa tekstury ≥ 0,5 (tryb 1) | tak, dwustronnie (7.5) + nieodkryty teren (10.5); tryb 8 bez oświetlenia, 5 mapowanie otoczenia |
+| modele, faza przezroczysta (🔶) | LESS | nie | nie | tryb 3: SRC_ALPHA/1−SRC_ALPHA, tryb 2: ONE/ONE | tryb 3: tylko alfa < 0,5 | jak wyżej; tryb 2 bez oświetlenia |
+| cząsteczki | LESS | nie | nie | ONE/ONE (addytywne) | nie | nie |
+| ramka ekranu | nie | nie | nie | SRC_ALPHA/1−SRC_ALPHA, kolor czarny | nie | nie |
 
 ## 9.4 Ramka ekranu (`BorderMask`) ✅
 

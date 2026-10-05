@@ -50,7 +50,7 @@ Tekst (CRLF), komentarze od `#`. Każdy wiersz: nazwa tekstury i pięć rozdziel
 | high | 128 → 256 → 64 → 32 → 16 |
 | maximum | 256 → 128 → 64 → 32 → 16 |
 
-Poziom wybiera rejestr `Performance\TextureQuality` (w laboratorium 2). ❓ Przypisanie wartości rejestru do poziomów: zrzuty menu przy 0, 2 i 4 nie różnią się (różnice to tylko animacja).
+Poziom wybiera rejestr `Performance\TextureQuality` (w laboratorium 2). Przypisania wartości rejestru do poziomów nie badamy dalej (decyzja: to mechanizm dla słabych kart, my używamy pełnych tekstur; to samo dotyczy kwantyzacji ARGB4444 z `TEXMAPS.BIN`). Dotychczasowa obserwacja: zrzuty menu przy 0, 2 i 4 nie różnią się (różnice to tylko animacja).
 
 ## `TEXMAPS.BIN` ✅
 

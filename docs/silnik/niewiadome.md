@@ -13,10 +13,11 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
 | Nieodkryty teren: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_nieodkryty_teren.md) za Diggles-Unity; brakuje porównania z grą |
 | **Cienie** pod obiektami | 🔶 | `.3db` ma mapy cieni 32 × 32 (rozmyty rzut bryły pod 45°, [3db.md §3.6](../formaty/3db.md)). W jaskini z lampą przy `MaxShadowLightDist` = 8 na podłodze są długie ciemne smugi od stworzeń, skierowane od lampy; przy 0 ich nie ma. Na powierzchni (samo słońce) cieni nie widać przy żadnej wartości ([BAZA_WIEDZY §9.8](../BAZA_WIEDZY.md)). ❓ Jak obraz jest rozciągany w stronę lampy, próg odległości, czy cieni jest kilka od kilku lamp |
-| Winieta (przyciemnienie brzegów ekranu w menu) | ❓ | widoczna na zrzutach |
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |
-| Prędkość animacji i interpolacja; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; sprzeczne dane o interpolacji ([11.6](11_obiekty_tcl_i_petla.md)); `move` to najpewniej przesunięcie korzenia na cykl (prędkość chodu) |
-| Cząsteczki: dokładne prawa typów | 🔶 | wspólny model i porównanie ze zrzutem: [rozdział 12](12_czasteczki.md) §12.5 |
+| Prędkość animacji; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; `move`/`rotate` ✅ na klatkę ([3db.md](../formaty/3db.md) §3.5). Interpolacja: nie badamy, u nas zawsze włączona (decyzja, [11.6](11_obiekty_tcl_i_petla.md)) |
+| Cząsteczki: dokładne prawa typów | 🔶 | wspólny model skalibrowany do zrzutów wszystkich 43 typów (rozmiar, emisja, podłoże; [rozdział 12](12_czasteczki.md) §12.5–12.6); barwy części typów i znaczenie pól `class_particle` ❓ |
+| Kamera w przerywnikach | ❓ | w rozgrywce `zoom` przycięty do [1,0; 2,5] ✅ ([6.1](06_kamera.md)); skrypty przerywników używają 0,5–6,0 |
+| Tryby rysowania linków 4, 6, 7, 9, 11 | ❓ | tabela w [3db.md](../formaty/3db.md) §3.2; u nas 4, 9, 11 jak 1, a 6, 7 jak 5 |
 | Płyny: symulacja przepływu | ❓ | dane i rysowanie: [rozdział 13](13_plyny.md); prawa przepływu: Diggles-Unity `FLUID_SYSTEM_RE.md` |
 | Animacje tekstur (`txtanim`), materiały `shader.tcl` | ❓ | |
 
@@ -28,7 +29,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Maska ruchu w `.pmp` (przebiegi u16) | 🔶 | płaszczyzna nawigacji; Diggles-Unity `ORIGINAL_PATHFINDING_RE.md` |
 | Model obiektów Tcl: szczegóły | 🔶 | opisany w [rozdziale 11](11_obiekty_tcl_i_petla.md) za Diggles-Unity; do sprawdzenia: semantyka licznika stanów, dlaczego timer klasy z `userstartup.tcl` nie zadziałał |
 | Dźwięk: głośność od odległości (`sound play` z pozycją), materiały i pomieszczenia w `sound anim`, przełączanie motywów `adaptive_sound` | 🔶 | składnia i powiązania: [rozdział 15](15_dzwiek.md); prawa mieszania: Diggles-Unity `SOUND_SYSTEM_RE.md` |
-| Ramka ekranu: rola prawej dolnej ćwiartki `bordermask.tga`, skalowanie w innych rozdzielczościach | ❓ | prawo przy 1024×768: [rozdział 9.4](09_klatka.md) |
+| Ramka ekranu: rola prawej dolnej ćwiartki `bordermask.tga` | ❓ | prawo ✅ i szerokość stała w pikselach (🔶 800×600): [rozdział 9.4](09_klatka.md); dawna „winieta” to ramka plus ciemna treść sceny |
 | Rejestr `TCLDEFINES`: składnia symboli preprocesora | ❓ | sama nazwa nie działa: [rozdział 2.2](02_start_i_skrypty.md) |
 | Kopanie, produkcja, walka, AI, interfejs | ❓ (zasady gracza: [rozdział 16](16_rozgrywka.md) 🔶) | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu ([mapa Diggles-Unity](../DIGGLES_UNITY.md)) |
 | Zapisy `.sav`: stan rozgrywki | 🔶 | mapę, kamerę, mgłę i obiekty czytamy ✅ ([formaty/sav.md](../formaty/sav.md)); logika obiektów, gracze, ekonomia i fabuła wg Diggles-Unity `ORIGINAL_SAVE_FORMAT_RE.md`, niesprawdzone |

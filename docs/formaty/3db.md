@@ -205,7 +205,7 @@ pozycja   = lerp(pos_i, pos_j, t)
 normalna  = normalize(lerp(sphere[nrm_i], sphere[nrm_j], t))
 ```
 
-**Interpolacja 🔶:** oryginalny silnik najpewniej interpoluje między klatkami (Diggles-Unity twierdzi, że nie; do sprawdzenia zrzutami). W exe jest opcja `AnimIpol [true|false] (true)`, w rejestrze `Performance\AnimInterpolation=1`, a dla obiektów komendy `set_forceipol`/`get_forceipol`. Dane są do tego przygotowane: w ok. 99,5% par kolejnych klatek linki mają ten sam materiał, tę samą pulę trójkątów i tę samą liczbę wierzchołków. Gdy topologia się różni, rysuj klatkę `i` bez interpolacji.
+**Interpolacja:** oryginalny silnik najpewniej interpoluje między klatkami (Diggles-Unity twierdzi, że nie). Nie rozstrzygamy tego: nasz renderer interpoluje zawsze (decyzja projektu, [rozdział 11.6](../silnik/11_obiekty_tcl_i_petla.md)). W exe jest opcja `AnimIpol [true|false] (true)`, w rejestrze `Performance\AnimInterpolation=1`, a dla obiektów komendy `set_forceipol`/`get_forceipol`. Dane są do tego przygotowane: w ok. 99,5% par kolejnych klatek linki mają ten sam materiał, tę samą pulę trójkątów i tę samą liczbę wierzchołków. Gdy topologia się różni, rysuj klatkę `i` bez interpolacji.
 
 🔶 Prędkość odtwarzania: **10 kl./s** według stałej gry podanej przez [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/ANIMATION_CONTROLLER.md` §1; [rozdział 11.6 przewodnika](../silnik/11_obiekty_tcl_i_petla.md)). Skrypty sprawdzają długość animacji w klatkach komendą `db_animlength obiekt.animacja`.
 
@@ -256,7 +256,7 @@ cienie 2, cmapy 0
 ## 12. Otwarte pytania
 - Tryby `flags` linku 4, 6, 7, 11 (tabela w §3.2): dokładny wzór mieszania; 9 = ciemniejsze niż 1 (❓ dlaczego).
 - Cień: obraz to rzut pod 45° na `shadowQuad` (🔶 §3.6); gra rysuje cienie od lamp (🔶), ❓ jak rozciąga obraz w stronę lampy. Dokładna reguła budowy `cmap` (poszerzenie o kratkę daje IoU 0,70, nie 1).
-- Czy gra interpoluje klatki (rejestr `AnimInterpolation=1` sugeruje, że tak; tempo logiki 10 Hz potwierdzone, [rozdział 11.7](../silnik/11_obiekty_tcl_i_petla.md)).
+- (Interpolacja klatek w oryginale: celowo nierozstrzygnięta, u nas zawsze włączona.)
 
 ## 9. Punkty zaczepienia ✅
 
