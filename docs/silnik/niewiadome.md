@@ -30,7 +30,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Dźwięk: głośność od odległości (`sound play` z pozycją), materiały i pomieszczenia w `sound anim`, przełączanie motywów `adaptive_sound` | 🔶 | składnia i powiązania: [rozdział 15](15_dzwiek.md); prawa mieszania: Diggles-Unity `SOUND_SYSTEM_RE.md` |
 | Ramka ekranu: rola prawej dolnej ćwiartki `bordermask.tga`, skalowanie w innych rozdzielczościach | ❓ | prawo przy 1024×768: [rozdział 9.4](09_klatka.md) |
 | Rejestr `TCLDEFINES`: składnia symboli preprocesora | ❓ | sama nazwa nie działa: [rozdział 2.2](02_start_i_skrypty.md) |
-| Kopanie, produkcja, walka, AI, interfejs | ❓ (zasady gracza: [rozdział 16](16_rozgrywka.md) 🔶) | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu (indeks: [BAZA_WIEDZY.md](../BAZA_WIEDZY.md) §10) |
+| Kopanie, produkcja, walka, AI, interfejs | ❓ (zasady gracza: [rozdział 16](16_rozgrywka.md) 🔶) | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu ([mapa Diggles-Unity](../DIGGLES_UNITY.md)) |
 | Zapisy `.sav`: stan rozgrywki | 🔶 | mapę, kamerę, mgłę i obiekty czytamy ✅ ([formaty/sav.md](../formaty/sav.md)); logika obiektów, gracze, ekonomia i fabuła wg Diggles-Unity `ORIGINAL_SAVE_FORMAT_RE.md`, niesprawdzone |
 | Fonty `.kft`, `ALPHABET.BIN`, `GUI/*.bin` | ❓ | |
 

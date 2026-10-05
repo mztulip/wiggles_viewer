@@ -84,3 +84,6 @@ Zwykle 0 bajtów. ❓
 ## 5. Inne pliki w katalogu
 
 `CAVE0–3.TGA` i plik `.txt` w `Data/Templates/` ❓ (prawdopodobnie pomoce edytora).
+
+---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_PIPELINE_COMPLETE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_PIPELINE_COMPLETE.md), [WORLDGEN_ORIGINAL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORLDGEN_ORIGINAL_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

@@ -386,21 +386,4 @@ Seria zrzutów `tools/lab/capture.sh scene` z jednym zmienianym parametrem, por�
 
 ## 10. Diggles-Unity: indeks dokumentacji
 
-[Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (MIT) to grywalna reimplementacja w Unity 6 z ok. 80 dokumentami RE (`../ref/Diggles-Unity-main/Docs/`, start: `Docs/README.md`). Wykorzystujemy ich **wiedzę** (z przypisaniem w kodzie i dokumentacji) i weryfikujemy ją na danych gry. Gdzie się różnimy, decyduje eksperyment na oryginale (np. ich mapowanie typu pola na grunt to według ich komentarza zgadywanie, a nasze pochodzi ze zrzutów gry).
-
-| Temat | Ich dokument | Stan u nas |
-|---|---|---|
-| Siatki BlockDB, kafel = 3 podsiatki, cliff path | `RENDERING_PIPELINE_COMPLETE.md` | ✅ wdrożone (siatki) |
-| Oświetlenie (światła punktowe, mgła, kolor wierzchołków) | `RENDERING_LIGHTING_RESEARCH.md`, `TUNNEL_TORCH_LIGHTING_RE.md` | ✅ prawo i światło nieba wdrożone ([rozdz. 7](silnik/07_oswietlenie.md)); pochodnie krasnali do zrobienia |
-| Tło z paralaksą (typ 5), krawędzie jaskiń | `BACKDROP_PARALLAX_RE.md`, `RIM_CUTOUT_RENDER_RE.md` | ✅ otwory, strefy horyzontu, panorama i dywan ([rozdz. 8](silnik/08_tlo.md)) |
-| Układ współrzędnych, kamera | `COORDINATE_SYSTEM.md`, `DigglesCameraController.cs` | ✅ zgodne z naszymi zrzutami ([rozdz. 1](silnik/01_przeglad.md), [6](silnik/06_kamera.md)) |
-| Nieodkryty teren | `FOG_OF_WAR_RE.md` | do zrobienia (silnik) |
-| Interpreter Tcl, model obiektów, start skryptów | `TCL_*.md`, `ENGINE_TCL_API.txt`, `ENGINE_COMMAND_GAP.md` | faza 5 |
-| Kopanie, tunele | `DIGGING_MECHANIC.md`, `ROOFED_TUNNEL_RE.md` | faza 6 |
-| Nawigacja, pathfinding (maska RLE w `.PMP` = płaszczyzna nawigacji 0/1/3) | `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md` | faza 6 |
-| Generator świata, składanie map | `WORLDGEN_ORIGINAL_RE.md`, `LEVEL_GENERATOR.md` | następny etap map |
-| Zapisy `.sav` | `ORIGINAL_SAVE_FORMAT_RE.md`, `save-re-reports/` | ✅ mapa z zapisu ([formaty/sav.md](formaty/sav.md)); reszta faza 6 |
-| Animacje, twarze, łączenie czapek | `ANIMATION_CONTROLLER.md`, `FACE_ANIMATION.md`, `HAT_LINK_SYSTEM.md` | przeglądarka/silnik |
-| Cząsteczki | `PARTICLE_SYSTEM_REWRITE.md`, `ParticleTypeTable.cs`, `CpuParticleEmitter.cs` | 🔶 wspólny model, typy 2/3 skalibrowane ([rozdz. 12](silnik/12_czasteczki.md)) |
-| Płyny | `FLUID_SYSTEM_RE.md`, `WATER_PHASE1_RE.md` | ✅ dane i rysowanie z zapisu ([rozdz. 13](silnik/13_plyny.md)); symulacja do zrobienia |
-| Dźwięk, energia, walka, UI | `SOUND_SYSTEM_RE.md`, `ENERGY_SYSTEM_RE.md`, `COMBAT_SYSTEM_RE.md`, `UI_*.md` | faza 6 |
+Pełna mapa ich dokumentacji (wszystkie dokumenty z odnośnikami), stan u nas, najważniejsze pliki ich kodu i plan „dogonić i wyprzedzić”: **[DIGGLES_UNITY.md](DIGGLES_UNITY.md)**. Każdy rozdział przewodnika i specyfikacja formatu kończą się linią z odnośnikami do ich odpowiedników.

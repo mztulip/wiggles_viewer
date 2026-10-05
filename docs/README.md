@@ -6,8 +6,9 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 
 1. **[Przewodnik po silniku](silnik/)**: rozdziały w kolejności, w jakiej powstaje obraz gry, od startu programu do gotowej klatki. Każdy opisuje zasadę działania, podaje algorytm w pseudokodzie i przykład liczbowy.
 2. **[Formaty plików](formaty/)**: dokładny układ bajtów każdego pliku. Do nich odsyłają rozdziały przewodnika.
-3. **[Mapa kodu](KOD.md)**: gdzie w [`src/`](../src) jest implementacja każdego podsystemu, który rozdział ją opisuje i czym ją sprawdzić.
-4. **[Baza wiedzy](BAZA_WIEDZY.md)**: dziennik badań. Skąd co wiemy, materiały referencyjne, laboratorium, otwarte pytania. Nie trzeba jej czytać, żeby pisać silnik.
+3. **[Diggles-Unity](DIGGLES_UNITY.md)**: mapa dokumentacji grywalnego portu Unity (wszystkie ich opracowania z odnośnikami), porównanie stanu i plan, jak ich dogonić i wyprzedzić.
+4. **[Mapa kodu](KOD.md)**: gdzie w [`src/`](../src) jest implementacja każdego podsystemu, który rozdział ją opisuje i czym ją sprawdzić.
+5. **[Baza wiedzy](BAZA_WIEDZY.md)**: dziennik badań. Skąd co wiemy, materiały referencyjne, laboratorium, otwarte pytania. Nie trzeba jej czytać, żeby pisać silnik.
 
 ## Przewodnik po silniku
 

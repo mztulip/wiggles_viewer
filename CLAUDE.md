@@ -9,8 +9,8 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–16 od startu gry do klatki obrazu (w tym nieodkryty teren, obiekty Tcl, cząsteczki, płyny, gra, dźwięk, mechaniki rozgrywki z instrukcji) (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
 - [docs/formaty/](docs/formaty/): **specyfikacje plików** (`3db.md`, `tekstury.md`, `sphere_dat.md`, `blockdb.md`, `szablony.md`, `sav.md`). Aktualizuj je razem z kodem
 - [docs/KOD.md](docs/KOD.md): **mapa kodu**: podsystem → pliki w [`src/`](src) → rozdział przewodnika → narzędzie do sprawdzenia. Zacznij od niej, szukając implementacji
-- [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9), indeks dokumentów Diggles-Unity (§10)
-- **Diggles-Unity** (`../ref/Diggles-Unity-main/Docs/`, MIT): obszerna dokumentacja RE całej gry. Przed pracą nad podsystemem sprawdź indeks w `BAZA_WIEDZY.md` §10. Ich wnioski weryfikuj na danych lub zrzutach gry
+- [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9)
+- **Diggles-Unity** (grywalny port w Unity, MIT): **[docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md)** to mapa wszystkich ich dokumentów z odnośnikami, stan u nas i plan „dogonić i wyprzedzić”. Przed pracą nad podsystemem przeczytaj ich dokument z tej mapy (lokalnie: `grep -rn "<fraza>" ../ref/Diggles-Unity-main/Docs`), wnioski sprawdź w laboratorium, a po pracy popraw wiersz mapy (stan, następny krok)
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
 - [LICENSE](LICENSE): GPL v3
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry

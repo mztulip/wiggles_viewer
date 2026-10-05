@@ -155,4 +155,6 @@ Prawo pochodzi z [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Do
 Stany renderu: test głębi, zapis głębi, bez cullingu, bez mieszania, alpha test > 126; potem przebieg detali (4.4).
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_PIPELINE_COMPLETE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_PIPELINE_COMPLETE.md), [ROOFED_TUNNEL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ROOFED_TUNNEL_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/blockdb.h`](../../src/lib/blockdb.h), [`lib/heightfield.h`](../../src/lib/heightfield.h), [`lib/terrain_mesh.h`](../../src/lib/terrain_mesh.h), [`lib/render/terrain_renderer.h`](../../src/lib/render/terrain_renderer.h), [`shaders/terrain.frag`](../../src/shaders/terrain.frag). Wszystkie moduły: [mapa kodu](../KOD.md).

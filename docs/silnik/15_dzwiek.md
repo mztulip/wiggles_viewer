@@ -92,4 +92,6 @@ W zakładce **Modele** sekcja „Dźwięki animacji” pokazuje `sound anim` bie
 `src/lib/sound.{h,cpp}`: `decodeSound` zamienia WAV i MP3 na próbki int16 (MP3 dekoduje [dr_mp3](https://github.com/mackron/dr_libs)), `toOutputFormat` przelicza je na 44100 Hz stereo (interpolacja liniowa), a `AudioOut` to mikser kilku głosów na SDL2 (głośność, pętla, pauza, przewijanie). Gra użyje tego samego miksera. Brakuje jeszcze praw głośności od odległości i materiałów (❓, [niewiadome](niewiadome.md)).
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [SOUND_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/SOUND_SYSTEM_RE.md), [AUDIO_SETUP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/AUDIO_SETUP.md), [CUTSCENE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/CUTSCENE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/sound.h`](../../src/lib/sound.h), [`lib/sound_refs.h`](../../src/lib/sound_refs.h), [`apps/wigview/sound_view.h`](../../src/apps/wigview/sound_view.h). Wszystkie moduły: [mapa kodu](../KOD.md).

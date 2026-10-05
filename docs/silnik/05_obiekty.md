@@ -93,4 +93,6 @@ w szablonie nałożonym w (21, 40):
 3. Obrót: tylko ry = 6,123 rad, czyli M = T · Ry(−6,123).
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [ANIMATION_CONTROLLER](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ANIMATION_CONTROLLER.md), [HAT_LINK_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/HAT_LINK_SYSTEM.md), [COORDINATE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COORDINATE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/class_db.h`](../../src/lib/class_db.h), [`lib/model3db.h`](../../src/lib/model3db.h), [`lib/render/model_renderer.h`](../../src/lib/render/model_renderer.h), [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`objectMatrix`, `resolve`). Wszystkie moduły: [mapa kodu](../KOD.md).

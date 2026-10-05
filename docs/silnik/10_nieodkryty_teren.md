@@ -159,4 +159,6 @@ call_method $FR timer_delete -1
 Wachlarz promieni o promieniu 50 pól odkrywa całą jaskinię menu i 3 pola skały wokół niej; dalsza lita skała zostaje czarna, ale w kadrze jej nie widać. ❓ Do sprawdzenia w laboratorium: zgodnie z prawem 10.4 po usunięciu `FogRemover` (`timer_delete`) scena powinna w ciągu kilkudziesięciu sekund zajść szarą mgłą; w naszym `capture.sh` zanotowaliśmy jednak, że obraz robił się czarny.
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [FOG_OF_WAR_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/FOG_OF_WAR_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`updateFog`, `objectVisibleInFog`), [`shaders/game_lighting.glsl`](../../src/shaders/game_lighting.glsl). Wszystkie moduły: [mapa kodu](../KOD.md).

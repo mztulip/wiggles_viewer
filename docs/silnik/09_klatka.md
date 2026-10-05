@@ -65,4 +65,6 @@ Najlepszy test to porównanie ze zrzutem z oryginału w tej samej rozdzielczośc
 | korytarz `urw_gng_021_a` z różnymi typami pól | rodzaje gruntu |
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_PIPELINE_COMPLETE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_PIPELINE_COMPLETE.md), [RENDERING_LIGHTING_RESEARCH](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_LIGHTING_RESEARCH.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`MapScene::render`), [`lib/render/rhi/rhi.h`](../../src/lib/render/rhi/rhi.h). Wszystkie moduły: [mapa kodu](../KOD.md).

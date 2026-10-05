@@ -118,4 +118,6 @@ Stosujemy ją tylko do modeli, nie do terenu. ✅ Sprawdzone na zrzutach OBERWEL
 Pod ziemią bez lamp jest więc ciemno, jak w grze, a jedna pochodnia wystarcza do pełnego oświetlenia swojego otoczenia (ok. 3 bloków).
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_LIGHTING_RESEARCH](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_LIGHTING_RESEARCH.md), [TUNNEL_TORCH_LIGHTING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/TUNNEL_TORCH_LIGHTING_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/render/game_lighting.h`](../../src/lib/render/game_lighting.h), [`shaders/game_lighting.glsl`](../../src/shaders/game_lighting.glsl), [`lib/map_scene.cpp`](../../src/lib/map_scene.cpp) (`baseLight`, `render`). Wszystkie moduły: [mapa kodu](../KOD.md).

@@ -140,4 +140,6 @@ W grze płomień kielicha ma ok. 0,27 bloku szerokości i 0,6 bloku wysokości, 
 Przy okazji widać, że gra rysuje w tym szablonie wodę (rozdział o płynach: do napisania).
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [PARTICLE_SYSTEM_REWRITE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/PARTICLE_SYSTEM_REWRITE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/particles.h`](../../src/lib/particles.h), [`lib/render/particle_renderer.h`](../../src/lib/render/particle_renderer.h), [`apps/wigview/particle_view.h`](../../src/apps/wigview/particle_view.h). Wszystkie moduły: [mapa kodu](../KOD.md).

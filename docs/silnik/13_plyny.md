@@ -76,4 +76,6 @@ Przykład: dwa otwarte pola (C = 960, A = 120, U/L = 8/0), pełne obok pustego: 
 🔶 Uproszczenia: przebieg po całym prostokącie z płynem zamiast rzadkiej listy pól, praca kierunkowa bez „starzenia”.
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [FLUID_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/FLUID_SYSTEM_RE.md), [WATER_PHASE1_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WATER_PHASE1_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/fluid_sim.h`](../../src/lib/fluid_sim.h), [`lib/render/fluid_renderer.h`](../../src/lib/render/fluid_renderer.h). Wszystkie moduły: [mapa kodu](../KOD.md).

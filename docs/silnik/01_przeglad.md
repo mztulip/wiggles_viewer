@@ -108,4 +108,6 @@ Mech z z = 13,54 ląduje więc na 13,77, skóra jaskini z z = 15,01 tuż przed p
 Nazwy w danych są niemieckie: *Zwerg* to krasnal, *Urwald* dżungla, *Höhle* jaskinia, *Gang* korytarz, *Oberwelt* powierzchnia, *Baum* drzewo.
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [COORDINATE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COORDINATE_SYSTEM.md), [ENGINE_ARCHITECTURE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_ARCHITECTURE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/vfs.h`](../../src/lib/vfs.h), [`lib/text.h`](../../src/lib/text.h). Wszystkie moduły: [mapa kodu](../KOD.md).

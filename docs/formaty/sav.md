@@ -188,3 +188,6 @@ Sprawdzenie:
 ## Czego nie czytamy
 
 ❓ Pozostałe pola sekcji 1 (stan silnika poza kamerą), cztery słowa po wymiarach świata, woda, zmienne Tcl i stan pracy obiektów, wszystko po ciałach obiektów (gracze, ekonomia, fabuła). Pełny opis w dokumentach Diggles-Unity wymienionych wyżej. Potrzebne będą przy wczytywaniu zapisu do działającej gry (faza 6).
+
+---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [ORIGINAL_SAVE_FORMAT_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_SAVE_FORMAT_RE.md), [ORIGINAL_SAVE_ACTION_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_SAVE_ACTION_RE.md), [save-re-reports/](https://github.com/Zimennik/Diggles-Unity/tree/main/Docs/save-re-reports/). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

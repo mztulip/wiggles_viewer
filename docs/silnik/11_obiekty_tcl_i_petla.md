@@ -236,4 +236,6 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 - **Diagnostyka**: `OW_TRACE_STATES=1` wypisuje przejścia stanów, co sekundę stan maszyny krasnali i każdą akcję z łańcuchem procedur, które ją zleciły. `OW_TRACE_QUERY=1` wypisuje zapytania o krasnali i trafione rezerwacje.
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [TCL_OBJECT_MODEL](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/TCL_OBJECT_MODEL.md), [ENGINE_ARCHITECTURE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_ARCHITECTURE.md), [ENGINE_COMMAND_GAP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_COMMAND_GAP.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/script/engine.h`](../../src/lib/script/engine.h), [`tools/owscript.cpp`](../../src/tools/owscript.cpp). Wszystkie moduły: [mapa kodu](../KOD.md).

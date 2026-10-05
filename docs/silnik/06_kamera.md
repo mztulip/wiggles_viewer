@@ -91,4 +91,6 @@ Wszystkie wielkości w tej samej skali (bloki albo jednostki modelu, × 200).
 | `camera_set`, `set_camerafollow` | przejazdy i śledzenie obiektu (przerywniki) ❓ |
 
 ---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [COORDINATE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COORDINATE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_world.h`](../../src/lib/map_world.h) (`GameView`), [`apps/wigview/main.cpp`](../../src/apps/wigview/main.cpp) (`viewProj`, `gameViewAngleLimit`), [`apps/game/main.cpp`](../../src/apps/game/main.cpp). Wszystkie moduły: [mapa kodu](../KOD.md).

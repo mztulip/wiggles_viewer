@@ -125,6 +125,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Przewodnik po silniku [`docs/silnik/`](docs/silnik) (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
 - [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
 - [x] Mapa kodu [docs/KOD.md](docs/KOD.md) (podsystem → pliki → rozdział → sprawdzanie), odnośniki z rozdziałów do kodu, [`tools/check_docs.py`](tools/check_docs.py) (drzewo od CLAUDE.md, zepsute linki, nieaktualne ścieżki, `--fix`)
+- [x] Mapa Diggles-Unity [docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md): wszystkie ich dokumenty z odnośnikami, stan u nas, ich kod, plan „dogonić i wyprzedzić”; linia z odnośnikami na końcu każdego rozdziału i formatu
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
 - [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), interfejs
 

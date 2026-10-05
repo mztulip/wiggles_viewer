@@ -68,3 +68,6 @@ Pozycja wierzchołka bloku (bx, by) w świecie to `(bx + x, by + y, z)` bloków.
 | 59 | pusty blok: wszystkie wysokości 0, czyli wykopany do samego dna (z = 7) ✅; na powierzchni wypełnia powietrze nad gruntem |
 
 Implementacja wzorcowa: [`src/lib/blockdb.cpp`](../../src/lib/blockdb.cpp).
+
+---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_PIPELINE_COMPLETE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_PIPELINE_COMPLETE.md), [ROOFED_TUNNEL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ROOFED_TUNNEL_RE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

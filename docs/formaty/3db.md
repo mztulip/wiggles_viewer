@@ -250,3 +250,6 @@ dequant(v) = (v − 32768) · 0,25
 Punkt obracamy jak obiekt-rodzica (oś pionowa) i dodajemy do jego pozycji; dziecko dostaje też obrót rodzica. Punkty modelu krasnala `mann`: 0 prawa ręka, 1 lewa ręka, 4 głowa, 6 i 11 tułów, 7 ręka z narzędziem, 10 usta. Przykład: `stand_anim_a`, klatka 0, głowa ≈ (0, −1, 0,05) bloku, czyli blok nad stopami.
 
 Źródło: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/HAT_LINK_SYSTEM.md` §3–4. ✅ Sprawdzone u nas: czapki z zapisu kampanii (przypięte w zapisie do punktu 4 krasnali) siedzą na głowach i podążają za animacją. Kod: `Model3db::linkOffset`, `MapScene::linkOffset` ([`src/lib/map_scene.cpp`](../../src/lib/map_scene.cpp)).
+
+---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [ANIMATION_CONTROLLER](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ANIMATION_CONTROLLER.md), [HAT_LINK_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/HAT_LINK_SYSTEM.md), [FACE_ANIMATION](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/FACE_ANIMATION.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

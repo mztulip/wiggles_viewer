@@ -39,3 +39,6 @@ Nasz loader ([`src/lib/tga.cpp`](../../src/lib/tga.cpp)) obsługuje też typy 3,
 Wyszukiwanie tekstury materiału: [3db.md](3db.md) §6.
 
 Źródła: układ katalogów i opis tekstur terenu z [ZarfaZ/DigglesHDmod](https://github.com/ZarfaZ/DigglesHDmod) (`Documentation.txt`). Statystyki formatu pochodzą z naszego `test3db`.
+
+---
+**Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [RENDERING_PIPELINE_COMPLETE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/RENDERING_PIPELINE_COMPLETE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
