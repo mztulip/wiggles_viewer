@@ -16,6 +16,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
 - [`tools/lab/capture.sh`](tools/lab/capture.sh) robi zrzut obrazu z oryginalnej gry w niewidocznym Xvfb (`menu`, `template <szablon>`, `scene <plik.tcl>`). Używaj go jako wzorca wizualnego
 - [`tools/lab/live.sh`](tools/lab/live.sh): gra z laboratorium w tle z wbudowanym serwerem WebTraq; `tcl '…'` wykonuje Tcl w działającej grze, `page`, `shot`, `stop` (§8.6 bazy wiedzy). Najszybszy sposób na pytania o stan gry. Pułapki: sprawdzaj, czy `tcl` zwraca `Ok.` (nie kieruj wyniku do `/dev/null`); dekoracje `Dummy_*` po utworzeniu nie mają obiektu Tcl; nowy krasnal potrzebuje `state_disable`; bez `FogRemover` zapis jest czarny (BAZA_WIEDZY §9.8–9.10)
+- [`tools/lab/live2.sh`](tools/lab/live2.sh): **przeglądarka szablonów w oryginale**, gra w widocznym oknie; `start [szablon]`, `show <szablon>`, `next/prev [filtr]`, `list`, `view x y`, `shot`, `stop`. Podmienia szablon w działającej grze w ok. 2 s (`map create` czyści mapę, obiekty Tcl usuwane, odsłonięcie prostokątem `FogRemover`, siatka lamp)
 - §8 bazy wiedzy: laboratorium (gra pod Wine z sondą Tcl). Narzędzia w [`tools/lab/`](tools/lab), wyniki w `../lab/Wiggles/owprobe_*.txt` i `tclerrors.txt`
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik [`tools/scan_tcl_natives.py`](tools/scan_tcl_natives.py))
 

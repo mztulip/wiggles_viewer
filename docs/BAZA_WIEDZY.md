@@ -318,7 +318,9 @@ tools/lab/live.sh page /objinfo:Ole
 tools/lab/live.sh shot zrzut.png
 tools/lab/live.sh stop
 ```
-To zastępuje wstrzykiwanie sond przez `userstartup.tcl` przy pytaniach o stan gry. Barnacle (SDK do wstrzykiwania kodu do exe) nie jest potrzebny.
+To zastępuje wstrzykiwanie sond przez `userstartup.tcl` przy pytaniach o stan gry.
+
+**Przeglądanie szablonów w oryginale:** [`tools/lab/live2.sh`](../tools/lab/live2.sh) uruchamia grę w widocznym oknie i podmienia szablony bez restartu (`next lava_unq` przechodzi po kolejnych szablonach pasujących do filtra). ✅ Ustalone przy tym: `map create W H` w działającej grze czyści całą mapę razem ze statycznymi dekoracjami, a obiekty Tcl (`obj_query 0 -limit 100000`) trzeba usunąć osobno (`del`); `fog_remove 0 -N -N` odsłania prostokąt ±N pól przez skałę, a dodatnie wartości to promienie zatrzymywane w skale, więc ich zwiększanie niewiele daje (rozdział 10.4); strona WebTraq `/screenshot` odsyła do `file/screenshot.jpg`, którego serwer nie wydaje (zrzut robimy z okna). Barnacle (SDK do wstrzykiwania kodu do exe) nie jest potrzebny.
 
 ### 8.7 Faza 0: sondy głębokie (2026-10-05)
 
