@@ -404,6 +404,14 @@ Pytanie: w jakiej płaszczyźnie leżą `cmap` i obraz cienia oraz jak powstały
 - **Powierzchnia** (krasnale, beczki, grzyby przy ścieżce, `set_view 245 30.5`): przy 0, 8 i 100 brak widocznej plamy pod obiektami; nieruchome beczki i grzyby identyczne. Dwa dodatkowe `Misc_LightSrc_a` obok krasnali nic nie zmieniły.
 - **Jaskinia** (`set_view 240 42.5`, `FogRemover`, `Misc_LightSrc_a` w (242; 41,5; 13)): zrzuty przy 0 i 8 różnią się (poza poruszającymi się zwierzętami) **długimi ciemnymi smugami na podłodze**: od stworzeń po lewej w lewo, od tych po prawej w prawo, czyli od lampy. Przy 0 smug nie ma. 🔶 Cienie rzucane od lamp punktowych w zasięgu `MaxShadowLightDist`, mocno wydłużone przy nisko położonym świetle.
 - Próba z nieruchomym grzybem (`new Pilz`) i lampą przestawianą `set_pos` na lewo i prawo: różnica to głównie oświetlenie ściany i podłogi, cień grzyba nieczytelny (kadr zasłonięty rośliną). ❓ Do powtórzenia na płaskiej, pustej podłodze z jednym obiektem.
+- Przy okazji (§9.9): krasnal stojący przy `Misc_LightSrc_a` w jaskini ma pod sobą wyraźną ciemną plamę na podłodze, przesuniętą od lampy (`../lab/wyniki/cien_krasnal_lampa.png`).
+
+### 9.9 Interpolacja animacji: próba metodą zrzutów, nierozstrzygnięta (2026-10-05)
+Cel: czy gra przy `AnimInterpolation=1` rysuje pozy pośrednie między klatkami animacji (10 kl./s animacji, ok. 20 kl./s obrazu, więc z interpolacją co drugi obraz byłby pozą pośrednią). Metoda: nowy krasnal w jaskini zapisu kampanii (`new Zwerg`, lampa obok), wzorce `set_anim $G <anim> k 0` (`ANIM_STILL`, klatka k), potem `set_anim … 0 2` (pętla) i seria 40–60 zrzutów wycinka (`import`, ok. 0,24 s na zrzut); każdy zrzut przypisany do najbliższego wzorca (RMSE). Pułapki, przez które wynik jest nieważny:
+- **AI krasnala** przesuwa go i zmienia animacje: `state_disable $G` (licznik `state_getenablecnt` = 0) pomaga, ale pierwsza próba zdążyła go przestawić; po wyłączeniu sprawdzić `get_pos` i dopiero wtedy ustalić kadr.
+- **Animacje z polem `rotate` lub `move`** (`drehen_links`) w pętli obracają lub przesuwają cały obiekt, a w `ANIM_STILL` nie, więc wzorce nie pasują do pętli.
+- **Pulsująca poświata** wokół nowego krasnala i migotanie lampy dają szum RMSE porównywalny z różnicą sąsiednich klatek (`lager_ablegen_hoch`: szum 8864, sąsiednie klatki 4775–8943); ta animacja wyprowadza też postać poza kadr.
+Następna próba: obiekt bez AI i bez poświaty (np. dekoracja z animacją pętli albo krasnal z zapisu po `state_disable`), animacja bez `move`/`rotate` o dużym ruchu w miejscu, wzorce z naszego renderera zamiast z gry, porównanie serii przy `AnimInterpolation` 1 i 0.
 
 ---
 

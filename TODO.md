@@ -115,7 +115,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Tekstury: zoom (suwak, Ctrl+kółko, „Dopasuj”, „1:1”), podgląd kanałów (RGBA, RGB, alfa, R, G, B), tło szachownicy, wartość piksela pod kursorem; `--texture GUI/bordermask.tga --texture-channel 2`
 - [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
 - [x] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
-- [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), tempo samej animacji i interpolacja do potwierdzenia zrzutami
+- [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), tempo samej animacji i interpolacja do potwierdzenia zrzutami (pierwsza próba nierozstrzygnięta, pułapki i plan: [BAZA_WIEDZY §9.9](docs/BAZA_WIEDZY.md))
 - [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
 - [x] Esc zamyka wigview
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
