@@ -83,7 +83,22 @@ Rozdziały 1–15 opisują, jak gra buduje i rysuje świat oraz jak działają s
 - Doświadczenie przyspiesza pracę i umożliwia nowe odkrycia. **Ma górny limit:** gdy w jednej dziedzinie przekroczy próg, w pozostałych samo maleje (specjalizacja).
 - **Rozmnażanie:** krasnale zakochują się i rozmnażają tylko **w czasie wolnym i w dobrym nastroju**. Dzieci dziedziczą doświadczenie rodziców.
 
-## 16.9 Interfejs i sterowanie kamerą
+## 16.9 Rozkazy gracza w skryptach
+
+Interfejs nie steruje krasnalem bezpośrednio. Kliknięcie przechodzi przez skrypt `Scripts/init/EVENTGEN.TCL`: dla zaznaczonego krasnala i wskazanego celu (miejsce, przedmiot, wróg, placówka) skrypt wybiera **zdarzenie rozkazu** komendą `evtgen_attrib -evtid <zdarzenie> -pos1 <pozycja> -subject1 <obiekt> -cursor <kursor> -desc <opis> [-text1 userevent]` i podaje kursor oraz opis do podpowiedzi. Silnik wysyła to zdarzenie do krasnala, a ten obsługuje je w `Scripts/classes/zwerg/Z_EVENTS.TCL` (`handle_event evt_task_walk { evt_task_walk_proc }` itd.).
+
+| Zdarzenie | Rozkaz |
+|---|---|
+| `evt_task_walk` | idź (bieg: ❓ parametr) |
+| `evt_task_pickup`, `evt_task_putdown`, `evt_task_snapitem`, `evt_task_dropall` | podnieś, połóż, chwyć, upuść wszystko |
+| `evt_task_useitem`, `evt_task_objaction`, `evt_task_switch` | użyj przedmiotu, czynność na obiekcie, przełącz |
+| `evt_task_dig`, `evt_task_mine`, `evt_task_harvest` | kop, wydobywaj, zbieraj |
+| `evt_task_open_box`, `evt_task_buildup`, `evt_task_workprod_prefer` | rozpakuj skrzynię, stawiaj budynek, przydział do placówki |
+| `evt_task_attack`, `evt_task_defend`, `evt_task_guard`, `evt_task_prodattack`, `evt_task_buildingconquer`, `evt_task_bombe`, `evt_task_kidnap`, `evt_task_convert` | walka i akcje specjalne |
+
+Rozkazy automatyczne (oznaczenia kopania, produkcja) przychodzą jako `evt_autoprod_*` (`dig`, `walk`, `pickup`, `buildup`, `workat`…). Zdarzenie można wysłać ze skryptu komendą `set_event <źródło> <zdarzenie> -target <obiekt> -pos1 <pozycja> …` (sygnatura z oficjalnej pomocy; 🔶 jako rozkaz dla krasnala nie sprawdzone). Dzięki temu bot testowy może wydawać rozkazy tak jak gracz, bez klikania (TODO).
+
+## 16.10 Interfejs i sterowanie kamerą
 
 - Kamera: CTRL albo kółko myszy + ruch obraca, + PPM przesuwa, + LPM przybliża; kółko i `*`/`/` na klawiaturze numerycznej zmieniają przybliżenie; cyfry klawiatury numerycznej przełączają ekrany, `5` centruje.
 - Klawisze funkcyjne: F1 pomoc, F2 szybki zapis, F3 lista krasnali, F4 lista placówek, F5 wynalazki, F6 drzewo genealogiczne, F7 dziennik, F8 centrowanie na krasnalu, TAB przełącza między krasnalami lub budynkami, ESC menu.

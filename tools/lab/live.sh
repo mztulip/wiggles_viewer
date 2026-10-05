@@ -7,6 +7,8 @@
 #                                         (bez sceny: menu startowe); czeka, aż serwer odpowie
 #   tools/lab/live.sh tcl 'skrypt'        wykonaj Tcl w głównym interpreterze gry, wypisz wynik
 #   tools/lab/live.sh tcl - < plik.tcl    to samo ze standardowego wejścia
+#                                         UWAGA: WebTraq ucina skrypt na pierwszym znaku ":", więc bez "::"
+#                                         (skrypt i tak działa na poziomie globalnym; zmienne bez przedrostka)
 #   tools/lab/live.sh page /objlist       surowa strona WebTraq (np. /objinfo:<nazwa>, /classinfo:<klasa>)
 #   tools/lab/live.sh shot out.png        zrzut ekranu gry
 #   tools/lab/live.sh stop                zamknij grę i Xvfb

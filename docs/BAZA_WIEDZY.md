@@ -304,7 +304,7 @@ Wartość rejestru `HKCU\Software\SekOst\Wiggles\Performance\WebServer=1` urucha
 | `/index` | system, pamięć, **data gry**, statystyki klatek (klatki logiki, klatki obrazu, średnie FPS) |
 | `/objlist`, `/objinfo:<nazwa>` | wszystkie obiekty; karta obiektu: klasa, pozycja, obrót, stan, właściciel, flagi (`CanClimb`, `AlternateAnimDB`…), ekwipunek, lista zadań |
 | `/classlist`, `/classinfo:<klasa>`, `/classinfomethod:<klasa>:<metoda>` | klasy: id, metody (z treścią), stany, instancje |
-| `/tclshell?script=…` | **wykonanie Tcl w głównym interpreterze działającej gry** (wynik: `Ok.` albo `Error:` ze stosem) |
+| `/tclshell?script=…` | **wykonanie Tcl w głównym interpreterze działającej gry** (wynik: `Ok.` albo `Error:` ze stosem). ✅ Serwer ucina skrypt na pierwszym znaku `:` (także zakodowanym w adresie), więc w skryptach nie używamy `::`; skrypt działa na poziomie globalnym, więc wystarczą zwykłe nazwy zmiennych |
 | `/tclcommand` | lista komend: w tej wersji pusta |
 | `/screenshot`, `/autoscreenshot`, `/jumpview:<x>:<y>` | zrzuty i skok kamery (nie sprawdzane) |
 

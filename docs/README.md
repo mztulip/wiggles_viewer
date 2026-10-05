@@ -28,7 +28,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [13. Płyny](silnik/13_plyny.md) | Woda, siarka, lawa: źródła, kształt w polu z BlockDB, stan w zapisie, rysowanie |
 | [14. Gra: pierwsza grywalna wersja](silnik/14_gra.md) | Program `openwiggles`: start, kamera, ruch krasnali po polach, kopanie (przybliżenia) |
 | [15. Dźwięk](silnik/15_dzwiek.md) | Pliki WAV/MP3, nazwy `sound bind`, dźwięki klatek animacji `sound anim`, `sound play`, muzyka, dialogi sekwencji; indeks odwołań i odtwarzanie |
-| [16. Rozgrywka: mechaniki według instrukcji](silnik/16_rozgrywka.md) | Cel i tryby gry, doba i plan dnia, potrzeby krasnali, sterowanie, kopanie, walka i dyplomacja, produkcja, wynalazki, doświadczenie, rozmnażanie |
+| [16. Rozgrywka: mechaniki według instrukcji](silnik/16_rozgrywka.md) | Cel i tryby gry, doba i plan dnia, potrzeby krasnali, sterowanie, kopanie, walka i dyplomacja, produkcja, wynalazki, doświadczenie, rozmnażanie, rozkazy gracza jako zdarzenia `evt_task_*` |
 | [Czego jeszcze nie wiemy](silnik/niewiadome.md) | Luki: cienie, przejścia gruntów, generator świata, rozgrywka |
 
 ## Formaty plików

@@ -41,6 +41,11 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
 - [ ] Czas gry: `gethours` = `gettime`/150, doba = 12 h = 30 min, data gry `dzień.miesiąc.rok`; plan dnia krasnali (`current_time_plan`, zegar) (rozdziały 11.4, 16.2)
 - [ ] Ramka ekranu `BorderMask` w grze i jako opcja w wigview (prawo w rozdziale 9.4)
+- [ ] 🤖 Bot testowy (rozwijany na bieżąco, w miarę potrzeby): te same scenariusze w oryginale i w `openwiggles`, porównanie przebiegu
+  - sterowanie: rozkazy gracza jako zdarzenia `evt_task_*` (`set_event`, rozdział 16.9), w oryginale przez WebTraq ([`tools/lab/live.sh`](tools/lab/live.sh)), u nas przez taki sam interfejs `/tclshell` w grze
+  - scenariusz: wczytanie zapisu, rozkazy (idź, kop, podnieś), próbki stanu co sekundę (pozycje, stany, zadania, teren), zrzuty
+  - porównanie z tolerancją (losowość, ok. 20 kl./s w oryginale): czas dojścia, kolejność stanów, wynik kopania; raport z zestawieniem zrzutów
+  - pierwszy krok: sprawdzić `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z}` w oryginale (pierwsza próba nie doszła do skutku przez ograniczenie WebTraq na znak `:`)
 - [ ] 🔧 Obiekty Tcl bez kopii zmiennych głównego interpretera, jak w grze (rozdział 11.1); sprawdzić, czy skrypty krasnali nadal działają
 
 ## Faza 0: rozpoznanie
