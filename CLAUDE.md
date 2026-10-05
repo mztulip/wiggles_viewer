@@ -14,6 +14,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
 - [LICENSE](LICENSE): GPL v3
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
+- [tools/lab/README.md](tools/lab/README.md): **instrukcja narzędzi laboratorium** (`capture.sh`, `live.sh`, `live2.sh`): jak uruchamiać, przykłady, pułapki
 - [`tools/lab/capture.sh`](tools/lab/capture.sh) robi zrzut obrazu z oryginalnej gry w niewidocznym Xvfb (`menu`, `template <szablon>`, `scene <plik.tcl>`). Używaj go jako wzorca wizualnego
 - [`tools/lab/live.sh`](tools/lab/live.sh): gra z laboratorium w tle z wbudowanym serwerem WebTraq; `tcl '…'` wykonuje Tcl w działającej grze, `page`, `shot`, `stop` (§8.6 bazy wiedzy). Najszybszy sposób na pytania o stan gry. Pułapki: sprawdzaj, czy `tcl` zwraca `Ok.` (nie kieruj wyniku do `/dev/null`); dekoracje `Dummy_*` po utworzeniu nie mają obiektu Tcl; nowy krasnal potrzebuje `state_disable`; bez `FogRemover` zapis jest czarny (BAZA_WIEDZY §9.8–9.10)
 - [`tools/lab/live2.sh`](tools/lab/live2.sh): **przeglądarka szablonów w oryginale**, gra w widocznym oknie; `start [szablon]`, `show <szablon>`, `next/prev [filtr]`, `list`, `view x y`, `shot`, `stop`. Podmienia szablon w działającej grze w ok. 2 s (`map create` czyści mapę, obiekty Tcl usuwane, odsłonięcie prostokątem `FogRemover`, siatka lamp)
