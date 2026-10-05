@@ -7,7 +7,7 @@ Kamera gry krąży po sferze wokół punktu na mapie. Skrypty ustawiają ją kom
 | Parametr | Znaczenie |
 |---|---|
 | `x`, `y` | punkt, na który patrzy kamera (ognisko), w blokach |
-| `zoom` | oddalenie; w grze gracz zmienia je w zakresie 1,0–2,5, skrypty i przerywniki używają 0,5–6,0. 🔶 W trakcie rozgrywki `set_view … 0.8` z powłoki WebTraq dał kadr taki jak `zoom` 1,0 ([BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)), więc gra przycina wartości poniżej 1,0 (❓ czy także w przerywnikach) |
+| `zoom` | oddalenie; w grze gracz zmienia je w zakresie 1,0–2,5, skrypty i przerywniki używają 0,5–6,0. ✅ W trakcie rozgrywki gra przycina `zoom` do **[1,0; 2,5]**: po `set_view` z 0,5, 0,9 i 0,99 `get_view` zwraca 1,0, a z 3,0, 4,0 i 6,0 zwraca 2,5; kadr po `set_view … 0.5` jest taki sam jak nasz przy 1,0 ([BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)). ❓ Czy przerywniki (0,5–6,0 w skryptach) mają inny zakres. U nas `kGameZoomMin/Max` ([map_world.h](../../src/lib/map_world.h)) w grze i w emulacji kamery wigview |
 | `dx` | pochylenie: kąt w pionie w radianach (ujemny = kamera nad ogniskiem, patrzy w dół) |
 | `dy` | odchylenie: kąt w poziomie w radianach (dodatni = kamera z lewej, patrzy w prawo) |
 

@@ -42,6 +42,9 @@ struct GameView
 {
 	float x = 0, y = 0, zoom = 1.38f, dx = -0.355f, dy = 0.f;
 };
+// ✅ Zakres zoom w trakcie gry: set_view poza nim gra przycina (get_view po set_view 0,5 → 1,0; 3,0 i 6,0 → 2,5;
+// docs/silnik/06_kamera.md §6.1). ❓ Czy przerywniki mają inny zakres.
+constexpr float kGameZoomMin = 1.f, kGameZoomMax = 2.5f;
 
 struct Scenario
 {

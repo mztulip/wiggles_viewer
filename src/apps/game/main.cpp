@@ -142,7 +142,7 @@ float angleLimit(float R)
 // Kamera gry (set_view x y zoom dx dy): macierz rzutowania·widoku i macierz świata (gra -> OpenGL).
 void gameCamera(const GameView& g, float aspect, glm::mat4& viewProj, glm::mat4& world)
 {
-	float Rb = g.zoom * 16.f - 10.f;
+	float Rb = std::clamp(g.zoom, kGameZoomMin, kGameZoomMax) * 16.f - 10.f;
 	float R = std::max(0.5f, Rb) * kBlock;
 	float lim = angleLimit(Rb), dx = std::clamp(g.dx, -lim, lim), dy = std::clamp(g.dy, -lim, lim);
 	float cdx = std::cos(dx), sdx = std::sin(dx), cdy = std::cos(dy), sdy = -std::sin(dy);
@@ -1532,7 +1532,7 @@ int main(int argc, char** argv)
 				float fx, fy;
 				if (g.pickTile(e.motion.x, e.motion.y, w, h, tx, ty, fx, fy)) g.hoverX = tx, g.hoverY = ty;
 			}
-			if (e.type == SDL_MOUSEWHEEL) g.cam.zoom = std::clamp(g.cam.zoom * std::pow(0.9f, float(e.wheel.y)), 0.9f, 3.f);
+			if (e.type == SDL_MOUSEWHEEL) g.cam.zoom = std::clamp(g.cam.zoom * std::pow(0.9f, float(e.wheel.y)), kGameZoomMin, kGameZoomMax);
 			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_n && !io.WantTextInput)
 			{
 				int mx, my, tx, ty;

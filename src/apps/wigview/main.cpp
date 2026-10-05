@@ -409,7 +409,7 @@ struct Viewer
 		{
 			// Prawo kamery z exe (map_world.h GameView); układ gry -> OpenGL przez odbicie osi Y.
 			const auto& g = gameCamView;
-			float Rb = g.zoom * 16.f - 10.f;
+			float Rb = std::clamp(g.zoom, kGameZoomMin, kGameZoomMax) * 16.f - 10.f; // zakres jak w grze (§6.1)
 			float R = std::max(0.5f, Rb) * MapView::kBlock;
 			float lim = gameViewAngleLimit(Rb), dx = std::clamp(g.dx, -lim, lim), dy = std::clamp(g.dy, -lim, lim);
 			float cdx = std::cos(dx), sdx = std::sin(dx), cdy = std::cos(dy), sdy = -std::sin(dy);
