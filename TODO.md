@@ -99,7 +99,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Parser `.3db` w C++ z walidacją odwołań; `test3db` przechodzi wszystkie 43 modele i 2052 tekstury
 - [x] `.3db`: pola mesha `shadowIndex` i `cmapIndex` rozpoznane ✅
 - [x] Pola `.3db`: tablica punktów zaczepienia, prostokąt cienia, `cmap` (maska 1/8 bloku z przesunięciem), kąty Eulera w rekordach zaczepienia, `move`/`rotate` na klatkę (zmierzone w grze); pola w kodzie przemianowane ([3db.md](docs/formaty/3db.md))
-- [ ] 🔬 `.3db`: bity `flags` linku, `u16` na przesunięciu 6 rekordu zaczepienia
+- [x] `.3db`: `flags` linku to tryby rysowania (0 niewidoczny, 1 zwykły, 2 addytywnie, 3 mieszanie alfa, 5 mapowanie otoczenia, 8 bez oświetlenia; zrzuty z gry); bajty 6–7 rekordu zaczepienia to dopełnienie wyrównania
+- [ ] Renderer modeli: tryby rysowania wg `flags` linku (2 addytywnie, 3 alfa, 5 mapowanie otoczenia, 8 bez oświetlenia; dziś wszystko jak 1); 🔬 tryby 4, 6, 7, 9, 11
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)

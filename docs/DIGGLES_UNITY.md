@@ -60,6 +60,7 @@ Odnośniki niżej prowadzą do bieżącej wersji na GitHubie (gałąź `main`). 
 | Animacje, zestawy animacji | [ANIMATION_CONTROLLER](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ANIMATION_CONTROLLER.md) | zaimplementowane | ✅ format i interpolacja ([3db.md](formaty/3db.md), [5](silnik/05_obiekty.md)) | zestawy animacji (`animset`) dla chodu |
 | Twarze (oczy, usta) | [FACE_ANIMATION](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/FACE_ANIMATION.md) | zaimplementowane | ❌ | |
 | Ramka ekranu | – | – | ✅ prawo zmierzone ([9.4](silnik/09_klatka.md)) | **wiemy więcej niż oni** |
+| Tryby rysowania fragmentów modelu (`flags` linku) | – | flag nie używają, przezroczystość zgadują z alfy TGA | ✅ tryby zmierzone w grze ([3db.md](formaty/3db.md)) | **wiemy więcej niż oni**; wdrożyć w rendererze |
 
 ## 4. Prezentacja, dźwięk, zapis
 
@@ -89,7 +90,7 @@ Katalog [`Assets/Diggles/Runtime`](https://github.com/Zimennik/Diggles-Unity/tre
 
 ## 6. Dogonić i wyprzedzić
 
-**Gdzie już jesteśmy przed nimi:** płyny (przepływ działa, u nich nie), zapis `.sav`, który wczytuje oryginalna gra, ramka ekranu, pomiary w działającym oryginale (WebTraq, sondy interpreterów, [BAZA_WIEDZY §8.6–8.7](BAZA_WIEDZY.md)), przeglądarka zasobów z dźwiękami i odwołaniami w skryptach, natywny silnik C++ z Vulkanem i OpenGL zamiast Unity.
+**Gdzie już jesteśmy przed nimi:** płyny (przepływ działa, u nich nie), zapis `.sav`, który wczytuje oryginalna gra, ramka ekranu, tryby rysowania z flag `.3db`, użycie `TEXMAPS.BIN` przez grę, pomiary w działającym oryginale (WebTraq, sondy interpreterów, [BAZA_WIEDZY §8.6–8.7](BAZA_WIEDZY.md)), przeglądarka zasobów z dźwiękami i odwołaniami w skryptach, natywny silnik C++ z Vulkanem i OpenGL zamiast Unity.
 
 **Co blokuje grywalność u nas, a u nich działa** (kolejność wg [TODO](../TODO.md), „Droga do grywalności”):
 1. **Dyspozytor pracy i produkcja** (krasnale same pracują, ognisko, skrzynie): [WORK_DISPATCHER_NATIVE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORK_DISPATCHER_NATIVE.md), [PRODUCTION_PANEL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/PRODUCTION_PANEL_RE.md).

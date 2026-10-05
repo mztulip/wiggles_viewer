@@ -345,6 +345,10 @@ Sondy: [`tools/lab/owprobe_deep.tcl`](../tools/lab/owprobe_deep.tcl) (świat z j
 - `TEXMAPS.BIN`: układ potwierdzony co do bajta i pikseli; zrzuty menu z paczką i bez niej się różnią (bez niej tekstury rozmyte), więc gra rysuje z paczki ARGB4444. `TextureQuality` 0/2/4 nie zmienia menu ([tekstury.md](formaty/tekstury.md)).
 - `.3db` (statystyki wszystkich 43 modeli): `unknown30` = prostokąt cienia (1:1 z `shadowIndex`), `cmap` = maska 0/1 w kratkach 1/8 bloku z przesunięciem `i16`, rekord zaczepienia ma kąty Eulera (bajty 8–19), `move`/`rotate` na klatkę ([3db.md](formaty/3db.md)).
 - Rozkaz `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z} -text1 userevent` działa: krasnal przeszedł 5 bloków (stan `task`, potem `work_idle`), prędkość 0,85 bloku/s na rozbiegu i 1,59 bloku/s w biegu (zgodnie z `move` animacji `gehen` 0,81 i `laufen_schnell` 1,71).
+
+### 8.9 Flagi linku `.3db`: eksperyment w laboratorium (2026-10-05)
+
+Metoda: w kopii `Data/3db/flusslandschaft.3db` w laboratorium podmieniona flaga obu klatek łąki `wiese_rund_a` (offsety 83 647 i 83 865, drugie słowo rekordu linku), scena: szablon `urw_gng_021_a`, łąka `Dummy_Wiese_rund` na środku, `set_view 18 18 1.2 -0.25 0`, z lampami i bez. Wyniki (jasność i maks. G w obszarze trawy): 1 → 41/154, 0 → trawa znika, 2 → 60/255 (addytywnie), 3 → 38/154 (miękko przejrzysta), 4 → 40/154 (jak 1), 8 → 45/198, 9 → 35/89. Bez lamp: 1 → maks. G 57, 8 → 198 (bez oświetlenia). Z teksturą `Character_Drache_b_256` podstawioną za mech: 1 i 4 mają ten sam układ wzoru, 5 inny (mapowanie otoczenia). Statystyki: flaga nie zależy od alfy tekstury; Diggles-Unity flag nie używa (rodzaj rysowania zgaduje z alfy TGA). Opis: [3db.md](formaty/3db.md) „Tryb rysowania linku”. Plik w laboratorium przywrócony.
 ---
 
 ## 9. Mapy i teren: przebieg badań

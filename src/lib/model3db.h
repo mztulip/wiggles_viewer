@@ -38,7 +38,7 @@ struct Material3db
 struct MeshLink
 {
 	uint16_t material = 0;
-	uint16_t flags = 0; // 🔶 1–11, prawdopodobnie bity sposobu rysowania (docs/formaty/3db.md §3.2)
+	uint16_t flags = 0; // ✅ tryb rysowania: 0 niewidoczny, 1 zwykły, 2 addytywnie, 3 alfa, 5 otoczenie, 8 bez światła (3db.md)
 	uint16_t triangles = 0;
 	uint16_t texcoords = 0;
 	uint16_t points = 0;
@@ -92,7 +92,7 @@ struct Model3db
 	std::vector<Animation3db> animations;
 	std::vector<std::array<uint8_t, 32 * 32>> shadows;
 	std::vector<CMap3db> cmaps;
-	// Rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz, u16 ❓, 3 × f32 kąty Eulera (radiany).
+	// Rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz, 2 B dopełnienia, 3 × f32 kąty Eulera (radiany).
 	std::vector<std::array<uint8_t, 20>> linkRecords;
 
 	// Pule danych

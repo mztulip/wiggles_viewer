@@ -68,15 +68,32 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | shadowQuad | 48 B | ✅ prostokąt cienia: 4 narożniki × `vec3` na ziemi (y = 0): (x0, 0, z0), (x1, 0, z0), (x0, 0, z1), (x1, 0, z1). Niezerowy dokładnie wtedy, gdy klatka ma cień (37 431 meshy), same zera bez cienia (12 744); o ok. 42 jednostki szerszy niż obrys modelu. 🔶 Miejsce, na które gra kładzie plamę cienia 32×32 (§3.6) |
 | cmapIndex | `u16` | ✅ indeks cmapy (§3.7) albo `0xFFFF`. Każda cmapa należy do dokładnie jednego mesha |
 
-**Link** (6 × `u16` = 12 B):
+**Link** (6 × `u16` = 12 B; tryby rysowania niżej):
 | Pole | Opis |
 |---|---|
 | material | indeks w tablicy materiałów |
-| flags | 🔶 wartości 1–11: 1 (168 801 linków), 3 (10 613), 2 (6120), 5 (2695), 6 (956), 4 (933), 8 (726), 7 (333), 11 (190), 9 (81). Prawdopodobnie bity sposobu rysowania: 6 mają m.in. `enviro_glas` i `enviro_wasser`, 8 `wasser_128` i `kreide_alpha`. ❓ znaczenie bitów (do sprawdzenia zrzutami) |
+| flags | ✅ **tryb rysowania fragmentu** (tabela niżej; wartości 1–11, nie są niezależnymi bitami). Nie wynika z kanału alfa tekstury: ten sam materiał ma różne flagi w różnych modelach (159 z 331 materiałów) |
 | triangles | indeks puli trójkątów |
 | texcoords | indeks puli UV |
 | points | indeks puli pozycji |
 | normals | indeks puli normalnych (w starszych narzędziach mylnie „brightness”) |
+
+**Tryb rysowania linku (`flags`)** ✅ obserwacja w grze: w kopii laboratoryjnej zmieniona flaga łąki `wiese_rund_a` (`flusslandschaft.3db`, tekstura mchu z alfą), zrzuty tej samej sceny ([BAZA_WIEDZY §8.9](../BAZA_WIEDZY.md)):
+
+| flags | Fragmentów w danych | W grze | Przykładowe materiały |
+|---|---|---|---|
+| 0 | 0 | **niewidoczny** (nie jest rysowany) | – |
+| 1 | 168 801 | zwykły: tekstura × oświetlenie, alfa jak tekstura | prawie wszystko |
+| 2 | 6 120 | **addytywnie** (świeci, tło przebija; jasne jak blask) | `FX_Licht*`, `Interface01`, `Elfen_Koerper`, `Character_Odin_a` |
+| 3 | 10 613 | jak 1, ale miękko przejrzysty: **zwykłe mieszanie alfa** | postacie (smok, chomik, troll), liany, mech |
+| 4 | 933 | jak 1 (różnicy nie widać; ❓) | `Urwald_stein_256`, `lava_nahtlos` |
+| 5 | 2 695 | **mapowanie otoczenia**: wzór tekstury nie według UV (sprawdzone wzorzystą teksturą) | `kr_enviroment_*`, `enviro_*` (kryształy, chrom, złoto, szkło) |
+| 6, 7 | 956, 333 | ❓ (mieszanie + otoczenie) | `enviro_glas`, `enviro_wasser`, `enviro_rot` |
+| 8 | 726 | **bez oświetlenia** (świeci własnym kolorem: w ciemności tak samo jasny jak przy lampach), nieprzejrzysty | `Checker` (znacznik światła), `Zwerge_Boden_c`, `brainposter` |
+| 9 | 81 | ciemniejszy niż 1 (❓) | `lava_boden_a`, `lava_rinne_a` |
+| 11 | 190 | ❓ | `lava_nahtlos`, `Trollh_Folterkammer_a_256` |
+
+Wartości zachowują się jak tryby (prawdopodobnie zestawy stanów etapów tekstur Direct3D), a nie niezależne bity: 1 i 2 osobno dają zwykły i addytywny obraz, a 3 zwykłe mieszanie alfa; 4 osobno nic nie zmienia, a 5 włącza mapowanie otoczenia. Mapowanie otoczenia zależy też od rejestru `Performance\UseEnvMapping`.
 
 ### 3.4 Obiekty
 | Pole | Typ | Opis |
@@ -125,7 +142,7 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | uvCount | `u16` × nUV | liczba par UV w każdej puli |
 | ptsCount | `u16` × nPts | liczba punktów w każdej puli |
 | nrmCount | `u16` × nNrm | liczba bajtów w każdej puli normalnych |
-| linkRecords | 20 B × n | ✅ rekordy punktów zaczepienia (§9): 3 × `u16` skwantyzowane x, y, z (0–5), `u16` ❓ (6–7, zwykle 0), 3 × `f32` kąty Eulera w radianach (8–19, wszystkie 197 623 w [0, 2π]) |
+| linkRecords | 20 B × n | ✅ rekordy punktów zaczepienia (§9): 3 × `u16` skwantyzowane x, y, z (0–5), 2 B dopełnienia (6–7, 🔶 śmieci z pamięci eksportera: wyrównanie `f32` do 4 bajtów; wartości nie zależą od numeru punktu, tylko od pliku), 3 × `f32` kąty Eulera w radianach (8–19, wszystkie 197 623 w [0, 2π]) |
 
 ### 3.9 Dane pul (w tej kolejności, pula po puli)
 | Pula | Element | Opis |
@@ -233,8 +250,7 @@ cienie 2, cmapy 0
 ```
 
 ## 12. Otwarte pytania
-- Znaczenie bitów `flags` linku (sposób rysowania: przezroczystość, mieszanie, dwustronność?).
-- `u16` na przesunięciu 6 rekordu zaczepienia (zwykle 0, 2632 różne wartości).
+- Tryby `flags` linku 4, 6, 7, 11 (tabela w §3.2): dokładny wzór mieszania; 9 = ciemniejsze niż 1 (❓ dlaczego).
 - Sposób rzutowania cienia na prostokąt `shadowQuad` (rozdział o cieniach, TODO).
 - Czy gra interpoluje klatki (rejestr `AnimInterpolation=1` sugeruje, że tak; tempo logiki 10 Hz potwierdzone, [rozdział 11.7](../silnik/11_obiekty_tcl_i_petla.md)).
 
