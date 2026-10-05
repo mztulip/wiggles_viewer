@@ -233,7 +233,32 @@ Akcje (chodzenie, animacje) mają własny przebieg, niezależny od ciał stanów
 - **Takt** 10 Hz: timery → kolejka zdarzeń → `handle_event` → ciało stanu (gdy licznik > 0 i nie trwa akcja).
 - **Zaślepki**: nieznana komenda trafia do procedury `unknown`, liczy się w dzienniku i zwraca `0`. Krasnal ze skryptem „umiera” po kilku sekundach, bo atrybuty (np. zdrowie) wynoszą 0. Dlatego w grze krasnale steruje na razie gracz (rozdział 14), a skrypty mają pozostałe obiekty.
 - **Komendy ważne dla zachowania** (ustalone na skryptach krasnala, 🔶): `obj_query` nie zwraca pytającego obiektu, a parametry bywają jednym napisem (`"-class Pilz -range 10"`) albo osobnymi słowami (`-class {Zwerg Baby} -boundingbox {…}`) i tylko pierwszy przypadek wolno rozbijać jako listę; `-boundingbox {x0 y0 z0 x1 y1 z1}` obejmuje też głębokość (z skryptu). `get_walkresult` w trakcie chodu = 2 (`WS_NOTFINISHED`). `placelock_set pos czas id` rezerwuje miejsce na czas (`note_pathlength`: długość drogi · 2), a `placelock_check pos promień id` sprawdza odległość 3D (z skryptu = ½ bloku). `get_place -random r -mindist d` losuje wolne miejsce (bez cudzych rezerwacji i postaci). `clock` jest własna (bez `clock.tcl` i `msgcat` z biblioteki Tcl).
-- **Diagnostyka**: `OW_TRACE_STATES=1` wypisuje przejścia stanów, co sekundę stan maszyny krasnali i każdą akcję z łańcuchem procedur, które ją zleciły. `OW_TRACE_QUERY=1` wypisuje zapytania o krasnali i trafione rezerwacje.
+- **Diagnostyka**: narzędzie `owscript` (niżej) oraz zmienne `OW_TRACE_STATES=1` wypisuje przejścia stanów, co sekundę stan maszyny krasnali i każdą akcję z łańcuchem procedur, które ją zleciły. `OW_TRACE_QUERY=1` wypisuje zapytania o krasnali i trafione rezerwacje.
+
+### Narzędzie `owscript`: silnik skryptów bez okna
+
+Do szybkiego sprawdzania, czego brakuje skryptom danej klasy, bez uruchamiania gry i grafiki ([`tools/owscript.cpp`](../../src/tools/owscript.cpp)):
+
+```
+build/release/owscript [--game <katalog gry>] [KLASA [SEKUNDY]] [-o dziennik.log]
+```
+
+Kolejno: wczytuje skrypty startowe i wszystkie klasy (`Engine::boot`, z pamięci podręcznej klas ok. 0,2 s), tworzy jeden obiekt `KLASY` (domyślnie `Zwerg`) i woła jego `obj_init`, potem przewija logikę o `SEKUNDY` (domyślnie 30) krokami 0,1 s (`Engine::tick`, takt 10 Hz jak w 11.7). Świata nie ma: obiekt stoi w pustce, więc wynik pokazuje zachowanie skryptów, a nie rozgrywkę. Bez `--game` katalog gry bierze ze zmiennej `OW_GAME` albo z domyślnej instalacji w `~/.wine`.
+
+Na konsoli: wynik startu (liczba klas i błędów), stan maszyny obiektu po utworzeniu i po przewinięciu, liczba błędów i różnych zaślepek. Przykład dla krasnala (30 s logiki w 0,24 s):
+
+```
+start OK: klasy 2684, błędy 0, 185 ms
+obiekt Zwerg: ze skryptami, 13 ms, stan 'idle'
+po 30 s: stan 'sparetime_dispatch', błędy 2, zaślepki 31
+```
+
+**Dziennik** (`owscript.log` albo plik z `-o`, ten sam format co `openwiggles_tcl.log` w grze):
+- `## Zaślepki`: komendy natywne, których jeszcze nie mamy, z liczbą wywołań, od najczęstszej (np. `set_textureanimation 54`, `get_classaniminfo 23`, `gamestats 18`). To lista „co dopisać najpierw”;
+- `## Błędy`: błędy Tcl z obiektem, stanem i stosem wywołań (np. zaślepka zwróciła `0`, a skrypt oczekiwał wartości logicznej albo listy);
+- `## lmsg bez hasła`: klucze tekstów bez tłumaczenia w `MESSAGES.TXT`.
+
+Typowe użycie: po dopisaniu komendy natywnej uruchomić `owscript` dla klasy, której dotyczy, i sprawdzić, czy zaślepka zniknęła z dziennika, a liczba błędów spadła. Dla innych klas: `owscript Baby 60`, `owscript Troll`, `owscript Fenris`.
 
 ---
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [TCL_OBJECT_MODEL](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/TCL_OBJECT_MODEL.md), [ENGINE_ARCHITECTURE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_ARCHITECTURE.md), [ENGINE_COMMAND_GAP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_COMMAND_GAP.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

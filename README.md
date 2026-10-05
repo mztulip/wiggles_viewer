@@ -68,6 +68,7 @@ build/release/wigview --particle 3                                       # zakł
 build/release/wigview --lang en                                          # język interfejsu (pl, en; nowe: lang/README.md)
 build/release/wigview --renderer opengl                         # wybór backendu (domyślnie Vulkan)
 build/release/test3db "/ścieżka/do/Wiggles"   # test parserów na wszystkich modelach i teksturach
+build/release/owscript Zwerg 60 -o zwerg.log    # skrypty krasnala przez 60 s bez okna; dziennik zaślepek i błędów
 
 # eksport glTF: obiekt (domyślnie pierwszy) i animacja (domyślnie wszystkie)
 build/release/export_gltf "/ścieżka/do/Wiggles" MANN mann gehen_loop -o krasnal_chod.glb
@@ -84,7 +85,9 @@ Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spac
 ### Programy
 | Program | Do czego służy |
 |---|---|
-| `wigview` | Przeglądarka: modele `.3db` z animacjami (z interpolacją klatek jak w oryginale), tekstury i **szablony map** (siatka PMP 2D i obiekty 3D; terenu jeszcze brak). `--screenshot` renderuje jedną klatkę do PNG, z `--ui` razem z interfejsem |
+| `openwiggles` | **Gra** (w budowie): scenariusze, zapisy `.sav` i szablony z terenem, obiektami, światłem, płynami i cząsteczkami; krasnale na rozkaz gracza, kopanie, skrypty Tcl obiektów (rozdział [14](docs/silnik/14_gra.md)) |
+| `wigview` | Przeglądarka: modele `.3db` z animacjami, cieniem i maską `cmap`; tekstury (zoom, kanały); mapy, scenariusze i zapisy z terenem; cząsteczki; dźwięki; drzewo całego `Data/`. `--screenshot` renderuje jedną klatkę do PNG (z `--ui` razem z interfejsem), `--thumbnails` miniatury wszystkich obiektów |
+| `owscript` | **Silnik skryptów bez okna**: tworzy obiekt klasy (domyślnie `Zwerg`), przewija logikę o zadaną liczbę sekund i zapisuje dziennik brakujących komend natywnych (z liczbą wywołań) i błędów Tcl. Pokazuje, co dopisać, żeby skrypty klasy działały ([rozdział 11.9](docs/silnik/11_obiekty_tcl_i_petla.md)) |
 | `export_gltf` | Eksport do glTF 2.0 (`.glb`) z teksturami i animacjami. Ten sam eksport jest w wigview (sekcja „Eksport glTF”). Pliki otworzysz w Blenderze, Godocie, three.js albo na https://gltf-viewer.donmccurdy.com |
 | `test3db` | **Test automatyczny** parserów na prawdziwych danych gry: wczytuje wszystkie modele `Data/3db` i tekstury `Data/Texture`, sprawdza spójność (zakresy indeksów, rozmiary pul, koniec pliku) i wypisuje statystyki. Kod wyjścia ≠ 0, gdy cokolwiek zawiedzie. Uruchamiamy go po każdej zmianie w parserach |
 
