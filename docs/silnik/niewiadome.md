@@ -12,7 +12,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Bit 0x80 typu pola, młodszy bajt `.l2m` | ❓ | bez widocznej różnicy na zrzutach |
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
 | Nieodkryty teren: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_nieodkryty_teren.md) za Diggles-Unity; brakuje porównania z grą |
-| **Cienie** pod obiektami | ❓ | `.3db` ma mapy cieni 32 × 32 przypisane do klatek; tylko w zasięgu `MaxShadowLightDist` = 8 od lampy; sposób rzutowania nieznany (Diggles-Unity też go nie zna); do ustalenia zrzutami z lampą |
+| **Cienie** pod obiektami | 🔶 | `.3db` ma mapy cieni 32 × 32 (rozmyty rzut bryły pod 45°, [3db.md §3.6](../formaty/3db.md)). W jaskini z lampą przy `MaxShadowLightDist` = 8 na podłodze są długie ciemne smugi od stworzeń, skierowane od lampy; przy 0 ich nie ma. Na powierzchni (samo słońce) cieni nie widać przy żadnej wartości ([BAZA_WIEDZY §9.8](../BAZA_WIEDZY.md)). ❓ Jak obraz jest rozciągany w stronę lampy, próg odległości, czy cieni jest kilka od kilku lamp |
 | Winieta (przyciemnienie brzegów ekranu w menu) | ❓ | widoczna na zrzutach |
 | Linia przycięcia panoramy, położenie panoramy przy kamerze startowej OBERWELT | 🔶 | rozdział 8 |
 | Prędkość animacji i interpolacja; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; sprzeczne dane o interpolacji ([11.6](11_obiekty_tcl_i_petla.md)); `move` to najpewniej przesunięcie korzenia na cykl (prędkość chodu) |

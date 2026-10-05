@@ -122,7 +122,7 @@ Wartości zachowują się jak tryby (prawdopodobnie zestawy stanów etapów teks
 | count | `u16` | 0–2 |
 | *powtórz:* data | 1024 B | mapa 32 × 32, 8 bit, skala szarości (cień rzucany pod obiektem). Klatki wskazują cień przez `shadowIndex` |
 
-🔶 **Co przedstawia obraz cienia.** Obraz leży na prostokącie `shadowQuad` klatki: kolumna i rośnie z x (od x0 do x1), wiersz j rośnie z z (od z0 do z1), bez odbić. Jest to rozmyty rzut bryły na ziemię światłem padającym pod 45° od tyłu: punkt (x, y, z) trafia w (x, z − y), gdzie −y to wysokość nad ziemią (oś y w dół), więc cień pada w +z, ku widzowi. Sprawdzenie: piksele > 40 porównane z rzutem trójkątów klatki dają średnio IoU 0,70 na 39 cieniach z 8 modeli; przesunięcie k·wysokość z k = 0,75 daje 0,65, a z k = 1,25 daje 0,58, odbicie osi x daje 0,62. Model ma najwyżej 2 obrazy cienia, które dzielą wszystkie klatki z cieniem, więc cień nie nadąża za animacją ([BAZA_WIEDZY §9.7](../BAZA_WIEDZY.md)). ❓ Czy i jak gra rysuje ten cień. Podgląd: `wigview --model BRUT.3DB --shadow-cmap`.
+🔶 **Co przedstawia obraz cienia.** Obraz leży na prostokącie `shadowQuad` klatki: kolumna i rośnie z x (od x0 do x1), wiersz j rośnie z z (od z0 do z1), bez odbić. Jest to rozmyty rzut bryły na ziemię światłem padającym pod 45° od tyłu: punkt (x, y, z) trafia w (x, z − y), gdzie −y to wysokość nad ziemią (oś y w dół), więc cień pada w +z, ku widzowi. Sprawdzenie: piksele > 40 porównane z rzutem trójkątów klatki dają średnio IoU 0,70 na 39 cieniach z 8 modeli; przesunięcie k·wysokość z k = 0,75 daje 0,65, a z k = 1,25 daje 0,58, odbicie osi x daje 0,62. Model ma najwyżej 2 obrazy cienia, które dzielą wszystkie klatki z cieniem, więc cień nie nadąża za animacją ([BAZA_WIEDZY §9.7](../BAZA_WIEDZY.md)). 🔶 Gra rysuje cienie od lamp w zasięgu `MaxShadowLightDist` (rejestr, domyślnie 8): przy 0 znikają długie smugi od stworzeń skierowane od lampy; na powierzchni ich nie widać ([BAZA_WIEDZY §9.8](../BAZA_WIEDZY.md)). ❓ Jak obraz jest rozciągany w stronę lampy. Podgląd: `wigview --model BRUT.3DB --shadow-cmap`.
 
 ### 3.7 Cmapy
 | Pole | Typ | Opis |
@@ -253,7 +253,7 @@ cienie 2, cmapy 0
 
 ## 12. Otwarte pytania
 - Tryby `flags` linku 4, 6, 7, 11 (tabela w §3.2): dokładny wzór mieszania; 9 = ciemniejsze niż 1 (❓ dlaczego).
-- Cień: obraz to rzut pod 45° na `shadowQuad` (🔶 §3.6); ❓ czy i jak gra go rysuje. Dokładna reguła budowy `cmap` (poszerzenie o kratkę daje IoU 0,70, nie 1).
+- Cień: obraz to rzut pod 45° na `shadowQuad` (🔶 §3.6); gra rysuje cienie od lamp (🔶), ❓ jak rozciąga obraz w stronę lampy. Dokładna reguła budowy `cmap` (poszerzenie o kratkę daje IoU 0,70, nie 1).
 - Czy gra interpoluje klatki (rejestr `AnimInterpolation=1` sugeruje, że tak; tempo logiki 10 Hz potwierdzone, [rozdział 11.7](../silnik/11_obiekty_tcl_i_petla.md)).
 
 ## 9. Punkty zaczepienia ✅

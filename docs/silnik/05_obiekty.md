@@ -81,7 +81,7 @@ Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 | zanikanie w głąb | modele za terenem (z < 0) przechodzą w kolor strefy horyzontu (rozdział 8) |
 | nieodkryty teren | obiekt rysuje się tylko przy dostatecznie odkrytym otoczeniu; dekoracje (`viewinfog`) także w szarej mgle (rozdział 10.5) |
 
-**Dane pomocnicze klatki** ([3db.md](../formaty/3db.md) §3.2, §3.7): prostokąt cienia na ziemi (`shadowQuad`, 4 narożniki) razem z mapą cienia 32×32 (🔶 rozmyty rzut bryły światłem pod 45°, cień pada w +z ku widzowi; ❓ czy gra go rysuje) i maska zajętości `cmap` w kratkach 1/8 bloku, też na ziemi w płaszczyźnie x/z (✅ płaszczyzna, 🔶 rzut bryły poszerzony o kratkę; kolizje: `animinit.tcl` daje klasie `class_collision 1`, gdy model ma `cmap`). Oba widać w wigview w sekcji „Cień i cmap” (`--shadow-cmap`).
+**Dane pomocnicze klatki** ([3db.md](../formaty/3db.md) §3.2, §3.7): prostokąt cienia na ziemi (`shadowQuad`, 4 narożniki) razem z mapą cienia 32×32 (🔶 rozmyty rzut bryły światłem pod 45°, cień pada w +z ku widzowi; 🔶 gra rysuje cienie tylko od lamp w zasięgu `MaxShadowLightDist`, wydłużone w stronę od lampy, [niewiadome](niewiadome.md)) i maska zajętości `cmap` w kratkach 1/8 bloku, też na ziemi w płaszczyźnie x/z (✅ płaszczyzna, 🔶 rzut bryły poszerzony o kratkę; kolizje: `animinit.tcl` daje klasie `class_collision 1`, gdy model ma `cmap`). Oba widać w wigview w sekcji „Cień i cmap” (`--shadow-cmap`).
 
 **Kolor przy alpha teście.** Przezroczyste piksele tekstur mają dowolny kolor (często szaroniebieski). Przy filtrowaniu i mipmapach miesza się on z sąsiednimi liśćmi i daje szare obwódki. Przed wysłaniem tekstury do GPU warto „rozlać” kolor nieprzezroczystych sąsiadów na przezroczyste piksele (alfa bez zmian).
 

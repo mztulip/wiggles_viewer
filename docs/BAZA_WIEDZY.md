@@ -399,6 +399,12 @@ Pytanie: w jakiej płaszczyźnie leżą `cmap` i obraz cienia oraz jak powstały
 - **Cień**, 39 obrazów z 8 modeli (do 3 klatek na obraz), piksele > 40 na prostokącie `shadowQuad`: rzut (x, z + k·wysokość) daje IoU 0,70 dla k = 1, 0,65 dla 0,75, 0,58 dla 1,25; odbicie x 0,62. Wniosek: 🔶 rozmyty rzut światłem pod 45° od tyłu, cień pada ku widzowi.
 - Podgląd obu: `wigview --model MANN.3DB --anim schlafen_boden_loop --shadow-cmap`.
 
+### 9.8 Cienie w działającej grze (2026-10-05)
+`live.sh start` z `gameload Data/Gamesave/save_kampania.sav`, kamera `set_view … 0.6 -0.2 0.2`, restart gry przy każdej zmianie `Performance\MaxShadowLightDist` (rejestr laboratorium). Zrzuty poza repo: `../lab/wyniki/cien_*.png`.
+- **Powierzchnia** (krasnale, beczki, grzyby przy ścieżce, `set_view 245 30.5`): przy 0, 8 i 100 brak widocznej plamy pod obiektami; nieruchome beczki i grzyby identyczne. Dwa dodatkowe `Misc_LightSrc_a` obok krasnali nic nie zmieniły.
+- **Jaskinia** (`set_view 240 42.5`, `FogRemover`, `Misc_LightSrc_a` w (242; 41,5; 13)): zrzuty przy 0 i 8 różnią się (poza poruszającymi się zwierzętami) **długimi ciemnymi smugami na podłodze**: od stworzeń po lewej w lewo, od tych po prawej w prawo, czyli od lampy. Przy 0 smug nie ma. 🔶 Cienie rzucane od lamp punktowych w zasięgu `MaxShadowLightDist`, mocno wydłużone przy nisko położonym świetle.
+- Próba z nieruchomym grzybem (`new Pilz`) i lampą przestawianą `set_pos` na lewo i prawo: różnica to głównie oświetlenie ściany i podłogi, cień grzyba nieczytelny (kadr zasłonięty rośliną). ❓ Do powtórzenia na płaskiej, pustej podłodze z jednym obiektem.
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji
