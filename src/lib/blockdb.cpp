@@ -1,4 +1,5 @@
 #include "lib/blockdb.h"
+#include "lib/i18n.h"
 
 #include "lib/binreader.h"
 #include "lib/vfs.h"
@@ -10,7 +11,7 @@ void BlockDb::load(const Vfs& vfs, int quality)
 {
 	std::string path = "Data/BlockDB" + std::to_string(quality < 0 ? 0 : (quality > 2 ? 2 : quality)) + ".BDB";
 	auto data = vfs.read(path);
-	if (!data) throw ParseError("brak " + path);
+	if (!data) throw ParseError(strf(tr("brak %s"), path.c_str()));
 	loadData(*data);
 }
 
@@ -24,7 +25,7 @@ void BlockDb::loadData(const std::vector<uint8_t>& data)
 	uint32_t nIndex = r.u32();
 	uint32_t nDesc = r.u32();
 	uint32_t nPalette = r.u32();
-	if (version != 11 || blocks != kBlocks) throw ParseError("nieznany nagłówek BlockDB");
+	if (version != 11 || blocks != kBlocks) throw ParseError(tr("nieznany nagłówek BlockDB"));
 
 	cells_.resize(size_t(blocks) * 3);
 	for (auto& c : cells_)
@@ -47,20 +48,20 @@ void BlockDb::loadData(const std::vector<uint8_t>& data)
 		bulkSize += size_t(c.vertCount) * 3;
 	}
 	r.readArray(bulk_, bulkSize);
-	if (!r.atEnd()) throw ParseError("nadmiarowe dane na końcu BlockDB");
+	if (!r.atEnd()) throw ParseError(tr("nadmiarowe dane na końcu BlockDB"));
 
 	// Walidacja odwołań (renderer im ufa).
 	for (const auto& c : cells_)
 	{
 		if (!c.vertCount) continue;
-		if (c.descriptor >= descriptors_.size()) throw ParseError("deskryptor poza zakresem");
+		if (c.descriptor >= descriptors_.size()) throw ParseError(tr("deskryptor poza zakresem"));
 		const auto& d = descriptors_[c.descriptor];
-		if (uint64_t(d[0]) + d[1] > indexPool_.size()) throw ParseError("zakres indeksów poza pulą");
+		if (uint64_t(d[0]) + d[1] > indexPool_.size()) throw ParseError(tr("zakres indeksów poza pulą"));
 		const uint8_t* p = bulk_.data() + c.bulkOffset;
 		for (uint16_t i = 0; i < c.vertCount; ++i)
-			if (uint16_t(p[i * 2] | (p[i * 2 + 1] << 8)) >= palette_.size()) throw ParseError("indeks palety poza zakresem");
+			if (uint16_t(p[i * 2] | (p[i * 2 + 1] << 8)) >= palette_.size()) throw ParseError(tr("indeks palety poza zakresem"));
 		for (uint32_t i = 0; i < d[1]; ++i)
-			if (indexPool_[d[0] + i] >= c.vertCount) throw ParseError("indeks trójkąta poza podsiatką");
+			if (indexPool_[d[0] + i] >= c.vertCount) throw ParseError(tr("indeks trójkąta poza podsiatką"));
 	}
 }
 

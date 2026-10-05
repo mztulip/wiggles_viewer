@@ -1,4 +1,5 @@
 #include "lib/map_template.h"
+#include "lib/i18n.h"
 
 #include "lib/binreader.h"
 
@@ -15,13 +16,13 @@ Pmp parsePmp(const std::vector<uint8_t>& data)
 	p.width = r.u32();
 	p.height = r.u32();
 	if (p.width == 0 || p.height == 0 || p.width > 4096 || p.height > 4096)
-		throw ParseError("nieprawidłowy rozmiar PMP");
+		throw ParseError(tr("nieprawidłowy rozmiar PMP"));
 	size_t n = size_t(p.width) * p.height;
 	r.readArray(p.types, n);
 	r.readArray(p.blocks, n);
 	r.readArray(p.mask, r.u32());
 	r.readArray(p.layer2, n);
-	if (!r.atEnd()) throw ParseError("nadmiarowe dane na końcu PMP: " + std::to_string(r.remaining()) + " B");
+	if (!r.atEnd()) throw ParseError(strf(tr("nadmiarowe dane na końcu PMP: %zu B"), r.remaining()));
 	return p;
 }
 
@@ -30,13 +31,13 @@ L2m parseL2m(const std::vector<uint8_t>& data)
 	if (data.empty()) return {}; // w grze są puste pliki .l2m (brak warstwy)
 	BinReader r(data);
 	uint32_t magic = r.u32();
-	if (magic != 0x004C324D) throw ParseError("brak nagłówka M2L"); // "M2L\0"
+	if (magic != 0x004C324D) throw ParseError(tr("brak nagłówka M2L")); // "M2L\0"
 	L2m l;
 	l.width = r.u32();
 	l.height = r.u32();
-	if (l.width > 4096 || l.height > 4096) throw ParseError("nieprawidłowy rozmiar L2M");
+	if (l.width > 4096 || l.height > 4096) throw ParseError(tr("nieprawidłowy rozmiar L2M"));
 	r.readArray(l.values, size_t(l.width) * l.height);
-	if (!r.atEnd()) throw ParseError("nadmiarowe dane na końcu L2M");
+	if (!r.atEnd()) throw ParseError(tr("nadmiarowe dane na końcu L2M"));
 	return l;
 }
 

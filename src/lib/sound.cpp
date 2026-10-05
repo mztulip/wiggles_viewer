@@ -1,4 +1,5 @@
 #include "lib/sound.h"
+#include "lib/i18n.h"
 
 #include <SDL.h>
 
@@ -41,7 +42,7 @@ bool decodeMp3(const uint8_t* data, size_t size, SoundPcm& out, std::string& err
 	if (!pcm || frames == 0 || cfg.channels == 0)
 	{
 		if (pcm) drmp3_free(pcm, nullptr);
-		err = "nie udało się zdekodować MP3";
+		err = tr("nie udało się zdekodować MP3");
 		return false;
 	}
 	out.rate = int(cfg.sampleRate);
@@ -62,7 +63,7 @@ bool decodeWav(const std::vector<uint8_t>& d, SoundPcm& out, std::string& err)
 {
 	if (d.size() < 12 || std::memcmp(d.data(), "RIFF", 4) || std::memcmp(d.data() + 8, "WAVE", 4))
 	{
-		err = "to nie jest plik RIFF/WAVE";
+		err = tr("to nie jest plik RIFF/WAVE");
 		return false;
 	}
 	uint16_t tag = 0, ch = 0, bits = 0;
@@ -89,7 +90,7 @@ bool decodeWav(const std::vector<uint8_t>& d, SoundPcm& out, std::string& err)
 	}
 	if (!pcm)
 	{
-		err = "brak kawałka data";
+		err = tr("brak kawałka data");
 		return false;
 	}
 	char fmt[96];
@@ -102,9 +103,7 @@ bool decodeWav(const std::vector<uint8_t>& d, SoundPcm& out, std::string& err)
 	}
 	if (tag != 1 || (bits != 8 && bits != 16) || ch == 0 || rate == 0)
 	{
-		char b[64];
-		std::snprintf(b, sizeof b, "nieobsługiwany format WAV (0x%x, %u bit)", tag, bits);
-		err = b;
+		err = strf(tr("nieobsługiwany format WAV (0x%x, %u bit)"), unsigned(tag), unsigned(bits));
 		return false;
 	}
 	out.rate = int(rate);

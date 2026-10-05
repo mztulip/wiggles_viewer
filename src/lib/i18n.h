@@ -42,10 +42,17 @@ std::string systemLanguage();
 
 const char* tr(const char* source);
 
+// printf do std::string; do komunikatów z parametrami: strf(tr("brak pliku %s"), nazwa).
+#if defined(__GNUC__)
+__attribute__((format(printf, 1, 2)))
+#endif
+std::string strf(const char* fmt, ...);
+
 } // namespace ow::i18n
 
 namespace ow
 {
+using i18n::strf;
 using i18n::tr;
 }
 

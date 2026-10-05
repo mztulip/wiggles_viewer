@@ -1,5 +1,8 @@
 #include "lib/i18n.h"
 
+#include <algorithm>
+#include <cstdarg>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -273,6 +276,19 @@ const char* tr(const char* source)
 	auto it = c->strings.find(text);
 	std::string out = (it != c->strings.end() ? it->second : text) + hash;
 	return c->withId.emplace(source, std::move(out)).first->second.c_str();
+}
+
+std::string strf(const char* fmt, ...)
+{
+	va_list a, b;
+	va_start(a, fmt);
+	va_copy(b, a);
+	int n = std::vsnprintf(nullptr, 0, fmt, a);
+	va_end(a);
+	std::string out(size_t(std::max(n, 0)), '\0');
+	if (n > 0) std::vsnprintf(out.data(), size_t(n) + 1, fmt, b);
+	va_end(b);
+	return out;
 }
 
 } // namespace ow::i18n

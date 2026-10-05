@@ -1,4 +1,5 @@
 #include "lib/gltf_export.h"
+#include "lib/i18n.h"
 
 #include "lib/texture_find.h"
 #include "lib/png_write.h"
@@ -178,7 +179,7 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	GltfExportStats st;
 	if (objectIndex < 0 || size_t(objectIndex) >= m.objects.size())
 	{
-		err = "brak obiektu";
+		err = tr("brak obiektu");
 		return false;
 	}
 	const Object3db& obj = m.objects[size_t(objectIndex)];
@@ -187,13 +188,13 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 		for (size_t i = 0; i < obj.animations.size(); ++i) anims.push_back(int(i));
 	if (anims.empty())
 	{
-		err = "obiekt nie ma animacji";
+		err = tr("obiekt nie ma animacji");
 		return false;
 	}
 	for (int a : anims)
 		if (a < 0 || size_t(a) >= obj.animations.size())
 		{
-			err = "indeks animacji poza zakresem";
+			err = tr("indeks animacji poza zakresem");
 			return false;
 		}
 
@@ -385,7 +386,7 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 
 	if (animNodes.empty())
 	{
-		err = "brak geometrii do eksportu";
+		err = tr("brak geometrii do eksportu");
 		return false;
 	}
 
@@ -401,7 +402,7 @@ bool exportGltf(const Model3db& m, const Vfs& vfs, const std::vector<Vec3f>& sph
 	std::ofstream f(outPath, std::ios::binary);
 	if (!f || !f.write(reinterpret_cast<const char*>(glb.data()), std::streamsize(glb.size())))
 	{
-		err = "nie można zapisać " + outPath;
+		err = strf(tr("nie można zapisać %s"), outPath.c_str());
 		return false;
 	}
 	st.bytes = glb.size();

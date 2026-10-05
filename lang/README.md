@@ -40,7 +40,8 @@ Interfejs OpenWiggles (na razie przeglądarka `wigview`) jest po polsku, a pozos
 
 - Napis interfejsu w kodzie: `tr("Tekst po polsku")`. Wołamy `tr()` przy każdym użyciu (bez zapamiętywania wyniku w zmiennych statycznych), więc zmiana języka działa od razu.
 - Napis tłumaczony później (np. przekazywany jako nazwa etapu): `N_("…")`, a w miejscu wyświetlenia `tr(zmienna)`.
+- Komunikat z parametrami: `strf(tr("brak %s"), nazwa.c_str())` zamiast sklejania napisów, żeby tłumacz widział całe zdanie, a znaczniki printf były sprawdzane.
 - Identyfikatory ImGui: przyrostek `##id` / `###id` nie jest tłumaczony. `tr("Mapy###mapy")` daje „Maps###mapy”, a `###` utrzymuje ten sam identyfikator we wszystkich językach (np. wybrana zakładka nie zmienia się po zmianie języka).
 - Po dodaniu albo zmianie napisów: [`tools/i18n_update.py`](../tools/i18n_update.py). Odświeża `openwiggles.pot` i scala każdy `.po`: nowe napisy dostają pusty `msgstr`, usunięte trafiają na koniec jako `#~`. Potem uzupełnij `en.po`. `tools/i18n_update.py --check` kończy się kodem 1, gdy w którymś języku czegoś brakuje.
 - Implementacja: [`src/lib/i18n.h`](../src/lib/i18n.h), [`src/lib/i18n.cpp`](../src/lib/i18n.cpp) (parser podzbioru `.po`: bez `msgctxt` i liczby mnogiej).
-- Komunikaty na konsoli i błędy z biblioteki ([`src/lib`](../src/lib), np. błędy parsera) zostają po polsku.
+- Błędy z biblioteki ([`src/lib`](../src/lib): parsery `.3db`, TGA, BlockDB, szablonów, zapisów, dźwięku, eksport glTF) są tłumaczone. Po polsku zostają: komunikaty na konsoli programów, dziennik skryptów (`openwiggles_tcl.log`), błędy Tcl zwracane skryptom gry i błędy wczytywania samych plików `.po`.

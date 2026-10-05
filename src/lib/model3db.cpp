@@ -1,4 +1,5 @@
 #include "lib/model3db.h"
+#include "lib/i18n.h"
 
 #include "lib/binreader.h"
 
@@ -56,7 +57,7 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 	Model3db m;
 
 	m.version = r.str32();
-	if (m.version != "3DDB 1.0") throw ParseError("nieznana wersja: '" + m.version + "'");
+	if (m.version != "3DDB 1.0") throw ParseError(strf(tr("nieznana wersja: '%s'"), m.version.c_str()));
 	m.name = r.str32();
 
 	m.materials.resize(r.u16());
@@ -130,7 +131,7 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 	for (size_t i = 0; i < m.normals.size(); ++i) r.readArray(m.normals[i], nrmCounts[i]);
 
 	if (!r.atEnd())
-		throw ParseError("nadmiarowe dane na końcu pliku: " + std::to_string(r.remaining()) + " B");
+		throw ParseError(strf(tr("nadmiarowe dane na końcu pliku: %zu B"), r.remaining()));
 
 	// Walidacja odwołań, żeby renderer mógł im ufać.
 	// Pule trójkątów są współdzielone przez wiele klatek, więc maksymalny indeks liczymy raz na pulę.
@@ -143,21 +144,21 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 			if (l.material >= m.materials.size() || l.triangles >= m.triangles.size() ||
 			    l.texcoords >= m.texcoords.size() || l.points >= m.points.size() ||
 			    l.normals >= m.normals.size())
-				throw ParseError("MeshLink poza zakresem pul");
+				throw ParseError(tr("MeshLink poza zakresem pul"));
 			if (maxIndex[l.triangles] >= int(m.points[l.points].size()))
-				throw ParseError("indeks trójkąta poza zakresem punktów");
+				throw ParseError(tr("indeks trójkąta poza zakresem punktów"));
 		}
 	for (const auto& mesh : m.meshes)
 	{
-		if (mesh.shadowIndex != 0xFFFF && mesh.shadowIndex >= m.shadows.size()) throw ParseError("indeks cienia poza zakresem");
-		if (mesh.cmapIndex != 0xFFFF && mesh.cmapIndex >= m.cmaps.size()) throw ParseError("indeks cmapy poza zakresem");
+		if (mesh.shadowIndex != 0xFFFF && mesh.shadowIndex >= m.shadows.size()) throw ParseError(tr("indeks cienia poza zakresem"));
+		if (mesh.cmapIndex != 0xFFFF && mesh.cmapIndex >= m.cmaps.size()) throw ParseError(tr("indeks cmapy poza zakresem"));
 	}
 	for (const auto& a : m.animations)
 		for (uint32_t f : a.frames)
-			if (f >= m.meshes.size()) throw ParseError("klatka animacji poza zakresem meshy");
+			if (f >= m.meshes.size()) throw ParseError(tr("klatka animacji poza zakresem meshy"));
 	for (const auto& o : m.objects)
 		for (uint32_t a : o.animations)
-			if (a >= m.animations.size()) throw ParseError("animacja obiektu poza zakresem");
+			if (a >= m.animations.size()) throw ParseError(tr("animacja obiektu poza zakresem"));
 
 	return m;
 }

@@ -1255,6 +1255,56 @@ msgstr ""
 msgid "Linia sekwencji z '-': pomijana, gdy gracz przerwie sekwencję."
 msgstr ""
 
+#: src/lib/blockdb.cpp:14
+#, c-format
+msgid "brak %s"
+msgstr ""
+
+#: src/lib/blockdb.cpp:28
+msgid "nieznany nagłówek BlockDB"
+msgstr ""
+
+#: src/lib/blockdb.cpp:51
+msgid "nadmiarowe dane na końcu BlockDB"
+msgstr ""
+
+#: src/lib/blockdb.cpp:57
+msgid "deskryptor poza zakresem"
+msgstr ""
+
+#: src/lib/blockdb.cpp:59
+msgid "zakres indeksów poza pulą"
+msgstr ""
+
+#: src/lib/blockdb.cpp:62
+msgid "indeks palety poza zakresem"
+msgstr ""
+
+#: src/lib/blockdb.cpp:64
+msgid "indeks trójkąta poza podsiatką"
+msgstr ""
+
+#: src/lib/gltf_export.cpp:182
+msgid "brak obiektu"
+msgstr ""
+
+#: src/lib/gltf_export.cpp:191
+msgid "obiekt nie ma animacji"
+msgstr ""
+
+#: src/lib/gltf_export.cpp:197
+msgid "indeks animacji poza zakresem"
+msgstr ""
+
+#: src/lib/gltf_export.cpp:389
+msgid "brak geometrii do eksportu"
+msgstr ""
+
+#: src/lib/gltf_export.cpp:405
+#, c-format
+msgid "nie można zapisać %s"
+msgstr ""
+
 #: src/lib/map_scene.cpp:37
 msgid "shader terenu: "
 msgstr ""
@@ -1308,6 +1358,61 @@ msgstr ""
 
 #: src/lib/map_scene.cpp:338
 msgid "Gotowe"
+msgstr ""
+
+#: src/lib/map_template.cpp:19
+msgid "nieprawidłowy rozmiar PMP"
+msgstr ""
+
+#: src/lib/map_template.cpp:25
+#, c-format
+msgid "nadmiarowe dane na końcu PMP: %zu B"
+msgstr ""
+
+#: src/lib/map_template.cpp:34
+msgid "brak nagłówka M2L"
+msgstr ""
+
+#: src/lib/map_template.cpp:38
+msgid "nieprawidłowy rozmiar L2M"
+msgstr ""
+
+#: src/lib/map_template.cpp:40
+msgid "nadmiarowe dane na końcu L2M"
+msgstr ""
+
+#: src/lib/model3db.cpp:60
+#, c-format
+msgid "nieznana wersja: '%s'"
+msgstr ""
+
+#: src/lib/model3db.cpp:134
+#, c-format
+msgid "nadmiarowe dane na końcu pliku: %zu B"
+msgstr ""
+
+#: src/lib/model3db.cpp:147
+msgid "MeshLink poza zakresem pul"
+msgstr ""
+
+#: src/lib/model3db.cpp:149
+msgid "indeks trójkąta poza zakresem punktów"
+msgstr ""
+
+#: src/lib/model3db.cpp:153
+msgid "indeks cienia poza zakresem"
+msgstr ""
+
+#: src/lib/model3db.cpp:154
+msgid "indeks cmapy poza zakresem"
+msgstr ""
+
+#: src/lib/model3db.cpp:158
+msgid "klatka animacji poza zakresem meshy"
+msgstr ""
+
+#: src/lib/model3db.cpp:161
+msgid "animacja obiektu poza zakresem"
 msgstr ""
 
 #: src/lib/particles.cpp:60
@@ -1482,6 +1587,208 @@ msgstr ""
 msgid "rosnąca kula pyłu"
 msgstr ""
 
+#: src/lib/save_game.cpp:68
+#, c-format
+msgid "nieprawidłowa liczba: %s = %d"
+msgstr ""
+
+#: src/lib/save_game.cpp:74
+#, c-format
+msgid "nieprawidłowy bajt obecności: %s"
+msgstr ""
+
+#: src/lib/save_game.cpp:82
+#, c-format
+msgid "oczekiwano znacznika %d, jest %d (bajt %zu)"
+msgstr ""
+
+#: src/lib/save_game.cpp:87
+#, c-format
+msgid "nieprawidłowa długość napisu %d"
+msgstr ""
+
+#: src/lib/save_game.cpp:89
+msgid "napis bez zera na końcu"
+msgstr ""
+
+#: src/lib/save_game.cpp:92
+msgid "wektor liczb"
+msgstr ""
+
+#: src/lib/save_game.cpp:95
+msgid "wektor napisów"
+msgstr ""
+
+#: src/lib/save_game.cpp:126
+msgid "wpisy akcji"
+msgstr ""
+
+#: src/lib/save_game.cpp:130
+msgid "akcja 0"
+msgstr ""
+
+#: src/lib/save_game.cpp:135
+msgid "akcja 1"
+msgstr ""
+
+#: src/lib/save_game.cpp:141
+msgid "akcja 2"
+msgstr ""
+
+#: src/lib/save_game.cpp:148
+#, c-format
+msgid "nieznany wariant akcji %d"
+msgstr ""
+
+#: src/lib/save_game.cpp:157
+#, c-format
+msgid "klasa ciała obiektu %d różni się od deklaracji"
+msgstr ""
+
+#: src/lib/save_game.cpp:159
+#, c-format
+msgid "nieprawidłowy typ obiektu %d"
+msgstr ""
+
+#: src/lib/save_game.cpp:174
+msgid "zmienne Tcl"
+msgstr ""
+
+#: src/lib/save_game.cpp:182
+msgid "nieprawidłowa obecność zmiennych Tcl"
+msgstr ""
+
+#: src/lib/save_game.cpp:194
+msgid "cząsteczki"
+msgstr ""
+
+#: src/lib/save_game.cpp:206
+msgid "powiązania aktora"
+msgstr ""
+
+#: src/lib/save_game.cpp:213
+msgid "nieprawidłowy wpis indeksu nazwanego"
+msgstr ""
+
+#: src/lib/save_game.cpp:220
+msgid "stan ruchomy"
+msgstr ""
+
+#: src/lib/save_game.cpp:239
+#: src/lib/save_game.cpp:241
+msgid "historia powiązań"
+msgstr ""
+
+#: src/lib/save_game.cpp:250
+msgid "wariant akcji"
+msgstr ""
+
+#: src/lib/save_game.cpp:253
+msgid "wpis rozszerzony"
+msgstr ""
+
+#: src/lib/save_game.cpp:254
+msgid "rekordy rozszerzone"
+msgstr ""
+
+#: src/lib/save_game.cpp:264
+msgid "tablica menedżera"
+msgstr ""
+
+#: src/lib/save_game.cpp:288
+msgid "rekordy akcji menedżera"
+msgstr ""
+
+#: src/lib/save_game.cpp:288
+msgid "nieobsługiwane rekordy akcji menedżera"
+msgstr ""
+
+#: src/lib/save_game.cpp:298
+msgid "nieprawidłowy indeks tabeli klas"
+msgstr ""
+
+#: src/lib/save_game.cpp:324
+msgid "kubełek"
+msgstr ""
+
+#: src/lib/save_game.cpp:345
+#, c-format
+msgid "zapis nie jest strumieniem gzip: %s"
+msgstr ""
+
+#: src/lib/save_game.cpp:350
+#, c-format
+msgid "obsługujemy tylko wersję zapisu 0xA5, jest 0x%X"
+msgstr ""
+
+#: src/lib/save_game.cpp:372
+msgid "nieprawidłowe wymiary świata"
+msgstr ""
+
+#: src/lib/save_game.cpp:395
+msgid "rekord pola ma nie 53 B"
+msgstr ""
+
+#: src/lib/save_game.cpp:400
+msgid "źródła wody"
+msgstr ""
+
+#: src/lib/save_game.cpp:401
+msgid "tamy wody"
+msgstr ""
+
+#: src/lib/save_game.cpp:403
+msgid "lista wody"
+msgstr ""
+
+#: src/lib/save_game.cpp:405
+msgid "lista mgły"
+msgstr ""
+
+#: src/lib/save_game.cpp:413
+msgid "brak pustego separatora po deklaracjach obiektów"
+msgstr ""
+
+#: src/lib/save_game.cpp:414
+msgid "rekordy pomocnicze"
+msgstr ""
+
+#: src/lib/save_game.cpp:424
+#, c-format
+msgid "ciało obiektu %d bez deklaracji"
+msgstr ""
+
+#: src/lib/save_game.cpp:442
+msgid "brak bazowego zapisu"
+msgstr ""
+
+#: src/lib/save_game.cpp:481
+#, c-format
+msgid "nie można utworzyć %s"
+msgstr ""
+
+#: src/lib/save_game.cpp:486
+#, c-format
+msgid "błąd zapisu %s"
+msgstr ""
+
+#: src/lib/sound.cpp:45
+msgid "nie udało się zdekodować MP3"
+msgstr ""
+
+#: src/lib/sound.cpp:66
+msgid "to nie jest plik RIFF/WAVE"
+msgstr ""
+
+#: src/lib/sound.cpp:93
+msgid "brak kawałka data"
+msgstr ""
+
+#: src/lib/sound.cpp:106
+#, c-format
+msgid "nieobsługiwany format WAV (0x%x, %u bit)"
+msgstr ""
+
 #: src/lib/sound_refs.cpp:171
 msgid "nazwa (sound bind)"
 msgstr ""
@@ -1512,4 +1819,30 @@ msgstr ""
 
 #: src/lib/sound_refs.cpp:178
 msgid "wzmianka"
+msgstr ""
+
+#: src/lib/tga.cpp:29
+msgid "TGA z paletą nieobsługiwane"
+msgstr ""
+
+#: src/lib/tga.cpp:33
+#, c-format
+msgid "nieobsługiwany typ TGA %d"
+msgstr ""
+
+#: src/lib/tga.cpp:34
+msgid "pusty obraz"
+msgstr ""
+
+#: src/lib/tga.cpp:37
+#, c-format
+msgid "nieobsługiwana głębia %d"
+msgstr ""
+
+#: src/lib/tga.cpp:76
+msgid "uszkodzone dane RLE"
+msgstr ""
+
+#: src/lib/script/engine.cpp:1746
+msgid "nie wczytano żadnej klasy"
 msgstr ""

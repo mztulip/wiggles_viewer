@@ -1,4 +1,5 @@
 #include "lib/tga.h"
+#include "lib/i18n.h"
 
 #include "lib/binreader.h"
 
@@ -25,15 +26,15 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err)
 		uint8_t desc = r.u8();
 		r.skip(idLen);
 
-		if (cmapType != 0) return fail("TGA z paletą nieobsługiwane");
+		if (cmapType != 0) return fail(tr("TGA z paletą nieobsługiwane"));
 		bool rle = type == 10 || type == 11;
 		bool gray = type == 3 || type == 11;
 		if (type != 2 && type != 3 && type != 10 && type != 11)
-			return fail("nieobsługiwany typ TGA " + std::to_string(type));
-		if (w <= 0 || h <= 0) return fail("pusty obraz");
+			return fail(strf(tr("nieobsługiwany typ TGA %d"), int(type)));
+		if (w <= 0 || h <= 0) return fail(tr("pusty obraz"));
 		int bytes = bpp / 8;
 		if (gray ? (bpp != 8 && bpp != 16) : (bpp != 16 && bpp != 24 && bpp != 32))
-			return fail("nieobsługiwana głębia " + std::to_string(bpp));
+			return fail(strf(tr("nieobsługiwana głębia %d"), int(bpp)));
 
 		out.width = w;
 		out.height = h;
@@ -72,7 +73,7 @@ bool loadTga(const std::vector<uint8_t>& data, Image& out, std::string* err)
 			{
 				uint8_t hdr = r.u8();
 				size_t count = (hdr & 0x7f) + 1;
-				if (i + count > n) return fail("uszkodzone dane RLE");
+				if (i + count > n) return fail(tr("uszkodzone dane RLE"));
 				if (hdr & 0x80)
 				{
 					for (int b = 0; b < bytes; ++b) raw[b] = r.u8();

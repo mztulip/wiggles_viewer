@@ -131,7 +131,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
-- [ ] Tłumaczenia: komunikaty błędów z [`src/lib`](src/lib) i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
+- [x] Tłumaczenia: komunikaty błędów z [`src/lib`](src/lib) (parsery, zapis, dźwięk, glTF) przez `tr`/`strf`; konsola i dziennik skryptów zostają po polsku ([lang/README.md](lang/README.md))
+- [ ] Font dla pism spoza DejaVu Sans (gdy pojawi się tłumaczenie np. na rosyjski albo japoński: wybór fontu według języka)
 - [x] Zrzut wsadowy miniatur: `wigview --thumbnails KATALOG [--model M] [--size 160x160]` zapisuje `<model>/<obiekt>.png` (animacja `standard`, klatka 0) i `index.html` z siatką; wszystkie 2583 obiekty w ok. 8 s. W Vulkanie zrzuty bez UI mają rozmiar z `--size` niezależnie od menedżera okien
 - [x] Dźwięki: zakładka z plikami Data/Sound i Data/Music (WAV PCM, WAV/MP3, MP3 przez dr_mp3), odtwarzanie z przebiegiem fali i przewijaniem, odwołania w skryptach (`sound bind/anim/play`, muzyka, dialogi, wzmianki) z kontekstem i przejściem do animacji; w zakładce Modele dźwięki klatek animacji; `--sound`; Ctrl+F szuka też dźwięków po nazwie logicznej ([rozdział 15](docs/silnik/15_dzwiek.md))
 - [ ] 🔬 Dźwięki: porównać z grą głośność `sound play` od odległości kamery i wybór dźwięku po materiale (`sound anim … stone …`)

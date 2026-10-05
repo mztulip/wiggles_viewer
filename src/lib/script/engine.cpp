@@ -1,4 +1,5 @@
 #include "lib/script/engine.h"
+#include "lib/i18n.h"
 
 #include "lib/vfs.h"
 
@@ -1742,7 +1743,7 @@ bool Engine::boot(std::string& err)
 	if (!classes_.empty() && errors_.empty()) writeClassCache(sig);
 	if (classes_.empty())
 	{
-		err = "nie wczytano żadnej klasy";
+		err = tr("nie wczytano żadnej klasy");
 		return false;
 	}
 	return true;
