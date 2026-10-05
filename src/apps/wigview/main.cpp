@@ -24,6 +24,7 @@
 //                      (albo pierwszej), klatka 0: KATALOG/<model>/<obiekt>.png i KATALOG/index.html; rozmiar z --size
 //                      (domyślnie 256x256), kończy działanie.
 // --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
+// --no-draw-modes: wszystkie linki modeli rysowane jak tryb 1 (bez trybów z flags linku), do porównań.
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 // --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
@@ -78,6 +79,7 @@ struct Args
 	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound, texture, file;
 	int textureChannel = 0;
 	bool shadowCmap = false;
+	bool drawModes = true; // --no-draw-modes
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -124,6 +126,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--texture") a.texture = next();
 		else if (k == "--texture-channel") a.textureChannel = std::atoi(next());
 		else if (k == "--shadow-cmap") a.shadowCmap = true;
+		else if (k == "--no-draw-modes") a.drawModes = false;
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
@@ -717,6 +720,9 @@ void Viewer::uiModel()
 		ImGui::Checkbox(tr("Siatka"), &draw.wireframe);
 		ImGui::SameLine();
 		ImGui::Checkbox(tr("Alpha test"), &draw.alphaTest);
+		ImGui::SameLine();
+		ImGui::Checkbox(tr("Tryby rysowania"), &draw.drawModes);
+		ImGui::SetItemTooltip(tr("flags linku: 0 niewidoczny, 2 addytywnie, 5–7 mapowanie otoczenia, 8 bez oświetlenia\n(3 miękka alfa: na razie jak 1); wyłączone: wszystko jak tryb 1"));
 		ImGui::SameLine();
 		ImGui::Checkbox(tr("Odwróć Y"), &flipY);
 		ImGui::ColorEdit3(tr("Tło"), &bg.r, ImGuiColorEditFlags_NoInputs);
@@ -1612,6 +1618,7 @@ int main(int argc, char** argv)
 		v.frameParticles();
 	}
 	v.openShadowCmap = args.shadowCmap;
+	v.draw.drawModes = args.drawModes;
 	if (!args.texture.empty())
 	{
 		std::string t = args.texture;

@@ -95,6 +95,8 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 
 Wartości zachowują się jak tryby (prawdopodobnie zestawy stanów etapów tekstur Direct3D), a nie niezależne bity: 1 i 2 osobno dają zwykły i addytywny obraz, a 3 zwykłe mieszanie alfa; 4 osobno nic nie zmienia, a 5 włącza mapowanie otoczenia. Mapowanie otoczenia zależy też od rejestru `Performance\UseEnvMapping`.
 
+**Nasz renderer** ([`render/model_renderer`](../../src/lib/render/model_renderer.cpp), [model.frag](../../src/shaders/model.frag)): 0 pomija link; 2 rysuje w drugim przebiegu addytywnie (`ONE, ONE`, kolor × alfa), bez zapisu głębi i bez oświetlenia (🔶 blask); 5–7 biorą współrzędne tekstury z normalnej (`n.xy · 0,5 + 0,5`, 🔶 kamera gry patrzy prawie wzdłuż osi z); 8 pomija oświetlenie; 1, 3, 4, 9, 11 jak 1. Tryb 3 jako miękka alfa wymaga sortowania przezroczystych w całej scenie (TODO), bo miękki brzeg z zapisem głębi zasłania obiekty rysowane później. Porównanie: przełącznik „Tryby rysowania” w wigview albo `--no-draw-modes`.
+
 ### 3.4 Obiekty
 | Pole | Typ | Opis |
 |---|---|---|

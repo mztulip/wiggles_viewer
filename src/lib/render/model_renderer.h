@@ -37,6 +37,10 @@ struct ModelDrawOptions
 	LightingMode lighting = LightingMode::SphereNormal;
 	bool wireframe = false;
 	bool alphaTest = true;
+	// Tryby rysowania linków według MeshLink::flags (docs/formaty/3db.md §3.2): 0 pominięty, 2 addytywnie,
+	// 5–7 mapowanie otoczenia, 8 bez oświetlenia; 3 (miękka alfa) na razie jak 1 (brak sortowania
+	// przezroczystych w scenie); false = wszystko jak tryb 1 (do porównań).
+	bool drawModes = true;
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-0.4f, 0.8f, 0.5f)); // w przestrzeni modelu po transformacji
 	float ambient = 0.45f;
 	// Strefa horyzontu: model za skałą (z gry < 0 bloków) przechodzi w kolor rgb ∝ |z|/głębokość.
@@ -82,11 +86,12 @@ private:
 		rhi::Handle vbo = rhi::kNull, ebo = rhi::kNull;
 		uint32_t count = 0;
 		uint16_t material = 0;
+		uint16_t flags = 1; // tryb rysowania (MeshLink::flags)
 	};
 	const std::vector<GpuLink>& frame(uint32_t meshIndex);
 
 	rhi::Device* dev_ = nullptr;
-	rhi::Handle pipe_ = rhi::kNull, pipeWire_ = rhi::kNull; // wspólne dla wszystkich modeli na urządzeniu
+	rhi::Handle pipe_ = rhi::kNull, pipeWire_ = rhi::kNull, pipeAdd_ = rhi::kNull; // wspólne dla modeli na urządzeniu
 	rhi::Handle sphereBuf_ = rhi::kNull;                     // stały bufor 256 × vec4 (wiązanie 2)
 	const Model3db* model_ = nullptr;
 	TextureCache* textures_ = nullptr;
