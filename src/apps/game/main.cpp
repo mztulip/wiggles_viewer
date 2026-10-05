@@ -32,6 +32,7 @@
 #include "lib/vfs.h"
 #include "ow_version.h"
 #include "lib/map_scene.h"
+#include "lib/world_sim.h"
 
 #include <SDL.h>
 #include <imgui.h>
@@ -61,11 +62,7 @@ namespace
 {
 
 constexpr float kBlock = MapScene::kBlock;
-constexpr float kGnomeZ = 8.0f;      // głębokość krasnala w skali skryptu (świat 11 bloków), jak w scenariuszach
-constexpr float kWalkSpeed = 1.6f;   // pola na sekundę (🔶)
-constexpr float kClimbSpeed = 0.9f;
-constexpr float kDigTime = 2.0f;     // sekundy kopania jednego pola (🔶)
-constexpr float kPi = 3.14159265f;
+constexpr float kPi = kSimPi; // stałe ruchu krasnali: lib/world_sim.h
 
 struct Args
 {
@@ -156,51 +153,8 @@ void gameCamera(const GameView& g, float aspect, glm::mat4& viewProj, glm::mat4&
 	world = glm::translate(glm::scale(glm::mat4(1.f), glm::vec3(1.f, -1.f, 1.f)), -glm::vec3(g.x, g.y, 14.f) * kBlock);
 }
 
-struct Unit
-{
-	int obj = -1;
-	float x = 0, y = 0;   // stopy: x środka, y dołu pola (bloki)
-	int tx = 0, ty = 0;   // bieżące pole
-	std::vector<std::pair<int, int>> path;
-	size_t step = 0;
-	enum State
-	{
-		Idle,
-		Walk,
-		Dig
-	} state = Idle;
-	int digX = -1, digY = -1;
-	float digT = 0;
-	float facing = -kPi * 0.5f; // −π/2 = w prawo, +π/2 = w lewo (obserwacja modelu mann)
-	float z = kGnomeZ;          // głębokość (skala skryptu), z zapisu albo scenariusza
-	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
-	bool digJob = false;        // przydzielony do kopania zaznaczonych pól (gracz)
-	float goalX = -1, goalZ = -1; // dokładny cel chodu skryptu (x w polu, głębokość), −1 = środek pola
-};
+using Unit = SimUnit;
 
-struct Game;
-// Most między silnikiem skryptów a sceną: ID obiektu skryptu = indeks obiektu MapScene + 1.
-// Metody zdefiniowane po Game (korzystają z krasnali i nawigacji).
-struct ScriptHost : script::Host
-{
-	Game* g = nullptr;
-	int createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3]) override;
-	void deleteObject(int id) override;
-	bool getPos(int id, float pos[3]) override;
-	void setPos(int id, const float pos[3]) override;
-	void setRotY(int id, float r) override;
-	float getRotY(int id) override;
-	void setAnim(int id, const std::string& anim, int, int mode) override;
-	double animLength(int id, const std::string& anim) override;
-	bool walkTo(int id, const float target[3], std::function<void(bool)> done) override;
-	float hmap(float x, float y) override;
-	bool underwater(const float p[3]) override;
-	bool findPlace(const float c[3], float r, float out[3]) override;
-	int gnomePosition(int id) override;
-	void glide(int id, const float to[3], float seconds) override;
-	void link(int child, int parent, int link) override;
-	bool linkOffset(int id, int link, float out[3]) override;
-};
 
 // Źródło mapy gry (do ponownego wczytania przy wczytywaniu zapisu .ows).
 struct Source
@@ -255,65 +209,26 @@ struct OwsReader
 	}
 };
 
-struct Game
+// Gra = symulacja świata (lib/world_sim.h: skrypty, krasnale, kopanie) + gracz (zaznaczenie, rozkazy, menu, zapis).
+struct Game : WorldSim
 {
+	Game() : WorldSim(maps) {} // maps powstaje po klasie bazowej; WorldSim tylko zapamiętuje referencję
 	Vfs vfs;
 	Source source;
 	int baseObjects = 0;              // obiekty mapy źródłowej (dalej: utworzone w grze)
 	std::vector<uint32_t> baseBlocks; // bloki i typy po wczytaniu źródła (różnice idą do zapisu)
 	std::vector<uint8_t> baseTypes;
-	std::unique_ptr<script::Engine> scripts;
-	ScriptHost host;
-	bool scriptGnomes = true; // krasnale sterowane skryptami (--player-gnomes: tylko gracz)
-	// ID obiektów skryptów: obiekty z zapisu mają ID z zapisu (zmienne Tcl się do nich odwołują),
-	// pozostałe od 100000. idx(id) = indeks obiektu MapScene.
-	std::unordered_map<int, int> idToIdx;
-	std::vector<int> idxToId;
-	int nextScriptId = 100000;
-	int idOf(int index)
-	{
-		if (index >= int(idxToId.size())) idxToId.resize(size_t(index) + 1, 0);
-		int& id = idxToId[size_t(index)];
-		if (!id)
-		{
-			const std::string& n = maps.objectName(index);
-			char* end = nullptr;
-			long v = n.empty() ? 0 : std::strtol(n.c_str(), &end, 10);
-			id = (v > 0 && end && !*end && !idToIdx.count(int(v))) ? int(v) : nextScriptId++;
-			idToIdx[id] = index;
-		}
-		return id;
-	}
-	bool valid(int id) const { return idToIdx.count(id) != 0; }
-	int idx(int id) const
-	{
-		auto it = idToIdx.find(id);
-		return it == idToIdx.end() ? -1 : it->second;
-	}
-	struct Glide
-	{
-		int obj;
-		float from[3], to[3], t, dur;
-	};
-	std::vector<Glide> glides; // płynne ruchy obiektów zlecone przez skrypty
-	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania (przeciągnięcie PPM)
 	int dragX0 = -1, dragY0 = -1;          // początek przeciągnięcia PPM (pole)
 	bool rightDrag = false;
 	bool paused = false;
 	float speed = 1.f; // tempo gry: 1, 2, 4 (klawisze 1–3)
-	float fogTimer = 0;
-	double scriptAcc = 0;
 	std::unique_ptr<rhi::Device> device;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
 	MapScene maps;
 	BorderMask border; // ramka ekranu (docs/silnik/09_klatka.md §9.4)
 	ModelDrawOptions draw;
-	NavGrid nav;
 	GameView cam;
-	std::vector<Unit> units;
-	int selected = -1;
-	std::string status;
 	int hoverX = -1, hoverY = -1;
 	bool showHelp = true;
 	bool showMenu = false;  // menu wyboru gry (start bez źródła, Esc w grze)
@@ -330,72 +245,9 @@ struct Game
 
 	const Pmp* grid() const { return maps.grid(); }
 
-	// Wysokość stóp w polu (x, ty): podłoże z bloku pod spodem (pierwszy wiersz siatki 8×8 o wysokości ≥ 13
-	// w środkowej kolumnie), np. na łące 0,5 pola niżej niż dół pola. Na ścianie: dół pola.
-	float floorY(int x, int ty) const
-	{
-		if (!nav.standable(x, ty) || !grid()) return float(ty) + 1.f;
-		const Pmp* g = grid();
-		const BlockRecord* r = maps.blockDb().record(g->blocks[size_t(ty + 1) * g->width + size_t(x)]);
-		if (!r) return float(ty) + 1.f;
-		for (int row = 0; row < 8; ++row)
-			if (r->depth[size_t(row * 8 + 4)] >= 13) return float(ty + 1) + float(row) / 8.f;
-		return float(ty) + 1.f;
-	}
-
-	// Pole, w którym stoi postać o stopach na wysokości y (stopy do 0,6 pola w głąb pola niżej).
-	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
-
-	void snapToFloor(Unit& u)
-	{
-		int x = int(std::floor(u.x)), y = tileOfFeet(u.y);
-		for (int d = 0; d < 40; ++d)
-		{
-			for (int yy : {y + d, y - d})
-				if (nav.standable(x, yy) || (d > 0 && nav.climbable(x, yy)))
-				{
-					u.tx = x, u.ty = yy;
-					u.x = float(x) + 0.5f, u.y = floorY(x, yy);
-					return;
-				}
-		}
-		u.tx = x, u.ty = y;
-	}
-
-	Unit* unitOf(int obj)
-	{
-		for (auto& u : units)
-			if (u.obj == obj) return &u;
-		return nullptr;
-	}
-
-	int addUnit(int obj)
-	{
-		maps.setObjectModel(obj, "mann.3db", "mann");
-		Unit u;
-		u.obj = obj;
-		const float* p = maps.objectPos(obj);
-		u.x = p[0], u.y = p[1], u.z = p[2];
-		snapToFloor(u);
-		units.push_back(u);
-		return int(units.size()) - 1;
-	}
-
-	void spawnUnit(float x, float y)
-	{
-		int o = maps.addObject("Zwerg", x, y, kGnomeZ);
-		selected = addUnit(o);
-	}
-
 	void initWorld()
 	{
-		units.clear();
-		idToIdx.clear(), idxToId.clear(), nextScriptId = 100000;
-		for (int i = 0; i < maps.objectCount(); ++i) idOf(i);
-		selected = -1;
-		if (const Pmp* g = grid()) nav.build(*g, maps.blockDb());
-		for (int i = 0; i < maps.objectCount(); ++i)
-			if (Vfs::lower(maps.objectClass(i)) == "zwerg") addUnit(i);
+		initUnits();
 		if (const auto& v = maps.view()) cam = *v;
 		else if (const Pmp* g = grid()) cam = GameView{float(g->width) * 0.5f, float(g->height) * 0.5f, 1.38f, 0.f, 0.f};
 		if (units.empty() && grid())
@@ -446,146 +298,6 @@ struct Game
 		status.clear();
 	}
 
-	void dig(int x, int y)
-	{
-		// 🔶 Wykopane pole: tunel z tylną ścianą (blok 4523: siatka 8×8 o wysokości 7), bez zszywania z sąsiadami.
-		// Rodzaj gruntu bez zmian, ale nie „otwór do tła” (typ 5): wtedy grunt pola niżej albo skała A (4).
-		uint8_t type = grid()->types[size_t(y) * grid()->width + size_t(x)];
-		if ((type & 0x7F) == 5)
-		{
-			uint8_t below = y + 1 < int(grid()->height) ? grid()->types[size_t(y + 1) * grid()->width + size_t(x)] : 4;
-			type = uint8_t((below & 0x7F) == 5 || (below & 0x7F) == 0 ? 4 : (below & 0x7F));
-		}
-		maps.setBlock(x, y, 4523, type);
-		nav.updateTile(*grid(), maps.blockDb(), x, y);
-		maps.rebuildTerrain();
-		digMarks.erase({x, y});
-		// Znalezisko jak w dig_execute (z_dignwalk.tcl): 4% szans; rodzaj losowany (🔶 bez stref kampanii).
-		if (float(std::rand()) / float(RAND_MAX) < 0.04f)
-		{
-			static const char* kFinds[] = {"Stein", "Eisenerz", "Kohle", "Golderz", "Kristallerz"};
-			const char* cls = kFinds[std::rand() % 5];
-			float pos[3] = {float(x) + 0.5f, floorY(x, y), kGnomeZ}, rot[3] = {0, 0, 0};
-			int id = host.createObject(cls, "", pos, rot);
-			if (scripts) scripts->attach(id, cls, "");
-			status = std::string(tr("Znalezisko: ")) + cls;
-		}
-	}
-
-	// Następne zaznaczone pole dla krasnala z zadaniem kopania: najbliższe, do którego da się dojść.
-	bool nextDigJob(Unit& u)
-	{
-		std::vector<std::pair<int, std::pair<int, int>>> cand;
-		for (auto& m : digMarks) cand.push_back({std::abs(m.first - u.tx) + std::abs(m.second - u.ty), m});
-		std::sort(cand.begin(), cand.end());
-		for (size_t i = 0; i < cand.size() && i < 12; ++i)
-		{
-			auto [mx, my] = cand[i].second;
-			if (nav.open(mx, my))
-			{
-				digMarks.erase({mx, my});
-				continue;
-			}
-			const int st[4][2] = {{mx - 1, my}, {mx + 1, my}, {mx, my - 1}, {mx, my + 1}};
-			for (auto& c : st)
-			{
-				if (!(nav.standable(c[0], c[1]) || nav.climbable(c[0], c[1]))) continue;
-				auto p = nav.path(u.tx, u.ty, c[0], c[1]);
-				if (p.empty()) continue;
-				u.path = std::move(p), u.step = 0, u.state = Unit::Walk, u.digX = mx, u.digY = my;
-				u.goalX = u.goalZ = -1;
-				u.onArrive = nullptr;
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// Zaznaczenie prostokąta pól skały do kopania; zadanie dostaje zaznaczony krasnal.
-	void markDig(int x0, int y0, int x1, int y1)
-	{
-		int n = 0;
-		for (int y = std::min(y0, y1); y <= std::max(y0, y1); ++y)
-			for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x)
-				if (!nav.open(x, y) && grid() && x >= 0 && y >= 0 && x < int(grid()->width) && y < int(grid()->height))
-					n += digMarks.insert({x, y}).second;
-		if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = true;
-		status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());
-		(void)n;
-	}
-
-	void updateUnit(Unit& u, float dt)
-	{
-		if (u.state == Unit::Walk)
-		{
-			if (u.step >= u.path.size())
-			{
-				u.state = u.digX >= 0 ? Unit::Dig : Unit::Idle;
-				u.digT = 0;
-				if (u.onArrive)
-				{
-					auto f = std::move(u.onArrive);
-					u.onArrive = nullptr;
-					f(true);
-				}
-			}
-			else
-			{
-				auto [wx, wy] = u.path[u.step];
-				float gx = float(wx) + 0.5f, gy = floorY(wx, wy);
-				bool last = u.step + 1 == u.path.size();
-				if (last && u.goalX >= 0) gx = std::clamp(u.goalX, float(wx) + 0.1f, float(wx) + 0.9f);
-				if (u.goalZ >= 0)
-				{ // w głąb równolegle z chodem
-					float dz = u.goalZ - u.z, mz = 2.f * kWalkSpeed * dt;
-					u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
-				}
-				bool vertical = wx == u.tx && wy != u.ty;
-				float speed = vertical ? kClimbSpeed : kWalkSpeed;
-				float ddx = gx - u.x, ddy = gy - u.y, len = std::hypot(ddx, ddy), mv = speed * dt;
-				if (std::abs(ddx) > 1e-3f) u.facing = ddx > 0 ? -kPi * 0.5f : kPi * 0.5f;
-				if (len <= mv)
-				{
-					u.x = gx, u.y = gy, u.tx = wx, u.ty = wy;
-					++u.step;
-				}
-				else
-					u.x += ddx / len * mv, u.y += ddy / len * mv;
-				const char* anim = !vertical ? "gehen_loop" : (ddy < 0 ? "kletter_hoch_loop" : "kletter_runter_loop");
-				if (vertical) u.facing = kPi; // twarzą do ściany
-				maps.playAnim(u.obj, anim, true);
-			}
-		}
-		if (u.state == Unit::Dig)
-		{
-			const char* anim = u.digY > u.ty ? "buddeln_unten" : u.digY < u.ty ? "buddeln_oben_normal"
-			                                                                   : "buddeln_vorn";
-			if (u.digY == u.ty) u.facing = u.digX > u.tx ? -kPi * 0.5f : kPi * 0.5f;
-			maps.playAnim(u.obj, anim, true);
-			u.digT += dt;
-			if (u.digT >= kDigTime)
-			{
-				dig(u.digX, u.digY);
-				u.digX = u.digY = -1;
-				u.state = Unit::Idle;
-				snapToFloor(u); // pod krasnalem mogło zniknąć podłoże
-			}
-		}
-		if (u.state == Unit::Idle && u.digJob)
-		{
-			if (digMarks.empty() || !nextDigJob(u)) u.digJob = false; // nic osiągalnego: koniec zadania
-		}
-		if (u.state == Unit::Idle)
-		{
-			if (!nav.standable(u.tx, u.ty) && !nav.climbable(u.tx, u.ty) && nav.open(u.tx, u.ty + 1))
-			{
-				u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = Unit::Walk; // spada
-			}
-			else if (!scripts) // ze skryptami animację w miejscu ustawia skrypt (set_anim)
-				maps.playAnim(u.obj, nav.standable(u.tx, u.ty) ? "standard" : "kletterstand", true);
-		}
-		maps.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
-	}
 
 	// Wczytanie mapy źródłowej i start świata (krasnale, skrypty). Używane przy starcie i przy wczytaniu zapisu.
 	bool loadSource(const Source& s)
@@ -596,13 +308,8 @@ struct Game
 		else ok = maps.loadScenario(s.name); // scenariusz .tcl albo zapis .sav z Data/Gamesave
 		source = s;
 		loaded = ok;
-		digMarks.clear(), glides.clear();
 		initWorld();
-		if (scripts)
-		{
-			scripts->resetWorld();
-			attachScripts();
-		}
+		startScripts();
 		baseObjects = maps.objectCount();
 		if (const Pmp* g = grid()) baseBlocks = g->blocks, baseTypes = g->types;
 		return ok;
@@ -841,62 +548,12 @@ struct Game
 		return r.ok;
 	}
 
-	// Skrypty obiektów świata (obj_init). Krasnale na razie steruje gracz (C++), nie skrypty.
-	void attachScripts()
-	{
-		if (!scripts) return;
-		int n = 0;
-		for (int i = 0; i < maps.objectCount(); ++i)
-		{
-			bool gnome = Vfs::lower(maps.objectClass(i)) == "zwerg";
-			if (gnome && !scriptGnomes) continue;
-			auto* o = scripts->attach(idOf(i), maps.objectClass(i), maps.objectInstanceName(i), false);
-			if (!o) continue;
-			o->owner = maps.objectOwner(i); // z zapisu
-			if (gnome && o->owner < 0) o->owner = 0; // krasnale ze scenariusza: gracz 0
-			n += o->interp != nullptr;
-		}
-		// obj_init dopiero po rejestracji wszystkich obiektów (obj_query widzi cały świat)
-		// Potem zmienne Tcl z zapisu (stan skryptów w chwili zapisu; timery ustawił już obj_init).
-		for (int i = 0; i < maps.objectCount(); ++i)
-		{
-			auto* o = scripts->object(idOf(i));
-			if (!o || !o->interp || !o->cls) continue;
-			scripts->runIn(*o, o->cls->initBody, "obj_init");
-			for (auto& [k, v] : maps.objectTclVars(i)) scripts->setVar(*o, k, v);
-		}
-		std::printf("skrypty: %d obiektów ze skryptami\n", n);
-	}
 
 	void update(float dt)
 	{
 		dt = std::min(dt, 0.1f);
 		maps.update(dt);
-		if (scripts)
-		{ // tura logiki 10 razy na sekundę (rozdział 11.7)
-			scriptAcc += dt;
-			while (scriptAcc >= 0.1)
-			{
-				scriptAcc -= 0.1;
-				scripts->tick(0.1);
-			}
-		}
-		for (auto& u : units) updateUnit(u, dt);
-		fogTimer += dt;
-		if (fogTimer >= 0.4f)
-		{ // mgła co 4 tury logiki (rozdział 10.2)
-			fogTimer = 0;
-			for (auto& u : units) maps.revealFog(u.tx, u.ty, 6);
-		}
-		for (auto it = glides.begin(); it != glides.end();)
-		{
-			it->t = std::min(it->t + dt, it->dur);
-			float k = it->dur > 0 ? it->t / it->dur : 1.f, p[3];
-			for (int i = 0; i < 3; ++i) p[i] = it->from[i] + (it->to[i] - it->from[i]) * k;
-			float dx = it->to[0] - it->from[0];
-			maps.setObjectPose(it->obj, p[0], p[1], p[2], std::abs(dx) > 1e-3f ? (dx > 0 ? -kPi * 0.5f : kPi * 0.5f) : maps.objectRotY(it->obj));
-			it = it->t >= it->dur ? glides.erase(it) : it + 1;
-		}
+		simUpdate(dt);
 	}
 
 	// Pole pod kursorem: promień kamery przecięty z płaszczyzną głębokości krasnali.
@@ -1143,139 +800,6 @@ struct Game
 };
 
 // --- ScriptHost ---
-int ScriptHost::createObject(const std::string& cls, const std::string&, const float pos[3], const float rot[3])
-{
-	int i = g->maps.addObject(cls, pos[0], pos[1], pos[2]);
-	g->maps.setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
-	if (Vfs::lower(cls) == "zwerg") g->addUnit(i);
-	return g->idOf(i);
-}
-void ScriptHost::deleteObject(int id)
-{ // 🔶 brak usuwania obiektów sceny: wynosimy poza świat
-	if (g->valid(id)) g->maps.setObjectPose(g->idx(id), -1000.f, -1000.f, 0.f, 0.f);
-}
-bool ScriptHost::getPos(int id, float pos[3])
-{
-	if (!g->valid(id)) return false;
-	const float* p = g->maps.objectPos(g->idx(id));
-	pos[0] = p[0], pos[1] = p[1], pos[2] = p[2];
-	return true;
-}
-void ScriptHost::setPos(int id, const float pos[3])
-{
-	if (!g->valid(id)) return;
-	if (Unit* u = g->unitOf(g->idx(id)))
-	{
-		u->x = pos[0], u->y = pos[1], u->z = pos[2];
-		u->path.clear(), u->state = Unit::Idle;
-		g->snapToFloor(*u);
-		return;
-	}
-	g->maps.setObjectPose(g->idx(id), pos[0], pos[1], pos[2], g->maps.objectRotY(g->idx(id)));
-}
-void ScriptHost::setRotY(int id, float r)
-{
-	if (!g->valid(id)) return;
-	if (Unit* u = g->unitOf(g->idx(id))) u->facing = r;
-	const float* p = g->maps.objectPos(g->idx(id));
-	g->maps.setObjectPose(g->idx(id), p[0], p[1], p[2], r);
-}
-float ScriptHost::getRotY(int id)
-{
-	return g->valid(id) ? g->maps.objectRotY(g->idx(id)) : 0.f;
-}
-void ScriptHost::setAnim(int id, const std::string& anim, int, int mode)
-{
-	if (!g->valid(id)) return;
-	if (Unit* u = g->unitOf(g->idx(id)); u && u->state != Unit::Idle) return; // chód i kopanie mają własne animacje
-	size_t dot = anim.find('.');
-	g->maps.playAnim(g->idx(id), dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
-}
-double ScriptHost::animLength(int id, const std::string& anim)
-{ // klatki animacji modelu / 10 kl./s
-	size_t dot = anim.find('.');
-	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
-	if (g->valid(id))
-	{
-		double s = g->maps.animSeconds(g->idx(id), name);
-		if (s > 0) return s;
-	}
-	return 1.5; // 🔶 nieznana animacja albo db_animlength bez obiektu
-}
-bool ScriptHost::walkTo(int id, const float t[3], std::function<void(bool)> done)
-{
-	Unit* u = g->unitOf(g->idx(id));
-	if (!u || u->digJob) return false; // krasnal pracuje dla gracza
-	int tx = int(std::floor(t[0])), ty = g->tileOfFeet(t[1]);
-	for (int d = 0; d < 4 && !g->nav.standable(tx, ty) && !g->nav.climbable(tx, ty); ++d) ++ty;
-	auto path = g->nav.path(u->tx, u->ty, tx, ty);
-	if (path.empty()) return false;
-	u->path = std::move(path), u->step = 0, u->state = Unit::Walk, u->digX = -1;
-	u->goalX = t[0], u->goalZ = t[2];
-	u->onArrive = std::move(done);
-	return true;
-}
-float ScriptHost::hmap(float x, float y)
-{ // głębokość tylnej ściany w punkcie: wartość siatki 8×8 (= z skryptu)
-	const Pmp* p = g->grid();
-	if (!p || x < 0 || y < 0 || x >= float(p->width) || y >= float(p->height)) return 0.f;
-	const BlockRecord* r = g->maps.blockDb().record(p->blocks[size_t(int(y)) * p->width + size_t(int(x))]);
-	if (!r) return 0.f;
-	int fx = std::clamp(int((x - std::floor(x)) * 8.f), 0, 7), fy = std::clamp(int((y - std::floor(y)) * 8.f), 0, 7);
-	return float(r->depth[size_t(fy * 8 + fx)]);
-}
-bool ScriptHost::underwater(const float p[3])
-{
-	return g->maps.fluidFill(int(std::floor(p[0])), int(std::floor(p[1]))) > 0.5f;
-}
-bool ScriptHost::findPlace(const float c[3], float r, float out[3])
-{
-	int cx = int(std::floor(c[0])), cy = g->tileOfFeet(c[1]);
-	if (g->nav.standable(cx, cy))
-	{ // pole celu jest dobre: zostaje x i głębokość, y na podłożu
-		out[0] = c[0], out[1] = g->floorY(cx, cy), out[2] = c[2];
-		return true;
-	}
-	int rad = std::max(1, int(std::ceil(r)));
-	for (int d = 0; d <= rad; ++d)
-		for (int dy = -d; dy <= d; ++dy)
-			for (int dx = -d; dx <= d; ++dx)
-			{
-				if (std::max(std::abs(dx), std::abs(dy)) != d || !g->nav.standable(cx + dx, cy + dy)) continue;
-				out[0] = float(cx + dx) + 0.5f, out[1] = g->floorY(cx + dx, cy + dy), out[2] = c[2];
-				return true;
-			}
-	return false;
-}
-void ScriptHost::glide(int id, const float to[3], float seconds)
-{
-	if (!g->valid(id) || g->unitOf(g->idx(id))) return;
-	const float* p = g->maps.objectPos(g->idx(id));
-	Game::Glide gl{g->idx(id), {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds};
-	for (auto& x : g->glides)
-		if (x.obj == gl.obj)
-		{
-			x = gl;
-			return;
-		}
-	g->glides.push_back(gl);
-}
-
-void ScriptHost::link(int child, int parent, int link)
-{
-	if (g->valid(child)) g->maps.linkObject(g->idx(child), g->valid(parent) ? g->idx(parent) : -1, link);
-}
-bool ScriptHost::linkOffset(int id, int link, float out[3])
-{
-	return g->valid(id) && g->maps.linkOffset(g->idx(id), link, out);
-}
-
-int ScriptHost::gnomePosition(int id)
-{
-	Unit* u = g->unitOf(g->idx(id));
-	return u && !g->nav.standable(u->tx, u->ty) ? 1 : 0;
-}
-
 } // namespace
 
 int main(int argc, char** argv)
@@ -1368,18 +892,12 @@ int main(int argc, char** argv)
 	}
 	if (args.scripts)
 	{ // silnik skryptów przed światem: obiekty mapy dostają skrypty przy wczytaniu
-		g.scripts = std::make_unique<script::Engine>(g.vfs);
-		g.host.g = &g;
 		g.scriptGnomes = args.scriptGnomes;
-		g.scripts->setHost(&g.host);
-		{ // język tekstów gry: --locale, inaczej język interfejsu (jeśli MESSAGES.TXT go ma), inaczej język wydania
-			const auto& langs = g.scripts->messages().languages();
-			if (!args.locale.empty()) g.scripts->setLocale(args.locale);
-			else if (std::find(langs.begin(), langs.end(), i18n::language()) != langs.end()) g.scripts->setLocale(i18n::language());
-		}
 		Uint64 t0 = SDL_GetTicks64();
 		std::string serr;
-		if (!g.scripts->boot(serr)) std::fprintf(stderr, "skrypty: %s\n", serr.c_str());
+		// język tekstów gry: --locale, inaczej język interfejsu (jeśli MESSAGES.TXT go ma), inaczej język wydania
+		if (!g.bootScripts(g.vfs, args.locale.empty() ? i18n::language() : args.locale, serr))
+			std::fprintf(stderr, "skrypty: %s\n", serr.c_str());
 		std::printf("skrypty: %zu klas w %llu ms\n", g.scripts->classCount(), (unsigned long long)(SDL_GetTicks64() - t0));
 	}
 	if (!args.load.empty())
