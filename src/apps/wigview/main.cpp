@@ -20,6 +20,9 @@
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
 // --texture PLIK: zakładka Tekstury z plikiem względem Data/ (np. GUI/bordermask.tga); --texture-channel N: 0 RGBA,
 //                 1 RGB, 2 alfa, 3 R, 4 G, 5 B.
+// --thumbnails KATALOG: miniatury wszystkich obiektów (z --model tylko tego modelu) w animacji „standard”
+//                      (albo pierwszej), klatka 0: KATALOG/<model>/<obiekt>.png i KATALOG/index.html; rozmiar z --size
+//                      (domyślnie 256x256), kończy działanie.
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 // --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
@@ -87,6 +90,10 @@ struct Args
 	rhi::Backend renderer = rhi::backendCompiled(rhi::Backend::Vulkan) ? rhi::Backend::Vulkan : rhi::Backend::OpenGL;
 	bool rendererForced = false;                          // --renderer: bez przełączania na drugi backend
 	int width = 1400, height = 900;
+	bool sizeSet = false;
+	std::string thumbnails; // --thumbnails KATALOG
+	// Tryb wsadowy (zrzut albo miniatury): bez interakcji, renderowanie poza ekranem.
+	bool batch() const { return !screenshot.empty() || !thumbnails.empty(); }
 };
 
 // Przycięcie kątów set_view przy dużym oddaleniu, ustalone obserwacją gry (docs/silnik/06_kamera.md §6.3):
@@ -159,7 +166,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--ui") a.ui = true;
 		else if (k == "--flip") a.flip = std::atoi(next());
 		else if (k == "--screenshot") a.screenshot = next();
-		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
+		else if (k == "--size") a.sizeSet = std::sscanf(next(), "%dx%d", &a.width, &a.height) == 2;
+		else if (k == "--thumbnails") a.thumbnails = next();
 		else
 		{
 			std::fprintf(stderr, "nieznany parametr: %s\n", k.c_str());
@@ -1330,10 +1338,62 @@ void addSettingsHandler()
 	ImGui::AddSettingsHandler(&h);
 }
 
+// --thumbnails: miniatury obiektów do KATALOG/<model>/<obiekt>.png i strona KATALOG/index.html z siatką.
+// render(px, w, h) rysuje jedną klatkę bieżącego widoku i zwraca jej obraz. Zwraca kod wyjścia programu.
+template <class Render>
+int writeThumbnails(Viewer& v, const Args& args, Render&& render)
+{
+	namespace fs = std::filesystem;
+	std::vector<std::string> models = args.model.empty() ? v.modelFiles : std::vector<std::string>{v.modelFile};
+	std::vector<uint8_t> px;
+	int w = 0, h = 0, written = 0, failed = 0;
+	for (int i = 0; i < 4; ++i) render(px, w, h); // okno musi się zmapować (jak przy --screenshot)
+	std::string html = "<!doctype html><meta charset=utf-8><title>wigview: miniatury</title>\n"
+	                   "<style>body{font:13px sans-serif;background:#222;color:#ddd}div{display:inline-block;margin:4px;"
+	                   "text-align:center;width:" +
+	    std::to_string(w) + "px;overflow:hidden}img{display:block}</style>\n";
+	for (const auto& file : models)
+	{
+		if (file != v.modelFile && !v.loadModel(file)) continue;
+		if (!v.model) continue;
+		std::string dir = safeFileName(Vfs::lower(file.substr(0, file.rfind('.'))));
+		fs::create_directories(fs::path(args.thumbnails) / dir);
+		html += "<h2>" + file + "</h2>\n";
+		for (int o = 0; o < int(v.model->objects.size()); ++o)
+		{
+			v.selectObject(o);
+			const auto& obj = v.model->objects[size_t(o)];
+			for (size_t k = 0; k < obj.animations.size(); ++k)
+				if (v.model->animations[obj.animations[k]].name == "standard") v.selectAnim(int(k));
+			if (!render(px, w, h) || px.size() != size_t(w) * h * 4)
+			{
+				++failed;
+				continue;
+			}
+			std::string rel = dir + "/" + safeFileName(obj.name) + ".png";
+			if (writePng((fs::path(args.thumbnails) / rel).string(), w, h, px)) ++written;
+			else ++failed;
+			const auto* a = v.currentAnim();
+			html += "<div><img src=\"" + rel + "\" width=" + std::to_string(w) + " loading=lazy>" + obj.name +
+			    "<br><small>" + (a ? a->name : std::string()) + "</small></div>\n";
+		}
+		std::printf("%s: %zu obiektów\n", file.c_str(), v.model->objects.size());
+	}
+	std::FILE* f = std::fopen((fs::path(args.thumbnails) / "index.html").string().c_str(), "wb");
+	if (f)
+	{
+		std::fwrite(html.data(), 1, html.size(), f);
+		std::fclose(f);
+	}
+	std::printf("miniatury: zapisano %d, błędy %d, %s/index.html\n", written, failed, args.thumbnails.c_str());
+	return failed || !f ? 1 : 0;
+}
+
 int main(int argc, char** argv)
 {
 	Args args;
 	if (!parseArgs(argc, argv, args)) return 2;
+	if (!args.thumbnails.empty() && !args.sizeSet) args.width = args.height = 256;
 	{
 		std::vector<std::string> warnings;
 		i18n::loadBuiltin(&warnings);
@@ -1410,7 +1470,7 @@ int main(int argc, char** argv)
 				continue;
 			}
 			// Zrzut ekranu: Vulkan renderuje poza ekranem (działa też w Xvfb bez DRI3).
-			v.device = rhi::createDevice(b, win, true, err, !args.screenshot.empty());
+			v.device = rhi::createDevice(b, win, true, err, args.batch());
 			if (v.device) break;
 			std::fprintf(stderr, "%s: %s\n", rhi::backendName(b), err.c_str());
 			SDL_DestroyWindow(win);
@@ -1498,7 +1558,7 @@ int main(int argc, char** argv)
 	}
 	if (!args.sound.empty())
 	{
-		v.sounds.setAutoplay(args.screenshot.empty());
+		v.sounds.setAutoplay(!args.batch());
 		v.sounds.select(args.sound);
 		v.activeTab = v.forceTab = 5;
 	}
@@ -1543,7 +1603,7 @@ int main(int argc, char** argv)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	addSettingsHandler();
-	ImGui::GetIO().IniFilename = args.screenshot.empty() ? "wigview.ini" : nullptr;
+	ImGui::GetIO().IniFilename = args.batch() ? nullptr : "wigview.ini";
 	ImGui::StyleColorsDark();
 	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
 	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -1555,7 +1615,7 @@ int main(int argc, char** argv)
 	// Jedna klatka: scena 3D (na prawo od panelu UI) i opcjonalnie interfejs.
 	// readback != nullptr: kopia obrazu klatki (RGBA, wiersz 0 = góra) do zrzutu ekranu.
 	auto renderFrame = [&](int w, int h, std::vector<uint8_t>* readback = nullptr) {
-		bool withUi = args.screenshot.empty() || args.ui;
+		bool withUi = !args.batch() || args.ui;
 		if (withUi)
 		{
 			dev.imguiNewFrame();
@@ -1582,7 +1642,12 @@ int main(int argc, char** argv)
 		dev.endFrame(readback);
 		return true;
 	};
-	auto drawableSize = [&](int& w, int& h) { SDL_GetWindowSizeInPixels(win, &w, &h); };
+	// Tryb wsadowy bez UI w Vulkanie rysuje do obrazu w pamięci o rozmiarze z --size: menedżer okien (np. kafelkujący)
+	// może zmienić rozmiar okna. OpenGL i --ui potrzebują rozmiaru okna.
+	auto drawableSize = [&](int& w, int& h) {
+		if (args.batch() && !args.ui && dev.backend() == rhi::Backend::Vulkan) w = args.width, h = args.height;
+		else SDL_GetWindowSizeInPixels(win, &w, &h);
+	};
 	// Okno postępu wczytywania mapy: osobna klatka z samym paskiem (scena jest w trakcie przebudowy,
 	// więc jej nie rysujemy). Wołane między klatkami, najwyżej co 30 ms.
 	Uint64 lastProgress = 0;
@@ -1618,7 +1683,7 @@ int main(int argc, char** argv)
 		dev.imguiRender(ImGui::GetDrawData());
 		dev.endFrame();
 	};
-	if (args.screenshot.empty()) v.maps.progress = drawProgress;
+	if (!args.batch()) v.maps.progress = drawProgress;
 	// Kolejność sprzątania: ImGui, potem obiekty z zasobami GPU (Viewer), urządzenie, na końcu okno.
 	auto shutdown = [&]() {
 		dev.waitIdle();
@@ -1664,6 +1729,19 @@ int main(int argc, char** argv)
 		return ok ? 0 : 1;
 	}
 
+	if (!args.thumbnails.empty())
+	{
+		int ok = writeThumbnails(v, args, [&](std::vector<uint8_t>& px, int& w, int& h) {
+			SDL_Event e;
+			while (SDL_PollEvent(&e))
+			{
+			}
+			drawableSize(w, h);
+			return renderFrame(w, h, &px);
+		});
+		shutdown();
+		return ok;
+	}
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
