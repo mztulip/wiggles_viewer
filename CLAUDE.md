@@ -33,7 +33,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - `../ref/DigglesHDmod-master` ma 2,6 GB, więc nie przeszukuj go rekurencyjnie bez filtra
 
 ## Budowanie i weryfikacja
-- `./build.sh [debug|release] [vulkan|opengl|both] [lib|imgui|wigview|test3db|export_gltf|all|clean]` (bash, bez CMake). Domyślnie oba backendy renderowania w `build/<tryb>/`; jeden backend w `build/<tryb>-vulkan|opengl/`
+- `./build.sh [debug|release] [vulkan|opengl|both] [lib|imgui|wigview|game|owscript|test3db|export_gltf|all|clean]` (bash, bez CMake). Domyślnie oba backendy renderowania w `build/<tryb>/`; jeden backend w `build/<tryb>-vulkan|opengl/`
 - Renderowanie przez warstwę [`src/lib/render/rhi/`](src/lib/render/rhi) (Vulkan `rhi_vk.cpp`, OpenGL 4.5 `rhi_gl.cpp`); shadery tylko w [`src/shaders/`](src/shaders) (GLSL 450, makra `UBO`/`TEX`/`OW_CLIP` z `common.glsl`). **Nie wołać OpenGL ani Vulkana bezpośrednio z rendererów.** Nowa funkcja renderowania = obie ścieżki; po zmianie porównać zrzuty `--renderer vulkan` i `--renderer opengl` (`magick compare -metric AE`)
 - glTF: `build/release/export_gltf <gra> <model> [obiekt] [animacja] -o x.glb`. Walidacja: `npx gltf-validator` (Khronos)
 - `build/release/test3db "<gra>"` sprawdza parsery na wszystkich danych gry
@@ -43,7 +43,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - Wersja programu (commit) jest w `build/gen/ow_version.h`, generowanym przez [`build.sh`](build.sh); wigview pokazuje ją w rogu ekranu i w tytule okna (zrzuty użytkownika da się przypisać do wersji)
 - **Priorytet: jak najszybciej grywalna gra** (`openwiggles`, [`src/apps/game`](src/apps/game)). Najpierw działające przybliżenie, oznaczone 🔶, a punkt „dopracować” idzie do TODO (sekcja „Droga do grywalności”)
 - Kod:
-  - [`src/lib`](src/lib) (libwiggles): formaty i dane (vfs z nakładkami modów, tga, model3db, blockdb, szablony, zapisy, `messages` (teksty `lmsg`), `sound`, `sound_refs`), `script/` (silnik Tcl), `map_scene` (scena mapy wspólna dla gry i przeglądarki), `render/` (renderery modeli, terenu, cząsteczek, płynów, panoramy; `render/rhi/` warstwa Vulkan/OpenGL)
+  - [`src/lib`](src/lib) (libwiggles): formaty i dane (vfs z nakładkami modów, tga, model3db, blockdb, szablony, zapisy, `messages` (teksty `lmsg`), `sound`, `sound_refs`), `script/` (silnik Tcl), `map_scene` (scena mapy wspólna dla gry i przeglądarki), `render/` (renderery modeli, terenu, cząsteczek, płynów, panoramy, ramki ekranu; `render/rhi/` warstwa Vulkan/OpenGL)
   - [`src/apps/wigview`](src/apps/wigview) (przeglądarka: tylko UI) i [`src/apps/game`](src/apps/game) (gra `openwiggles`), [`src/tools`](src/tools) (test3db, export_gltf, owscript), [`src/shaders`](src/shaders)
   - **[`src/lib`](src/lib) nie dołącza niczego z [`src/apps`](src/apps)** (sprawdza to [`build.sh`](build.sh)). Kod potrzebny grze i przeglądarce trafia do biblioteki
 
