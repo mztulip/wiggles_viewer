@@ -250,13 +250,12 @@ struct Game : WorldSim
 		initUnits();
 		if (const auto& v = maps.view()) cam = *v;
 		else if (const Pmp* g = grid()) cam = GameView{float(g->width) * 0.5f, float(g->height) * 0.5f, 1.38f, 0.f, 0.f};
-		if (units.empty() && grid())
+		if (gnomeCount() == 0 && grid())
 		{ // mapa bez krasnali: jeden przy środku kamery
 			spawnUnit(cam.x, cam.y);
 			cam.x = units.back().x, cam.y = units.back().y - 1.f;
 		}
-		if (!units.empty()) selected = 0;
-		status = units.empty() ? tr("Brak krasnali na mapie.") : "";
+		status = gnomeCount() == 0 ? tr("Brak krasnali na mapie.") : "";
 	}
 
 	// Rozkaz: idź na pole albo kop pole skały.
@@ -585,6 +584,7 @@ struct Game : WorldSim
 			float bd = 1.2f;
 			for (size_t i = 0; i < units.size(); ++i)
 			{
+				if (!units[i].gnome) continue; // wukery nie słuchają gracza
 				float d = std::hypot(units[i].x - fx, (units[i].y - 0.6f) - fy);
 				if (d < bd) bd = d, best = int(i);
 			}
@@ -732,7 +732,7 @@ struct Game : WorldSim
 		ImGui::SetNextWindowBgAlpha(0.6f);
 		ImGui::Begin("hud", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 		ImGui::Text("OpenWiggles %s", OW_VERSION);
-		ImGui::Text(tr("Krasnale: %zu"), units.size());
+		ImGui::Text(tr("Krasnale: %d"), gnomeCount());
 		if (selected >= 0 && selected < int(units.size()))
 		{
 			const Unit& u = units[size_t(selected)];
@@ -769,6 +769,7 @@ struct Game : WorldSim
 		for (size_t i = 0; i < units.size(); ++i)
 		{
 			const Unit& u = units[i];
+			if (!u.gnome) continue;
 			ImGui::PushID(int(i));
 			std::string name;
 			const script::ScriptObject* so = scripts ? scripts->object(idOf(u.obj)) : nullptr;

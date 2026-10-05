@@ -48,7 +48,14 @@ struct SimUnit
 	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
 	bool digJob = false;                // przydzielony do kopania zaznaczonych pól (gracz)
 	float goalX = -1, goalZ = -1;       // dokładny cel chodu skryptu (x w polu, głębokość), −1 = środek pola
+	// Rodzaj postaci i jej animacje ruchu (krasnal: mann.3db; wuker: model klasy).
+	bool gnome = true;
+	std::string walkAnim = "gehen_loop", climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop";
+	std::string standAnim = "standard", climbStandAnim = "kletterstand";
 };
+
+// Klasy chodzące po siatce nawigacji: krasnal (Zwerg) i wukery. Nazwa klasy małymi literami.
+bool isWalkerClass(const std::string& lowerClass);
 
 class WorldSim : public script::Host
 {
@@ -86,8 +93,12 @@ public:
 	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
 	void snapToFloor(SimUnit& u);
 	SimUnit* unitOf(int obj);
-	int addUnit(int obj);
+	int addUnit(int obj); // krasnal albo wuker (wg klasy obiektu)
+	int gnomeCount() const;
 	void spawnUnit(float x, float y);
+	// Zaludnienie mapy bez krasnali (przeglądarka): krasnale i wukery na wolnych, suchych polach z podłożem
+	// najbliżej punktu (cx, cy), co najmniej 2 pola od siebie. Przed startScripts (obiekty dostaną wtedy skrypty).
+	void populate(float cx, float cy, int gnomes, int wukers);
 	void updateUnit(SimUnit& u, float dt);
 	// Kopanie
 	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania
@@ -119,6 +130,8 @@ public:
 	void glide(int id, const float to[3], float seconds) override;
 	void link(int child, int parent, int link) override;
 	bool linkOffset(int id, int link, float out[3]) override;
+	void changeParticleSource(int id, int slot, const ParticleSource& s) override;
+	void setParticleSource(int id, int slot, bool on) override;
 
 protected:
 	void attachScripts();

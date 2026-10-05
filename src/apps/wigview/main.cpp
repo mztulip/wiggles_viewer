@@ -16,6 +16,8 @@
 // --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav) albo ścieżka do pliku .sav.
 // Katalog gry: --game, potem zmienna WIGGLES_DIR, potem OW_GAME, potem wybór z okna „Ścieżki” (wigview.ini),
 // na końcu ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
+// --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
+// --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --paths: otwiera okno „Ścieżki” (katalog gry i zapisów) przy starcie.
 // --saves-dir KATALOG: zapisy .sav z tego katalogu w zakładce Zapisy (domyślnie Data/Gamesave gry albo wybór z okna).
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
@@ -44,6 +46,7 @@
 
 #include "lib/i18n.h"
 #include "lib/render/border_mask.h"
+#include "lib/world_sim.h"
 #include "lib/render/model_renderer.h"
 #include "lib/render/texture_cache.h"
 #include "lib/gltf_export.h"
@@ -95,6 +98,8 @@ struct Args
 	std::vector<std::array<float, 6>> emits; // --emit TYP X Y Z MAX NAKLATKĘ
 	std::string savesDir;                    // --saves-dir
 	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
+	bool simulate = false;                   // --simulate: symulacja (skrypty) na mapie
+	float warmup = 0;                        // --warmup S: przewinięcie symulacji przed zrzutem
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
@@ -134,6 +139,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 		if (k == "--game") a.game = next();
 		else if (k == "--saves-dir") a.savesDir = next();
 		else if (k == "--paths") a.paths = true;
+		else if (k == "--simulate") a.simulate = true;
+		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--model") a.model = next();
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
@@ -269,6 +276,32 @@ struct Viewer
 	bool mapTab() const { return activeTab == 2 || activeTab == 3; }
 	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
 	MapView maps;
+	// Symulacja (skrypty obiektów, krasnale) na scenie map: przełącznik w panelu map, domyślnie wyłączona.
+	std::unique_ptr<WorldSim> sim;
+	bool simulate = false, simActive = false, keepCamera = false;
+	// Start symulacji na bieżącej mapie (pierwszy raz: silnik skryptów). progress: okno postępu.
+	void startSim(const std::function<void(float, const char*)>& progress)
+	{
+		if (!maps.hasTemplate()) return;
+		if (!sim)
+		{
+			sim = std::make_unique<WorldSim>(maps);
+			if (progress) progress(0.2f, N_("Skrypty: klasy obiektów (pierwszy raz kilka sekund)"));
+			std::string err;
+			if (!sim->bootScripts(vfs, i18n::language(), err)) std::fprintf(stderr, "skrypty: %s\n", err.c_str());
+		}
+		if (progress) progress(0.8f, N_("Skrypty: obiekty mapy"));
+		sim->initUnits();
+		if (sim->gnomeCount() == 0) // wokół środka kadru (kamera map: jednostki modelu względem szablonu)
+			sim->populate((center.x + pan.x) / MapView::kBlock, (center.y - pan.y) / MapView::kBlock, 3, 1);
+		sim->startScripts();
+		simActive = true;
+		if (std::getenv("OW_TRACE_SIM"))
+			for (const auto& u : sim->units)
+				std::fprintf(stderr, "[sim] %s %s pole (%d, %d) stopy (%.2f, %.2f) z %.1f\n", maps.objectClass(u.obj).c_str(),
+				    u.gnome ? "krasnal" : "wuker", u.tx, u.ty, u.x, u.y, u.z);
+		maps.simInfo = strf(tr("krasnale: %d, postacie: %zu"), sim->gnomeCount(), sim->units.size());
+	}
 	BorderMask border;       // ramka ekranu gry na obszarze sceny map (--border-mask)
 	bool borderMask = false;
 	ParticleView particles;
@@ -536,6 +569,7 @@ struct Viewer
 	void update(float dt)
 	{
 		if (playing) maps.update(dt);
+		if (playing && simActive && mapTab()) sim->simUpdate(std::min(dt, 0.1f));
 		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
 		if (!playing || n <= 1) return;
@@ -1792,6 +1826,8 @@ int main(int argc, char** argv)
 	}
 	v.borderMask = args.borderMask;
 	v.maps.borderMask = &v.borderMask;
+	v.maps.simulate = &v.simulate;
+	v.simulate = args.simulate;
 	startupProgress(0.6f, N_("Cząsteczki i ramka ekranu"));
 	v.particles.init(dev, &v.vfs, v.textures.get());
 	startupProgress(0.7f, N_("Dźwięki"));
@@ -2016,6 +2052,11 @@ int main(int argc, char** argv)
 
 	if (!args.screenshot.empty())
 	{
+		if (v.simulate && v.maps.hasTemplate())
+		{
+			v.startSim(nullptr);
+			for (float t = 0; t < args.warmup; t += 0.1f) v.update(0.1f);
+		}
 		int w, h;
 		// Kilka klatek, żeby okno zdążyło się zmapować (inaczej zawartość bufora jest niezdefiniowana).
 		for (int i = 0; i < 5; ++i)
@@ -2131,12 +2172,29 @@ int main(int argc, char** argv)
 				}
 			}
 		}
+		// Symulacja: wyłączenie i „Od nowa” wczytują mapę ponownie (obiekty wracają na miejsca), bez zmiany kamery.
+		if ((!v.simulate && v.simActive) || v.maps.simRestart)
+		{
+			v.simActive = false;
+			v.maps.simRestart = false;
+			v.maps.simInfo.clear();
+			v.maps.reloadCurrent();
+			v.keepCamera = true;
+		}
 		if (v.maps.hasPending())
 		{ // wczytanie wybrane w UI w poprzedniej klatce
 			lastProgress = 0;
 			v.maps.runPending();
-			v.frameMap();
+			if (!v.keepCamera) v.frameMap();
+			v.keepCamera = false;
+			v.simActive = false;
 			last = SDL_GetPerformanceCounter(); // czas wczytywania nie przesuwa animacji
+		}
+		if (v.simulate && !v.simActive && v.maps.hasTemplate())
+		{ // nowa mapa albo włączenie: skrypty na bieżącej mapie
+			lastProgress = 0;
+			v.startSim(drawProgress);
+			last = SDL_GetPerformanceCounter();
 		}
 		Uint64 now = SDL_GetPerformanceCounter();
 		float dt = float(now - last) / float(SDL_GetPerformanceFrequency());

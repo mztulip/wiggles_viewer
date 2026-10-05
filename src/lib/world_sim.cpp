@@ -13,6 +13,18 @@
 namespace ow
 {
 
+bool isWalkerClass(const std::string& c)
+{
+	return c == "zwerg" || c == "wuker" || c == "schwefelwuker";
+}
+
+int WorldSim::gnomeCount() const
+{
+	int n = 0;
+	for (const auto& u : units) n += u.gnome;
+	return n;
+}
+
 bool WorldSim::bootScripts(const Vfs& vfs, const std::string& locale, std::string& err)
 {
 	scripts = std::make_unique<script::Engine>(vfs);
@@ -31,8 +43,13 @@ void WorldSim::initUnits()
 	selected = -1;
 	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb());
 	for (int i = 0; i < scene_.objectCount(); ++i)
-		if (Vfs::lower(scene_.objectClass(i)) == "zwerg") addUnit(i);
-	if (!units.empty()) selected = 0;
+		if (isWalkerClass(Vfs::lower(scene_.objectClass(i)))) addUnit(i);
+	for (size_t k = 0; k < units.size(); ++k)
+		if (units[k].gnome)
+		{
+			selected = int(k);
+			break;
+		}
 }
 
 void WorldSim::startScripts()
@@ -109,9 +126,15 @@ SimUnit* WorldSim::unitOf(int obj)
 
 int WorldSim::addUnit(int obj)
 {
-	scene_.setObjectModel(obj, "mann.3db", "mann");
+	bool gnome = Vfs::lower(scene_.objectClass(obj)) == "zwerg";
+	if (gnome) scene_.setObjectModel(obj, "mann.3db", "mann");
 	SimUnit u;
 	u.obj = obj;
+	u.gnome = gnome;
+	if (!gnome)
+	{ // wuker: animacje bez przyrostka _loop przy wspinaniu, model z klasy
+		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter";
+	}
 	const float* p = scene_.objectPos(obj);
 	u.x = p[0], u.y = p[1], u.z = p[2];
 	snapToFloor(u);
@@ -230,7 +253,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			}
 			else
 				u.x += ddx / len * mv, u.y += ddy / len * mv;
-			const char* anim = !vertical ? "gehen_loop" : (ddy < 0 ? "kletter_hoch_loop" : "kletter_runter_loop");
+			const std::string& anim = !vertical ? u.walkAnim : (ddy < 0 ? u.climbUpAnim : u.climbDownAnim);
 			if (vertical) u.facing = kSimPi; // twarzą do ściany
 			scene_.playAnim(u.obj, anim, true);
 		}
@@ -261,7 +284,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = SimUnit::Walk; // spada
 		}
 		else if (!scripts) // ze skryptami animację w miejscu ustawia skrypt (set_anim)
-			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? "standard" : "kletterstand", true);
+			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? u.standAnim : u.climbStandAnim, true);
 	}
 	scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
 }
@@ -318,7 +341,7 @@ int WorldSim::createObject(const std::string& cls, const std::string&, const flo
 {
 	int i = scene_.addObject(cls, pos[0], pos[1], pos[2]);
 	scene_.setObjectPose(i, pos[0], pos[1], pos[2], rot[1]);
-	if (Vfs::lower(cls) == "zwerg") addUnit(i);
+	if (isWalkerClass(Vfs::lower(cls))) addUnit(i);
 	return idOf(i);
 }
 void WorldSim::deleteObject(int id)
@@ -445,6 +468,43 @@ int WorldSim::gnomePosition(int id)
 {
 	SimUnit* u = unitOf(idx(id));
 	return u && !nav.standable(u->tx, u->ty) ? 1 : 0;
+}
+
+void WorldSim::populate(float cx, float cy, int gnomes, int wukers)
+{
+	const Pmp* g = simGrid();
+	if (!g) return;
+	std::vector<std::pair<int, int>> spots;
+	int x0 = int(std::floor(cx)), y0 = int(std::floor(cy));
+	for (int r = 0; r < 40 && int(spots.size()) < gnomes + wukers; ++r)
+		for (int dy = -r; dy <= r && int(spots.size()) < gnomes + wukers; ++dy)
+			for (int dx = -r; dx <= r && int(spots.size()) < gnomes + wukers; ++dx)
+			{
+				if (std::max(std::abs(dx), std::abs(dy)) != r || !nav.standable(x0 + dx, y0 + dy)) continue;
+				if (scene_.fluidFill(x0 + dx, y0 + dy) > 0.05f) continue; // nie na dnie zalanej komory
+				bool far = true;
+				for (auto& s : spots) far = far && std::max(std::abs(s.first - (x0 + dx)), std::abs(s.second - (y0 + dy))) >= 2;
+				if (far) spots.push_back({x0 + dx, y0 + dy});
+			}
+	for (size_t i = 0; i < spots.size(); ++i)
+	{
+		auto [x, y] = spots[i];
+		const char* cls = int(i) < gnomes ? "Zwerg" : "Wuker";
+		int o = scene_.addObject(cls, float(x) + 0.5f, floorY(x, y), kGnomeZ);
+		addUnit(o);
+		idOf(o);
+	}
+	if (selected < 0 && gnomeCount() > 0) selected = 0;
+}
+
+void WorldSim::changeParticleSource(int id, int slot, const ParticleSource& s)
+{
+	if (valid(id)) scene_.setObjectParticle(idx(id), slot, s);
+}
+
+void WorldSim::setParticleSource(int id, int slot, bool on)
+{
+	if (valid(id)) scene_.enableObjectParticle(idx(id), slot, on);
 }
 
 } // namespace ow

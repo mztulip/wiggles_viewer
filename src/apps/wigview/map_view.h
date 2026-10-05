@@ -53,6 +53,10 @@ public:
 	const std::string& savesDir() const { return savesDir_; }
 
 	bool* borderMask = nullptr; // przełącznik ramki ekranu w wigview (rysuje ją Viewer); nullptr = bez przełącznika
+	bool* simulate = nullptr;   // przełącznik symulacji (skrypty, krasnale; prowadzi ją Viewer)
+	bool simRestart = false;    // „Od nowa”: Viewer wczytuje mapę ponownie i startuje symulację
+	std::string simInfo;        // stan symulacji do panelu (ustawia Viewer)
+	void reloadCurrent();       // ponowne wczytanie bieżącej mapy (odroczone, jak wybór z listy)
 
 private:
 	enum class ListMode

@@ -1,5 +1,6 @@
 #include "lib/script/engine.h"
 #include "lib/i18n.h"
+#include "lib/particles.h"
 
 #include "lib/vfs.h"
 
@@ -599,6 +600,28 @@ int cmdSetAnim(Engine& e, Tcl_Interp* in, Args& a)
 	if (e.host_ && id)
 		e.host_->setAnim(id, e.resolveAnim(e.object(id), a[2]), a.size() > 3 ? std::atoi(a[3].c_str()) : 0,
 		    a.size() > 4 ? std::atoi(a[4].c_str()) : 2);
+	setResult(in, "");
+	return TCL_OK;
+}
+// change_particlesource obj slot typ {rx ry rz} {dx dy dz} max naKlatkę [widoczneWMgle …]: argumenty jak class_particle.
+int cmdChangeParticleSource(Engine& e, Tcl_Interp* in, Args& a)
+{
+	int id = a.size() > 3 ? e.resolveObj(in, a[1]) : 0;
+	if (e.host_ && id)
+	{
+		std::string rest;
+		for (size_t i = 3; i < a.size(); ++i) rest += (a[i].find(' ') != std::string::npos ? " {" + a[i] + "}" : " " + a[i]);
+		ParticleSource s;
+		if (parseClassParticle(rest, s)) e.host_->changeParticleSource(id, std::atoi(a[2].c_str()), s);
+	}
+	setResult(in, "");
+	return TCL_OK;
+}
+// set_particlesource obj slot 0|1
+int cmdSetParticleSource(Engine& e, Tcl_Interp* in, Args& a)
+{
+	int id = a.size() > 3 ? e.resolveObj(in, a[1]) : 0;
+	if (e.host_ && id) e.host_->setParticleSource(id, std::atoi(a[2].c_str()), std::atoi(a[3].c_str()) != 0);
 	setResult(in, "");
 	return TCL_OK;
 }
@@ -1330,6 +1353,8 @@ const Entry kCommands[] = {
     {"get_pos", cmdGetPos},
     {"set_pos", cmdSetPos},
     {"set_anim", cmdSetAnim},
+    {"change_particlesource", cmdChangeParticleSource},
+    {"set_particlesource", cmdSetParticleSource},
     {"db_animlength", cmdAnimLength},
     {"action", cmdAction},
     {"tasklist_add", cmdTasklist},

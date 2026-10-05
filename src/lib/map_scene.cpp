@@ -373,28 +373,60 @@ bool MapScene::addEmitter(const ParticleSource& s, float x, float y, float zWorl
 	return true;
 }
 
-// Emitery cząsteczek obiektów (class_particle klasy), rozgrzane o 4 s symulacji, żeby efekt już trwał.
+// Emiter źródła s przypiętego do obiektu obj (pozycja z obiektu, podłoże z terenu).
+void MapScene::configureEmitter(MapEmitter& m, const ParticleType& t, const ParticleSource& s, int obj)
+{
+	const float* p = objects_[size_t(obj)].src.pos;
+	m.obj = obj;
+	m.x = int(std::floor(p[0]));
+	m.y = int(std::floor(p[1]));
+	m.emitter.configure(t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
+	m.emitter.setUsableCells(particles_.usableCells(t.tex, t.grid));
+	m.emitter.setOrigin(p[0], p[1], p[2] * 0.5f + 7.f);
+	m.emitter.setFloorDrop(floorDrop(p[0], p[1] + s.rel[1]));
+}
+
+void MapScene::setObjectParticle(int obj, int slot, const ParticleSource& s)
+{
+	const ParticleType* t = particlesReady_ && obj >= 0 && obj < int(objects_.size()) ? particleType(s.type) : nullptr;
+	if (!t) return;
+	for (auto& e : emitters_)
+		if (e.obj == obj && e.slot == slot)
+		{
+			configureEmitter(e, *t, s, obj);
+			return;
+		}
+	MapEmitter m;
+	m.slot = slot;
+	configureEmitter(m, *t, s, obj);
+	emitters_.push_back(std::move(m));
+}
+
+void MapScene::enableObjectParticle(int obj, int slot, bool on)
+{
+	for (auto& e : emitters_)
+		if (e.obj == obj && e.slot == slot) e.emitter.setActive(on);
+}
+
+// Emitery cząsteczek obiektów (class_particle klasy, sloty 0, 1, …), rozgrzane o 4 s symulacji, żeby efekt już trwał.
 void MapScene::buildEmitters()
 {
 	emitters_.clear();
 	particleAcc_ = 0.f;
 	if (!particlesReady_) return;
-	for (const auto& o : objects_)
+	for (int i = 0; i < int(objects_.size()); ++i)
 	{
-		const auto* list = classes_.particles(o.src.className);
+		const auto* list = classes_.particles(objects_[size_t(i)].src.className);
 		if (!list) continue;
-		for (const ParticleSource& s : *list)
+		for (size_t k = 0; k < list->size(); ++k)
 		{
+			const ParticleSource& s = (*list)[k];
 			const ParticleType* t = particleType(s.type);
 			if (!t) continue;
 			MapEmitter m;
-			m.x = int(std::floor(o.src.pos[0]));
-			m.y = int(std::floor(o.src.pos[1]));
-			m.emitter.configure(*t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
-			m.emitter.setUsableCells(particles_.usableCells(t->tex, t->grid));
-			m.emitter.setOrigin(o.src.pos[0], o.src.pos[1], o.src.pos[2] * 0.5f + 7.f);
-			m.emitter.setFloorDrop(floorDrop(o.src.pos[0], o.src.pos[1] + s.rel[1]));
-			for (int i = 0; i < 48; ++i) m.emitter.step();
+			m.slot = int(k);
+			configureEmitter(m, *t, s, i);
+			for (int j = 0; j < 48; ++j) m.emitter.step();
 			emitters_.push_back(std::move(m));
 		}
 	}
@@ -455,7 +487,16 @@ void MapScene::update(float dt)
 	int steps = 0;
 	while (particleAcc_ >= 1.f / 12.f && steps < 4)
 	{
-		for (auto& e : emitters_) e.emitter.step();
+		for (auto& e : emitters_)
+		{
+			if (e.obj >= 0 && e.obj < int(objects_.size()))
+			{ // obiekt mógł się przesunąć (skrypty, krasnale)
+				const float* p = objects_[size_t(e.obj)].src.pos;
+				e.emitter.setOrigin(p[0], p[1], p[2] * 0.5f + 7.f);
+				e.x = int(std::floor(p[0])), e.y = int(std::floor(p[1]));
+			}
+			e.emitter.step();
+		}
 		particleAcc_ -= 1.f / 12.f;
 		++steps;
 	}

@@ -90,6 +90,14 @@ void MapView::setSavesDir(const std::string& dir)
 	refreshSaves();
 }
 
+void MapView::reloadCurrent()
+{
+	if (file_.empty()) return;
+	std::string f = file_;
+	if (f.find('/') != std::string::npos && (endsWithI(f, ".sav"))) pending_ = [this, f] { return loadSavePath(f); };
+	else pending_ = [this, f] { return loadListed(f); };
+}
+
 // Wczytanie pozycji listy: zapisy z wybranego katalogu to pełne ścieżki.
 bool MapView::loadListed(const std::string& f)
 {
@@ -290,6 +298,24 @@ bool MapView::ui(bool savesTab)
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Płyny"), &showFluids_);
 	ImGui::SetItemTooltip(tr("Woda, siarka i lawa z zapisu gry (%d pól)."), fluidCells_);
+	if (simulate)
+	{
+		ImGui::Checkbox(tr("Symulacja (skrypty)"), simulate);
+		ImGui::SetItemTooltip(tr("Wykonuje skrypty obiektów jak w grze: krasnale i wukery chodzą i pracują, pierścienie\n"
+		                         "i inne obiekty dostają efekty i animacje ze skryptów. Na szablonie bez krasnali stawia\n"
+		                         "3 krasnale i wukera. Pierwsze włączenie wczytuje klasy skryptów (kilka sekund).\n"
+		                         "Wyłączenie wczytuje mapę od nowa."));
+		if (*simulate)
+		{
+			ImGui::SameLine();
+			if (ImGui::SmallButton(tr("Od nowa"))) simRestart = true;
+			if (!simInfo.empty())
+			{
+				ImGui::SameLine();
+				ImGui::TextDisabled("%s", simInfo.c_str());
+			}
+		}
+	}
 	ImGui::Checkbox(tr("Oświetlenie jak w grze"), &gameLighting_);
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Lampa podglądu"), &previewLamp_);

@@ -40,6 +40,8 @@ def_class Dummy_Haengelicht ... {            ;# lampa wisząca na łańcuchach
 class_particle 21 {-0.05 -0.75 0.4} {0 -0.005 0} 60 1 0 0 0.5   ;# kryształ: mgiełka unosząca się
 ```
 
+Źródła z `class_particle` mają sloty 0, 1, … w kolejności deklaracji, więc `set_particlesource obiekt 0 0|1` wyłącza i włącza także je. ✅ Część obiektów ustawia źródła dopiero w skrypcie: pierścienie (`Ring_Der_Luft`, `Ring_Des_Wassers`, `Ring_Des_Feuers` w `Scripts/classes/story/Ringe.tcl`) wołają w `obj_init` metodę `reset`, a ta `change_particlesource this 0 <typ> …` i `set_particlesource this 0 1` (i `set_anim … drehen`, obrót). Bez wykonywania skryptów (wigview bez symulacji) takich efektów nie ma; nasz silnik obsługuje obie komendy ([`lib/script/engine.cpp`](../../src/lib/script/engine.cpp), emitery przypięte do obiektu w `MapScene::setObjectParticle`).
+
 Skrypty gry używają 29 klas dekoracji z `class_particle`. Pełną listę użyć każdego typu pokazuje zakładka Cząsteczki w wigview.
 
 ## 12.2 Atlasy

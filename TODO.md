@@ -121,6 +121,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), interpolację zostawiamy włączoną niezależnie od oryginału (decyzja: płynniejszy obraz to zaleta; próba pomiaru w [BAZA_WIEDZY §9.9](docs/BAZA_WIEDZY.md))
 - [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
 - [x] Esc zamyka wigview
+- [x] Symulacja w wigview: przełącznik „Symulacja (skrypty)” w zakładkach map (domyślnie wyłączony; `--simulate`, `--warmup S`): skrypty obiektów jak w grze przez wspólny [`world_sim`](src/lib/world_sim.h) (krasnale i wukery chodzą, pierścienie i inne obiekty dostają efekty i animacje ze skryptów); na szablonie bez krasnali 3 krasnale i wuker przy środku kadru (na suchych polach); „Od nowa”; wyłączenie wczytuje mapę od nowa
+- [ ] Symulacja: wukery chodzą mechanizmem krasnali (siatka nawigacji, animacje `gehen_loop`/`kletter_hoch`); walka z krasnalami i zachowania potworów nie są sprawdzone; most nad wodą w `kris_unq_060` nie jest chodliwy w nawigacji
 - [x] Ścieżki: katalog gry z `--game`, `WIGGLES_DIR`, `OW_GAME`, wyboru w oknie „Ścieżki…” (wigview.ini; zmiana restartuje wigview) albo `~/.wine`; katalog zapisów z wyboru albo `--saves-dir`; `WIGGLES_DIR` także w grze i `owscript`; przy starcie okno postępu z etapami (`OW_PROGRESS_LOG=1` wypisuje czasy), skan użyć cząsteczek w skryptach dopiero przy otwarciu zakładki (start 3,3 s → 0,6 s)
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
 - [x] Orientacja osi: Y w dół, układ lewoskrętny; w OpenGL odbicie osi Y (poprawione: obrót odwracał napisy) ✅

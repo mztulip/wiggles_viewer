@@ -60,7 +60,10 @@ public:
 	// Dodatkowe źródło cząsteczek w punkcie (x, y bloki sceny, y w dół; zWorld = z świata w blokach), jak
 	// change_particlesource na obiekcie stojącym w tym punkcie (porównania ze zrzutami gry). false: nieznany typ.
 	bool addEmitter(const ParticleSource& s, float x, float y, float zWorld);
-	float floorDrop(float x, float y) const; // bloki od punktu do litej skały pod nim (podłoże cząsteczek)
+	float floorDrop(float x, float y) const;
+	// Źródło cząsteczek obiektu ze skryptu (change_particlesource): nowe albo zmienione w slocie; podąża za obiektem.
+	void setObjectParticle(int obj, int slot, const ParticleSource& s);
+	void enableObjectParticle(int obj, int slot, bool on); // set_particlesource // bloki od punktu do litej skały pod nim (podłoże cząsteczek)
 	// Kamera startowa scenariusza (set_view), we współrzędnych przyciętego świata.
 	const std::optional<GameView>& gameView() const { return gameView_; }
 	const int* origin() const { return worldOrigin_; } // lewy górny róg przyciętego świata (bloki)
@@ -206,8 +209,10 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	struct MapEmitter
 	{
 		ParticleEmitter emitter;
-		int x = 0, y = 0; // pole obiektu (nieodkryty teren)
+		int x = 0, y = 0;         // pole obiektu (nieodkryty teren)
+		int obj = -1, slot = -1;  // obiekt i slot źródła (class_particle: kolejne sloty od 0)
 	};
+	void configureEmitter(MapEmitter& m, const ParticleType& t, const ParticleSource& s, int obj);
 	ParticleRenderer particles_;
 	bool particlesReady_ = false, showParticles_ = true;
 	std::vector<MapEmitter> emitters_;

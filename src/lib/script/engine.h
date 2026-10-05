@@ -28,6 +28,7 @@ struct Tcl_Interp;
 
 namespace ow
 {
+struct ParticleSource; // lib/particles.h
 
 class Vfs;
 
@@ -97,6 +98,9 @@ struct Host
 	virtual void glide(int id, const float to[3], float /*sekundy*/) { setPos(id, to); }
 	virtual void link(int /*dziecko*/, int /*rodzic, 0 = odepnij*/, int /*punkt*/) {}
 	virtual bool linkOffset(int, int, float[3]) { return false; } // get_linkpos
+	// Źródła cząsteczek obiektu (change_particlesource / set_particlesource; docs/silnik/12_czasteczki.md §12.1).
+	virtual void changeParticleSource(int /*id*/, int /*slot*/, const ParticleSource&) {}
+	virtual void setParticleSource(int /*id*/, int /*slot*/, bool /*włączone*/) {}
 };
 
 struct ScriptObject

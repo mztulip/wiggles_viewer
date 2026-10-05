@@ -17,6 +17,8 @@ Krasnale to obiekty klasy `Zwerg` z zapisu albo z `set_pos [qnew Zwerg] {x y z}`
 
 ## 14.2 Kamera
 
+Symulacja świata (skrypty obiektów, krasnale, wukery, kopanie) jest w [`lib/world_sim`](../../src/lib/world_sim.h), wspólna dla gry i przeglądarki (wigview: przełącznik „Symulacja (skrypty)”). Wukery chodzą tym samym mechanizmem co krasnale (🔶), z własnymi animacjami (`gehen_loop`, `kletter_hoch`, `kletter_runter`); panel gracza pokazuje tylko krasnale.
+
 Prawo `set_view` z rozdziału 6: cel (x, y) w blokach, `zoom`, kąty. Gracz przesuwa cel (WASD, strzałki, środkowy przycisk myszy) i zmienia zoom (kółko, 1,0–2,5 jak w grze, [6.1](06_kamera.md)). Jak w oryginale kamera jedzie też, gdy kursor dotknie krawędzi okna: pas szerokości `max(4, min(szer, wys)/60)` px, prędkość jak klawiszy (🔶 obie wartości na oko, do porównania z grą).
 
 Wskazywanie pola: promień z kamery przez piksel kursora przecinamy z płaszczyzną głębokości krasnali (z świata 11 bloków). Pole = `floor(x), floor(y)` punktu przecięcia.
