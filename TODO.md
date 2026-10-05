@@ -133,7 +133,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Cząsteczki: zakładka z 43 typami (atlas, parametry, użycie w skryptach, podgląd emitera), `--particle N`; emitery z `class_particle` na mapach; rozdział [12](docs/silnik/12_czasteczki.md)
 - [x] 🔬 Cząsteczki: zrzuty wszystkich 43 typów z gry (krasnal jako nośnik, `change_particlesource … 64 2 0 10`), tabela wyglądu i porównanie z naszym podglądem ([BAZA_WIEDZY §9.10](docs/BAZA_WIEDZY.md))
 - [x] Cząsteczki: pierwsza kalibracja rozmiaru i emisji w tej samej scenie (`wigview --emit`, pomiar zasięgu i jasności względem zrzutów z gry): 36–42 i 7, 12–14, 17–19, 22, 24, 26, 28–30, 32–35 zgodne co do czynnika 2 ([BAZA_WIEDZY §9.10](docs/BAZA_WIEDZY.md))
-- [ ] Cząsteczki: kształt 0 (zwarta kula), 3 (szeroki ogień), 6 (dym, nie płatki), barwy 12 i 42; typy „ziemne” 8, 10, 15 niewidoczne (podłoże z terenu zamiast płaszczyzny 3 bloki niżej); przepisać prawa typów zamiast wspólnego modelu; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
+- [x] Cząsteczki „ziemne”: podłoże z mapy wysokości (`MapScene::floorDrop`, pierwsza lita próbka pod emiterem) zamiast płaszczyzny 3 bloki niżej; rozmiary 1, 8, 15, 17, 26 wg zrzutów gry
+- [ ] Cząsteczki: kształt 0 (zwarta kula), 3 (szeroki ogień), 6 (dym, nie płatki), barwy 8, 12 i 42; przepisać prawa typów zamiast wspólnego modelu; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Kamera: gra przycina `zoom` do [1,0; 2,5] (✅ `get_view` po `set_view`); u nas `kGameZoomMin/Max` w grze (kółko myszy, `gameCamera`) i w emulacji kamery wigview
 - [ ] 🔬 Kamera w przerywnikach: skrypty używają `zoom` 0,5–6,0; czy wtedy zakres jest inny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))

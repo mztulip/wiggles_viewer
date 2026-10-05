@@ -22,7 +22,6 @@ constexpr float kBuoyancy = 0.003f;
 constexpr float kDriftDamping = 0.9f;
 constexpr float kDriftCouple = 0.03f;
 constexpr float kSwayAmp = 0.03f;
-constexpr float kGroundDrop = 3.f; // podłoże cząsteczek „ziemnych” 3 bloki pod emiterem (bez terenu, 🔶)
 constexpr float kPi = 3.14159265f;
 
 std::vector<ParticleType> buildTypes()
@@ -64,7 +63,7 @@ std::vector<ParticleType> buildTypes()
 	{
 		auto& p = T(1, N_("iskry i bryzgi przy ziemi"), A256d, 0x0f, 255, 8);
 		p.motion = M::Ground, p.shape = S::Box, set3(p.box, .1f, .1f, .1f), set3(p.jitter, .06f, .06f, .06f), p.rows = 1;
-		p.size = 2.5f, p.sizeCurve = Z::Grow, p.gravity = -.01f, p.ageCap = 100;
+		p.size = 1.2f, p.sizeCurve = Z::Grow, p.gravity = -.01f, p.ageCap = 100;
 	}
 	{
 		auto& p = T(2, N_("ciepły żar"), A128d, 0x10, 180, 16);
@@ -99,7 +98,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(8, N_("ciemnoczerwone krople (ziemia)"), B128d, 0x0f, 255, 16);
-		p.motion = M::Ground, set3(p.jitter, .03f, 0, .03f), p.rows = 2, p.size = .5f, p.sizeCurve = Z::Grow;
+		p.motion = M::Ground, set3(p.jitter, .03f, 0, .03f), p.rows = 2, p.size = 4.f, p.sizeCurve = Z::Grow;
 		p.colour = C::Constant, p.argb = 0xFFC03028, p.gravity = -.01f, p.ageCap = 95;
 	}
 	{
@@ -109,7 +108,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(10, N_("szare krople (odbicie od ziemi)"), B128d, 0x0f, 255, 16);
-		p.motion = M::Ground, p.count = N::Single, set3(p.jitter, .06f, 0, .06f), p.row0 = 4, p.rows = 2, p.size = .4f;
+		p.motion = M::Ground, p.count = N::Single, set3(p.jitter, .06f, 0, .06f), p.row0 = 4, p.rows = 2, p.size = 3.f;
 		p.sizeCurve = Z::Grow, p.colour = C::Constant, p.argb = 0xFF9098A8, p.gravity = -.008f, p.ageCap = 95;
 	}
 	{
@@ -135,7 +134,7 @@ std::vector<ParticleType> buildTypes()
 	{
 		auto& p = T(15, N_("żółte krople"), B128d, 0x0f, 200, 16);
 		p.motion = M::Ground, p.shape = S::Disc, p.radius = .1f, p.row0 = 4, p.rows = 2, p.colour = C::Constant, p.argb = yellow;
-		p.size = .6f, p.gravity = -.012f, p.ageCap = 95;
+		p.size = 2.5f, p.gravity = -.012f, p.ageCap = 95;
 	}
 	{
 		auto& p = T(16, N_("ciepły stożek w górę"), C256d, 0x10, 100, 4);
@@ -144,7 +143,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(17, N_("wióry (stolarz)"), B128d, 0x0f, 255, 8);
-		p.motion = M::Ground, p.shape = S::Cone, p.radius = .15f, p.row0 = 5, p.rows = 2, p.size = 2.5f, p.gravity = -.01f, p.ageCap = 100;
+		p.motion = M::Ground, p.shape = S::Cone, p.radius = .15f, p.row0 = 5, p.rows = 2, p.size = 1.6f, p.gravity = -.01f, p.ageCap = 100;
 	}
 	{
 		auto& p = T(18, N_("iskry (kuźnia)"), B128d, 0x10, 170, 8);
@@ -185,7 +184,7 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(26, N_("wióry (kamieniarz)"), B128d, 0x0f, 255, 8);
-		p.motion = M::Ground, p.shape = S::Cone, p.radius = .1f, p.row0 = 5, p.rows = 2, p.size = 2.5f, p.gravity = -.01f, p.ageCap = 100;
+		p.motion = M::Ground, p.shape = S::Cone, p.radius = .1f, p.row0 = 5, p.rows = 2, p.size = 1.6f, p.gravity = -.01f, p.ageCap = 100;
 	}
 	{
 		auto& p = T(27, N_("mała kula ognia (pochodnia)"), A128d, 0x10, 180, 16);
@@ -451,7 +450,7 @@ void ParticleEmitter::step()
 	}
 	// C) ruch
 	alive_ = 0;
-	float floorY = origin_[1] - kGroundDrop;
+	float floorY = origin_[1] - floorDrop_;
 	for (auto& p : pool_)
 	{
 		if (!p.alive) continue;

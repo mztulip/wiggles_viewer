@@ -344,6 +344,19 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 // Docs/COORDINATE_SYSTEM.md §3.3–3.4, stałe z Wiggles.exe:
 //  - głębokość obiektu: z_świata = z_skryptu·0,5 + 7 bloków (DAT_0073708c, DAT_00737520),
 //  - obrót: M = Ry(−ry)·Rx(−rx)·Rz(−rz) (macierze gry są transpozycją standardowych).
+// Odległość (bloki) od punktu (x, y; y w dół) do litej skały pod nim w mapie wysokości: podłoże cząsteczek
+// „ziemnych” (krople, wióry). Bez terenu albo bez skały w zasięgu 8 bloków: 3 bloki (🔶 jak dotąd).
+float MapScene::floorDrop(float x, float y) const
+{
+	if (!heights_) return 3.f;
+	const Heightfield& h = *heights_;
+	constexpr int S = Heightfield::kSamplesPerBlock;
+	int sx = int(std::floor(x * S)), sy0 = int(std::floor(y * S));
+	for (int sy = std::max(sy0, 0); sy < std::min(h.height, sy0 + 8 * S); ++sy)
+		if (h.at(sx, sy) >= 15) return std::max(0.f, float(sy) / S - y);
+	return 3.f;
+}
+
 bool MapScene::addEmitter(const ParticleSource& s, float x, float y, float zWorld)
 {
 	const ParticleType* t = particlesReady_ ? particleType(s.type) : nullptr;
@@ -353,7 +366,8 @@ bool MapScene::addEmitter(const ParticleSource& s, float x, float y, float zWorl
 	m.y = int(std::floor(y));
 	m.emitter.configure(*t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
 	m.emitter.setUsableCells(particles_.usableCells(t->tex, t->grid));
-	m.emitter.setOrigin(x + s.rel[0], y + s.rel[1], zWorld + s.rel[2] * 0.5f);
+	m.emitter.setOrigin(x, y, zWorld);
+	m.emitter.setFloorDrop(floorDrop(x, y));
 	for (int i = 0; i < 36; ++i) m.emitter.step(); // 3 s przy 12 klatkach na sekundę, jak zrzuty z gry
 	emitters_.push_back(std::move(m));
 	return true;
@@ -379,6 +393,7 @@ void MapScene::buildEmitters()
 			m.emitter.configure(*t, s, uint32_t(emitters_.size() + 1) * 2654435761u);
 			m.emitter.setUsableCells(particles_.usableCells(t->tex, t->grid));
 			m.emitter.setOrigin(o.src.pos[0], o.src.pos[1], o.src.pos[2] * 0.5f + 7.f);
+			m.emitter.setFloorDrop(floorDrop(o.src.pos[0], o.src.pos[1] + s.rel[1]));
 			for (int i = 0; i < 48; ++i) m.emitter.step();
 			emitters_.push_back(std::move(m));
 		}

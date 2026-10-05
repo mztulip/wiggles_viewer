@@ -107,6 +107,7 @@ C) ruch żywych: pos += vel
                 vel.y += grawitacja·2,5;  przez pierwsze buoyancyFrames klatek vel.y += 0,003
                 vel ·= drag;  vel += drift·0,03 [wander];  x += cos(wiek·0,25)·0,03 [sway]
                 typy „ziemne”: pod podłożem odbicie vel.y = −0,3·vel.y, vel.xz ·= 0,5
+                (podłoże: pierwsza lita próbka mapy wysokości pod emiterem, 🔶; bez terenu 3 bloki niżej)
    wiek t = wiek/życie:  rozmiar · (Grow 0,5+0,8t | Shrink 1−0,9t | Pulse)
                          kolor: biały / stały / szary (narasta 20%, gaśnie) / ciepły (biały, alfa 1−t²)
                          animacja: klatka = wiek, a dla ognia (flipSquare) klatka = floor(t²·liczba klatek)
@@ -122,7 +123,7 @@ Rysowanie: kwadrat o boku `rozmiar · 0,12` bloku, zwrócony do kamery, kolor `t
 ## 12.5 Czego jeszcze brakuje
 
 - 🔶 Typy liczone wspólnym modelem zamiast 42 osobnych funkcji gry. Diggles-Unity ma przepisane z gry funkcje części typów (0–3, 6, 8–23, 26, 28–30, 32, 36–40): warto porównać każdy typ ze zrzutem gry (§12.6).
-- ❓ Podłoże cząsteczek „ziemnych” (1, 8, 10, 15, 17, 18, 26): gra próbkuje teren, my mamy płaszczyznę 3 bloki pod emiterem.
+- 🔶 Podłoże cząsteczek „ziemnych” (1, 8, 10, 15, 17, 18, 26): bierzemy pierwszą litą próbkę mapy wysokości (wartość 15) pod emiterem w tej samej kolumnie (`MapScene::floorDrop`); wióry 17 i 26 oraz plama 8 leżą wtedy na podłodze jak w grze. ❓ Jak dokładnie robi to gra.
 - ❓ Typ 6 i inne „z wierzchołków modelu”: na razie kula 0,3 bloku.
 - ❓ Lina (25), obrót cząsteczek, smugi wzdłuż prędkości (7, 42).
 - ❓ Znaczenie pól `widoczneWMgle` i ostatnich argumentów `class_particle`, tryb 0x0f/0x10.
@@ -130,7 +131,7 @@ Rysowanie: kwadrat o boku `rozmiar · 0,12` bloku, zwrócony do kamery, kolor `t
 
 ## 12.6 Porównanie ze zrzutem gry
 
-**Wszystkie typy** ([BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)): w działającej grze każdy typ 0–42 podpięty do krasnala (`change_particlesource $G 1 <typ> {0 0 0} {0 0 0} 64 2 0 10`). Poza płomieniami (2, 27) i typami 24, 25 nasze typy są za małe albo niewidoczne; obłoki i wybuchy 33–42 są w grze wielokrotnie większe od płomienia (39, 40, 42 na cały kadr przy `zoom` 0,8), u nas porównywalne z nim. Typy 7, 8, 30–32, 37–41 u nas nic nie pokazują. Pierwsza kalibracja rozmiaru i emisji w tej samej scenie (`wigview --emit`, [BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)) zbliżyła zasięg i jasność typów 7, 12–14, 17–19, 22, 24, 26, 28–30, 32–42 do gry (stosunek jasności 0,8–2,0 zamiast do 3000). 🔶 Obłoki i wybuchy (36–40) i błyski 41 gra przy źródle ciągłym emituje w każdej klatce, a nie z losową bramką Diggles-Unity. Do zrobienia: kształt typów 0, 3, 6, barwy (12, 42), typy „ziemne” 8, 10, 15.
+**Wszystkie typy** ([BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)): w działającej grze każdy typ 0–42 podpięty do krasnala (`change_particlesource $G 1 <typ> {0 0 0} {0 0 0} 64 2 0 10`). Poza płomieniami (2, 27) i typami 24, 25 nasze typy są za małe albo niewidoczne; obłoki i wybuchy 33–42 są w grze wielokrotnie większe od płomienia (39, 40, 42 na cały kadr przy `zoom` 0,8), u nas porównywalne z nim. Typy 7, 8, 30–32, 37–41 u nas nic nie pokazują. Pierwsza kalibracja rozmiaru i emisji w tej samej scenie (`wigview --emit`, [BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)) zbliżyła zasięg i jasność typów 7, 12–14, 17–19, 22, 24, 26, 28–30, 32–42 do gry (stosunek jasności 0,8–2,0 zamiast do 3000). 🔶 Obłoki i wybuchy (36–40) i błyski 41 gra przy źródle ciągłym emituje w każdej klatce, a nie z losową bramką Diggles-Unity. Typy „ziemne” 1, 8, 15, 17, 26 po dodaniu podłoża z terenu i powiększeniu leżą na podłodze z jasnością gry co do czynnika 3 (10 w grze jest na poziomie szumu). Do zrobienia: kształt typów 0, 3, 6, barwy (8 bardziej różowa w grze, 12, 42).
 
 **Płomienie** (pierwsza kalibracja):
 

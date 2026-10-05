@@ -135,6 +135,8 @@ public:
 	// Punkt zaczepienia (obiekt) w układzie gry: x, y (bloki, y w dół), z świata (bloki).
 	void setOrigin(float x, float y, float zWorld);
 	void setActive(bool a) { active_ = a; }
+	// Podłoże cząsteczek „ziemnych”: tyle bloków pod punktem emitera (domyślnie 3, bez terenu).
+	void setFloorDrop(float blocks) { floorDrop_ = blocks; }
 	// cellUsable: komórki atlasu, które nie są puste (z kanału alfa tekstury); puste = wszystkie.
 	void setUsableCells(const std::vector<bool>& cellUsable);
 	void step();                  // jedna klatka symulacji
@@ -158,6 +160,7 @@ private:
 	void spawn(P& p);
 	void finish(P& p);
 	void colourAt(P& p) const;
+	float floorDrop_ = 3.f;
 	const ParticleType* type_ = nullptr;
 	ParticleSource src_;
 	float origin_[3] = {0, 0, 0}; // układ symulacji (y w górę)
