@@ -301,10 +301,9 @@ bool MapView::ui(bool savesTab)
 	if (simulate)
 	{
 		ImGui::Checkbox(tr("Symulacja (skrypty)"), simulate);
-		ImGui::SetItemTooltip(tr("Wykonuje skrypty obiektów jak w grze: krasnale i wukery chodzą i pracują, pierścienie\n"
-		                         "i inne obiekty dostają efekty i animacje ze skryptów. Na szablonie bez krasnali stawia\n"
-		                         "3 krasnale i wukera. Pierwsze włączenie wczytuje klasy skryptów (kilka sekund).\n"
-		                         "Wyłączenie wczytuje mapę od nowa."));
+		ImGui::SetItemTooltip(tr("Wykonuje skrypty obiektów jak w grze: postacie z mapy (zapis, scenariusz, szablon) chodzą\n"
+		                         "i pracują, pierścienie i inne obiekty dostają efekty i animacje ze skryptów.\n"
+		                         "Pierwsze włączenie wczytuje klasy skryptów (kilka sekund). Wyłączenie wczytuje mapę od nowa."));
 		if (*simulate)
 		{
 			ImGui::SameLine();
@@ -313,6 +312,17 @@ bool MapView::ui(bool savesTab)
 			{
 				ImGui::SameLine();
 				ImGui::TextDisabled("%s", simInfo.c_str());
+			}
+			if (ImGui::Checkbox(tr("Dodaj postacie na mapie bez krasnali"), &populate)) simRestart = true;
+			ImGui::SetItemTooltip(tr("Nie z danych gry: na mapie bez żadnego krasnala (np. sam szablon) stawia podaną liczbę\n"
+			                         "krasnali i wukerów przy środku kadru. Zapisy i scenariusze mają własne postacie."));
+			if (populate)
+			{
+				ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6.f);
+				if (ImGui::SliderInt(tr("krasnale##pop"), &populateGnomes, 0, 10)) simRestart = true;
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6.f);
+				if (ImGui::SliderInt(tr("wukery##pop"), &populateWukers, 0, 5)) simRestart = true;
 			}
 		}
 	}

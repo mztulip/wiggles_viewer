@@ -17,6 +17,7 @@
 // Katalog gry: --game, potem zmienna WIGGLES_DIR, potem OW_GAME, potem wybór z okna „Ścieżki” (wigview.ini),
 // na końcu ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
+// --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --paths: otwiera okno „Ścieżki” (katalog gry i zapisów) przy starcie.
 // --saves-dir KATALOG: zapisy .sav z tego katalogu w zakładce Zapisy (domyślnie Data/Gamesave gry albo wybór z okna).
@@ -100,6 +101,7 @@ struct Args
 	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
 	bool simulate = false;                   // --simulate: symulacja (skrypty) na mapie
 	float warmup = 0;                        // --warmup S: przewinięcie symulacji przed zrzutem
+	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
@@ -141,6 +143,11 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--paths") a.paths = true;
 		else if (k == "--simulate") a.simulate = true;
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
+		else if (k == "--populate")
+		{
+			a.popGnomes = std::atoi(next());
+			if (i + 1 < argc && argv[i + 1][0] != '-') a.popWukers = std::atoi(next());
+		}
 		else if (k == "--model") a.model = next();
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
@@ -292,8 +299,9 @@ struct Viewer
 		}
 		if (progress) progress(0.8f, N_("Skrypty: obiekty mapy"));
 		sim->initUnits();
-		if (sim->gnomeCount() == 0) // wokół środka kadru (kamera map: jednostki modelu względem szablonu)
-			sim->populate((center.x + pan.x) / MapView::kBlock, (center.y - pan.y) / MapView::kBlock, 3, 1);
+		if (maps.populate && sim->gnomeCount() == 0) // opcja przeglądarki; wokół środka kadru (jednostki modelu → bloki)
+			sim->populate((center.x + pan.x) / MapView::kBlock, (center.y - pan.y) / MapView::kBlock, maps.populateGnomes,
+			    maps.populateWukers);
 		sim->startScripts();
 		simActive = true;
 		if (std::getenv("OW_TRACE_SIM"))
@@ -1828,6 +1836,7 @@ int main(int argc, char** argv)
 	v.maps.borderMask = &v.borderMask;
 	v.maps.simulate = &v.simulate;
 	v.simulate = args.simulate;
+	if (args.popGnomes >= 0) v.maps.populate = true, v.maps.populateGnomes = args.popGnomes, v.maps.populateWukers = args.popWukers;
 	startupProgress(0.6f, N_("Cząsteczki i ramka ekranu"));
 	v.particles.init(dev, &v.vfs, v.textures.get());
 	startupProgress(0.7f, N_("Dźwięki"));

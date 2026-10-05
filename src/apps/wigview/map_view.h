@@ -55,6 +55,9 @@ public:
 	bool* borderMask = nullptr; // przełącznik ramki ekranu w wigview (rysuje ją Viewer); nullptr = bez przełącznika
 	bool* simulate = nullptr;   // przełącznik symulacji (skrypty, krasnale; prowadzi ją Viewer)
 	bool simRestart = false;    // „Od nowa”: Viewer wczytuje mapę ponownie i startuje symulację
+	// Dodatek przeglądarki (nie z danych gry): postacie na mapie bez krasnali, przy starcie symulacji.
+	bool populate = false;
+	int populateGnomes = 3, populateWukers = 1;
 	std::string simInfo;        // stan symulacji do panelu (ustawia Viewer)
 	void reloadCurrent();       // ponowne wczytanie bieżącej mapy (odroczone, jak wybór z listy)
 
