@@ -1357,7 +1357,7 @@ void Viewer::ui()
 		}
 		if (ImGui::BeginTabItem(tr("Cząsteczki###czasteczki"), nullptr, tabFlags(4)))
 		{
-			if (activeTab != 4) frameParticles();
+			if (activeTab != 4) particles.ensureUsage(), frameParticles();
 			activeTab = 4;
 			if (particles.ui()) frameParticles();
 			ImGui::EndTabItem();
@@ -1731,11 +1731,57 @@ int main(int argc, char** argv)
 	}
 	rhi::Device& dev = *v.device;
 
+	// ImGui od razu po urządzeniu: okno postępu startu rysuje się w trakcie wczytywania danych.
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	addSettingsHandler();
+	ImGui::GetIO().IniFilename = args.batch() ? nullptr : "wigview.ini";
+	ImGui::StyleColorsDark();
+	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
+	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+	         "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
+		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
+	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+	         "/usr/share/fonts/noto/NotoSansMono-Regular.ttf", "C:\\Windows\\Fonts\\consola.ttf"})
+		if (std::filesystem::exists(f) && (v.files.mono = ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 14.f))) break;
+	dev.imguiInit();
+
+	// Postęp startu (po zmianie katalogu gry pierwszy start trwa kilka do kilkunastu sekund: pliki gry czytane z
+	// zimnego dysku). Osobna klatka z samym oknem postępu; OW_PROGRESS_LOG=1 wypisuje czasy etapów.
+	const bool startLog = std::getenv("OW_PROGRESS_LOG") != nullptr;
+	const Uint64 startT0 = SDL_GetTicks64();
+	auto startupProgress = [&](float f, const char* stage) {
+		if (startLog) std::fprintf(stderr, "[start] %6llu ms  %3.0f%%  %s\n", (unsigned long long)(SDL_GetTicks64() - startT0), f * 100.f, stage);
+		if (args.batch()) return;
+		SDL_PumpEvents();
+		int w, h;
+		SDL_GetWindowSizeInPixels(win, &w, &h);
+		dev.imguiNewFrame();
+		ImGui_ImplSDL2_NewFrame();
+		ImGui::NewFrame();
+		ImVec2 ds = ImGui::GetIO().DisplaySize;
+		ImGui::SetNextWindowPos(ImVec2(ds.x * 0.5f, ds.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(520, 0));
+		ImGui::Begin(tr("Uruchamianie###start"), nullptr,
+		    ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+		ImGui::TextWrapped(tr("Katalog gry: %s"), args.game.c_str());
+		ImGui::TextDisabled("%s", tr(stage));
+		ImGui::ProgressBar(std::clamp(f, 0.f, 1.f), ImVec2(-1, 0));
+		ImGui::TextDisabled(tr("Pierwszy start z nowym katalogiem gry trwa dłużej (pliki gry czytane z dysku)."));
+		ImGui::End();
+		ImGui::Render();
+		if (!dev.beginFrame(w, h, 0.06f, 0.06f, 0.08f)) return;
+		dev.imguiRender(ImGui::GetDrawData());
+		dev.endFrame();
+	};
+	startupProgress(0.02f, N_("Shadery"));
+
 	if (!v.renderer.init(dev, err))
 	{
 		std::fprintf(stderr, "Shader: %s\n", err.c_str());
 		return 1;
 	}
+	startupProgress(0.08f, N_("Klasy obiektów, szablony i scenariusze"));
 	v.textures = std::make_unique<TextureCache>(v.vfs);
 	v.textures->setDevice(&dev);
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
@@ -1746,12 +1792,15 @@ int main(int argc, char** argv)
 	}
 	v.borderMask = args.borderMask;
 	v.maps.borderMask = &v.borderMask;
+	startupProgress(0.6f, N_("Cząsteczki i ramka ekranu"));
 	v.particles.init(dev, &v.vfs, v.textures.get());
+	startupProgress(0.7f, N_("Dźwięki"));
 	v.sounds.init(&v.vfs);
 	v.files.init(&v.vfs);
 	v.files.canOpen = [&v](const std::string& p) { return v.openFile(p, false); };
 	v.files.open = [&v](const std::string& p) { return v.openFile(p, true); };
 	v.sounds.onOpenAnim = [&v](const std::string& obj, const std::string& anim, int fr) { v.openAnim(obj, anim, fr); };
+	startupProgress(0.8f, N_("Modele i tekstury"));
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT"))
 	{
 		v.sphere = parseSphereDat(*sd);
@@ -1870,19 +1919,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	addSettingsHandler();
-	ImGui::GetIO().IniFilename = args.batch() ? nullptr : "wigview.ini";
-	ImGui::StyleColorsDark();
-	// Domyślny font ImGui nie ma polskich znaków. Bierzemy systemowy TTF (glify ładowane na żądanie, ImGui 1.92+).
-	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-	         "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
-		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
-	for (const char* f : {"/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-	         "/usr/share/fonts/noto/NotoSansMono-Regular.ttf", "C:\\Windows\\Fonts\\consola.ttf"})
-		if (std::filesystem::exists(f) && (v.files.mono = ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 14.f))) break;
-	dev.imguiInit();
+	startupProgress(0.95f, N_("Lista tekstur"));
 	if (v.texFiles.empty()) v.refreshTexFiles(); // --texture mogło już wybrać katalog i plik
 
 	// Jedna klatka: scena 3D (na prawo od panelu UI) i opcjonalnie interfejs.

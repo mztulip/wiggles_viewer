@@ -22,6 +22,9 @@ public:
 	static constexpr float kBlock = 200.f; // jednostek modelu na blok
 
 	void init(ow::rhi::Device& dev, const ow::Vfs* vfs, ow::TextureCache* textures);
+	// Użycia typów w skryptach: skan wszystkich skryptów (0,7–3 s), więc dopiero przy pierwszej potrzebie
+	// (zakładka Cząsteczki, select), a nie przy starcie wigview.
+	void ensureUsage();
 	bool ui();                     // true: wycentruj kamerę
 	void update(float dt);
 	void step(int d);              // poprzedni/następny typ (strzałki)
@@ -43,6 +46,8 @@ private:
 	ow::rhi::Device* dev_ = nullptr;
 	ow::ParticleRenderer renderer_;
 	std::string error_;
+	const ow::Vfs* vfs_ = nullptr;
+	bool usageScanned_ = false;
 	std::vector<ow::ParticleUsage> usage_;
 	std::vector<int> usageCount_;
 	int sel_ = 3;

@@ -304,7 +304,7 @@ msgid "pliki"
 msgstr ""
 
 #: src/apps/wigview/files_view.cpp:271
-#: src/apps/wigview/particle_view.cpp:224
+#: src/apps/wigview/particle_view.cpp:233
 msgid "rozmiar"
 msgstr ""
 
@@ -363,7 +363,7 @@ msgstr ""
 
 #: src/apps/wigview/main.cpp:689
 #: src/apps/wigview/map_view.cpp:257
-#: src/apps/wigview/particle_view.cpp:200
+#: src/apps/wigview/particle_view.cpp:209
 #: src/apps/wigview/sound_view.cpp:301
 #, c-format
 msgid "Błąd: %s"
@@ -400,13 +400,13 @@ msgid "Odtwarzanie"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:736
-#: src/apps/wigview/particle_view.cpp:236
+#: src/apps/wigview/particle_view.cpp:245
 #: src/apps/wigview/sound_view.cpp:307
 msgid "Pauza"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:736
-#: src/apps/wigview/particle_view.cpp:236
+#: src/apps/wigview/particle_view.cpp:245
 #: src/apps/wigview/sound_view.cpp:307
 msgid "Graj"
 msgstr ""
@@ -746,6 +746,7 @@ msgid "Cząsteczki"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:1365
+#: src/apps/wigview/main.cpp:1797
 msgid "Dźwięki"
 msgstr ""
 
@@ -832,7 +833,40 @@ msgstr ""
 msgid "Zmiana działa od razu i jest zapamiętana (--saves-dir ma pierwszeństwo)."
 msgstr ""
 
-#: src/apps/wigview/main.cpp:1949
+#: src/apps/wigview/main.cpp:1765
+msgid "Uruchamianie"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1767
+#, c-format
+msgid "Katalog gry: %s"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1770
+msgid "Pierwszy start z nowym katalogiem gry trwa dłużej (pliki gry czytane z dysku)."
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1777
+msgid "Shadery"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1784
+msgid "Klasy obiektów, szablony i scenariusze"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1795
+msgid "Cząsteczki i ramka ekranu"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1803
+msgid "Modele i tekstury"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1922
+msgid "Lista tekstur"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:1986
 msgid "Wczytywanie"
 msgstr ""
 
@@ -1164,116 +1198,116 @@ msgstr ""
 msgid "biały"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:171
+#: src/apps/wigview/particle_view.cpp:179
 msgid "Ramki: komórki atlasu używane przez typ."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:180
+#: src/apps/wigview/particle_view.cpp:189
 msgid "filtr (np. ogień)"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:208
+#: src/apps/wigview/particle_view.cpp:217
 #, c-format
 msgid "Typ %d: %s"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:209
+#: src/apps/wigview/particle_view.cpp:218
 msgid "Parametry typu: Diggles-Unity (hipoteza: część dobrana na oko, do sprawdzenia w grze)."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:219
+#: src/apps/wigview/particle_view.cpp:228
 msgid "atlas"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:220
+#: src/apps/wigview/particle_view.cpp:229
 msgid "jasność, tryb"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:221
+#: src/apps/wigview/particle_view.cpp:230
 msgid "rozrzut"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:222
+#: src/apps/wigview/particle_view.cpp:231
 msgid "ruch"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:223
+#: src/apps/wigview/particle_view.cpp:232
 msgid "kolor"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:224
+#: src/apps/wigview/particle_view.cpp:233
 #, c-format
 msgid "%.2f (×%.2f = %.2f bloku)"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:225
+#: src/apps/wigview/particle_view.cpp:234
 msgid "czas życia"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:225
+#: src/apps/wigview/particle_view.cpp:234
 #, c-format
 msgid "%d klatek"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:229
+#: src/apps/wigview/particle_view.cpp:238
 msgid "Źródło"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:231
+#: src/apps/wigview/particle_view.cpp:240
 msgid "na klatkę"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:232
+#: src/apps/wigview/particle_view.cpp:241
 msgid "najwięcej"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:233
+#: src/apps/wigview/particle_view.cpp:242
 msgid "prędkość (dir)"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:234
+#: src/apps/wigview/particle_view.cpp:243
 msgid "Bloki na klatkę w układzie gry (y w dół: ujemne y = w górę)."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:238
+#: src/apps/wigview/particle_view.cpp:247
 msgid "Od nowa"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:240
+#: src/apps/wigview/particle_view.cpp:249
 #, c-format
 msgid "żywych: %d"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:242
+#: src/apps/wigview/particle_view.cpp:251
 msgid "klatek symulacji na s"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:243
+#: src/apps/wigview/particle_view.cpp:252
 msgid "Nieznane: gra liczy cząsteczki co klatkę obrazu; Diggles-Unity przyjmuje 12/s."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:245
+#: src/apps/wigview/particle_view.cpp:254
 msgid "skala rozmiaru"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:246
+#: src/apps/wigview/particle_view.cpp:255
 msgid "Hipoteza: rozmiar typu × skala = bok w blokach (Diggles-Unity: 0,25; zrzut gry: ok. 0,12)."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:248
+#: src/apps/wigview/particle_view.cpp:257
 msgid "Atlas"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:252
+#: src/apps/wigview/particle_view.cpp:261
 #, c-format
 msgid "Użycie w skryptach (%d)"
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:255
+#: src/apps/wigview/particle_view.cpp:264
 msgid "Brak bezpośredniego użycia (typ może być podany zmienną)."
 msgstr ""
 
-#: src/apps/wigview/particle_view.cpp:279
+#: src/apps/wigview/particle_view.cpp:288
 msgid "Kliknięcie class_particle przejmuje jego parametry źródła."
 msgstr ""
 

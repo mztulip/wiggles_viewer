@@ -60,8 +60,15 @@ void ParticleView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures
 {
 	dev_ = &dev;
 	if (!renderer_.init(dev, error_, *textures)) error_ = "shader cząsteczek: " + error_;
-	usage_ = scanParticleUsage(*vfs);
+	vfs_ = vfs;
 	usageCount_.assign(particleTypes().size(), 0);
+}
+
+void ParticleView::ensureUsage()
+{
+	if (usageScanned_ || !vfs_) return;
+	usageScanned_ = true;
+	usage_ = scanParticleUsage(*vfs_);
 	for (const auto& u : usage_)
 		if (u.type >= 0 && u.type < int(usageCount_.size())) usageCount_[size_t(u.type)]++;
 	select(sel_);
@@ -69,6 +76,7 @@ void ParticleView::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures
 
 void ParticleView::select(int type)
 {
+	ensureUsage();
 	const ParticleType* t = particleType(type);
 	if (!t) return;
 	sel_ = type;
@@ -173,6 +181,7 @@ void ParticleView::uiAtlas(const ParticleType& t)
 
 bool ParticleView::ui()
 {
+	ensureUsage();
 	bool recenter = false;
 	const auto& types = particleTypes();
 	ImGui::BeginChild("typy", ImVec2(ImGui::GetFontSize() * 16.f, 0), ImGuiChildFlags_Borders);

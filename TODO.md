@@ -121,7 +121,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), interpolację zostawiamy włączoną niezależnie od oryginału (decyzja: płynniejszy obraz to zaleta; próba pomiaru w [BAZA_WIEDZY §9.9](docs/BAZA_WIEDZY.md))
 - [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
 - [x] Esc zamyka wigview
-- [x] Ścieżki: katalog gry z `--game`, `WIGGLES_DIR`, `OW_GAME`, wyboru w oknie „Ścieżki…” (wigview.ini; zmiana restartuje wigview) albo `~/.wine`; katalog zapisów z wyboru albo `--saves-dir`; `WIGGLES_DIR` także w grze i `owscript`
+- [x] Ścieżki: katalog gry z `--game`, `WIGGLES_DIR`, `OW_GAME`, wyboru w oknie „Ścieżki…” (wigview.ini; zmiana restartuje wigview) albo `~/.wine`; katalog zapisów z wyboru albo `--saves-dir`; `WIGGLES_DIR` także w grze i `owscript`; przy starcie okno postępu z etapami (`OW_PROGRESS_LOG=1` wypisuje czasy), skan użyć cząsteczek w skryptach dopiero przy otwarciu zakładki (start 3,3 s → 0,6 s)
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
 - [x] Orientacja osi: Y w dół, układ lewoskrętny; w OpenGL odbicie osi Y (poprawione: obrót odwracał napisy) ✅
 - [x] Skala modeli względem świata gry: 1 blok = 200 jednostek modelu, bez skalowania ✅ ([3db.md](docs/formaty/3db.md), [rozdział 5](docs/silnik/05_obiekty.md))
