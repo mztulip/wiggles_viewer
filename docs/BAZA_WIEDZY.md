@@ -132,6 +132,8 @@ Nazwy są niemieckie: *Zwerg* to krasnal (wiggle), *Lager* to magazyn, *Sägewer
 Źródło: [DigglesMods/WigSound](https://github.com/DigglesMods/WigSound).
 - Dialogi sekwencji: `Data/Sound/Sequenzen/<nazwa>.mp3`, odtwarzane przez `seq_audiostream open/play <start> <stop>`.
 - Opcja `-soundlog` w oryginale zapisuje `log_asnd.txt`.
+- ✅ (2026-10-05, skaner `src/lib/sound_refs.cpp`, `test3db`) Wszystkie 1420 plików dźwiękowych dekodują się (WAV PCM 8/16 bit, 4× WAV z MP3, MP3). Indeks: 1015 `sound bind`, 2171 `sound anim`, 735 `sound animnoseq`, 147 `sound play`, 353 odwołania muzyki, 205 dialogów; 1227 plików ma odwołanie. Wszystkie klucze `sound anim obiekt.animacja` pasują do obiektów i animacji z `.3db`; klatki liczone od 0 (🔶: 493 odwołań do klatki 0, 4 poza animacją). 11 nazw `sound bind` bez pliku (żarty `mp_chat_*` w `catch`).
+- ✅ Linie plików sekwencji zaczynające się od `-` nie są wyłączone: `sequencer.tcl` (`parse_next`) wykonuje je, a pomija tylko po przerwaniu sekwencji przez gracza; `+` wykonuje się zawsze. Opis: [rozdział 15](silnik/15_dzwiek.md).
 
 ## 5. Mody: format DigglesModManager ✅
 Źródło: [DigglesMods/DigglesModManager](https://github.com/DigglesMods/DigglesModManager) (`Service/ModdingService.cs`).

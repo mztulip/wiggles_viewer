@@ -1,4 +1,5 @@
-// Test parserów na danych gry: wszystkie modele Data/3db/*.3db i tekstury Data/Texture/**.tga.
+// Test parserów na danych gry: wszystkie modele Data/3db/*.3db, tekstury Data/Texture/**.tga,
+// szablony, zapisy oraz dźwięki (dekodowanie i odwołania w skryptach).
 // Sprawdza też założenia o danych (zgodność rozmiarów pul, zakresy), żeby wiedzieć,
 // czemu renderer może ufać.
 //
@@ -8,6 +9,8 @@
 #include "lib/map_template.h"
 #include "lib/model3db.h"
 #include "lib/save_game.h"
+#include "lib/sound.h"
+#include "lib/sound_refs.h"
 #include "lib/binreader.h"
 #include "lib/tga.h"
 #include "lib/vfs.h"
@@ -172,6 +175,49 @@ int testSaves(const Vfs& vfs) {
 	return failed;
 }
 
+// Dźwięki: każdy plik musi się zdekodować; indeks odwołań (docs/silnik/15_dzwiek.md) w liczbach.
+int testSounds(const Vfs& vfs) {
+	int failed = 0;
+	double seconds = 0;
+	std::map<std::string, int> formats;
+	std::vector<std::string> files = listSoundFiles(vfs), keys;
+	for (const auto& f : files) {
+		keys.push_back(soundFileKey(f));
+		auto data = vfs.read(f);
+		SoundPcm pcm;
+		std::string err;
+		if (!data || !decodeSound(*data, pcm, err)) {
+			std::printf("  %-50s BŁĄD: %s\n", f.c_str(), data ? err.c_str() : "odczyt");
+			++failed;
+			continue;
+		}
+		seconds += pcm.seconds();
+		formats[pcm.format]++;
+	}
+	for (const auto& [fmt, n] : formats) std::printf("  %5d  %s\n", n, fmt.c_str());
+	SoundIndex idx = scanSoundRefs(vfs, keys);
+	int kinds[8] = {};
+	for (const auto& r : idx.refs) kinds[r.kind]++;
+	int withRefs = 0, bound = 0;
+	for (const auto& k : keys) {
+		withRefs += !idx.refsForFile(k).empty();
+		bound += !idx.namesForFile(k).empty();
+	}
+	std::set<std::string> keySet(keys.begin(), keys.end());
+	int missing = 0;
+	for (const auto& [name, file] : idx.fileOfName)
+		if (!keySet.count(file)) {
+			if (missing < 10) std::printf("  sound bind %s -> brak pliku %s\n", name.c_str(), file.c_str());
+			++missing;
+		}
+	std::printf("odwołania: bind %d, anim %d, animnoseq %d, play %d, playglobal %d, muzyka %d, dialogi %d, wzmianki %d\n",
+	            kinds[SoundRef::Bind], kinds[SoundRef::Anim], kinds[SoundRef::AnimNoSeq], kinds[SoundRef::Play],
+	            kinds[SoundRef::PlayGlobal], kinds[SoundRef::Music], kinds[SoundRef::Clip], kinds[SoundRef::Mention]);
+	std::printf("dźwięki: %zu (%.0f min), z nazwą logiczną %d, z jakimkolwiek odwołaniem %d, nazwy bez pliku %d, błędy %d\n",
+	            files.size(), seconds / 60, bound, withRefs, missing, failed);
+	return failed;
+}
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::fprintf(stderr, "użycie: %s <katalog gry>\n", argv[0]);
@@ -190,6 +236,8 @@ int main(int argc, char** argv) {
 	failed += testTemplates(vfs);
 	std::printf("\n");
 	failed += testSaves(vfs);
+	std::printf("\n");
+	failed += testSounds(vfs);
 	std::printf("\n%s\n", failed ? "BŁĘDY" : "WSZYSTKO OK");
 	return failed ? 1 : 0;
 }

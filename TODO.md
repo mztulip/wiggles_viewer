@@ -110,13 +110,14 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [ ] Tłumaczenia: komunikaty błędów z `src/lib` i konsoli (dziś tylko po polsku); font dla pism spoza DejaVu Sans
 - [ ] Lista modeli do zrzutu wsadowego (miniatury wszystkich obiektów)
-- [ ] Odtwarzacz dźwięków WAV i MP3 (opcjonalnie)
+- [x] Dźwięki: zakładka z plikami Data/Sound i Data/Music (WAV PCM, WAV/MP3, MP3 przez dr_mp3), odtwarzanie z przebiegiem fali i przewijaniem, odwołania w skryptach (`sound bind/anim/play`, muzyka, dialogi, wzmianki) z kontekstem i przejściem do animacji; w zakładce Modele dźwięki klatek animacji; `--sound`; Ctrl+F szuka też dźwięków po nazwie logicznej ([rozdział 15](docs/silnik/15_dzwiek.md))
+- [ ] 🔬 Dźwięki: porównać z grą głośność `sound play` od odległości kamery i wybór dźwięku po materiale (`sound anim … stone …`)
 
 ## Dokumentacja
 - [x] Przewodnik po silniku `docs/silnik/` (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
 - [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
-- [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), dźwięk, interfejs
+- [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), interfejs
 
 ## Faza 4: mapy i teren
 - [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
@@ -189,7 +190,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Kopanie (`dig_*`) i modyfikacja terenu
 - [ ] Produkcja, ekwipunek, drzewko technologii
 - [ ] GUI: `layout`, `textwin`, fonty `.kft` (🔬 format), ikony
-- [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka
+- [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka: dekodowanie i mikser są gotowe (`src/lib/sound.h`, [rozdział 15](docs/silnik/15_dzwiek.md)); brakuje komend Tcl, głośności od odległości i motywów muzyki
 - [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`)
 - [ ] AI (`ai init`, `std_ai.tcl`)
 - [x] Odczyt mapy z zapisu `.sav`: teren, kamera, nieodkryty teren, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Zapisy obok Mapy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4, pole „Odkryj mapę”, pasek postępu wczytywania (czasy etapów: `OW_PROGRESS_LOG=1`)

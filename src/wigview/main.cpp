@@ -18,10 +18,11 @@
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
+// --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
-// tekstura, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja,
+// tekstura, dźwięk, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja,
 // Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Esc wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
@@ -34,6 +35,7 @@
 #include "lib/vfs.h"
 #include "wigview/map_view.h"
 #include "wigview/particle_view.h"
+#include "wigview/sound_view.h"
 
 #include <ow_version.h> // generowany przez build.sh: OW_VERSION (commit), OW_VERSION_DATE
 
@@ -59,7 +61,7 @@ using namespace ow;
 namespace {
 
 struct Args {
-	std::string game, model, object, anim, screenshot, templ, search, scenario, lang;
+	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
 	int ipol = 1;
@@ -93,6 +95,7 @@ bool parseArgs(int argc, char** argv, Args& a) {
 		else if (k == "--anim") a.anim = next();
 		else if (k == "--template") a.templ = next();
 		else if (k == "--particle") a.particle = std::atoi(next());
+		else if (k == "--sound") a.sound = next();
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center") {
@@ -152,11 +155,13 @@ struct Viewer {
 	Vfs vfs;
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
-	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy, 3 zapisy (2 i 3 pokazują widok mapy), 4 cząsteczki
+	int activeTab = 0;       // 0 modele, 1 tekstury, 2 mapy, 3 zapisy (2 i 3 pokazują widok mapy), 4 cząsteczki, 5 dźwięki
 	bool mapTab() const { return activeTab == 2 || activeTab == 3; }
 	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
 	MapView maps;
 	ParticleView particles;
+	SoundView sounds;
+	bool animSounds = false; // zakładka Modele: odtwarzaj dźwięki klatek (sound anim) podczas animacji
 	bool scrollToSel = false; // przewiń listy do zaznaczenia (po zmianie klawiaturą)
 	char exportDir[512] = ".";
 	std::string exportMsg;
@@ -185,6 +190,8 @@ struct Viewer {
 	glm::vec3 bg{0.18f, 0.20f, 0.24f};
 
 	float uiRight = 0; // prawa krawędź panelu w punktach ImGui
+	float uiWidth = 560, uiHeight = 0, narrowWidth = 0;
+	bool wideTab = false; // panel poszerzony dla zakładki Dźwięki
 	char objFilter[64] = "";
 	char animFilter[64] = "";
 
@@ -357,6 +364,8 @@ struct Viewer {
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
 		} else if (activeTab == 4) {
 			particles.render(viewProj(w - x0, h) * modelMatrix());
+		} else if (activeTab == 5) {
+			// Dźwięki: bez sceny 3D
 		} else {
 			uint32_t a, b;
 			float t;
@@ -370,15 +379,51 @@ struct Viewer {
 		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
 		if (!playing || n <= 1) return;
+		float prev = frame;
+		bool wrapped = false;
 		frame += dt * fps;
 		if (frame >= float(n)) {
-			if (loop) frame = std::fmod(frame, float(n));
-			else {
+			if (loop) {
+				frame = std::fmod(frame, float(n));
+				wrapped = true;
+			} else {
 				frame = float(n - 1);
 				playing = false;
 			}
 		}
+		if (animSounds && activeTab == 0) {
+			// Klatki przekroczone w tym kroku: (prev, frame], z przejściem przez koniec pętli.
+			int a = int(prev), b = int(frame);
+			if (wrapped) {
+				for (int f = a + 1; f < n; ++f) playFrameSounds(f);
+				for (int f = 0; f <= b; ++f) playFrameSounds(f);
+			} else
+				for (int f = a + 1; f <= b; ++f) playFrameSounds(f);
+		}
 	}
+
+	// Klucz animacji w sound anim: "<obiekt>.<animacja>" małymi literami (docs/silnik/15_dzwiek.md).
+	std::string animSoundKey() const {
+		auto a = currentAnim();
+		if (!a) return {};
+		return Vfs::lower(model->objects[size_t(object)].name + "." + a->name);
+	}
+	std::vector<int> animSoundRefs() {
+		auto it = sounds.index().byAnim.find(animSoundKey());
+		if (it == sounds.index().byAnim.end()) return {};
+		std::vector<int> v;
+		for (int i : it->second)
+			if (!sounds.index().refs[size_t(i)].commented) v.push_back(i);
+		std::stable_sort(v.begin(), v.end(), [&](int x, int y) { return sounds.index().refs[size_t(x)].frame < sounds.index().refs[size_t(y)].frame; });
+		return v;
+	}
+	void playFrameSounds(int f) {
+		for (int i : animSoundRefs()) {
+			const auto& r = sounds.index().refs[size_t(i)];
+			if (r.frame == f) sounds.playName(r.name, r.volume > 0 ? r.volume : 1.f);
+		}
+	}
+	void openAnim(const std::string& obj, const std::string& animName, int fr);
 
 	void refreshTexFiles() {
 		texFiles.clear();
@@ -409,7 +454,7 @@ struct Viewer {
 	void exportGlb(bool allAnims);
 
 	// --- Wyszukiwarka (Ctrl+F) ---
-	enum class HitKind { Model, Object, Texture, Template, Scenario };
+	enum class HitKind { Model, Object, Texture, Template, Scenario, Sound };
 	struct SearchEntry {
 		HitKind kind;
 		std::string label;   // to, co widzi użytkownik
@@ -508,6 +553,31 @@ void Viewer::uiModel() {
 			ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), tr("Klatki %u i %u mają inną topologię (bez interpolacji)"), fa, fb);
 	}
 
+	std::vector<int> refs = animSoundRefs();
+	if (ImGui::CollapsingHeader(tr("Dźwięki animacji"), refs.empty() ? 0 : ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Checkbox(tr("Odtwarzaj dźwięki klatek podczas animacji"), &animSounds);
+		if (refs.empty()) ImGui::TextDisabled(tr("Brak sound anim dla %s"), animSoundKey().c_str());
+		for (size_t k = 0; k < refs.size(); ++k) {
+			const auto& r = sounds.index().refs[size_t(refs[k])];
+			ImGui::PushID(int(k));
+			if (ImGui::SmallButton(tr("graj"))) sounds.playName(r.name, r.volume > 0 ? r.volume : 1.f);
+			ImGui::SameLine();
+			auto f = sounds.index().fileOfName.find(r.name);
+			ImGui::Text(tr("klatka %d: %s%s"), r.frame, r.name.c_str(), r.kind == SoundRef::AnimNoSeq ? tr("  (poza sekwencjami)") : "");
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("%s:%d\n%s\n%s", r.script.c_str(), r.line, r.text.c_str(),
+				                  f != sounds.index().fileOfName.end() ? f->second.c_str() : tr("(brak sound bind)"));
+			if (f != sounds.index().fileOfName.end()) {
+				ImGui::SameLine();
+				if (ImGui::SmallButton(tr("plik"))) {
+					for (const auto& path : sounds.files())
+						if (soundFileKey(path) == f->second) sounds.select(path);
+					forceTab = activeTab = 5;
+				}
+			}
+			ImGui::PopID();
+		}
+	}
 	if (ImGui::CollapsingHeader(tr("Widok"), ImGuiTreeNodeFlags_DefaultOpen)) {
 		const char* modes[] = {tr("Bez światła"), tr("Bajt jako jasność (stare)"), tr("Normalne SPHERE.DAT"), tr("Podgląd normalnych")};
 		int m = int(draw.lighting);
@@ -601,6 +671,13 @@ void Viewer::buildSearchIndex(bool withObjects) {
 				if (endsWithI(f, ".tga")) add(HitKind::Texture, texDirs[size_t(d)] + "/" + f, f, d);
 		for (auto& f : maps.files()) add(HitKind::Template, f, f, -1);
 		for (auto& f : maps.scenarios()) add(HitKind::Scenario, f, f, -1);
+		// Dźwięki: ścieżka i nazwy logiczne (sound bind), żeby dało się szukać po nazwie ze skryptu.
+		for (auto& f : sounds.files()) {
+			std::string label = f.substr(5);
+			auto names = sounds.index().namesForFile(soundFileKey(f));
+			for (size_t k = 0; k < names.size(); ++k) label += (k ? ", " : "  [") + names[k] + (k + 1 == names.size() ? "]" : "");
+			add(HitKind::Sound, label, f, -1);
+		}
 		searchIndexed = true;
 	}
 	if (withObjects && !objectsIndexed) {
@@ -647,7 +724,8 @@ void Viewer::updateSearchHits() {
 		case HitKind::Scenario: return 1;
 		case HitKind::Template: return 1;
 		case HitKind::Object: return 2;
-		default: return 3;
+		case HitKind::Sound: return 3;
+		default: return 4;
 		}
 	};
 	std::stable_sort(searchHits.begin(), searchHits.end(), [&](int a, int b) { return rank(a) < rank(b); });
@@ -679,6 +757,10 @@ void Viewer::openHit(const SearchEntry& e) {
 		else maps.select(e.file);
 		frameMap();
 		break;
+	case HitKind::Sound:
+		forceTab = activeTab = 5;
+		sounds.select(e.file);
+		break;
 	}
 	scrollToSel = true;
 }
@@ -696,12 +778,12 @@ void Viewer::uiSearch() {
 		searchOpen = false;
 		return;
 	}
-	const char* kKind[] = {tr("model"), tr("obiekt"), tr("tekstura"), tr("szablon"), tr("scenariusz")};
-	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}, {1, 0.5f, 0.5f, 1}};
+	const char* kKind[] = {tr("model"), tr("obiekt"), tr("tekstura"), tr("szablon"), tr("scenariusz"), tr("dźwięk")};
+	static const ImVec4 kColor[] = {{0.5f, 0.8f, 1, 1}, {0.6f, 1, 0.6f, 1}, {1, 0.8f, 0.4f, 1}, {0.9f, 0.6f, 1, 1}, {1, 0.5f, 0.5f, 1}, {0.5f, 1, 0.9f, 1}};
 
 	if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
 	ImGui::SetNextItemWidth(-1);
-	if (ImGui::InputTextWithHint("##q", tr("szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze (kilka słów = wszystkie muszą pasować)"),
+	if (ImGui::InputTextWithHint("##q", tr("szukaj: modele, obiekty w modelach, tekstury, szablony, scenariusze, dźwięki (kilka słów = wszystkie muszą pasować)"),
 	                             searchText, sizeof searchText)) {
 		searchSel = 0;
 		buildSearchIndex(std::string(searchText).size() >= 2);
@@ -753,10 +835,20 @@ void Viewer::ui() {
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
+	// Zakładka Dźwięki nie ma sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
+	if ((activeTab == 5) != wideTab) {
+		wideTab = activeTab == 5;
+		if (ImGuiWindow* w = ImGui::FindWindowByName("wigview")) uiWidth = w->Size.x, uiHeight = w->Size.y;
+		else uiHeight = vp->WorkSize.y - 16; // pierwsza klatka, okno jeszcze nie istnieje
+		if (wideTab) {
+			narrowWidth = uiWidth;
+			ImGui::SetNextWindowSize(ImVec2(std::max(uiWidth, std::min(1250.f, vp->WorkSize.x - 16)), uiHeight));
+		} else if (narrowWidth > 0) ImGui::SetNextWindowSize(ImVec2(narrowWidth, uiHeight));
+	}
 	ImGui::Begin("wigview");
 	if (ImGui::Button(tr("Szukaj (Ctrl+F)"))) searchRequest = true;
 	ImGui::SameLine();
-	ImGui::TextDisabled(tr("modele, obiekty, tekstury, szablony"));
+	ImGui::TextDisabled(tr("modele, obiekty, tekstury, szablony, dźwięki"));
 	{
 		// Wybór języka (lang/*.po); zapamiętywany w wigview.ini.
 		const auto& langs = i18n::languages();
@@ -806,6 +898,11 @@ void Viewer::ui() {
 			if (particles.ui()) frameParticles();
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem(tr("Dźwięki###dzwieki"), nullptr, tabFlags(5))) {
+			activeTab = 5;
+			sounds.ui();
+			ImGui::EndTabItem();
+		}
 		ImGui::EndTabBar();
 		forceTab = -1;
 	}
@@ -833,6 +930,26 @@ std::string safeFileName(std::string s) {
 	for (auto& c : s)
 		if (!(std::isalnum((unsigned char)c) || c == '_' || c == '-')) c = '_';
 	return s;
+}
+
+// Animacja z odwołania sound anim: obiekt szukany we wszystkich modelach (indeks obiektów wyszukiwarki).
+void Viewer::openAnim(const std::string& obj, const std::string& animName, int fr) {
+	buildSearchIndex(true);
+	for (const auto& e : searchIndex) {
+		if (e.kind != HitKind::Object || Vfs::lower(e.label.substr(0, e.label.find("  ("))) != Vfs::lower(obj)) continue;
+		forceTab = activeTab = 0;
+		if (modelFile != e.file) loadModel(e.file);
+		if (!model || e.index >= int(model->objects.size())) return;
+		selectObject(e.index);
+		const auto& o = model->objects[size_t(object)];
+		for (size_t k = 0; k < o.animations.size(); ++k)
+			if (Vfs::lower(model->animations[o.animations[k]].name) == Vfs::lower(animName)) selectAnim(int(k));
+		frame = float(std::clamp(fr, 0, std::max(0, frameCount() - 1)));
+		playing = false;
+		scrollToSel = true;
+		return;
+	}
+	std::fprintf(stderr, "nie znaleziono obiektu %s w modelach\n", obj.c_str());
 }
 
 void Viewer::exportGlb(bool allAnims) {
@@ -965,6 +1082,8 @@ int main(int argc, char** argv) {
 	v.textures->setDevice(&dev);
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
 	v.particles.init(dev, &v.vfs, v.textures.get());
+	v.sounds.init(&v.vfs);
+	v.sounds.onOpenAnim = [&v](const std::string& obj, const std::string& anim, int fr) { v.openAnim(obj, anim, fr); };
 	if (auto sd = v.vfs.read("Data/SPHERE.DAT")) {
 		v.sphere = parseSphereDat(*sd);
 		v.renderer.setSphere(v.sphere);
@@ -1004,6 +1123,11 @@ int main(int argc, char** argv) {
 		v.particles.prewarm(36); // 3 s przy 12 klatkach symulacji na sekundę
 		v.activeTab = v.forceTab = 4;
 		v.frameParticles();
+	}
+	if (!args.sound.empty()) {
+		v.sounds.setAutoplay(args.screenshot.empty());
+		v.sounds.select(args.sound);
+		v.activeTab = v.forceTab = 5;
 	}
 	if (!args.templ.empty() || !args.scenario.empty()) {
 		if (!args.scenario.empty()) {
@@ -1193,17 +1317,22 @@ int main(int argc, char** argv) {
 					if (v.activeTab == 0) v.stepModel(-1);
 					else if (v.activeTab == 1) v.stepTexture(-1);
 					else if (v.activeTab == 4) v.particles.step(-1);
+					else if (v.activeTab == 5) v.sounds.step(-1);
 					else v.maps.step(-1);
 					break;
 				case SDLK_DOWN:
 					if (v.activeTab == 0) v.stepModel(1);
 					else if (v.activeTab == 1) v.stepTexture(1);
 					else if (v.activeTab == 4) v.particles.step(1);
+					else if (v.activeTab == 5) v.sounds.step(1);
 					else v.maps.step(1);
 					break;
 				case SDLK_PAGEUP: v.stepAnim(-1); break;
 				case SDLK_PAGEDOWN: v.stepAnim(1); break;
-				case SDLK_SPACE: v.playing = !v.playing; break;
+				case SDLK_SPACE:
+					if (v.activeTab == 5) v.sounds.togglePlay();
+					else v.playing = !v.playing;
+					break;
 				case SDLK_LEFT: v.playing = false; v.frame = std::max(0.f, float(int(v.frame) - 1)); break;
 				case SDLK_RIGHT: v.playing = false; v.frame = float(std::min(n - 1, int(v.frame) + 1)); break;
 				default: break;

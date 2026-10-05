@@ -13,6 +13,7 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 2. **`wigview`**: przeglądarka assetów i animacji:
    - modele `.3db` z podglądem animacji (odtwarzanie, pauza, wybór klatki),
    - tekstury (`.tga` i inne formaty gry),
+   - dźwięki i muzyka (WAV, MP3) z odtwarzaniem i listą odwołań w skryptach,
    - przeglądanie struktury katalogu `Data/`,
    - opcjonalnie eksport do glTF/PNG.
 3. **`libwiggles`**: wspólna biblioteka z parserami formatów plików, systemem plików wirtualnym nad `Data/` i podstawowym rendererem. Używają jej obie aplikacje.
@@ -51,6 +52,7 @@ build/release/wigview --scenario single_Knockersdorf          # cała mapa zło�
 build/release/wigview --scenario systeminit                   # menu gry z kamerą jak w oryginale
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
+build/release/wigview --sound Data/Sound/Fenris/fe_schritt1.WAV      # zakładka Dźwięki z plikiem
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd nieodkrytego terenu (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy
 OW_PROGRESS_LOG=1 build/release/wigview                                  # czasy etapów wczytywania map i zapisów na stderr

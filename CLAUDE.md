@@ -6,7 +6,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [TODO.md](TODO.md): **żywy plan prac**. Odhaczaj wykonane punkty i dopisuj nowe, gdy coś odkryjesz
 - [README.md](README.md): cele projektu, decyzje techniczne, plan pracy, lista materiałów referencyjnych
 - [docs/README.md](docs/README.md): **wejście do dokumentacji**. Zasada: dokumentacja ma wystarczyć człowiekowi do samodzielnego napisania silnika, więc opisujemy, jak i dlaczego coś działa (algorytm, przykład liczbowy, źródło, status ✅/🔶/❓), a nie tylko wynik
-- [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–14 od startu gry do klatki obrazu (w tym nieodkryty teren, obiekty Tcl, cząsteczki, płyny, gra) (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
+- [docs/silnik/](docs/silnik/): **przewodnik po silniku**, rozdziały 1–15 od startu gry do klatki obrazu (w tym nieodkryty teren, obiekty Tcl, cząsteczki, płyny, gra, dźwięk) (skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, kolejność rysowania, niewiadome). Każde nowe ustalenie o działaniu gry trafia do właściwego rozdziału
 - [docs/formaty/](docs/formaty/): **specyfikacje plików** (`3db.md`, `tekstury.md`, `sphere_dat.md`, `blockdb.md`, `szablony.md`, `sav.md`). Aktualizuj je razem z kodem
 - [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9), indeks dokumentów Diggles-Unity (§10)
 - **Diggles-Unity** (`../ref/Diggles-Unity-main/Docs/`, MIT): obszerna dokumentacja RE całej gry. Przed pracą nad podsystemem sprawdź indeks w `BAZA_WIEDZY.md` §10. Ich wnioski weryfikuj na danych lub zrzutach gry
@@ -40,7 +40,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - **Napisy interfejsu przez `tr("…")`** (po polsku, `src/lib/i18n.h`). Po dodaniu lub zmianie napisów uruchom `tools/i18n_update.py` i uzupełnij `lang/en.po` (`--check` musi przejść). Opis: [lang/README.md](lang/README.md)
 - Wersja programu (commit) jest w `build/gen/ow_version.h`, generowanym przez `build.sh`; wigview pokazuje ją w rogu ekranu i w tytule okna (zrzuty użytkownika da się przypisać do wersji)
 - **Priorytet: jak najszybciej grywalna gra** (`openwiggles`, `src/game`). Najpierw działające przybliżenie, oznaczone 🔶, a punkt „dopracować” idzie do TODO (sekcja „Droga do grywalności”)
-- Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
+- Kod: `src/lib` (libwiggles: vfs, tga, model3db, png_write, `sound` (dekodowanie i mikser SDL), `sound_refs` (odwołania do dźwięków w skryptach), `gfx/` z loaderem GL i rendererem), `src/wigview`, `src/tools`
 
 ## Zasady
 - Kod i dokumentacja są w tym repozytorium (`openwiggles_git/`). Materiały referencyjne (`../ref/`, zipy) leżą w katalogu nadrzędnym i nie trafiają do repo.
