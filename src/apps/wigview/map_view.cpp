@@ -6,6 +6,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <filesystem>
 
 using namespace ow;
 
@@ -64,13 +65,36 @@ bool MapView::loadSavePath(const std::string& path)
 	return MapScene::loadSavePath(path);
 }
 
-// Lista zapisów gry z Data/Gamesave (gra dopisuje nowe w trakcie działania, stąd odświeżanie).
+// Lista zapisów: z Data/Gamesave (gra dopisuje nowe w trakcie działania, stąd odświeżanie) albo z wybranego
+// katalogu na dysku (pełne ścieżki, wczytywane przez loadSavePath).
 void MapView::refreshSaves()
 {
 	saves_.clear();
-	for (auto& f : vfs_->list("Data/Gamesave"))
-		if (endsWithI(f, ".sav")) saves_.push_back(f);
+	if (savesDir_.empty())
+	{
+		for (auto& f : vfs_->list("Data/Gamesave"))
+			if (endsWithI(f, ".sav")) saves_.push_back(f);
+	}
+	else
+	{
+		std::error_code ec;
+		for (std::filesystem::directory_iterator it(savesDir_, ec), end; !ec && it != end; it.increment(ec))
+			if (it->is_regular_file(ec) && endsWithI(it->path().filename().string(), ".sav")) saves_.push_back(it->path().string());
+	}
 	std::sort(saves_.begin(), saves_.end());
+}
+
+void MapView::setSavesDir(const std::string& dir)
+{
+	savesDir_ = dir;
+	refreshSaves();
+}
+
+// Wczytanie pozycji listy: zapisy z wybranego katalogu to pełne ścieżki.
+bool MapView::loadListed(const std::string& f)
+{
+	if (list_ == ListMode::Saves && !savesDir_.empty()) return loadSavePath(f);
+	return list_ == ListMode::Templates ? loadTemplate(f) : loadScenario(f);
 }
 
 // Pola wyboru zapisu: odświeżenie listy i wczytanie pliku spoza katalogu gry.
@@ -78,6 +102,9 @@ void MapView::uiSaves(bool& recenter)
 {
 	if (ImGui::Button(tr("Odśwież listę"))) refreshSaves();
 	ImGui::SetItemTooltip(tr("Gra dopisuje nowe zapisy do Data/Gamesave w trakcie działania."));
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", savesDir_.empty() ? "Data/Gamesave" : savesDir_.c_str());
+	ImGui::SetItemTooltip(tr("Katalog zapisów; zmiana: przycisk „Ścieżki…” u góry okna."));
 	ImGui::SetNextItemWidth(-(ImGui::CalcTextSize(tr("Wczytaj")).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x));
 	bool enter = ImGui::InputTextWithHint("##savepath", tr("ścieżka do pliku .sav"), savePath_, sizeof savePath_,
 	    ImGuiInputTextFlags_EnterReturnsTrue);
@@ -99,8 +126,7 @@ void MapView::step(int d)
 		if (list[size_t(vis[k])] == file_) pos = int(k);
 	if (pos < 0) pos = d > 0 ? -1 : 0;
 	pos = (pos + d + int(vis.size())) % int(vis.size());
-	if (list_ != ListMode::Templates) loadScenario(list[size_t(vis[size_t(pos)])]);
-	else loadTemplate(list[size_t(vis[size_t(pos)])]);
+	loadListed(list[size_t(vis[size_t(pos)])]);
 	scrollToSel_ = true;
 }
 
@@ -210,15 +236,14 @@ bool MapView::ui(bool savesTab)
 	const char* hint = list_ == ListMode::Templates ? tr("filtr (np. urw_gng)") : list_ == ListMode::Scenarios ? tr("filtr (np. single_)")
 	                                                                                                           : tr("filtr (np. quick)");
 	ImGui::InputTextWithHint("##mf", hint, filter_, sizeof filter_);
-	if (list_ == ListMode::Saves && saves_.empty()) ImGui::TextDisabled(tr("Brak zapisów w Data/Gamesave."));
+	if (list_ == ListMode::Saves && saves_.empty())
+		ImGui::TextDisabled(tr("Brak zapisów w %s."), savesDir_.empty() ? "Data/Gamesave" : savesDir_.c_str());
 	for (const auto& f : currentList())
 	{
 		if (!passFilter(filter_, f)) continue;
-		if (ImGui::Selectable(f.c_str(), f == file_))
-		{
-			if (list_ != ListMode::Templates) pending_ = [this, f] { return loadScenario(f); };
-			else pending_ = [this, f] { return loadTemplate(f); };
-		}
+		// zapisy z wybranego katalogu: pełna ścieżka na liście, pokazujemy samą nazwę
+		std::string label = list_ == ListMode::Saves && !savesDir_.empty() ? std::filesystem::path(f).filename().string() : f;
+		if (ImGui::Selectable((label + "##" + f).c_str(), f == file_)) pending_ = [this, f] { return loadListed(f); };
 		if (f == file_ && scrollToSel_) ImGui::SetScrollHereY(0.5f);
 	}
 	if (scrollToSel_)

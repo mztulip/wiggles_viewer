@@ -22,7 +22,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [docs/tcl_natywne_kandydaci.txt](docs/tcl_natywne_kandydaci.txt): kandydaci na natywne komendy Tcl wraz z liczbą użyć (wynik [`tools/scan_tcl_natives.py`](tools/scan_tcl_natives.py))
 
 ## Gra (dane oryginalne)
-- Instalacja: `~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles`. **Tylko do odczytu.** `Wiggles.exe` to wersja 1.0 build 844 (polska)
+- Instalacja: `~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles`. **Tylko do odczytu.** Programy szukają gry w kolejności: `--game`, zmienna `WIGGLES_DIR`, `OW_GAME`, (wigview) wybór z okna „Ścieżki…” zapisany w `wigview.ini`, ta instalacja. `Wiggles.exe` to wersja 1.0 build 844 (polska)
 - Najważniejsze: `Data/systeminit.tcl` (start), `Data/3db/`, `Data/Texture/`, `Data/Scripts/`, `Data/Templates/`, `Data/Gamesave/`
 - Nazwy plików mają mieszaną wielkość liter (`BABY.3DB`, `baby.3db`), więc trzeba je wyszukiwać bez rozróżniania wielkości. Teksty są w CP1250 lub CP1252 z końcami linii CRLF
 

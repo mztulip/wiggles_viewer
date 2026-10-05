@@ -1,6 +1,7 @@
 // owscript: test silnika skryptów bez okna (docs/silnik/11_obiekty_tcl_i_petla.md §11.9).
 //
 //   owscript [--game <katalog gry>] [KLASA [SEKUNDY]] [-o dziennik.log]
+//   Bez --game: WIGGLES_DIR, potem OW_GAME, potem instalacja w ~/.wine.
 // Wczytuje skrypty startowe i klasy, tworzy jeden obiekt KLASY (domyślnie Zwerg), przewija logikę
 // o SEKUNDY (domyślnie 30) i zapisuje dziennik: zaślepki komend natywnych i błędy skryptów.
 #include "lib/script/engine.h"
@@ -28,7 +29,8 @@ int main(int argc, char** argv)
 	}
 	if (game.empty())
 	{
-		const char* e = std::getenv("OW_GAME");
+		const char* e = std::getenv("WIGGLES_DIR");
+		if (!e || !*e) e = std::getenv("OW_GAME");
 		const char* h = std::getenv("HOME");
 		game = e ? e : std::string(h ? h : ".") + "/.wine/drive_c/Program Files (x86)/Innonics/Wiggles";
 	}

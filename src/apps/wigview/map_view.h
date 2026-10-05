@@ -48,6 +48,9 @@ public:
 	// savesTab: zakładka Zapisy (lista zapisów gry) zamiast Mapy (szablony i scenariusze).
 	bool ui(bool savesTab);
 	bool showingSave() const { return list_ == ListMode::Saves; }
+	// Katalog zapisów na dysku; pusty = Data/Gamesave gry (z nakładkami). Ustawienie odświeża listę.
+	void setSavesDir(const std::string& dir);
+	const std::string& savesDir() const { return savesDir_; }
 
 	bool* borderMask = nullptr; // przełącznik ramki ekranu w wigview (rysuje ją Viewer); nullptr = bez przełącznika
 
@@ -66,12 +69,14 @@ private:
 	}
 	void uiGrid();
 	void refreshSaves();
+	bool loadListed(const std::string& f);
 	void uiSaves(bool& recenter);
 
 	std::function<bool()> pending_;
 	std::vector<std::string> files_; // skrypty .tcl szablonów
 	std::vector<std::string> scenarios_, saves_;
 	char savePath_[512] = "";
+	std::string savesDir_; // pusty: Data/Gamesave; inaczej saves_ to pełne ścieżki plików w tym katalogu
 	char filter_[64] = "";
 	bool scrollToSel_ = false;
 	int gridLayer_ = 0; // 0 typ, 1 ID bloku, 2 warstwa2, 3 l2m

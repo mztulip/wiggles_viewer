@@ -44,7 +44,9 @@ Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, `zlib`, a do renderowa
 ./build.sh release opengl  # tylko OpenGL:  build/release-opengl/
 ./build.sh clean
 
-build/release/wigview                          # przeglądarka (gra w ~/.wine/... albo OW_GAME=...)
+build/release/wigview                          # przeglądarka; katalog gry: --game, WIGGLES_DIR, OW_GAME, wybór z okna „Ścieżki…”, ~/.wine/...
+WIGGLES_DIR=/ścieżka/do/Wiggles build/release/wigview    # katalog gry ze zmiennej środowiska (też openwiggles i owscript)
+build/release/wigview --saves-dir ~/zapisy      # zakładka Zapisy z innego katalogu (w oknie „Ścieżki…” też do wyboru i zapamiętania)
 build/release/wigview --game /ścieżka/do/Wiggles --model MANN --anim gehen_loop
 build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
 build/release/wigview --template unq_menue                    # zakładka Mapy z szablonem menu gry

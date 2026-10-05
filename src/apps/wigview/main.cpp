@@ -14,7 +14,10 @@
 // --fow: podgląd nieodkrytego terenu: 0 brak, 1 wszystko szare, 2 kadr widoczny + reszta szara, 3 kadr + reszta czarna,
 //        4 z zapisu gry (domyślnie dla zapisów).
 // --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav) albo ścieżka do pliku .sav.
-// Bez --game: zmienna OW_GAME albo ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
+// Katalog gry: --game, potem zmienna WIGGLES_DIR, potem OW_GAME, potem wybór z okna „Ścieżki” (wigview.ini),
+// na końcu ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
+// --paths: otwiera okno „Ścieżki” (katalog gry i zapisów) przy starcie.
+// --saves-dir KATALOG: zapisy .sav z tego katalogu w zakładce Zapisy (domyślnie Data/Gamesave gry albo wybór z okna).
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
@@ -48,6 +51,7 @@
 #include "lib/png_write.h"
 #include "lib/tga.h"
 #include "lib/vfs.h"
+#include "apps/wigview/dir_picker.h"
 #include "apps/wigview/files_view.h"
 #include "apps/wigview/map_view.h"
 #include "apps/wigview/particle_view.h"
@@ -74,6 +78,8 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h> // execv: restart po zmianie katalogu gry
+
 using namespace ow;
 
 namespace
@@ -87,6 +93,9 @@ struct Args
 	bool drawModes = true; // --no-draw-modes
 	bool borderMask = false; // --border-mask
 	std::vector<std::array<float, 6>> emits; // --emit TYP X Y Z MAX NAKLATKĘ
+	std::string savesDir;                    // --saves-dir
+	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
+	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -123,6 +132,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 		std::string k = argv[i];
 		auto next = [&]() -> const char* { return i + 1 < argc ? argv[++i] : ""; };
 		if (k == "--game") a.game = next();
+		else if (k == "--saves-dir") a.savesDir = next();
+		else if (k == "--paths") a.paths = true;
 		else if (k == "--model") a.model = next();
 		else if (k == "--object") a.object = next();
 		else if (k == "--anim") a.anim = next();
@@ -195,13 +206,52 @@ bool parseArgs(int argc, char** argv, Args& a)
 			return false;
 		}
 	}
-	if (a.game.empty())
-	{
-		if (const char* e = std::getenv("OW_GAME")) a.game = e;
-		else if (const char* h = std::getenv("HOME"))
-			a.game = std::string(h) + "/.wine/drive_c/Program Files (x86)/Innonics/Wiggles";
-	}
 	return true;
+}
+
+// Wartość klucza z sekcji [OpenWiggles][Ustawienia] pliku wigview.ini, czytana przed startem ImGui
+// (katalog gry jest potrzebny, zanim powstanie okno).
+std::string iniValue(const char* key)
+{
+	std::FILE* f = std::fopen("wigview.ini", "rb");
+	if (!f) return {};
+	char line[2048];
+	bool inSection = false;
+	std::string want = std::string(key) + "=", out;
+	while (std::fgets(line, sizeof line, f))
+	{
+		std::string l = line;
+		while (!l.empty() && (l.back() == '\n' || l.back() == '\r')) l.pop_back();
+		if (!l.empty() && l[0] == '[') inSection = l == "[OpenWiggles][Ustawienia]";
+		else if (inSection && l.compare(0, want.size(), want) == 0) out = l.substr(want.size());
+	}
+	std::fclose(f);
+	return out;
+}
+
+// Katalog gry: --game > WIGGLES_DIR > OW_GAME > wigview.ini > instalacja w ~/.wine.
+void resolveGameDir(Args& a)
+{
+	if (!a.game.empty())
+	{
+		a.gameSource = "--game";
+		return;
+	}
+	for (const char* env : {"WIGGLES_DIR", "OW_GAME"})
+		if (const char* e = std::getenv(env); e && *e)
+		{
+			a.game = e;
+			a.gameSource = env;
+			return;
+		}
+	if (std::string ini = iniValue("GameDir"); !ini.empty())
+	{
+		a.game = ini;
+		a.gameSource = "wigview.ini";
+		return;
+	}
+	if (const char* h = std::getenv("HOME")) a.game = std::string(h) + "/.wine/drive_c/Program Files (x86)/Innonics/Wiggles";
+	a.gameSource = "domyślny";
 }
 
 bool endsWithI(const std::string& s, const std::string& suf)
@@ -604,6 +654,11 @@ struct Viewer
 	void updateSearchHits();
 	void openHit(const SearchEntry& e);
 	void uiSearch();
+	// Okno „Ścieżki”: katalog gry (zmiana = restart wigview) i katalog zapisów (od razu).
+	void uiPaths();
+	std::string gameDir, gameSource, restartGame; // restartGame: nowy katalog gry, pętla główna kończy się i robi execv
+	bool pathsOpen = false;
+	DirPicker dirPicker;
 
 	void ui();
 	void uiModel();
@@ -1246,8 +1301,10 @@ void Viewer::ui()
 	}
 	ImGui::Begin("wigview");
 	if (ImGui::Button(tr("Szukaj (Ctrl+F)"))) searchRequest = true;
+	ImGui::SetItemTooltip(tr("modele, obiekty, tekstury, szablony, dźwięki"));
 	ImGui::SameLine();
-	ImGui::TextDisabled(tr("modele, obiekty, tekstury, szablony, dźwięki"));
+	if (ImGui::Button(tr("Ścieżki…"))) pathsOpen = true;
+	ImGui::SetItemTooltip(tr("Katalog gry: %s\nZapisy: %s"), gameDir.c_str(), maps.savesDir().empty() ? "Data/Gamesave" : maps.savesDir().c_str());
 	{
 		// Wybór języka (lang/*.po); zapamiętywany w wigview.ini.
 		const auto& langs = i18n::languages();
@@ -1322,6 +1379,7 @@ void Viewer::ui()
 	}
 	uiRight = ImGui::GetWindowPos().x + ImGui::GetWindowSize().x;
 	uiSearch();
+	uiPaths();
 	scrollToSel = false;
 	ImGui::End();
 }
@@ -1409,8 +1467,9 @@ int findIndex(const std::vector<std::string>& v, const std::string& name)
 
 } // namespace
 
-// Język interfejsu w wigview.ini (sekcja [OpenWiggles][Ustawienia]); --lang ma pierwszeństwo.
+// Język interfejsu i ścieżki w wigview.ini (sekcja [OpenWiggles][Ustawienia]); --lang ma pierwszeństwo.
 bool gLangFromArgs = false;
+std::string gIniGameDir, gIniSavesDir; // wybór z okna „Ścieżki” (pusty = bez wpisu)
 void addSettingsHandler()
 {
 	ImGuiSettingsHandler h;
@@ -1422,9 +1481,99 @@ void addSettingsHandler()
 		if (!gLangFromArgs && std::sscanf(line, "Language=%31s", code) == 1) i18n::setLanguage(code);
 	};
 	h.WriteAllFn = [](ImGuiContext*, ImGuiSettingsHandler* self, ImGuiTextBuffer* buf) {
-		buf->appendf("[%s][Ustawienia]\nLanguage=%s\n\n", self->TypeName, i18n::language().c_str());
+		buf->appendf("[%s][Ustawienia]\nLanguage=%s\n", self->TypeName, i18n::language().c_str());
+		if (!gIniGameDir.empty()) buf->appendf("GameDir=%s\n", gIniGameDir.c_str());
+		if (!gIniSavesDir.empty()) buf->appendf("SavesDir=%s\n", gIniSavesDir.c_str());
+		buf->appendf("\n");
 	};
 	ImGui::AddSettingsHandler(&h);
+}
+
+void Viewer::uiPaths()
+{
+	dirPicker.ui();
+	if (!pathsOpen) return;
+	ImGui::SetNextWindowSize(ImVec2(660, 0), ImGuiCond_Appearing);
+	if (!ImGui::Begin(tr("Ścieżki###sciezki"), &pathsOpen, ImGuiWindowFlags_NoCollapse))
+	{
+		ImGui::End();
+		return;
+	}
+	ImGui::SeparatorText(tr("Katalog gry"));
+	ImGui::TextWrapped("%s", gameDir.c_str());
+	ImGui::TextDisabled(tr("źródło: %s"), gameSource == "domyślny" ? tr("domyślny (~/.wine)") : gameSource.c_str());
+	if (ImGui::Button(tr("Zmień…##gra")))
+		dirPicker.open(
+		    tr("Katalog gry"), gameDir,
+		    [](const std::string& d, std::string& status) {
+			    Vfs t;
+			    t.addRoot(d);
+			    if (!t.exists("Data/3db"))
+			    {
+				    status = tr("brak Data/3db: to nie jest katalog gry");
+				    return false;
+			    }
+			    size_t n = 0;
+			    for (const auto& f : t.list("Data/3db")) n += endsWithI(f, ".3db");
+			    status = strf(tr("gra znaleziona (%zu modeli)"), n);
+			    return true;
+		    },
+		    [this](const std::string& d) {
+			    gIniGameDir = d;
+			    ImGui::MarkIniSettingsDirty();
+			    restartGame = d;
+		    });
+	if (!gIniGameDir.empty())
+	{
+		ImGui::SameLine();
+		if (ImGui::Button(tr("Zapomnij wybór")))
+		{
+			gIniGameDir.clear();
+			ImGui::MarkIniSettingsDirty();
+		}
+		ImGui::SetItemTooltip(tr("Usuwa katalog z wigview.ini (działa od następnego uruchomienia)."));
+	}
+	ImGui::TextDisabled(tr("Kolejność: --game, zmienna WIGGLES_DIR, OW_GAME, wybór z tego okna (wigview.ini),\n"
+	                       "instalacja w ~/.wine. Zmiana katalogu uruchamia wigview ponownie."));
+	for (const char* env : {"WIGGLES_DIR", "OW_GAME"})
+		if (const char* e = std::getenv(env); e && *e)
+		{
+			ImGui::TextColored(ImVec4(1, 0.8f, 0.4f, 1), tr("Ustawiona zmienna %s ma pierwszeństwo przed wyborem z okna."), env);
+			break;
+		}
+
+	ImGui::SeparatorText(tr("Katalog zapisów (.sav)"));
+	const std::string& sd = maps.savesDir();
+	ImGui::TextWrapped("%s", sd.empty() ? tr("Data/Gamesave gry") : sd.c_str());
+	if (ImGui::Button(tr("Zmień…##zapisy")))
+		dirPicker.open(
+		    tr("Katalog zapisów"), sd.empty() ? gameDir + "/Data/Gamesave" : sd,
+		    [](const std::string& d, std::string& status) {
+			    size_t n = 0;
+			    std::error_code ec;
+			    for (std::filesystem::directory_iterator it(d, ec), end; !ec && it != end; it.increment(ec))
+				    n += it->is_regular_file(ec) && endsWithI(it->path().filename().string(), ".sav");
+			    status = strf(tr("zapisów .sav: %zu"), n);
+			    return true;
+		    },
+		    [this](const std::string& d) {
+			    maps.setSavesDir(d);
+			    gIniSavesDir = d;
+			    ImGui::MarkIniSettingsDirty();
+			    forceTab = activeTab = 3;
+		    });
+	if (!sd.empty())
+	{
+		ImGui::SameLine();
+		if (ImGui::Button(tr("Data/Gamesave gry")))
+		{
+			maps.setSavesDir("");
+			gIniSavesDir.clear();
+			ImGui::MarkIniSettingsDirty();
+		}
+	}
+	ImGui::TextDisabled(tr("Zmiana działa od razu i jest zapamiętana (--saves-dir ma pierwszeństwo)."));
+	ImGui::End();
 }
 
 // --thumbnails: miniatury obiektów do KATALOG/<model>/<obiekt>.png i strona KATALOG/index.html z siatką.
@@ -1482,6 +1631,9 @@ int main(int argc, char** argv)
 {
 	Args args;
 	if (!parseArgs(argc, argv, args)) return 2;
+	gIniGameDir = iniValue("GameDir");
+	gIniSavesDir = iniValue("SavesDir");
+	resolveGameDir(args);
 	if (!args.thumbnails.empty() && !args.sizeSet) args.width = args.height = 256;
 	{
 		std::vector<std::string> warnings;
@@ -1505,9 +1657,13 @@ int main(int argc, char** argv)
 		if (!v.vfs.addOverlay(o, i18n::language())) std::fprintf(stderr, "nakładka %s: brak katalogu Data ani Data_%s\n", o.c_str(), i18n::language().c_str());
 	if (!v.vfs.exists("Data/3db"))
 	{
-		std::fprintf(stderr, "Nie znaleziono Data/3db w '%s'. Podaj --game <katalog gry>.\n", args.game.c_str());
+		std::fprintf(stderr, "Nie znaleziono Data/3db w '%s' (źródło: %s). Podaj --game <katalog gry> albo ustaw WIGGLES_DIR.\n",
+		    args.game.c_str(), args.gameSource.c_str());
 		return 1;
 	}
+	v.gameDir = args.game;
+	v.gameSource = args.gameSource;
+	v.pathsOpen = args.paths;
 	for (auto& f : v.vfs.list("Data/3db"))
 		if (endsWithI(f, ".3db")) v.modelFiles.push_back(f);
 	{ // katalogi z plikami TGA w Data/Texture, Data/Ground i Data/GUI (z podkatalogami)
@@ -1583,6 +1739,7 @@ int main(int argc, char** argv)
 	v.textures = std::make_unique<TextureCache>(v.vfs);
 	v.textures->setDevice(&dev);
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
+	if (std::string sd = args.savesDir.empty() ? gIniSavesDir : args.savesDir; !sd.empty()) v.maps.setSavesDir(sd);
 	{
 		std::string err;
 		if (!v.border.init(dev, v.vfs, err)) std::fprintf(stderr, "ramka ekranu: %s\n", err.c_str());
@@ -1861,8 +2018,14 @@ int main(int argc, char** argv)
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
+	std::string restartGame;
 	while (running)
 	{
+		if (!v.restartGame.empty())
+		{
+			restartGame = v.restartGame; // okno „Ścieżki”: nowy katalog gry
+			break;
+		}
 		SDL_Event e;
 		while (SDL_PollEvent(&e))
 		{
@@ -1948,6 +2111,30 @@ int main(int argc, char** argv)
 		if (!renderFrame(w, h)) SDL_Delay(16); // np. okno zminimalizowane
 	}
 
-	shutdown();
+	shutdown(); // zapisuje też wigview.ini (z nowym GameDir)
+	if (!restartGame.empty())
+	{
+		// Ponowne uruchomienie z tymi samymi opcjami poza --game. Katalog weźmie się z wigview.ini, chyba że
+		// ustawiona zmienna środowiska ma pierwszeństwo: wtedy podajemy go jawnie.
+		std::vector<std::string> a;
+		for (int i = 0; i < argc; ++i)
+		{
+			if (std::string(argv[i]) == "--game" && i + 1 < argc)
+			{
+				++i;
+				continue;
+			}
+			a.push_back(argv[i]);
+		}
+		const char* e1 = std::getenv("WIGGLES_DIR");
+		const char* e2 = std::getenv("OW_GAME");
+		if ((e1 && *e1) || (e2 && *e2)) a.insert(a.end(), {"--game", restartGame});
+		std::vector<char*> av;
+		for (auto& x : a) av.push_back(x.data());
+		av.push_back(nullptr);
+		execv("/proc/self/exe", av.data());
+		std::perror("execv");
+		return 1;
+	}
 	return 0;
 }

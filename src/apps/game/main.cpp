@@ -5,6 +5,7 @@
 //               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--locale KOD] [--screenshot plik.png]
 //               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
 // F5 / F9: szybki zapis i wczytanie najnowszego zapisu (~/.local/share/openwiggles/saves/, .sav jak w grze albo .ows).
+// Bez --game: zmienna WIGGLES_DIR, potem OW_GAME, potem ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
 // --overlay KATALOG: nakładka w układzie modów (Data/ i Data_<język> przykrywają pliki gry), można podać kilka razy.
 // --no-border-mask: bez czarnej ramki ekranu z Data/GUI/bordermask.tga (w grze rejestr Performance\BorderMask, domyślnie 1).
 // --locale: język tekstów gry (lmsg, MESSAGES.TXT); domyślnie język interfejsu, jeśli dane go mają, inaczej język wydania.
@@ -127,7 +128,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 	}
 	if (a.game.empty())
 	{
-		if (const char* e = std::getenv("OW_GAME")) a.game = e;
+		if (const char* e = std::getenv("WIGGLES_DIR"); e && *e) a.game = e;
+		else if (const char* e = std::getenv("OW_GAME")) a.game = e;
 		else if (const char* h = std::getenv("HOME")) a.game = std::string(h) + "/.wine/drive_c/Program Files (x86)/Innonics/Wiggles";
 	}
 	return true;
