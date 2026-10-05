@@ -53,6 +53,7 @@ build/release/wigview --scenario systeminit                   # menu gry z kamer
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
 build/release/wigview --sound Data/Sound/Fenris/fe_schritt1.WAV      # zakładka Dźwięki z plikiem
+build/release/wigview --texture GUI/bordermask.tga --texture-channel 2   # zakładka Tekstury, sam kanał alfa (0 RGBA, 1 RGB, 2 alfa, 3–5 R/G/B)
 build/release/wigview --overlay ../ref/DigglesHDmod-master          # tekstury HD z moda (Data/ + Data_<język>), bez kopiowania do gry
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd nieodkrytego terenu (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy

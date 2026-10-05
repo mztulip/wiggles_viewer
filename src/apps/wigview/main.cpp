@@ -18,6 +18,8 @@
 // --screenshot: renderuje jedną klatkę, zapisuje PNG i kończy działanie (z --ui razem z interfejsem).
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
+// --texture PLIK: zakładka Tekstury z plikiem względem Data/ (np. GUI/bordermask.tga); --texture-channel N: 0 RGBA,
+//                 1 RGB, 2 alfa, 3 R, 4 G, 5 B.
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
 // --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
 //                    można podać kilka razy (późniejsza wyżej).
@@ -34,6 +36,7 @@
 #include "lib/gltf_export.h"
 #include "lib/model3db.h"
 #include "lib/png_write.h"
+#include "lib/tga.h"
 #include "lib/vfs.h"
 #include "apps/wigview/map_view.h"
 #include "apps/wigview/particle_view.h"
@@ -65,7 +68,8 @@ namespace
 
 struct Args
 {
-	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound;
+	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound, texture;
+	int textureChannel = 0;
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -104,6 +108,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--template") a.templ = next();
 		else if (k == "--particle") a.particle = std::atoi(next());
 		else if (k == "--sound") a.sound = next();
+		else if (k == "--texture") a.texture = next();
+		else if (k == "--texture-channel") a.textureChannel = std::atoi(next());
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
@@ -212,16 +218,28 @@ struct Viewer
 
 	float uiRight = 0; // prawa krawędź panelu w punktach ImGui
 	float uiWidth = 560, uiHeight = 0, narrowWidth = 0;
-	bool wideTab = false; // panel poszerzony dla zakładki Dźwięki
+	bool wideTab = false; // panel poszerzony dla zakładek Tekstury i Dźwięki
 	char objFilter[64] = "";
 	char animFilter[64] = "";
 
-	// Przeglądarka tekstur
+	// Przeglądarka tekstur. Katalogi względem Data/ (np. "Texture/m256", "Ground/detail", "GUI/icons").
 	std::vector<std::string> texDirs;
 	int texDir = 0;
 	std::vector<std::string> texFiles;
 	int texSel = -1;
 	char texFilter[64] = "";
+	float texZoom = 0.f;   // 0 = dopasuj do panelu
+	int texChannel = 0;    // 0 RGBA, 1 RGB, 2 alfa, 3 R, 4 G, 5 B
+	bool texChecker = true; // szachownica pod przezroczystymi pikselami
+	std::string texImgPath; // plik wczytany do texImg
+	int texImgChannel = -1; // tryb, z którym zbudowano texPreview
+	Image texImg;           // piksele wybranej tekstury (do kanałów i wartości pod kursorem)
+	rhi::Handle texPreview = rhi::kNull;
+	void updateTexPreview(const std::string& path);
+	~Viewer()
+	{
+		if (texPreview && textures && textures->device()) textures->device()->destroyTexture(texPreview);
+	}
 
 	const Animation3db* currentAnim() const
 	{
@@ -412,9 +430,9 @@ struct Viewer
 		{
 			particles.render(viewProj(w - x0, h) * modelMatrix());
 		}
-		else if (activeTab == 5)
+		else if (activeTab == 1 || activeTab == 5)
 		{
-			// Dźwięki: bez sceny 3D
+			// Tekstury i Dźwięki: bez sceny 3D
 		}
 		else
 		{
@@ -493,7 +511,7 @@ struct Viewer
 		texFiles.clear();
 		texSel = -1;
 		if (texDir < 0 || size_t(texDir) >= texDirs.size()) return;
-		for (auto& f : vfs.list("Data/Texture/" + texDirs[size_t(texDir)]))
+		for (auto& f : vfs.list("Data/" + texDirs[size_t(texDir)]))
 			if (endsWithI(f, ".tga")) texFiles.push_back(f);
 	}
 
@@ -748,14 +766,93 @@ void Viewer::uiTextures()
 	ImGui::BeginChild("podglad");
 	if (texSel >= 0)
 	{
-		std::string p = "Data/Texture/" + texDirs[size_t(texDir)] + "/" + texFiles[size_t(texSel)];
-		const auto& t = textures->getPath(p);
-		ImGui::Text("%s  %dx%d  %s", p.c_str(), t.width, t.height, t.hasAlpha ? "RGBA" : "RGB");
+		std::string p = "Data/" + texDirs[size_t(texDir)] + "/" + texFiles[size_t(texSel)];
+		updateTexPreview(p);
+		const Image& im = texImg;
+		ImGui::Text("%s  %dx%d  %s", p.c_str(), im.width, im.height, im.hasAlpha ? "RGBA" : "RGB");
+		const char* modes[] = {"RGBA", "RGB", tr("alfa"), "R", "G", "B"};
+		ImGui::SetNextItemWidth(90);
+		ImGui::Combo(tr("Kanały"), &texChannel, modes, 6);
+		ImGui::SameLine();
+		ImGui::Checkbox(tr("Szachownica"), &texChecker);
+		ImGui::SameLine();
+		if (ImGui::Button(tr("Dopasuj"))) texZoom = 0.f;
+		ImGui::SameLine();
+		if (ImGui::Button("1:1")) texZoom = 1.f;
+		ImGui::SameLine();
 		float avail = ImGui::GetContentRegionAvail().x;
-		float s = std::min(avail, 512.f) / float(std::max(1, t.width));
-		ImGui::Image(ImTextureID(device->imguiTexture(t.id)), ImVec2(t.width * s, t.height * s));
+		float fit = std::min(avail, 512.f) / float(std::max(1, im.width));
+		float z = texZoom > 0.f ? texZoom : fit;
+		ImGui::SetNextItemWidth(std::max(60.f, ImGui::GetContentRegionAvail().x));
+		if (ImGui::SliderFloat("##zoom", &z, 0.125f, 16.f, tr("powiększenie %.2f×"), ImGuiSliderFlags_Logarithmic)) texZoom = z;
+		ImGui::BeginChild("obraz", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+		if (texPreview && im.width > 0)
+		{
+			ImVec2 p0 = ImGui::GetCursorScreenPos(), size(im.width * z, im.height * z);
+			if (texChecker)
+			{
+				auto* dl = ImGui::GetWindowDrawList();
+				const float c = 8.f;
+				ImVec2 clipMin = ImGui::GetWindowPos(), clipMax(clipMin.x + ImGui::GetWindowSize().x, clipMin.y + ImGui::GetWindowSize().y);
+				for (float y = 0; y < size.y; y += c)
+					for (float x = 0; x < size.x; x += c)
+					{
+						ImVec2 a(p0.x + x, p0.y + y), b(std::min(p0.x + x + c, p0.x + size.x), std::min(p0.y + y + c, p0.y + size.y));
+						if (b.x < clipMin.x || b.y < clipMin.y || a.x > clipMax.x || a.y > clipMax.y) continue;
+						bool odd = (int(x / c) + int(y / c)) & 1;
+						dl->AddRectFilled(a, b, odd ? IM_COL32(110, 110, 110, 255) : IM_COL32(160, 160, 160, 255));
+					}
+			}
+			ImGui::Image(ImTextureID(device->imguiTexture(texPreview)), size);
+			if (ImGui::IsItemHovered())
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				if (io.KeyCtrl && io.MouseWheel != 0.f) texZoom = std::clamp(z * std::pow(1.25f, io.MouseWheel), 0.125f, 16.f);
+				int px = int((io.MousePos.x - p0.x) / z), py = int((io.MousePos.y - p0.y) / z);
+				if (px >= 0 && py >= 0 && px < im.width && py < im.height)
+				{
+					const uint8_t* c = &im.rgba[(size_t(py) * im.width + px) * 4];
+					ImGui::SetTooltip(tr("piksel (%d, %d)\nR %d  G %d  B %d  A %d"), px, py, c[0], c[1], c[2], c[3]);
+				}
+			}
+		}
+		else ImGui::TextDisabled("%s", tr("nie można wczytać pliku"));
+		ImGui::EndChild();
 	}
 	ImGui::EndChild();
+}
+
+// Piksele wybranej tekstury i tekstura podglądu w trybie kanałów (texChannel): RGBA bez zmian,
+// RGB z pełną alfą, pojedynczy kanał jako szarość.
+void Viewer::updateTexPreview(const std::string& path)
+{
+	if (path != texImgPath)
+	{
+		texImgPath = path;
+		texImg = Image{};
+		if (auto d = vfs.read(path)) loadTga(*d, texImg);
+		texImgChannel = -1;
+	}
+	if (texImgChannel == texChannel || texImg.width <= 0) return;
+	texImgChannel = texChannel;
+	std::vector<uint8_t> px = texImg.rgba;
+	for (size_t i = 0; i < px.size(); i += 4)
+	{
+		if (texChannel == 1) px[i + 3] = 255;
+		else if (texChannel >= 2)
+		{
+			uint8_t v = texChannel == 2 ? px[i + 3] : px[i + size_t(texChannel - 3)];
+			px[i] = px[i + 1] = px[i + 2] = v;
+			px[i + 3] = 255;
+		}
+	}
+	rhi::TextureDesc d;
+	d.width = texImg.width;
+	d.height = texImg.height;
+	d.mipmaps = false;
+	d.repeatU = d.repeatV = false;
+	if (texPreview) device->updateTexture(texPreview, d, px.data());
+	else texPreview = device->createTexture(d, px.data());
 }
 
 void Viewer::buildSearchIndex(bool withObjects)
@@ -768,7 +865,7 @@ void Viewer::buildSearchIndex(bool withObjects)
 	{
 		for (auto& f : modelFiles) add(HitKind::Model, f, f, -1);
 		for (int d = 0; d < int(texDirs.size()); ++d)
-			for (auto& f : vfs.list("Data/Texture/" + texDirs[size_t(d)]))
+			for (auto& f : vfs.list("Data/" + texDirs[size_t(d)]))
 				if (endsWithI(f, ".tga")) add(HitKind::Texture, texDirs[size_t(d)] + "/" + f, f, d);
 		for (auto& f : maps.files()) add(HitKind::Template, f, f, -1);
 		for (auto& f : maps.scenarios()) add(HitKind::Scenario, f, f, -1);
@@ -959,10 +1056,10 @@ void Viewer::ui()
 	ImGuiViewport* vp = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x + 8, vp->WorkPos.y + 8), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(560, vp->WorkSize.y - 16), ImGuiCond_FirstUseEver);
-	// Zakładka Dźwięki nie ma sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
-	if ((activeTab == 5) != wideTab)
+	// Zakładki Tekstury i Dźwięki nie mają sceny 3D: panel poszerza się na czas jej otwarcia i wraca do poprzedniej szerokości.
+	if ((activeTab == 1 || activeTab == 5) != wideTab)
 	{
-		wideTab = activeTab == 5;
+		wideTab = activeTab == 1 || activeTab == 5;
 		if (ImGuiWindow* w = ImGui::FindWindowByName("wigview")) uiWidth = w->Size.x, uiHeight = w->Size.y;
 		else uiHeight = vp->WorkSize.y - 16; // pierwsza klatka, okno jeszcze nie istnieje
 		if (wideTab)
@@ -1180,9 +1277,24 @@ int main(int argc, char** argv)
 	}
 	for (auto& f : v.vfs.list("Data/3db"))
 		if (endsWithI(f, ".3db")) v.modelFiles.push_back(f);
-	for (auto& d : v.vfs.list("Data/Texture"))
-		if (v.vfs.resolve("Data/Texture/" + d) && std::filesystem::is_directory(*v.vfs.resolve("Data/Texture/" + d)))
-			v.texDirs.push_back(d);
+	{ // katalogi z plikami TGA w Data/Texture, Data/Ground i Data/GUI (z podkatalogami)
+		std::vector<std::string> stack = {"GUI", "Ground", "Texture"};
+		while (!stack.empty())
+		{
+			std::string d = stack.back();
+			stack.pop_back();
+			bool tga = false;
+			std::vector<std::string> subs;
+			for (auto& f : v.vfs.list("Data/" + d))
+			{
+				auto r = v.vfs.resolve("Data/" + d + "/" + f);
+				if (r && std::filesystem::is_directory(*r)) subs.push_back(d + "/" + f);
+				else if (endsWithI(f, ".tga")) tga = true;
+			}
+			if (tga) v.texDirs.push_back(d);
+			for (auto it = subs.rbegin(); it != subs.rend(); ++it) stack.push_back(*it);
+		}
+	}
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
@@ -1287,6 +1399,18 @@ int main(int argc, char** argv)
 		v.activeTab = v.forceTab = 4;
 		v.frameParticles();
 	}
+	if (!args.texture.empty())
+	{
+		std::string t = args.texture;
+		std::string dir = t.find('/') != std::string::npos ? t.substr(0, t.rfind('/')) : "", file = t.substr(t.rfind('/') + 1);
+		for (int i = 0; i < int(v.texDirs.size()); ++i)
+			if (Vfs::lower(v.texDirs[size_t(i)]) == Vfs::lower(dir)) v.texDir = i;
+		v.refreshTexFiles();
+		for (int i = 0; i < int(v.texFiles.size()); ++i)
+			if (Vfs::lower(v.texFiles[size_t(i)]) == Vfs::lower(file)) v.texSel = i;
+		v.texChannel = std::clamp(args.textureChannel, 0, 5);
+		v.activeTab = v.forceTab = 1;
+	}
 	if (!args.sound.empty())
 	{
 		v.sounds.setAutoplay(args.screenshot.empty());
@@ -1341,7 +1465,7 @@ int main(int argc, char** argv)
 	         "/usr/share/fonts/noto/NotoSans-Regular.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"})
 		if (std::filesystem::exists(f) && ImGui::GetIO().Fonts->AddFontFromFileTTF(f, 15.f)) break;
 	dev.imguiInit();
-	v.refreshTexFiles();
+	if (v.texFiles.empty()) v.refreshTexFiles(); // --texture mogło już wybrać katalog i plik
 
 	// Jedna klatka: scena 3D (na prawo od panelu UI) i opcjonalnie interfejs.
 	// readback != nullptr: kopia obrazu klatki (RGBA, wiersz 0 = góra) do zrzutu ekranu.

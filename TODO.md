@@ -111,8 +111,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 ## Faza 3: wigview, czyli przeglądarka assetów
 - [x] Okno SDL2 + ImGui (dziś Vulkan albo OpenGL 4.5 przez `rhi`), lista modeli `Data/3db`, polski font
 - [ ] Drzewo całego `Data/` (inne typy plików)
-- [x] Podgląd tekstur TGA (lista katalogów i plików, filtr, rozmiar)
-- [ ] Tekstury: zoom, podgląd samego kanału alfa, tło szachownicy
+- [x] Podgląd tekstur TGA (lista katalogów i plików, filtr, rozmiar): katalogi `Texture/`, `Ground/` i `GUI/` (z podkatalogami)
+- [x] Tekstury: zoom (suwak, Ctrl+kółko, „Dopasuj”, „1:1”), podgląd kanałów (RGBA, RGB, alfa, R, G, B), tło szachownicy, wartość piksela pod kursorem; `--texture GUI/bordermask.tga --texture-channel 2`
 - [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
 - [x] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
 - [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), tempo samej animacji i interpolacja do potwierdzenia zrzutami
