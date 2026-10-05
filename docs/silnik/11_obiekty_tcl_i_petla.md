@@ -174,7 +174,7 @@ set_anim <obj> <obiekt>.<animacja> <klatka_startowa> <tryb> [<ciąg_dalszy>]
 - **Tempo: 10 klatek na sekundę**, liczone od chwili startu: `klatka = start + round((teraz − t0) · 10 + 0,05)`. Silnik sam nie łączy `_start → _loop → _end`. Robią to skrypty albo akcje, znając długość animacji (`db_animlength`).
 - `set_class_anim stan obiekt.anim` buduje w klasie mapę „stan logiczny → animacja”, a `set_class_animset N {…}` zestawy zastępcze dla sposobów chodzenia (krasnal ma ich 17: zwykły, bieg, zmęczony, pływanie, z koszem…). Akcja chodzenia wybiera zestaw i animacje `start`/`loop`/`stop`.
 
-⚠ **Sprzeczność do wyjaśnienia:** według Diggles-Unity gra **nie interpoluje** klatek, a w rejestrze naszej instalacji jest `Performance\AnimInterpolation=1` i opcja exe `AnimIpol`, co sugeruje interpolację (rozdział 5.4, [3db.md](../formaty/3db.md) §8). Rozstrzygnie seria zrzutów animowanego obiektu w laboratorium.
+⚠ **Sprzeczność do wyjaśnienia:** według Diggles-Unity gra **nie interpoluje** klatek, a w rejestrze naszej instalacji jest `Performance\AnimInterpolation=1` i opcja exe `AnimIpol`, co sugeruje interpolację (rozdział 5.4, [3db.md](../formaty/3db.md) §8). **Decyzja projektu:** nie rozstrzygamy tego. Nasz silnik interpoluje klatki zawsze (przełącznik `I` w wigview), bo płynniejszy obraz jest zaletą, a współczesny komputer robi to bez kosztu. Pierwsza próba pomiaru: [BAZA_WIEDZY §9.9](../BAZA_WIEDZY.md).
 
 ## 11.7 Takt gry
 
