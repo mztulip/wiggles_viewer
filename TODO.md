@@ -36,7 +36,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Krasnale przechodzą do czasu wolnego (`sparetime_dispatch`: łapanie much, spacery, animacje): poprawki `obj_query` (argumenty jako osobne słowa, bez pytającego, z w prostopadłościanie), `get_walkresult` = 2 w trakcie chodu, `get_place -random` omija rezerwacje i postacie, rezerwacje 3D
 - [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [x] Pamięć podręczna klas: start skryptów 0,1 s zamiast 5,5 s
-- [ ] 🔧 Skrypty: zgodność 8.3 → 8.6, `lmsg` z tłumaczeniami z `MESSAGES.TXT` (dziś zwraca klucz), odczyt zmiennych Tcl obiektów z zapisu (tryb bezpieczny niepotrzebny: gra go nie używa, rozdział 11.1)
+- [ ] 🔧 Skrypty: zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu (tryb bezpieczny niepotrzebny: gra go nie używa, rozdział 11.1)
 - [x] Interfejs gry: panel krasnali z imionami i potrzebami, znacznik zaznaczenia, pauza i tempo
 - [ ] Drzewko technologii i wynalazki (`init_techtree`, `gen_tt.tcl`, „czapka naukowca”), po G10
 - [x] G11 Zapis i wczytanie gry z poziomu gry: własny format `.ows` (źródło + zmiany), F5/F9 (rozdział 14.7)
@@ -55,7 +55,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
   - sterowanie: rozkazy gracza jako zdarzenia `evt_task_*` (`set_event`, rozdział 16.9), w oryginale przez WebTraq ([`tools/lab/live.sh`](tools/lab/live.sh)), u nas przez taki sam interfejs `/tclshell` w grze
   - scenariusz: wczytanie zapisu, rozkazy (idź, kop, podnieś), próbki stanu co sekundę (pozycje, stany, zadania, teren), zrzuty
   - porównanie z tolerancją (losowość, ok. 20 kl./s w oryginale): czas dojścia, kolejność stanów, wynik kopania; raport z zestawieniem zrzutów
-  - pierwszy krok: sprawdzić `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z}` w oryginale (pierwsza próba nie doszła do skutku przez ograniczenie WebTraq na znak `:`)
+  - [x] pierwszy krok: `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z} -text1 userevent` działa w oryginale (BAZA §8.8)
 - [ ] 🔧 Obiekty Tcl bez kopii zmiennych głównego interpretera, jak w grze (rozdział 11.1); sprawdzić, czy skrypty krasnali nadal działają
 
 ## Faza 0: rozpoznanie
@@ -93,17 +93,19 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 
 ## Faza 2: libwiggles, czyli formaty plików
 - [x] Wirtualny system plików: wyszukiwanie bez rozróżniania wielkości liter, wiele korzeni
-- [ ] VFS: nakładanie `Data_HD`, wariantów językowych i modów
+- [x] VFS: nakładki w układzie modów (`Data/` + `Data_<język>`), `--overlay` w wigview i grze, sprawdzone na DigglesHDmod ([tekstury.md](docs/formaty/tekstury.md)); łatki `change_*.tcl`: faza 7
 - [x] Loader TGA (typy 2/3/10/11, 8–32 bit); gra używa wyłącznie typu 2, 32 bit
 - [x] Wyszukiwanie tekstury po nazwie materiału (`m256` → `m128` → `m064` → `m032` → `Gray` → `Misc` → `ClassIcons`)
 - [x] Parser `.3db` w C++ z walidacją odwołań; `test3db` przechodzi wszystkie 43 modele i 2052 tekstury
 - [x] `.3db`: pola mesha `shadowIndex` i `cmapIndex` rozpoznane ✅
-- [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, flagi linku, rekordy 20 B, znaczenie `cmap`, pola animacji (ruch korzenia, flagi)
+- [x] Pola `.3db`: tablica punktów zaczepienia, prostokąt cienia, `cmap` (maska 1/8 bloku z przesunięciem), kąty Eulera w rekordach zaczepienia, `move`/`rotate` na klatkę (zmierzone w grze); pola w kodzie przemianowane ([3db.md](docs/formaty/3db.md))
+- [ ] 🔬 `.3db`: bity `flags` linku, `u16` na przesunięciu 6 rekordu zaczepienia
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)
-- [ ] `MESSAGES.TXT` (`lmsg`, dziś zwraca klucz), `QUOTES.TXT`, `LOCALE.TXT`
-- [ ] 🔬 `texlevels.txt`, `TEXMAPS.BIN` (prawdopodobnie do pominięcia)
+- [x] `MESSAGES.TXT` (`lmsg`, `locale` jak w grze, `--locale`), `QUOTES.TXT`, `LOCALE.TXT` ([teksty.md](docs/formaty/teksty.md)); CP1250 w `text.h`
+- [x] `texlevels.txt` i `TEXMAPS.BIN` opisane; gra rysuje z `TEXMAPS.BIN` (ARGB4444)
+- [ ] 🔬 Wierność tekstur: opcjonalna kwantyzacja do ARGB4444 jak `TEXMAPS.BIN`; przypisanie `TextureQuality` do poziomów `texlevels.txt`
 
 ## Faza 3: wigview, czyli przeglądarka assetów
 - [x] Okno SDL2 + ImGui (dziś Vulkan albo OpenGL 4.5 przez `rhi`), lista modeli `Data/3db`, polski font

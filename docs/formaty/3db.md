@@ -65,14 +65,14 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | bboxMax | `vec3` | |
 | linkTable | 128 B | ✅ 32 × `u32`: punkty zaczepienia 0..31 tej klatki, wartość = indeks rekordu w puli 20-bajtowej (§9); indeks poza pulą = brak punktu |
 | shadowIndex | `u16` | ✅ indeks cienia (§3.6) albo `0xFFFF`, gdy klatka nie ma cienia |
-| unknown30 | 48 B | 🔶 wygląda na 12 × `f32` |
+| shadowQuad | 48 B | ✅ prostokąt cienia: 4 narożniki × `vec3` na ziemi (y = 0): (x0, 0, z0), (x1, 0, z0), (x0, 0, z1), (x1, 0, z1). Niezerowy dokładnie wtedy, gdy klatka ma cień (37 431 meshy), same zera bez cienia (12 744); o ok. 42 jednostki szerszy niż obrys modelu. 🔶 Miejsce, na które gra kładzie plamę cienia 32×32 (§3.6) |
 | cmapIndex | `u16` | ✅ indeks cmapy (§3.7) albo `0xFFFF`. Każda cmapa należy do dokładnie jednego mesha |
 
 **Link** (6 × `u16` = 12 B):
 | Pole | Opis |
 |---|---|
 | material | indeks w tablicy materiałów |
-| flags | 🔶 1 w 90% linków, rzadziej 2, 3, 5, 6. Prawdopodobnie flagi renderowania (przezroczystość? dwustronność?) |
+| flags | 🔶 wartości 1–11: 1 (168 801 linków), 3 (10 613), 2 (6120), 5 (2695), 6 (956), 4 (933), 8 (726), 7 (333), 11 (190), 9 (81). Prawdopodobnie bity sposobu rysowania: 6 mają m.in. `enviro_glas` i `enviro_wasser`, 8 `wasser_128` i `kreide_alpha`. ❓ znaczenie bitów (do sprawdzenia zrzutami) |
 | triangles | indeks puli trójkątów |
 | texcoords | indeks puli UV |
 | points | indeks puli pozycji |
@@ -93,11 +93,11 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | *powtórz:* name | `str` | np. `"gehen_loop"`, `"standard"` |
 | frameCount | `u16` | |
 | frames | `u32` × frameCount | indeksy meshy, kolejne klatki |
-| flags | `u16` | 🔶 (0, 3, …) |
-| unknownF | `f32` | 🔶 |
+| flags | `u16` | ❓ 648 różnych wartości, 1414 animacji ma 0; wygląda na niezainicjowaną pamięć eksportera (np. 26981 = `0x6965` = tekst „ei”). Ignorować |
+| unknownF | `f32` | ❓ 867 różnych wartości, zwykle 0. Ignorować |
 | source | `str` | ścieżka do pliku eksportera, np. `...\baby_aufwachen.sex`. Ignorować |
-| move | `vec3` | 🔶 prawdopodobnie przesunięcie postaci na cykl animacji |
-| rotate | `vec3` | 🔶 prawdopodobnie obrót na cykl w radianach (`drehen_links`: z = +0,1309 = 7,5°) |
+| move | `vec3` | ✅ przesunięcie postaci **na klatkę** (jednostki modelu; 200 = blok), w układzie modelu (−y = do przodu, z = w górę przy wspinaniu). Przy 10 kl./s: `gehen_loop` 16,22 → 0,81 bloku/s, `laufen_schnell_loop` 34,29 → 1,71 bloku/s; w grze zmierzone 0,85 i 1,59 bloku/s (rozbieg i bieg po rozkazie, [BAZA_WIEDZY §8.8](../BAZA_WIEDZY.md)). Niezerowe w 366 z 6445 animacji |
+| rotate | `vec3` | ✅ obrót **na krok między klatkami**, w radianach: `baby.drehen_links` 13 klatek × 0,1309 → 12 kroków = π/2 (90°), `mann.drehen_links` 4 klatki × 0,5265 → 3 kroki ≈ 90°. Niezerowe w 83 animacjach |
 
 ### 3.6 Cienie
 | Pole | Typ | Opis |
@@ -110,8 +110,8 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 |---|---|---|
 | count | `u16` | (MANN: 6390) |
 | *powtórz:* width, height | `u16`, `u16` | |
-| unknown1, unknown2 | `u16`, `u16` | 🔶 |
-| pixels | `u8` × width × height | 🔶 8-bit mapa przypisana do jednej klatki (`cmapIndex` mesha). Gra ma komendę `has_cmap obiekt.animacja` |
+| originX, originY | `i16`, `i16` | ✅ położenie lewego górnego rogu maski względem punktu obiektu, w kratkach (`BRUT`: 65531 = −5, 65533 = −3) |
+| pixels | `u8` × width × height | ✅ maska zajętości 0/1 (wszystkie piksele w danych to 0 albo 1) w kratkach **1/8 bloku** (25 jednostek modelu; `BRUT`: 8 wypełnionych kolumn na obrys 204 jednostek), w płaszczyźnie x (w prawo) i y (w dół). Przypisana do jednej klatki (`cmapIndex` mesha). 🔶 Mapa kolizji: `animinit.tcl` ustawia klasie `class_collision 1`, gdy `has_cmap obiekt.standard` (Diggles-Unity `DigglesModelLibrary.HasCMap`). Mają ją postacie (`MANN` 1020, `FRAU` 1016 klatek), budynki (`produktionsstaetten` 384) i część dekoracji |
 
 ### 3.8 Nagłówek pul
 | Pole | Typ | Opis |
@@ -125,7 +125,7 @@ Plik czyta się sekwencyjnie, bez przesunięć i wyrównań. Po przeczytaniu ost
 | uvCount | `u16` × nUV | liczba par UV w każdej puli |
 | ptsCount | `u16` × nPts | liczba punktów w każdej puli |
 | nrmCount | `u16` × nNrm | liczba bajtów w każdej puli normalnych |
-| linkRecords | 20 B × n | ✅ rekordy punktów zaczepienia: 3 × `u16` skwantyzowane x, y, z + 14 B ❓ (§9) |
+| linkRecords | 20 B × n | ✅ rekordy punktów zaczepienia (§9): 3 × `u16` skwantyzowane x, y, z (0–5), `u16` ❓ (6–7, zwykle 0), 3 × `f32` kąty Eulera w radianach (8–19, wszystkie 197 623 w [0, 2π]) |
 
 ### 3.9 Dane pul (w tej kolejności, pula po puli)
 | Pula | Element | Opis |
@@ -233,9 +233,10 @@ cienie 2, cmapy 0
 ```
 
 ## 12. Otwarte pytania
-- `unknown80`, `unknown30` w meshu; flagi linku; rekordy 20-bajtowe; znaczenie `cmap` (kolizje? maski zaznaczania?).
-- Pola animacji: `flags`, `unknownF`, `move`, `rotate` (ruch korzenia?).
-- Prędkość animacji (10 kl./s według Diggles-Unity, niepotwierdzone) i to, czy gra interpoluje.
+- Znaczenie bitów `flags` linku (sposób rysowania: przezroczystość, mieszanie, dwustronność?).
+- `u16` na przesunięciu 6 rekordu zaczepienia (zwykle 0, 2632 różne wartości).
+- Sposób rzutowania cienia na prostokąt `shadowQuad` (rozdział o cieniach, TODO).
+- Czy gra interpoluje klatki (rejestr `AnimInterpolation=1` sugeruje, że tak; tempo logiki 10 Hz potwierdzone, [rozdział 11.7](../silnik/11_obiekty_tcl_i_petla.md)).
 
 ## 9. Punkty zaczepienia ✅
 
@@ -247,7 +248,7 @@ x = dequant(u16[0]), y = dequant(u16[1]), z = 2 · dequant(u16[2])   (jednostki 
 dequant(v) = (v − 32768) · 0,25
 ```
 
-Punkt obracamy jak obiekt-rodzica (oś pionowa) i dodajemy do jego pozycji; dziecko dostaje też obrót rodzica. Punkty modelu krasnala `mann`: 0 prawa ręka, 1 lewa ręka, 4 głowa, 6 i 11 tułów, 7 ręka z narzędziem, 10 usta. Przykład: `stand_anim_a`, klatka 0, głowa ≈ (0, −1, 0,05) bloku, czyli blok nad stopami.
+Punkt obracamy jak obiekt-rodzica (oś pionowa) i dodajemy do jego pozycji; dziecko dostaje też obrót rodzica. Rekord ma też własną orientację punktu: 3 × `f32` (bajty 8–19) to kąty Eulera X, Y, Z w radianach (Y = obrót wokół osi pionowej), dzięki którym czapka przechyla się z głową (komenda `get_linkrot`; za Diggles-Unity `DigglesLinkPoints.TryGetLocalEuler`, zakres danych ✅). Punkty modelu krasnala `mann`: 0 prawa ręka, 1 lewa ręka, 4 głowa, 6 i 11 tułów, 7 ręka z narzędziem, 10 usta. Przykład: `stand_anim_a`, klatka 0, głowa ≈ (0, −1, 0,05) bloku, czyli blok nad stopami.
 
 Źródło: [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/HAT_LINK_SYSTEM.md` §3–4. ✅ Sprawdzone u nas: czapki z zapisu kampanii (przypięte w zapisie do punktu 4 krasnali) siedzą na głowach i podążają za animacją. Kod: `Model3db::linkOffset`, `MapScene::linkOffset` ([`src/lib/map_scene.cpp`](../../src/lib/map_scene.cpp)).
 

@@ -11,6 +11,8 @@
 // sprawdzona w całości (różnice expr, kodowanie). Lista zaślepek: openwiggles_tcl.log.
 #pragma once
 
+#include "lib/messages.h"
+
 #include <array>
 #include <cstdint>
 #include <deque>
@@ -147,6 +149,13 @@ public:
 	std::map<std::string, std::string> mainValues_; // wartości zmiennych głównego interpretera po starcie
 	void detach(int id);
 
+	// Język tekstów gry (komenda locale, lmsg). Domyślnie język pierwszego hasła MESSAGES.TXT (język
+	// wydania, w polskiej wersji "pl"). Ustawić przed boot(): wyniki lmsg trafiają do pamięci podręcznej klas.
+	void setLocale(const std::string& l) { locale_ = l; }
+	const std::string& locale() const { return locale_; }
+	const Messages& messages() const { return messages_; }
+	std::string lmsg(const std::string& key); // tekst w bieżącym języku albo klucz (brak zapisywany w dzienniku)
+
 	double time() const { return time_; }
 	void tick(double dt); // tura logiki (10 Hz): timery, zdarzenia, stany, akcje
 
@@ -207,6 +216,9 @@ public:
 	bool fromCache_ = false;
 	std::set<std::string> nativeNames_;
 	double time_ = 0;
+	Messages messages_;
+	std::string locale_ = "en";
+	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry
 };
 

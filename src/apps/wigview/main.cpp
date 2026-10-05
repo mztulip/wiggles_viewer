@@ -19,6 +19,8 @@
 // --template: otwiera zakładkę Mapy z podanym szablonem (np. urw_gng_021_a).
 // --particle TYP: otwiera zakładkę Cząsteczki z typem 0..42 (w zrzucie ekranu symulacja jest przewinięta o 3 s).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
+// --overlay KATALOG: nakładka w układzie modów (np. DigglesHDmod): jej Data/ i Data_<język> przykrywają pliki gry;
+//                    można podać kilka razy (późniejsza wyżej).
 //
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
@@ -64,6 +66,7 @@ namespace
 struct Args
 {
 	std::string game, model, object, anim, screenshot, templ, search, scenario, lang, sound;
+	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
 	int ipol = 1;
@@ -101,6 +104,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--template") a.templ = next();
 		else if (k == "--particle") a.particle = std::atoi(next());
 		else if (k == "--sound") a.sound = next();
+		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center")
@@ -1167,6 +1171,8 @@ int main(int argc, char** argv)
 	auto viewer = std::make_unique<Viewer>();
 	Viewer& v = *viewer;
 	v.vfs.addRoot(args.game);
+	for (const auto& o : args.overlays)
+		if (!v.vfs.addOverlay(o, i18n::language())) std::fprintf(stderr, "nakładka %s: brak katalogu Data ani Data_%s\n", o.c_str(), i18n::language().c_str());
 	if (!v.vfs.exists("Data/3db"))
 	{
 		std::fprintf(stderr, "Nie znaleziono Data/3db w '%s'. Podaj --game <katalog gry>.\n", args.game.c_str());

@@ -16,9 +16,19 @@ std::string Vfs::lower(std::string s)
 	return s;
 }
 
-void Vfs::addRoot(const fs::path& dir)
+void Vfs::addRoot(const fs::path& dir, const std::string& dataDir)
 {
-	roots_.insert(roots_.begin(), dir);
+	roots_.insert(roots_.begin(), Root{dir, dataDir});
+}
+
+bool Vfs::addOverlay(const fs::path& dir, const std::string& lang)
+{
+	Root probe{dir, "Data"};
+	bool any = false;
+	if (resolveIn(probe, "Data")) addRoot(dir), any = true;
+	Root langRoot{dir, "Data_" + lang};
+	if (!lang.empty() && resolveIn(langRoot, "Data")) addRoot(dir, "Data_" + lang), any = true;
+	return any;
 }
 
 const std::unordered_map<std::string, std::string>& Vfs::dirIndex(const fs::path& dir) const
@@ -36,10 +46,11 @@ const std::unordered_map<std::string, std::string>& Vfs::dirIndex(const fs::path
 	return idx;
 }
 
-std::optional<fs::path> Vfs::resolveIn(const fs::path& root, const std::string& gamePath) const
+std::optional<fs::path> Vfs::resolveIn(const Root& root, const std::string& gamePath) const
 {
-	fs::path cur = root;
+	fs::path cur = root.dir;
 	size_t i = 0;
+	bool first = true;
 	while (i <= gamePath.size())
 	{
 		size_t j = gamePath.find_first_of("/\\", i);
@@ -47,6 +58,8 @@ std::optional<fs::path> Vfs::resolveIn(const fs::path& root, const std::string& 
 		std::string part = gamePath.substr(i, j - i);
 		i = j + 1;
 		if (part.empty() || part == ".") continue;
+		if (first && lower(part) == "data") part = root.dataDir; // wariant katalogu danych (Data_de…)
+		first = false;
 		const auto& idx = dirIndex(cur);
 		auto it = idx.find(lower(part));
 		if (it == idx.end()) return std::nullopt;

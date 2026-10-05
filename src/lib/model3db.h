@@ -38,7 +38,7 @@ struct Material3db
 struct MeshLink
 {
 	uint16_t material = 0;
-	uint16_t flags = 0; // 🔶 zwykle 1; także 2, 3, 5, 6
+	uint16_t flags = 0; // 🔶 1–11, prawdopodobnie bity sposobu rysowania (docs/formaty/3db.md §3.2)
 	uint16_t triangles = 0;
 	uint16_t texcoords = 0;
 	uint16_t points = 0;
@@ -49,11 +49,12 @@ struct Mesh3db
 {
 	std::vector<MeshLink> links;
 	Vec3f bboxMin{}, bboxMax{};
-	// ✅ Punkty zaczepienia: 32 × u32, indeks rekordu w Model3db::unknown20 dla punktu 0..31 (głowa = 4,
+	// ✅ Punkty zaczepienia: 32 × u32, indeks rekordu w Model3db::linkRecords dla punktu 0..31 (głowa = 4,
 	// prawa ręka = 0, lewa = 1, usta = 10); indeks poza zakresem = brak punktu (Diggles-Unity HAT_LINK_SYSTEM.md §4).
-	std::array<uint8_t, 0x80> unknown80{};
+	std::array<uint8_t, 0x80> linkTable{};
 	uint16_t shadowIndex = 0xFFFF; // ✅ indeks w Model3db::shadows albo 0xFFFF
-	std::array<uint8_t, 0x30> unknown30{}; // 🔶 12 × f32
+	// ✅ Prostokąt cienia: 4 narożniki × vec3 (f32) na ziemi (y = 0); same zera, gdy klatka nie ma cienia.
+	std::array<uint8_t, 0x30> shadowQuad{};
 	uint16_t cmapIndex = 0xFFFF; // ✅ indeks w Model3db::cmaps albo 0xFFFF
 };
 
@@ -61,11 +62,11 @@ struct Animation3db
 {
 	std::string name;
 	std::vector<uint32_t> frames; // indeksy do Model3db::meshes
-	uint16_t unknownFlags = 0;
-	float unknownF = 0;
+	uint16_t unknownFlags = 0; // ❓ najpewniej niezainicjowana pamięć eksportera
+	float unknownF = 0;         // ❓ zwykle 0
 	std::string sourceFile; // ścieżka do pliku .sex eksportera
-	Vec3f move{};   // 🔶 ruch korzenia na cykl
-	Vec3f rotate{}; // 🔶 obrót na cykl (radiany)
+	Vec3f move{};   // ✅ przesunięcie na klatkę (jednostki modelu, −y = do przodu)
+	Vec3f rotate{}; // ✅ obrót na krok między klatkami (radiany)
 };
 
 struct Object3db
@@ -76,8 +77,9 @@ struct Object3db
 
 struct CMap3db
 {
-	uint16_t width = 0, height = 0, unknown1 = 0, unknown2 = 0;
-	std::vector<uint8_t> pixels;
+	uint16_t width = 0, height = 0;
+	int16_t originX = 0, originY = 0; // ✅ lewy górny róg maski względem punktu obiektu, w kratkach 1/8 bloku
+	std::vector<uint8_t> pixels; // ✅ maska zajętości 0/1 (🔶 kolizje, has_cmap)
 };
 
 struct Model3db
@@ -90,7 +92,8 @@ struct Model3db
 	std::vector<Animation3db> animations;
 	std::vector<std::array<uint8_t, 32 * 32>> shadows;
 	std::vector<CMap3db> cmaps;
-	std::vector<std::array<uint8_t, 20>> unknown20; // rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz + 14 B ❓
+	// Rekordy punktów zaczepienia: 3 × u16 skwantyzowane xyz, u16 ❓, 3 × f32 kąty Eulera (radiany).
+	std::vector<std::array<uint8_t, 20>> linkRecords;
 
 	// Pule danych
 	std::vector<std::vector<uint16_t>> triangles;            // indeksy, po 3 na trójkąt
@@ -110,11 +113,11 @@ struct Model3db
 	bool linkOffset(uint32_t mesh, int link, Vec3f& out) const
 	{
 		if (mesh >= meshes.size() || link < 0 || link >= 32) return false;
-		const auto& t = meshes[mesh].unknown80;
+		const auto& t = meshes[mesh].linkTable;
 		uint32_t slot = uint32_t(t[size_t(link) * 4]) | uint32_t(t[size_t(link) * 4 + 1]) << 8 |
 		    uint32_t(t[size_t(link) * 4 + 2]) << 16 | uint32_t(t[size_t(link) * 4 + 3]) << 24;
-		if (slot >= unknown20.size()) return false;
-		const auto& r = unknown20[slot];
+		if (slot >= linkRecords.size()) return false;
+		const auto& r = linkRecords[slot];
 		auto u = [&](int o) { return uint16_t(r[size_t(o)] | (r[size_t(o) + 1] << 8)); };
 		out = {dequant(u(0)), dequant(u(2)), 2.f * dequant(u(4))};
 		return true;

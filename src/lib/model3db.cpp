@@ -73,9 +73,9 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 		r.readArray(mesh.links, r.u16()); // 6 × u16 w kolejności pól MeshLink
 		mesh.bboxMin = readVec3(r);
 		mesh.bboxMax = readVec3(r);
-		readArray(r, mesh.unknown80);
+		readArray(r, mesh.linkTable);
 		mesh.shadowIndex = r.u16();
-		readArray(r, mesh.unknown30);
+		readArray(r, mesh.shadowQuad);
 		mesh.cmapIndex = r.u16();
 	}
 
@@ -106,8 +106,8 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 	{
 		c.width = r.u16();
 		c.height = r.u16();
-		c.unknown1 = r.u16();
-		c.unknown2 = r.u16();
+		c.originX = int16_t(r.u16());
+		c.originY = int16_t(r.u16());
 		r.readArray(c.pixels, size_t(c.width) * c.height);
 	}
 
@@ -115,14 +115,14 @@ Model3db parseModel3db(const std::vector<uint8_t>& data)
 	m.texcoords.resize(r.u16());
 	m.points.resize(r.u16());
 	m.normals.resize(r.u16());
-	m.unknown20.resize(r.u32());
+	m.linkRecords.resize(r.u32());
 
 	std::vector<uint16_t> triCounts, uvCounts, ptCounts, nrmCounts;
 	r.readArray(triCounts, m.triangles.size());
 	r.readArray(uvCounts, m.texcoords.size());
 	r.readArray(ptCounts, m.points.size());
 	r.readArray(nrmCounts, m.normals.size());
-	for (auto& u : m.unknown20) readArray(r, u);
+	for (auto& u : m.linkRecords) readArray(r, u);
 
 	for (size_t i = 0; i < m.triangles.size(); ++i) r.readArray(m.triangles[i], triCounts[i]);
 	for (size_t i = 0; i < m.texcoords.size(); ++i) r.readArray(m.texcoords[i], uvCounts[i]);

@@ -3,8 +3,7 @@
 // Gra pochodzi z Windows, a nazwy plików mają mieszaną wielkość liter
 // (np. "3db/BABY.3DB" i "3db/baby.3db" to ten sam plik dla gry), dlatego
 // wyszukiwanie ignoruje wielkość liter. Separatorami mogą być '/' lub '\'.
-// Kolejne korzenie (addRoot) mają wyższy priorytet. Na tym oprzemy później
-// Data_HD i mody.
+// Kolejne korzenie (addRoot) mają wyższy priorytet: nakładki (mody, tekstury HD) przykrywają pliki gry.
 #pragma once
 
 #include <cstdint>
@@ -21,7 +20,12 @@ class Vfs
 {
 public:
 	// Dodaje katalog (np. ".../Wiggles"). Ścieżki w grze są względne do niego, np. "Data/3db/baby.3db".
-	void addRoot(const std::filesystem::path& dir);
+	// dataDir: katalog grający rolę "Data/" w tym korzeniu (np. "Data_de" w wariancie językowym moda).
+	void addRoot(const std::filesystem::path& dir, const std::string& dataDir = "Data");
+	// Nakładka w układzie modów (DigglesHDmod, DigglesModManager): katalog z "Data/" przykrywa grę, a jeśli
+	// istnieje "Data_<lang>", ten przykrywa jeszcze "Data/" nakładki (np. tekstury z napisami w języku).
+	// Pliki łatek change_*.tcl nie są stosowane (TODO, faza 7). false: brak "Data/" ani "Data_<lang>".
+	bool addOverlay(const std::filesystem::path& dir, const std::string& lang);
 	bool empty() const { return roots_.empty(); }
 
 	// Rzeczywista ścieżka pliku lub katalogu, jeśli istnieje.
@@ -38,9 +42,14 @@ public:
 private:
 	// Indeks katalogu: nazwa małymi literami -> prawdziwa nazwa.
 	const std::unordered_map<std::string, std::string>& dirIndex(const std::filesystem::path& dir) const;
-	std::optional<std::filesystem::path> resolveIn(const std::filesystem::path& root, const std::string& gamePath) const;
+	struct Root
+	{
+		std::filesystem::path dir;
+		std::string dataDir; // zamiennik pierwszego członu "Data" ścieżki gry
+	};
+	std::optional<std::filesystem::path> resolveIn(const Root& root, const std::string& gamePath) const;
 
-	std::vector<std::filesystem::path> roots_;
+	std::vector<Root> roots_;
 	mutable std::unordered_map<std::string, std::unordered_map<std::string, std::string>> cache_;
 };
 

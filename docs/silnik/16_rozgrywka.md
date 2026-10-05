@@ -96,7 +96,7 @@ Interfejs nie steruje krasnalem bezpośrednio. Kliknięcie przechodzi przez skry
 | `evt_task_open_box`, `evt_task_buildup`, `evt_task_workprod_prefer` | rozpakuj skrzynię, stawiaj budynek, przydział do placówki |
 | `evt_task_attack`, `evt_task_defend`, `evt_task_guard`, `evt_task_prodattack`, `evt_task_buildingconquer`, `evt_task_bombe`, `evt_task_kidnap`, `evt_task_convert` | walka i akcje specjalne |
 
-Rozkazy automatyczne (oznaczenia kopania, produkcja) przychodzą jako `evt_autoprod_*` (`dig`, `walk`, `pickup`, `buildup`, `workat`…). Zdarzenie można wysłać ze skryptu komendą `set_event <źródło> <zdarzenie> -target <obiekt> -pos1 <pozycja> …` (sygnatura z oficjalnej pomocy; 🔶 jako rozkaz dla krasnala nie sprawdzone). Dzięki temu bot testowy może wydawać rozkazy tak jak gracz, bez klikania (TODO).
+Rozkazy automatyczne (oznaczenia kopania, produkcja) przychodzą jako `evt_autoprod_*` (`dig`, `walk`, `pickup`, `buildup`, `workat`…). Zdarzenie można wysłać ze skryptu komendą `set_event <źródło> <zdarzenie> -target <obiekt> -pos1 <pozycja> …` (✅ sprawdzone w grze: `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z} -text1 userevent` prowadzi krasnala do celu, [BAZA_WIEDZY §8.8](../BAZA_WIEDZY.md)). Dzięki temu bot testowy może wydawać rozkazy tak jak gracz, bez klikania (TODO).
 
 ## 16.10 Interfejs i sterowanie kamerą
 

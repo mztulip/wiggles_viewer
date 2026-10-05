@@ -338,6 +338,13 @@ Sondy: [`tools/lab/owprobe_deep.tcl`](../tools/lab/owprobe_deep.tcl) (świat z j
 
 **Ramka ekranu** (dawne „winieta”): [rozdział 9.4](silnik/09_klatka.md). Zrzuty menu i zapisu kampanii z `BorderMask` 1/0 oraz `LightGlow` 1/0: różnią się tylko pikselami 0–10 od krawędzi; `LightGlow` nie zmienia tych scen.
 
+
+### 8.8 Faza 2: formaty pomocnicze i nieznane pola `.3db` (2026-10-05)
+
+- `lmsg`/`locale` w działającej grze (WebTraq): dopasowanie dokładne, brak hasła = klucz + wpis w `msgmisses.txt`, `locale en` przełącza teksty, bez `Language` w rejestrze `locale` jest puste; `LOCALE.TXT` (`de`) nie jest źródłem języka ([teksty.md](formaty/teksty.md)).
+- `TEXMAPS.BIN`: układ potwierdzony co do bajta i pikseli; zrzuty menu z paczką i bez niej się różnią (bez niej tekstury rozmyte), więc gra rysuje z paczki ARGB4444. `TextureQuality` 0/2/4 nie zmienia menu ([tekstury.md](formaty/tekstury.md)).
+- `.3db` (statystyki wszystkich 43 modeli): `unknown30` = prostokąt cienia (1:1 z `shadowIndex`), `cmap` = maska 0/1 w kratkach 1/8 bloku z przesunięciem `i16`, rekord zaczepienia ma kąty Eulera (bajty 8–19), `move`/`rotate` na klatkę ([3db.md](formaty/3db.md)).
+- Rozkaz `set_event <krasnal> evt_task_walk -target <krasnal> -pos1 {x y z} -text1 userevent` działa: krasnal przeszedł 5 bloków (stan `task`, potem `work_idle`), prędkość 0,85 bloku/s na rozbiegu i 1,59 bloku/s w biegu (zgodnie z `move` animacji `gehen` 0,81 i `laufen_schnell` 1,71).
 ---
 
 ## 9. Mapy i teren: przebieg badań

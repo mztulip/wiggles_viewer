@@ -7,5 +7,7 @@ namespace ow
 {
 
 std::string cp1252ToUtf8(const std::string& s);
+// Windows-1250 (Europa Środkowa: polskie teksty, np. MESSAGES.TXT wersji polskiej) -> UTF-8.
+std::string cp1250ToUtf8(const std::string& s);
 
 } // namespace ow

@@ -42,6 +42,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | `Data/BlockDB0/1/2.BDB` | [blockdb.md](formaty/blockdb.md): kształty bloków terenu |
 | `Data/Templates/*.pmp`, `*.l2m`, `*.tcl` | [szablony.md](formaty/szablony.md): szablony map |
 | `Data/Gamesave/*.sav` | [sav.md](formaty/sav.md): zapis gry (mapa, kamera, mgła, obiekty) |
+| `Data/MESSAGES.TXT`, `QUOTES.TXT`, `LOCALE.TXT` | [teksty.md](formaty/teksty.md): tłumaczenia (`lmsg`, `locale`) i cytaty |
 
 ## Oznaczenia
 

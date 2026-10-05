@@ -7,6 +7,7 @@
 
 #include "lib/class_db.h"
 #include "lib/map_template.h"
+#include "lib/messages.h"
 #include "lib/model3db.h"
 #include "lib/save_game.h"
 #include "lib/sound.h"
@@ -16,6 +17,7 @@
 #include "lib/vfs.h"
 
 #include <cstdio>
+#include <cstring>
 #include <map>
 #include <set>
 
@@ -206,6 +208,47 @@ int testSaves(const Vfs& vfs)
 	return failed;
 }
 
+// Teksty i pliki pomocnicze tekstur (docs/formaty/teksty.md, tekstury.md).
+int testTexts(const Vfs& vfs)
+{
+	int failed = 0;
+	Messages m;
+	auto msg = vfs.read("Data/MESSAGES.TXT");
+	if (!msg || !m.load(*msg))
+	{
+		std::printf("  MESSAGES.TXT: BŁĄD odczytu\n");
+		++failed;
+	}
+	else
+	{
+		std::string langs;
+		for (const auto& l : m.languages()) langs += " " + l;
+		std::printf("  MESSAGES.TXT: %zu haseł, języki:%s\n", m.size(), langs.c_str());
+	}
+	if (auto q = vfs.read("Data/QUOTES.TXT"))
+	{
+		auto quotes = parseQuotes(*q);
+		std::map<std::string, int> byLang;
+		for (const auto& x : quotes) byLang[x.lang]++;
+		std::printf("  QUOTES.TXT: %zu cytatów,", quotes.size());
+		for (const auto& [l, n] : byLang) std::printf(" %s %d", l.c_str(), n);
+		std::printf("\n");
+	}
+	// TEXMAPS.BIN: "TexC", liczba tekstur n, 4 maski ARGB4444, n × 50 B nazw, n × 176816 B pikseli.
+	if (auto t = vfs.read("Data/Texture/TEXMAPS.BIN"))
+	{
+		bool ok = t->size() >= 24 && std::string(t->begin(), t->begin() + 4) == "TexC";
+		uint32_t n = 0;
+		if (ok) std::memcpy(&n, t->data() + 4, 4);
+		size_t expect = 24 + size_t(n) * 50 + size_t(n) * 176816;
+		ok = ok && expect == t->size();
+		std::printf("  TEXMAPS.BIN: %u tekstur, rozmiar %s z układem n×(50 + 176816) B\n", n, ok ? "zgodny" : "NIEZGODNY");
+		if (!ok) ++failed;
+	}
+	std::printf("teksty: błędy %d\n", failed);
+	return failed;
+}
+
 // Dźwięki: każdy plik musi się zdekodować; indeks odwołań (docs/silnik/15_dzwiek.md) w liczbach.
 int testSounds(const Vfs& vfs)
 {
@@ -277,6 +320,8 @@ int main(int argc, char** argv)
 	failed += testSaves(vfs);
 	std::printf("\n");
 	failed += testSounds(vfs);
+	std::printf("\n");
+	failed += testTexts(vfs);
 	std::printf("\n%s\n", failed ? "BŁĘDY" : "WSZYSTKO OK");
 	return failed ? 1 : 0;
 }

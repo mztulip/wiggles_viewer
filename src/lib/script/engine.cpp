@@ -130,9 +130,15 @@ int cmdLog(Engine&, Tcl_Interp* in, Args&)
 	setResult(in, "");
 	return TCL_OK;
 }
-int cmdEcho(Engine&, Tcl_Interp* in, Args& a)
-{ // lmsg x -> x
-	setResult(in, a.size() > 1 ? a[1] : "");
+// lmsg klucz: tekst z MESSAGES.TXT w bieżącym języku; bez hasła sam klucz (docs/formaty/teksty.md).
+int cmdLmsg(Engine& e, Tcl_Interp* in, Args& a)
+{
+	if (a.size() != 2)
+	{
+		Tcl_SetResult(in, const_cast<char*>("invalid arg count (1 expected)"), TCL_STATIC);
+		return TCL_ERROR;
+	}
+	setResult(in, e.lmsg(a[1]));
 	return TCL_OK;
 }
 int cmdStub(Engine& e, Tcl_Interp* in, Args& a)
@@ -175,9 +181,10 @@ int cmdCd(Engine& e, Tcl_Interp* in, Args& a)
 	setResult(in, "");
 	return TCL_OK;
 }
-int cmdLocale(Engine&, Tcl_Interp* in, Args&)
-{ // język danych gry (pliki *_pl.tcl, *_de.tcl)
-	setResult(in, "pl");
+int cmdLocale(Engine& e, Tcl_Interp* in, Args& a)
+{ // locale [język]: język tekstów (lmsg) i plików *_pl.txt, *_de.txt; z argumentem ustawia
+	if (a.size() > 1) e.setLocale(a[1]);
+	setResult(in, e.locale());
 	return TCL_OK;
 }
 int cmdInClassDef(Engine& e, Tcl_Interp* in, Args&)
@@ -1259,7 +1266,7 @@ const Entry kCommands[] = {
     {"load_info", cmdLog},
     {"set_run_info", cmdLog},
     {"show_loading", cmdLog},
-    {"lmsg", cmdEcho},
+    {"lmsg", cmdLmsg},
     {"__ow_stub", cmdStub},
     {"minimalrun", cmdZero},
     {"get_mapedit", cmdZero},
@@ -1420,6 +1427,7 @@ Engine::Engine(const Vfs& vfs) : vfs_(vfs)
 	const char* xdg = std::getenv("XDG_CACHE_HOME");
 	const char* home = std::getenv("HOME");
 	cacheDir_ = xdg && *xdg ? std::string(xdg) + "/openwiggles" : std::string(home ? home : ".") + "/.cache/openwiggles";
+	if (auto m = vfs_.read("Data/MESSAGES.TXT"); m && messages_.load(*m)) locale_ = messages_.languages().front();
 	Tcl_FindExecutable(nullptr);
 	main_ = newInterp();
 }
@@ -1626,7 +1634,8 @@ std::string Engine::scriptsSignature() const
 		++count;
 		newest = std::max<long long>(newest, it->last_write_time(ec).time_since_epoch().count());
 	}
-	return std::string(kCacheVersion) + " " + root->string() + " " + std::to_string(count) + " " + std::to_string(newest);
+	return std::string(kCacheVersion) + " " + root->string() + " " + std::to_string(count) + " " + std::to_string(newest) +
+	    " locale=" + locale_; // lmsg w ciałach klas zależy od języka
 }
 
 void Engine::writeClassCache(const std::string& sig)
@@ -2016,6 +2025,22 @@ void Engine::finishAction(ScriptObject& o, bool ok)
 	o.actionUntil = time_; // kod zakończenia wykona najbliższa tura logiki
 }
 
+std::string Engine::lmsg(const std::string& key)
+{
+	// Napisy Tcl to bajty pliku zapisane 1:1 jako znaki U+0000..U+00FF (toUtf8), więc klucz wraca do bajtów.
+	std::string raw;
+	for (size_t i = 0; i < key.size(); ++i)
+	{
+		unsigned char c = key[i];
+		if (c < 0x80) raw += char(c);
+		else if ((c & 0xE0) == 0xC0 && i + 1 < key.size()) raw += char(((c & 0x1F) << 6) | (key[++i] & 0x3F));
+		else return key; // znak spoza zakresu bajtów: takiego hasła w pliku nie ma
+	}
+	if (const std::string* t = messages_.find(raw, locale_)) return toUtf8(*t);
+	msgMisses_[key]++;
+	return key;
+}
+
 void Engine::writeLog(const std::string& path) const
 {
 	std::ofstream f(path);
@@ -2027,6 +2052,8 @@ void Engine::writeLog(const std::string& path) const
 	for (auto& [v, k] : s) f << k << "\t" << v << "\n";
 	f << "\n## Błędy\n";
 	for (auto& e : errors_) f << e << "\n";
+	f << "\n## lmsg bez hasła w MESSAGES.TXT (język " << locale_ << ")\n";
+	for (auto& [k, v] : msgMisses_) f << k << "\t" << v << "\n";
 }
 
 } // namespace ow::script

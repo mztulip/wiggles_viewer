@@ -2,9 +2,11 @@
 //
 // Użycie:
 //   openwiggles [--game <katalog gry>] [--scenario NAZWA | --save PLIK.sav | --template SZABLON]
-//               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--screenshot plik.png]
+//               [--renderer vulkan|opengl] [--size SZERxWYS] [--lang KOD] [--locale KOD] [--screenshot plik.png]
 //               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
 // F5 / F9: szybki zapis i wczytanie najnowszego zapisu (~/.local/share/openwiggles/saves/, .sav jak w grze albo .ows).
+// --overlay KATALOG: nakładka w układzie modów (Data/ i Data_<język> przykrywają pliki gry), można podać kilka razy.
+// --locale: język tekstów gry (lmsg, MESSAGES.TXT); domyślnie język interfejsu, jeśli dane go mają, inaczej język wydania.
 // Bez mapy: najnowszy zapis z Data/Gamesave, a gdy go nie ma, szablon kris_unq_060 z jednym krasnalem.
 //
 // Sterowanie: LPM zaznacza krasnala, PPM na wolnym polu = idź, PPM na skale = kop.
@@ -64,7 +66,8 @@ constexpr float kPi = 3.14159265f;
 
 struct Args
 {
-	std::string game, scenario, save, templ, screenshot, lang;
+	std::string game, scenario, save, templ, screenshot, lang, locale;
+	std::vector<std::string> overlays;
 	rhi::Backend renderer = rhi::Backend::Vulkan;
 	bool rendererForced = false;
 	int width = 1280, height = 800;
@@ -88,6 +91,8 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--template") a.templ = next();
 		else if (k == "--screenshot") a.screenshot = next();
 		else if (k == "--lang") a.lang = next();
+		else if (k == "--locale") a.locale = next();
+		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--no-scripts") a.scripts = false;
@@ -1276,6 +1281,8 @@ int main(int argc, char** argv)
 	auto game = std::make_unique<Game>();
 	Game& g = *game;
 	g.vfs.addRoot(args.game);
+	for (const auto& o : args.overlays)
+		if (!g.vfs.addOverlay(o, i18n::language())) std::fprintf(stderr, "nakładka %s: brak katalogu Data ani Data_%s\n", o.c_str(), i18n::language().c_str());
 	if (!g.vfs.exists("Data/3db"))
 	{
 		std::fprintf(stderr, "Nie znaleziono Data/3db w '%s'. Podaj --game <katalog gry>.\n", args.game.c_str());
@@ -1354,6 +1361,11 @@ int main(int argc, char** argv)
 		g.host.g = &g;
 		g.scriptGnomes = args.scriptGnomes;
 		g.scripts->setHost(&g.host);
+		{ // język tekstów gry: --locale, inaczej język interfejsu (jeśli MESSAGES.TXT go ma), inaczej język wydania
+			const auto& langs = g.scripts->messages().languages();
+			if (!args.locale.empty()) g.scripts->setLocale(args.locale);
+			else if (std::find(langs.begin(), langs.end(), i18n::language()) != langs.end()) g.scripts->setLocale(i18n::language());
+		}
 		Uint64 t0 = SDL_GetTicks64();
 		std::string serr;
 		if (!g.scripts->boot(serr)) std::fprintf(stderr, "skrypty: %s\n", serr.c_str());
