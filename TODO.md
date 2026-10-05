@@ -50,7 +50,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
 - [x] Scena i rysowanie map w bibliotece ([`lib/map_scene.h`](src/lib/map_scene.h), `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
-- [ ] Ramka ekranu `BorderMask` w grze i jako opcja w wigview (prawo w rozdziale 9.4)
+- [x] Ramka ekranu `BorderMask` w grze (domyślnie, `--no-border-mask`) i jako opcja w wigview (`--border-mask`, przełącznik w zakładkach map); prawo doprecyzowane: teksel 3·(p + 0,5 − 2) z próbkowaniem liniowym, zgodność z grą ±0,02 ([rozdział 9.4](docs/silnik/09_klatka.md))
+- [ ] 🔬 Ramka ekranu przy innej rozdzielczości niż 1024×768 (czy skaluje się z ekranem: 21⅓ piksela = 1/48 szerokości)
 - [ ] 🤖 Bot testowy (rozwijany na bieżąco, w miarę potrzeby): te same scenariusze w oryginale i w `openwiggles`, porównanie przebiegu
   - sterowanie: rozkazy gracza jako zdarzenia `evt_task_*` (`set_event`, rozdział 16.9), w oryginale przez WebTraq ([`tools/lab/live.sh`](tools/lab/live.sh)), u nas przez taki sam interfejs `/tclshell` w grze
   - scenariusz: wczytanie zapisu, rozkazy (idź, kop, podnieś), próbki stanu co sekundę (pozycje, stany, zadania, teren), zrzuty

@@ -51,7 +51,9 @@ Wokół całego obrazu gra rysuje cienką czarną ramkę z zaokrąglonymi rogami
 |---|---|---|---|---|---|---|---|---|---|
 | przepuszczanie (1 − α) | 0 | 0,04 | 0,17 | 0,31 | 0,50 | 0,72 | 0,86 | 0,92 | 1 |
 
-🔶 Dopasowanie: piksel `p` od krawędzi odpowiada tekselowi `4·(p − 3)` paska tekstury, czyli 3 piksele pełnej czerni, a dalej 64-tekselowy pasek ściśnięty do 16 pikseli. To samo przeliczenie zgadza się w rogu na przekątnej (przepuszczanie 0,5 przy tekselu 32 tekstury, czyli w pikselu 11, zmierzone 0,52 w pikselu 12). Nie sprawdzaliśmy innych rozdzielczości niż 1024×768 (❓ czy ramka skaluje się z ekranem).
+✅ Dopasowanie: **środek piksela `p` od krawędzi odpowiada tekselowi `3·(p + 0,5 − 2)` paska tekstury, próbkowanemu liniowo**, czyli 64-tekselowy pasek leży na 21⅓ piksela, zaczynając 2 piksele od krawędzi. Dopasowanie przesunięcia i skali (3,0 teksela na piksel, próbkowanie punktowe, liniowe albo uśrednienie dały podobny błąd) do tabeli wyżej: odchyłka ≤ 0,02 dla każdego p. Nasza ramka zmierzona tak samo jak gra (stosunek zrzutów z ramką i bez, 1024×768): 0,02; 0,06; 0,16; 0,32; 0,51; 0,70; 0,85; 0,94; 0,99 dla p = 3…11, na przekątnej 0,53 w pikselu 12 (gra: 0,52). Wcześniejsze przybliżenie `4·(p − 3)` dawało przejście za ostre (0,23 zamiast 0,31 w p = 6).
+
+🔶 21⅓ piksela to 1/48 szerokości i 1/36 wysokości ekranu 1024×768, więc gra może skalować ramkę z rozdzielczością; nie sprawdzaliśmy innych rozdzielczości (❓). U nas ramka ma stałą szerokość w pikselach: [`render/border_mask`](../../src/lib/render/border_mask.h), shader [border_mask.frag](../../src/shaders/border_mask.frag); w grze domyślnie włączona (`--no-border-mask`), w wigview przełącznik „Ramka ekranu” w zakładkach map (`--border-mask`).
 
 ## 9.5 Weryfikacja
 

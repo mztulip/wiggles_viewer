@@ -49,6 +49,8 @@ public:
 	bool ui(bool savesTab);
 	bool showingSave() const { return list_ == ListMode::Saves; }
 
+	bool* borderMask = nullptr; // przełącznik ramki ekranu w wigview (rysuje ją Viewer); nullptr = bez przełącznika
+
 private:
 	enum class ListMode
 	{

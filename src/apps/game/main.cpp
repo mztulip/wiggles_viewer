@@ -6,6 +6,7 @@
 //               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
 // F5 / F9: szybki zapis i wczytanie najnowszego zapisu (~/.local/share/openwiggles/saves/, .sav jak w grze albo .ows).
 // --overlay KATALOG: nakładka w układzie modów (Data/ i Data_<język> przykrywają pliki gry), można podać kilka razy.
+// --no-border-mask: bez czarnej ramki ekranu z Data/GUI/bordermask.tga (w grze rejestr Performance\BorderMask, domyślnie 1).
 // --locale: język tekstów gry (lmsg, MESSAGES.TXT); domyślnie język interfejsu, jeśli dane go mają, inaczej język wydania.
 // Bez mapy: najnowszy zapis z Data/Gamesave, a gdy go nie ma, szablon kris_unq_060 z jednym krasnalem.
 //
@@ -16,6 +17,7 @@
 // Scena i rysowanie: MapScene (lib/map_scene.h). 🔶 Tymczasowo: ruch po siatce pól (lib/nav.h), kopanie
 // zamienia blok na pusty (59). Zachowania krasnali z Tcl (Scripts/classes/zwerg) jeszcze nie działają.
 #include "lib/blockdb.h"
+#include "lib/render/border_mask.h"
 #include "lib/render/model_renderer.h"
 #include "lib/render/texture_cache.h"
 #include "lib/i18n.h"
@@ -74,6 +76,7 @@ struct Args
 	bool scripts = true;          // --no-scripts: bez silnika Tcl
 	bool scriptGnomes = true;     // --player-gnomes: krasnale tylko na rozkaz gracza, bez skryptów
 	bool reveal = false;          // --reveal: bez nieodkrytego terenu
+	bool borderMask = true;       // --no-border-mask: bez ramki ekranu
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
 	std::string load, saveTo;     // --load plik.ows, --save-to plik.ows (zapis po --warmup; testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
@@ -96,6 +99,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--size") std::sscanf(next(), "%dx%d", &a.width, &a.height);
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--no-scripts") a.scripts = false;
+		else if (k == "--no-border-mask") a.borderMask = false;
 		else if (k == "--player-gnomes") a.scriptGnomes = false;
 		else if (k == "--reveal") a.reveal = true;
 		else if (k == "--load") a.load = next();
@@ -301,6 +305,7 @@ struct Game
 	std::unique_ptr<TextureCache> textures;
 	std::vector<Vec3f> sphere;
 	MapScene maps;
+	BorderMask border; // ramka ekranu (docs/silnik/09_klatka.md §9.4)
 	ModelDrawOptions draw;
 	NavGrid nav;
 	GameView cam;
@@ -1323,6 +1328,10 @@ int main(int argc, char** argv)
 	g.textures->setDevice(&dev);
 	if (auto sd = g.vfs.read("Data/SPHERE.DAT")) g.sphere = parseSphereDat(*sd);
 	g.maps.init(dev, &g.vfs, g.textures.get(), &g.sphere);
+	{
+		std::string err;
+		if (args.borderMask && !g.border.init(dev, g.vfs, err)) std::fprintf(stderr, "ramka ekranu: %s\n", err.c_str());
+	}
 
 	// Źródło mapy: --save / --template / --scenario / --load (zapis .ows) albo najnowszy zapis gry.
 	Source src;
@@ -1418,6 +1427,7 @@ int main(int argc, char** argv)
 		if (!dev.beginFrame(w, h, clear.r, clear.g, clear.b)) return false;
 		dev.setViewport(0, 0, w, h);
 		if (g.loaded) g.render(w, h);
+		if (args.borderMask) g.border.draw(0, w, h);
 		dev.imguiRender(ImGui::GetDrawData());
 		dev.endFrame(readback);
 		return true;

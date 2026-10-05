@@ -277,6 +277,14 @@ bool MapView::ui(bool savesTab)
 	ImGui::Checkbox(tr("Panorama nieba"), &showPanorama_);
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Dywan łąki"), &showCarpet_);
+	ImGui::EndDisabled();
+	if (borderMask)
+	{
+		ImGui::SameLine();
+		ImGui::Checkbox(tr("Ramka ekranu"), borderMask);
+		ImGui::SetItemTooltip(tr("Czarna ramka z zaokrąglonymi rogami z Data/GUI/bordermask.tga, jak w grze z BorderMask=1"));
+	}
+	ImGui::BeginDisabled(!hasOpenAir_);
 	{
 		// Podgląd nieodkrytego terenu (wymaga oświetlenia gry).
 		const char* modes[] = {tr("wyłączona"), tr("całość odkryta, niewidoczna (szara)"), tr("kadr widoczny, reszta szara"),

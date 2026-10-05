@@ -24,6 +24,7 @@
 //                      (albo pierwszej), klatka 0: KATALOG/<model>/<obiekt>.png i KATALOG/index.html; rozmiar z --size
 //                      (domyślnie 256x256), kończy działanie.
 // --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
+// --border-mask: ramka ekranu gry (Data/GUI/bordermask.tga) na scenie map, jak w grze z BorderMask=1.
 // --no-draw-modes: wszystkie linki modeli rysowane jak tryb 1 (bez trybów z flags linku), do porównań.
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
 // --sound PLIK: otwiera zakładkę Dźwięki z plikiem (ścieżka gry, np. Data/Sound/Fenris/fe_schritt1.WAV).
@@ -37,6 +38,7 @@
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/i18n.h"
+#include "lib/render/border_mask.h"
 #include "lib/render/model_renderer.h"
 #include "lib/render/texture_cache.h"
 #include "lib/gltf_export.h"
@@ -80,6 +82,7 @@ struct Args
 	int textureChannel = 0;
 	bool shadowCmap = false;
 	bool drawModes = true; // --no-draw-modes
+	bool borderMask = false; // --border-mask
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
 	float frame = 0;
@@ -127,6 +130,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--texture-channel") a.textureChannel = std::atoi(next());
 		else if (k == "--shadow-cmap") a.shadowCmap = true;
 		else if (k == "--no-draw-modes") a.drawModes = false;
+		else if (k == "--border-mask") a.borderMask = true;
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
@@ -204,6 +208,8 @@ struct Viewer
 	bool mapTab() const { return activeTab == 2 || activeTab == 3; }
 	int forceTab = -1;       // zakładka do wybrania w najbliższej klatce UI
 	MapView maps;
+	BorderMask border;       // ramka ekranu gry na obszarze sceny map (--border-mask)
+	bool borderMask = false;
 	ParticleView particles;
 	SoundView sounds;
 	FilesView files;
@@ -447,6 +453,7 @@ struct Viewer
 		if (mapTab())
 		{
 			if (maps.hasTemplate()) maps.render(viewProj(w - x0, h), modelMatrix(), draw, center.z, center + pan * glm::vec3(1, -1, 1));
+			if (borderMask) border.draw(x0, w - x0, h);
 		}
 		else if (activeTab == 4)
 		{
@@ -1565,6 +1572,12 @@ int main(int argc, char** argv)
 	v.textures = std::make_unique<TextureCache>(v.vfs);
 	v.textures->setDevice(&dev);
 	v.maps.init(dev, &v.vfs, v.textures.get(), &v.sphere);
+	{
+		std::string err;
+		if (!v.border.init(dev, v.vfs, err)) std::fprintf(stderr, "ramka ekranu: %s\n", err.c_str());
+	}
+	v.borderMask = args.borderMask;
+	v.maps.borderMask = &v.borderMask;
 	v.particles.init(dev, &v.vfs, v.textures.get());
 	v.sounds.init(&v.vfs);
 	v.files.init(&v.vfs);
