@@ -130,6 +130,10 @@ Rysowanie: kwadrat o boku `rozmiar · 0,12` bloku, zwrócony do kamery, kolor `t
 
 ## 12.6 Porównanie ze zrzutem gry
 
+**Wszystkie typy** ([BAZA_WIEDZY §9.10](../BAZA_WIEDZY.md)): w działającej grze każdy typ 0–42 podpięty do krasnala (`change_particlesource $G 1 <typ> {0 0 0} {0 0 0} 64 2 0 10`). Poza płomieniami (2, 27) i typami 24, 25 nasze typy są za małe albo niewidoczne; obłoki i wybuchy 33–42 są w grze wielokrotnie większe od płomienia (39, 40, 42 na cały kadr przy `zoom` 0,8), u nas porównywalne z nim. Typy 7, 8, 30–32, 37–41 u nas nic nie pokazują. Kalibracja typ po typie: TODO.
+
+**Płomienie** (pierwsza kalibracja):
+
 Szablon `kris_unq_060` (dwa kielichy ognia `Dummy_Feuerkelch_b`, typ 2, i dwie lampy `Dummy_Haengelicht`, typ 3), kamera `set_view 24,5 21 1,0 0 0` (szablon w bloku 16,16). Zrzut gry: `../lab/zrzuty/czasteczki/kris_unq_060_gra.png` (poza repozytorium), nasz obraz: `wigview --template kris_unq_060 --view 8.5 5 1.0 0 0`.
 
 W grze płomień kielicha ma ok. 0,27 bloku szerokości i 0,6 bloku wysokości, jest żółty z jasnym środkiem, zwarty. Parametry Diggles-Unity dawały płomień ok. 0,9 bloku szerokości, pomarańczowo-czerwony i rozproszony. Po trzech poprawkach obraz jest zgodny:

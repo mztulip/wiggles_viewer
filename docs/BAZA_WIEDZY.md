@@ -413,6 +413,44 @@ Cel: czy gra przy `AnimInterpolation=1` rysuje pozy pośrednie między klatkami 
 - **Pulsująca poświata** wokół nowego krasnala i migotanie lampy dają szum RMSE porównywalny z różnicą sąsiednich klatek (`lager_ablegen_hoch`: szum 8864, sąsiednie klatki 4775–8943); ta animacja wyprowadza też postać poza kadr.
 Następna próba: obiekt bez AI i bez poświaty (np. dekoracja z animacją pętli albo krasnal z zapisu po `state_disable`), animacja bez `move`/`rotate` o dużym ruchu w miejscu, wzorce z naszego renderera zamiast z gry, porównanie serii przy `AnimInterpolation` 1 i 0.
 
+### 9.10 Cząsteczki: wszystkie 43 typy w działającej grze (2026-10-05)
+Metoda (`live.sh`, zapis kampanii, jaskinia `set_view 237,4 41,5 0,8 0 0`, lampa obok): nośnikiem jest nowy krasnal (`new Zwerg`, `state_disable`, przed każdym typem `set_pos` w to samo miejsce), a źródło ustawia `change_particlesource $G 1 <typ> {0 0 0} {0 0 0} 64 2 0 10; set_particlesource $G 1 1` (slot 1, punkt zaczepienia 10 = usta, jak w `Trigger_Tournament.tcl`). Zrzut wycinka 360×420 po 3 s. Pułapki: dekoracje `Dummy_*` (np. kielich ognia) po utworzeniu nie mają już obiektu Tcl (`invalid object`), więc zmiana ich źródła nic nie daje; błędy WebTraq trzeba sprawdzać (`Ok.`), a nie kierować do `/dev/null`; slot 0 krasnala też działa i jego źródło zostaje, dopóki go nie wyłączyć. Zrzuty: `../lab/zrzuty/czasteczki/typy/gra_<typ>.png`, nasze `wigview --particle <typ>` obok: `nasz_<typ>.png`.
+
+Wygląd w grze (źródło ciągłe 64/2, więc typy jednorazowe dają większe chmury niż w skryptach); „nasz” to podgląd wigview w innej skali kamery, więc porównujemy charakter i rozmiar względem płomienia typu 2:
+
+| typ | w grze | nasz |
+|---|---|---|
+| 0 | duża jasna biało-żółta kula żaru przy głowie | rzadkie drobne kropki (za małe) |
+| 2 | płomień | ✅ zgodny (kalibracja §9.4) |
+| 3 | duży ogień, języki do ok. 1,5 bloku w górę | węższy słup |
+| 4 | małe białe „Z” | niewidoczne |
+| 1, 5, 9, 10, 15, 16, 19, 23 | prawie nic w tym ustawieniu | drobne kropki albo nic |
+| 6 | biały dym wokół postaci | małe kłęby |
+| 7 | biała smuga spadająca w dół | brak |
+| 8 | różowa plama na ziemi | brak |
+| 11, 13, 14 | iskry i odłamki wokół postaci (11 szeroko) | drobne kropki |
+| 12 | duży biały obłok (ponad 1 blok) | punkt |
+| 17, 26 | brązowe wióry przy nogach | drobne |
+| 18 | żółte iskry przy nogach | drobne |
+| 20, 21 | biało-szary pył i mgiełka przy głowie | mały obłok |
+| 22 | białe smugi w górę po bokach postaci | nikłe |
+| 24 | białe płatki przy nogach | rozproszone płatki (podobne) |
+| 25 | biała kreska (promień) | kreska (podobna) |
+| 27 | pomarańczowa kula ognia, ok. 0,5 bloku | mała, podobna barwa |
+| 28, 29 | niebieskie kule, fioletowo-biały słup dymu (~1 blok) | nikłe |
+| 30–32 | fiolet, niebieski znak, biały błysk-gwiazda | brak |
+| 33 | zielono-żółte iskry wokół | niebieskie kropki |
+| 34 | ogromna biało-żółta kula ognia (~1,5 bloku) | mała |
+| 35 | duży szary dym | mały biały |
+| 36, 38 | niebieski, błękitny obłok „puf” (~1 blok) | kropka, brak |
+| 37 | ognisty wybuch z czarnymi odłamkami | brak |
+| 39 | turkusowy pierścień na cały kadr | brak |
+| 40 | pomarańczowy wybuch na cały kadr | brak |
+| 41 | duży biały błysk-gwiazda | brak |
+| 42 | brązowa kula pyłu na cały kadr | mała |
+
+Wniosek: poza płomieniami 2 i 27 oraz typami 24 i 25 nasze typy są za małe albo niewidoczne, najbardziej wybuchy i obłoki 33–42 (u nas rozmiarem jak płomień, w grze wielokrotnie większe). Następny krok: ta sama scena w wigview (krasnal, punkt 10, kamera `--view`) i kalibracja rozmiaru, czasu życia i jasności typ po typie, zaczynając od 34–42 i 0, 3, 12.
+
 ---
 
 ## 10. Diggles-Unity: indeks dokumentacji

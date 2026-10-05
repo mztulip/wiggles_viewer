@@ -131,7 +131,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
 - [x] Wyszukiwarka Ctrl+F: modele, obiekty w modelach, tekstury, szablony
 - [x] Cząsteczki: zakładka z 43 typami (atlas, parametry, użycie w skryptach, podgląd emitera), `--particle N`; emitery z `class_particle` na mapach; rozdział [12](docs/silnik/12_czasteczki.md)
-- [ ] 🔬 Cząsteczki: porównać każdy typ ze zrzutem gry (scena z `change_particlesource`), przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
+- [x] 🔬 Cząsteczki: zrzuty wszystkich 43 typów z gry (krasnal jako nośnik, `change_particlesource … 64 2 0 10`), tabela wyglądu i porównanie z naszym podglądem ([BAZA_WIEDZY §9.10](docs/BAZA_WIEDZY.md))
+- [ ] Cząsteczki: kalibracja typ po typie wg zrzutów §9.10 (ta sama scena w wigview: krasnal, punkt 10, `--view`); najpierw obłoki i wybuchy 33–42 (u nas wielokrotnie za małe) oraz 0, 3, 12; brakujące 7, 8, 30–32, 37–41; przepisać prawa typów zamiast wspólnego modelu; podłoże z terenu dla typów „ziemnych”; płomień typu 3 przy `Dummy_Haengelicht` niewidoczny
 - [x] Płyny z zapisu: typ i wypełnienie pola (`.sav`), deskryptor płynu z BlockDB, rysowanie ściany i powierzchni ([rozdział 13](docs/silnik/13_plyny.md))
 - [x] Języki interfejsu: polski (źródłowy) i angielski, pliki gettext `lang/*.po` osadzane przy budowaniu, wybór w oknie i `--lang`, zapamiętany w `wigview.ini` ([lang/README.md](lang/README.md))
 - [x] Tłumaczenia: komunikaty błędów z [`src/lib`](src/lib) (parsery, zapis, dźwięk, glTF) przez `tr`/`strf`; konsola i dziennik skryptów zostają po polsku ([lang/README.md](lang/README.md))
