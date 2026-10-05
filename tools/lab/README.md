@@ -11,6 +11,7 @@ Skrypty uruchamiamy z katalogu repozytorium (`openwiggles_git`).
 | Skrypt | Okno | Do czego |
 |---|---|---|
 | [`capture.sh`](capture.sh) | niewidoczne (Xvfb) | jeden zrzut: menu, szablon albo własna scena; gra startuje i kończy się za każdym razem (ok. 1 min) |
+| [`capture2.sh`](capture2.sh) | **widoczne** | jak `capture.sh`, ale w widocznym oknie Wine i z odsłonięciem szablonu prostokątem `fog_remove 0 -50 -50` (przez skałę, cały szablon); zrzut okna przez `xdotool` + `import`, więc okno musi być widoczne |
 | [`live.sh`](live.sh) | niewidoczne (Xvfb) | gra działa w tle; wykonywanie Tcl w działającej grze i zrzuty bez restartów |
 | [`live2.sh`](live2.sh) | **widoczne** | przeglądanie szablonów map w oryginale, podmiana szablonu w ok. 2 s |
 
@@ -56,6 +57,8 @@ tools/lab/capture.sh scene out.png <plik.tcl> [sekundy=60]
 `template` wstawia szablon w blok (16, 16), więc środek kamery to 16 + połowa wymiaru szablonu (przykład: szablon 16×4 → `24 18`). Bez `x y` kamera patrzy na (18, 18). Mgła jest odsłaniana z dodatnim zasięgiem (`fog_remove 0 50 50`), czyli promieniami zatrzymywanymi w skale: przy szablonach z kilkoma komorami widać tylko tę przy środku. Pełne odsłonięcie daje ujemny zasięg (`-50 -50`, prostokąt przez skałę), jak w `live2.sh`.
 
 Porównanie z naszym renderem tego samego kadru: `build/release/wigview --template <szablon> --view <x−16> <y−16> zoom kąt1 kąt2 --size 1024x768 --screenshot nasz.png`.
+
+`capture2.sh` przyjmuje te same argumenty (`menu`, `template`, `scene`); w trybie `scene` domyślnie czeka 10 s, a w `menu` 30 s.
 
 ## `live.sh`: gra w tle, Tcl i zrzuty
 
