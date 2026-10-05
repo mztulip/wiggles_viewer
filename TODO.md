@@ -101,7 +101,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Pola `.3db`: tablica punktów zaczepienia, prostokąt cienia, `cmap` (maska 1/8 bloku z przesunięciem), kąty Eulera w rekordach zaczepienia, `move`/`rotate` na klatkę (zmierzone w grze); pola w kodzie przemianowane ([3db.md](docs/formaty/3db.md))
 - [x] `.3db`: `flags` linku to tryby rysowania (0 niewidoczny, 1 zwykły, 2 addytywnie, 3 mieszanie alfa, 5 mapowanie otoczenia, 8 bez oświetlenia; zrzuty z gry); bajty 6–7 rekordu zaczepienia to dopełnienie wyrównania
 - [x] Renderer modeli: tryby rysowania wg `flags` linku: 0 pominięty, 2 addytywnie (osobny przebieg bez zapisu głębi, bez oświetlenia 🔶), 5–7 mapowanie otoczenia z normalnej 🔶, 8 bez oświetlenia; przełącznik „Tryby rysowania” i `--no-draw-modes` w wigview
-- [ ] Tryb 3 (miękka alfa): dziś jak 1, bo miękki brzeg zapisujący głębię zasłania obiekty rysowane później (w menu widać przez niego niebo); potrzebny przebieg przezroczystych fragmentów posortowanych w całej scenie (próg 0,5 z zapisem głębi, potem brzegi bez zapisu)
+- [x] Tryb 3 (miękka alfa): fazy rysowania w scenie (`ModelDrawOptions::phase`): najpierw rdzenie (alfa ≥ 0,5) z zapisem głębi, potem miękkie brzegi i blask trybu 2 bez zapisu, od najdalszego obiektu; bez tego w menu przez brzegi lian prześwitywało niebo
 - [ ] 🔬 Tryby 4, 6, 7, 9, 11 (dziś 4, 9, 11 jak 1, a 6, 7 jak 5)
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅

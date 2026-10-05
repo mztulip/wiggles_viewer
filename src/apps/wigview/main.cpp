@@ -722,7 +722,7 @@ void Viewer::uiModel()
 		ImGui::Checkbox(tr("Alpha test"), &draw.alphaTest);
 		ImGui::SameLine();
 		ImGui::Checkbox(tr("Tryby rysowania"), &draw.drawModes);
-		ImGui::SetItemTooltip(tr("flags linku: 0 niewidoczny, 2 addytywnie, 5–7 mapowanie otoczenia, 8 bez oświetlenia\n(3 miękka alfa: na razie jak 1); wyłączone: wszystko jak tryb 1"));
+		ImGui::SetItemTooltip(tr("flags linku: 0 niewidoczny, 2 addytywnie, 3 miękka alfa, 5–7 mapowanie otoczenia,\n8 bez oświetlenia; wyłączone: wszystko jak tryb 1"));
 		ImGui::SameLine();
 		ImGui::Checkbox(tr("Odwróć Y"), &flipY);
 		ImGui::ColorEdit3(tr("Tło"), &bg.r, ImGuiColorEditFlags_NoInputs);

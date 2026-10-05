@@ -22,7 +22,7 @@ struct DrawUniforms
 // Potoki wspólne dla wszystkich ModelRenderer na danym urządzeniu.
 struct Shared
 {
-	rhi::Handle pipe = rhi::kNull, wire = rhi::kNull, add = rhi::kNull;
+	rhi::Handle pipe = rhi::kNull, wire = rhi::kNull, add = rhi::kNull, soft = rhi::kNull;
 };
 std::unordered_map<rhi::Device*, Shared> gShared;
 } // namespace
@@ -63,7 +63,10 @@ bool ModelRenderer::init(rhi::Device& dev, std::string& err)
 		d.depthWrite = false;
 		sh.add = dev.createPipeline(d, err);
 		if (!sh.add) return false;
+		// Tryb 3, faza przezroczysta: miękkie brzegi mieszane alfą, bez zapisu głębi.
 		d.blend = rhi::Blend::Alpha;
+		sh.soft = dev.createPipeline(d, err);
+		if (!sh.soft) return false;
 		d.depthWrite = true;
 		d.wireframe = true;
 		sh.wire = dev.createPipeline(d, err);
@@ -72,6 +75,7 @@ bool ModelRenderer::init(rhi::Device& dev, std::string& err)
 	pipe_ = sh.pipe;
 	pipeWire_ = sh.wire;
 	pipeAdd_ = sh.add;
+	pipeSoft_ = sh.soft;
 	setSphere(sphere_);
 	return true;
 }
@@ -168,22 +172,28 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	u.tint = glm::vec4(1.f);
 	u.params = glm::vec4(t, opt.horizonZOffset, opt.base, 0.f);
 	u.flags = glm::ivec4(int(opt.lighting), opt.alphaTest ? 1 : 0, opt.gameLights ? 1 : 0, 0);
-	// Dwa przebiegi: najpierw linki zwykłe (tryby 1, 3–11), potem addytywne (2); tryb 0 nie jest rysowany.
-	for (int pass = 0; pass < 2; ++pass)
+	// Przebiegi: 0 nieprzezroczyste (wszystko poza trybami 0 i 2; tryb 3 tylko alfa ≥ 0,5), 1 miękkie brzegi
+	// trybu 3 (w shaderze tryb 103: tylko alfa < 0,5), 2 blask trybu 2.
+	using Phase = ModelDrawOptions::Phase;
+	int firstPass = opt.phase == Phase::Transparent ? 1 : 0, lastPass = opt.phase == Phase::Opaque || !opt.drawModes ? 0 : 2;
+	for (int pass = firstPass; pass <= lastPass; ++pass)
 	{
 		bool pipeBound = false;
 		for (size_t i = 0; i < linksA.size(); ++i)
 		{
 			const auto& l = linksA[i];
 			int mode = opt.drawModes ? l.flags : 1;
-			if (mode == 0 || (mode == 2) != (pass == 1)) continue;
+			bool take = pass == 0 ? mode != 0 && mode != 2 : pass == 1 ? mode == 3
+			                                                           : mode == 2;
+			if (!take) continue;
 			if (!pipeBound)
 			{
-				dev_->bindPipeline(pass == 0 ? pipe_ : pipeAdd_);
+				dev_->bindPipeline(pass == 0 ? pipe_ : pass == 1 ? pipeSoft_
+				                                                 : pipeAdd_);
 				dev_->bindUniformBuffer(rhi::kBindStatic, sphereBuf_);
 				pipeBound = true;
 			}
-			u.flags.w = mode;
+			u.flags.w = pass == 1 ? 103 : mode;
 			dev_->setUniforms(rhi::kBindDraw, &u, sizeof u);
 			dev_->bindTexture(0, textures_ ? textures_->get(model_->materials[l.material].name).id : rhi::kNull);
 			dev_->bindVertexBuffer(0, l.vbo);

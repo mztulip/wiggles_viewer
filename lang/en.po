@@ -481,8 +481,8 @@ msgid "Tryby rysowania"
 msgstr "Draw modes"
 
 #: src/apps/wigview/main.cpp:725
-msgid "flags linku: 0 niewidoczny, 2 addytywnie, 5–7 mapowanie otoczenia, 8 bez oświetlenia\n(3 miękka alfa: na razie jak 1); wyłączone: wszystko jak tryb 1"
-msgstr "link flags: 0 invisible, 2 additive, 5–7 environment mapping, 8 unlit\n(3 soft alpha: like 1 for now); off: everything like mode 1"
+msgid "flags linku: 0 niewidoczny, 2 addytywnie, 3 miękka alfa, 5–7 mapowanie otoczenia,\n8 bez oświetlenia; wyłączone: wszystko jak tryb 1"
+msgstr "link flags: 0 invisible, 2 additive, 3 soft alpha, 5–7 environment mapping,\n8 unlit; off: everything like mode 1"
 
 #: src/apps/wigview/main.cpp:727
 msgid "Odwróć Y"
@@ -1856,3 +1856,6 @@ msgstr "corrupt RLE data"
 #: src/lib/script/engine.cpp:1746
 msgid "nie wczytano żadnej klasy"
 msgstr "no classes loaded"
+
+#~ msgid "flags linku: 0 niewidoczny, 2 addytywnie, 5–7 mapowanie otoczenia, 8 bez oświetlenia\n(3 miękka alfa: na razie jak 1); wyłączone: wszystko jak tryb 1"
+#~ msgstr "link flags: 0 invisible, 2 additive, 5–7 environment mapping, 8 unlit\n(3 soft alpha: like 1 for now); off: everything like mode 1"

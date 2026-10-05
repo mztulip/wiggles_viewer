@@ -38,9 +38,17 @@ struct ModelDrawOptions
 	bool wireframe = false;
 	bool alphaTest = true;
 	// Tryby rysowania linków według MeshLink::flags (docs/formaty/3db.md §3.2): 0 pominięty, 2 addytywnie,
-	// 5–7 mapowanie otoczenia, 8 bez oświetlenia; 3 (miękka alfa) na razie jak 1 (brak sortowania
-	// przezroczystych w scenie); false = wszystko jak tryb 1 (do porównań).
+	// 3 miękka alfa, 5–7 mapowanie otoczenia, 8 bez oświetlenia; false = wszystko jak tryb 1 (do porównań).
 	bool drawModes = true;
+	// Faza: Opaque rysuje nieprzezroczyste części (alfa ≥ 0,5, z zapisem głębi), Transparent miękkie brzegi
+	// trybu 3 (alfa < 0,5) i blask trybu 2 bez zapisu głębi. Scena rysuje najpierw wszystkie obiekty w fazie
+	// Opaque, potem w Transparent od najdalszego; All = obie fazy po kolei (pojedynczy model).
+	enum class Phase
+	{
+		All,
+		Opaque,
+		Transparent
+	} phase = Phase::All;
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-0.4f, 0.8f, 0.5f)); // w przestrzeni modelu po transformacji
 	float ambient = 0.45f;
 	// Strefa horyzontu: model za skałą (z gry < 0 bloków) przechodzi w kolor rgb ∝ |z|/głębokość.
@@ -91,7 +99,8 @@ private:
 	const std::vector<GpuLink>& frame(uint32_t meshIndex);
 
 	rhi::Device* dev_ = nullptr;
-	rhi::Handle pipe_ = rhi::kNull, pipeWire_ = rhi::kNull, pipeAdd_ = rhi::kNull; // wspólne dla modeli na urządzeniu
+	// Potoki wspólne dla modeli na urządzeniu: zwykły, siatka, addytywny (tryb 2), miękka alfa bez zapisu głębi (tryb 3).
+	rhi::Handle pipe_ = rhi::kNull, pipeWire_ = rhi::kNull, pipeAdd_ = rhi::kNull, pipeSoft_ = rhi::kNull;
 	rhi::Handle sphereBuf_ = rhi::kNull;                     // stały bufor 256 × vec4 (wiązanie 2)
 	const Model3db* model_ = nullptr;
 	TextureCache* textures_ = nullptr;

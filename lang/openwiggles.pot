@@ -479,7 +479,7 @@ msgid "Tryby rysowania"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:725
-msgid "flags linku: 0 niewidoczny, 2 addytywnie, 5–7 mapowanie otoczenia, 8 bez oświetlenia\n(3 miękka alfa: na razie jak 1); wyłączone: wszystko jak tryb 1"
+msgid "flags linku: 0 niewidoczny, 2 addytywnie, 3 miękka alfa, 5–7 mapowanie otoczenia,\n8 bez oświetlenia; wyłączone: wszystko jak tryb 1"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:727

@@ -11,15 +11,20 @@ TEX(3) uniform sampler2D uTex;
 layout(location = 0) out vec4 oColor;
 void main()
 {
-	int draw = uFlags.w; // tryb rysowania linku
+	int draw = uFlags.w % 100; // tryb rysowania linku
+	bool fringe = uFlags.w >= 100; // faza przezroczysta trybu 3: tylko miękkie brzegi
 	// 🔶 5–7: mapowanie otoczenia, współrzędne tekstury z normalnej (kamera gry patrzy prawie wzdłuż −z).
 	vec2 uv = (draw >= 5 && draw <= 7) ? normalize(vNormal).xy * 0.5 + 0.5 : vUV;
 	vec4 t = texture(uTex, uv);
-	// 2 (addytywny) bez progu alfa. 🔶 3 (miękka alfa) na razie jak 1: miękki brzeg zapisujący głębię zasłania
-	// obiekty rysowane później (widać przez niego niebo); wymaga osobnego przebiegu przezroczystych w scenie.
+	// 2 (addytywny) bez progu alfa. 3: rdzeń (alfa ≥ 0,5) jak 1, a miękkie brzegi w osobnej fazie bez zapisu
+	// głębi, po wszystkich nieprzezroczystych obiektach sceny (inaczej brzeg zasłania obiekty rysowane później).
 	if (draw == 2)
 	{
 		if (t.a < 1.0 / 255.0) discard;
+	}
+	else if (fringe)
+	{
+		if (t.a >= 0.5 || t.a < 1.0 / 255.0) discard;
 	}
 	else if (uFlags.y != 0 && t.a < 0.5) discard;
 	vec3 c = t.rgb;

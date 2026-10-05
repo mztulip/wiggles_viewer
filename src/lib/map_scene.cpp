@@ -660,6 +660,17 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 		opt.horizonZOffset = gameZOffset;
 	}
 	const float fps = 10.f; // tempo animacji gry, §11.6
+	// Obiekty do faz rysowania: najpierw wszystkie nieprzezroczyste, potem miękkie brzegi i blask od najdalszego.
+	struct Draw
+	{
+		const PlacedObject* o;
+		uint32_t a, b;
+		float t;
+		glm::mat4 gm;
+		float base;
+	};
+	std::vector<Draw> draws;
+	draws.reserve(objects_.size());
 	for (const auto& o : objects_)
 	{
 		if (!o.slot || o.animation < 0) continue;
@@ -680,12 +691,21 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 			if (mode == 1) f = std::min(f, float(n - 1));
 		}
 		int i = int(f) % n, j = mode == 2 ? (i + 1) % n : std::min(i + 1, n - 1);
-		glm::mat4 gm = objectMatrix(o.src);
-		glm::mat4 m = world * gm;
-		opt.gameModel = gm;
-		opt.base = baseLight(o.src.pos[0], o.src.pos[1]);
-		o.slot->renderer->drawFrames(an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), viewProj, m, opt);
+		draws.push_back({&o, an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), objectMatrix(o.src), baseLight(o.src.pos[0], o.src.pos[1])});
 	}
+	auto drawAll = [&](ModelDrawOptions::Phase phase) {
+		opt.phase = phase;
+		for (const auto& d : draws)
+		{
+			opt.gameModel = d.gm;
+			opt.base = d.base;
+			d.o->slot->renderer->drawFrames(d.a, d.b, d.t, viewProj, world * d.gm, opt);
+		}
+	};
+	drawAll(ModelDrawOptions::Phase::Opaque);
+	// Kamera gry patrzy w stronę −z (przednia płaszczyzna z = 14,5 jest najbliżej): od najmniejszego z.
+	std::stable_sort(draws.begin(), draws.end(), [](const Draw& x, const Draw& y) { return x.gm[3][2] < y.gm[3][2]; });
+	drawAll(ModelDrawOptions::Phase::Transparent);
 	if (showFluids_) fluids_.draw(viewProj * world, time_);
 	// Cząsteczki po modelach (addytywne, bez zapisu głębi). W nieodkrytym terenie tylko na polach z bajtem ≥ 0x81 (§10.5).
 	if (showParticles_)
