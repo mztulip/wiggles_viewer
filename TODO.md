@@ -1,10 +1,25 @@
 # TODO: OpenWiggles
 
 Żywy plan. Odhaczamy `[x]`, dopisujemy nowe punkty, gdy coś odkryjemy.
-Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie (wyniki do [`docs/BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md)).
+Oznaczenia: 🔬 = najpierw trzeba zbadać format lub zachowanie w laboratorium (wyniki do [`docs/BAZA_WIEDZY.md`](docs/BAZA_WIEDZY.md)), 🔧 = dopracowanie działającego przybliżenia, 🤖 = bot testowy.
+Przed pracą nad podsystemem: wiersz w [mapie Diggles-Unity](docs/DIGGLES_UNITY.md) (ich dokument, stan u nas) i sprawdzenie w działającym oryginale przez [`tools/lab/live.sh`](tools/lab/live.sh).
 
 ## Droga do grywalności (priorytet)
 Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
+
+### Następne kroki (kolejność)
+Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co u nich działa, a u nas blokuje grywalność.
+1. [ ] **G12 Czas gry**: komenda `gametime` (`start`/`stop`/`factor`), `gethours` = `gettime`/150, doba = 12 h = 30 min, data `dzień.miesiąc.rok`; plan dnia krasnali (`current_time_plan`, zegar na ekranie) (rozdziały [11.4](docs/silnik/11_obiekty_tcl_i_petla.md), [16.2](docs/silnik/16_rozgrywka.md)). Mały krok, potrzebny do pracy i odpoczynku
+2. [ ] **G9 Potrzeby i harmonogram**: jedzenie, sen, nastrój, przejście praca ⇄ czas wolny wg planu dnia (`get_remaining_sparetime` dziś zawsze > 0); stany `work_idle`, `prodfill_dispatch`, `sparetime_dispatch` jak w zapisie kampanii (BAZA §8.7). Źródło: [GNOME_BEHAVIOR_COMPLETE_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/GNOME_BEHAVIOR_COMPLETE_RE.md), [re_parts/sparetime-idle](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/sparetime-idle.md)
+3. [ ] **G10 Dyspozytor pracy i produkcja** (największa luka): ognisko, skrzynie (pakowanie, rozpakowanie), zlecenia (LPM/PPM, 10 = bez końca), przydział do placówki, `prodfill`. Źródło: [WORK_DISPATCHER_NATIVE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORK_DISPATCHER_NATIVE.md), [PRODUCTION_PANEL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/PRODUCTION_PANEL_RE.md), [PRODUCTION_SLOT_OVERRIDE_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/PRODUCTION_SLOT_OVERRIDE_RE.md)
+4. [ ] **G8 Przedmioty i ekwipunek**: grzyby, kamienie, kryształy po kopaniu, podnoszenie, odkładanie (wolne miejsce), użycie. Źródło: [ITEM_PLACEMENT_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ITEM_PLACEMENT_RE.md)
+5. [ ] **Rozkazy gracza jak w grze**: kliknięcie → `EVENTGEN.TCL` (`evtgen_attrib`) → zdarzenie `evt_task_*` dla krasnala ([rozdział 16.9](docs/silnik/16_rozgrywka.md)), zamiast rozkazów w C++. Przy okazji punkt `/tclshell` w grze (zgodny z WebTraq) dla bota
+6. [ ] **Kopanie przez skrypty gry** (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`, `CObj_DigTask`), oznaczenia kopania, kilku kopaczy. Źródło: [DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md), [re_parts/dig-natives](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/dig-natives.md), [re_parts/tcl-dig-complete](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/tcl-dig-complete.md)
+7. [ ] **Ruch jak w grze**: siatka 8×8 i maska `.pmp`, wspinanie, spadanie. Źródło: [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [re_parts/walk-executor](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/walk-executor.md)
+8. [ ] **G13 Generator świata** (nowa gra w kampanii i potyczce: `StoryMgr load_level`, `load_sandbox`, `lg_*`). Źródło: [WORLDGEN_ORIGINAL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORLDGEN_ORIGINAL_RE.md), [LEVEL_GENERATOR](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LEVEL_GENERATOR.md)
+9. [ ] **Szanse na wyprzedzenie Diggles-Unity** (u nich też nie działa): drabiny, windy, drzwi ([LADDER_ELEVATOR_DOOR_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LADDER_ELEVATOR_DOOR_RE.md)); walka, potwory, dyplomacja ([COMBAT_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COMBAT_SYSTEM_RE.md)); energia ([ENERGY_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENERGY_SYSTEM_RE.md)); przejścia między światami; pełny zapis `.sav`
+
+### Zrobione i dopracowanie
 - [x] G1 Program `openwiggles`: świat z zapisu, scenariusza albo szablonu, kamera gry (WASD, mysz, kółko), HUD
 - [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
 - [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* ([`src/lib/nav.h`](src/lib/nav.h))
@@ -21,25 +36,20 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Krasnale przechodzą do czasu wolnego (`sparetime_dispatch`: łapanie much, spacery, animacje): poprawki `obj_query` (argumenty jako osobne słowa, bez pytającego, z w prostopadłościanie), `get_walkresult` = 2 w trakcie chodu, `get_place -random` omija rezerwacje i postacie, rezerwacje 3D
 - [ ] G7c Kolejne komendy wg dziennika `openwiggles_tcl.log` (`action move`, `get_vectorxz`, `lcount`, `sparetime`, `dist_between` …), harmonogram pracy (`get_remaining_sparetime` dziś zawsze > 0), właściciel obiektów z zapisu
 - [x] Pamięć podręczna klas: start skryptów 0,1 s zamiast 5,5 s
-- [ ] 🔧 Skrypty: `makettree.tcl`/`init_techtree`, tryb bezpieczny, zgodność 8.3 → 8.6, odczyt zmiennych Tcl obiektów z zapisu
+- [ ] 🔧 Skrypty: zgodność 8.3 → 8.6, `lmsg` z tłumaczeniami z `MESSAGES.TXT` (dziś zwraca klucz), odczyt zmiennych Tcl obiektów z zapisu (tryb bezpieczny niepotrzebny: gra go nie używa, rozdział 11.1)
 - [x] Interfejs gry: panel krasnali z imionami i potrzebami, znacznik zaznaczenia, pauza i tempo
-- [ ] G8 Przedmioty: grzyby, kamienie, kryształy po kopaniu; podnoszenie i ekwipunek
-- [ ] G9 Potrzeby krasnali (jedzenie, sen) i czas wolny ze skryptów
-- [ ] G10 Produkcja i budynki (warsztaty), drzewko technologii
+- [ ] Drzewko technologii i wynalazki (`init_techtree`, `gen_tt.tcl`, „czapka naukowca”), po G10
 - [x] G11 Zapis i wczytanie gry z poziomu gry: własny format `.ows` (źródło + zmiany), F5/F9 (rozdział 14.7)
 - [x] Zapis jak w grze: F5 zapisuje `.sav` łatą na wczytanym zapisie (czas, kamera, pola, płyny, pozycje obiektów); oryginalna gra go wczytuje (BAZA §9.6)
 - [x] Menu wyboru gry (ImGui, start bez źródła i Esc): nasze zapisy, zapisy gry, scenariusze; F9 wczytuje najnowszy zapis
 - [x] Przesuwanie kamery kursorem przy krawędzi okna
 - [ ] 🔧 Krawędź okna: szerokość pasa i prędkość zmierzyć w grze; menu bliżej oryginału (szablony, nowa gra, opisy scenariuszy)
 - [ ] 🔧 Zapis `.sav`: obiekty utworzone i usunięte w grze, zmienne Tcl, stany, timery, przepływy płynu; zapis gier ze scenariusza/szablonu (dziś `.ows`, potrzebny opis sekcji po znaczniku 7)
-- [ ] 🔧 Ruch: drobna siatka 8×8 i maska `.pmp` zamiast pól, drabiny, windy, spadanie z obrażeniami
-- [ ] 🔧 Kopanie przez skrypty gry (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`) zamiast C++; czas pracy i wybór kopacza
-- [ ] 🔧 Mgła: odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól
+- [ ] 🔧 Mgła: obiekty odkrywające (`set_fogofwar`, `fog_remove`), odkrywanie promieniami (10.3) i wygasanie zamiast koła 6 pól ([FOG_OF_WAR_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/FOG_OF_WAR_RE.md))
 - [ ] 🔧 Kopanie: kształty bloków z tablicy sąsiadów BlockDB (zszywanie krawędzi), twardość materiału, czas kopania; przebudowa tylko zmienionego kawałka terenu
 - [ ] 🔧 Wskazywanie: promień kamery przecięty z płaszczyzną z = 11; lepiej z siatką terenu i modelami
 - [x] Scena i rysowanie map w bibliotece ([`lib/map_scene.h`](src/lib/map_scene.h), `MapScene`), wigview dokłada tylko panel (`MapView`); gra nie kompiluje już plików przeglądarki
 - [ ] 🔧 Scenariusze: krasnal w `single_Knockersdorf` stoi poza szablonami (atrapa przenoszona przez skrypty fabuły)
-- [ ] Czas gry: `gethours` = `gettime`/150, doba = 12 h = 30 min, data gry `dzień.miesiąc.rok`; plan dnia krasnali (`current_time_plan`, zegar) (rozdziały 11.4, 16.2)
 - [ ] Ramka ekranu `BorderMask` w grze i jako opcja w wigview (prawo w rozdziale 9.4)
 - [ ] 🤖 Bot testowy (rozwijany na bieżąco, w miarę potrzeby): te same scenariusze w oryginale i w `openwiggles`, porównanie przebiegu
   - sterowanie: rozkazy gracza jako zdarzenia `evt_task_*` (`set_event`, rozdział 16.9), w oryginale przez WebTraq ([`tools/lab/live.sh`](tools/lab/live.sh)), u nas przez taki sam interfejs `/tclshell` w grze
@@ -76,7 +86,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 ## Faza 1: szkielet projektu i build
 - [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), [`src/apps/game`](src/apps/game), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów
 - [x] [`build.sh`](build.sh) (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
-- [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad (Tcl później)
+- [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad, Tcl 8.6 z systemu, dr_mp3 w `third_party/`
 - [x] Ścieżka do gry: `--game`, zmienna `OW_GAME`, domyślnie instalacja w `~/.wine`
 - [x] `git init` (repo `openwiggles_git`; `ref/` i zipy zostają poza repo)
 - [x] `.gitignore` (`build/`, pliki wynikowe)
@@ -91,17 +101,18 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔬 Nieznane pola `.3db`: blok 0x80, blok 0x30, flagi linku, rekordy 20 B, znaczenie `cmap`, pola animacji (ruch korzenia, flagi)
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
-- [ ] Dekoder tekstów: CP1250 i CP1252 → UTF-8, `MESSAGES.TXT` (`lmsg`), `QUOTES.TXT`
+- [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)
+- [ ] `MESSAGES.TXT` (`lmsg`, dziś zwraca klucz), `QUOTES.TXT`, `LOCALE.TXT`
 - [ ] 🔬 `texlevels.txt`, `TEXMAPS.BIN` (prawdopodobnie do pominięcia)
 
 ## Faza 3: wigview, czyli przeglądarka assetów
-- [x] Okno SDL2 + OpenGL 3.3 + ImGui, lista modeli `Data/3db`, polski font
+- [x] Okno SDL2 + ImGui (dziś Vulkan albo OpenGL 4.5 przez `rhi`), lista modeli `Data/3db`, polski font
 - [ ] Drzewo całego `Data/` (inne typy plików)
 - [x] Podgląd tekstur TGA (lista katalogów i plików, filtr, rozmiar)
 - [ ] Tekstury: zoom, podgląd samego kanału alfa, tło szachownicy
 - [x] Podgląd modelu `.3db`: kamera orbitalna, lista obiektów i animacji z filtrami
 - [x] Odtwarzanie animacji: play, pauza, krok po klatce, prędkość, pętla
-- [ ] 🔬 Prawdziwa prędkość animacji w grze (fps) i znaczenie pól animacji (flagi, f32, ruch/obrót korzenia)
+- [ ] 🔬 Znaczenie pól animacji (flagi, f32, ruch/obrót korzenia); tempo: logika 10 Hz i obraz ok. 20 kl./s zmierzone (rozdział 11.7), tempo samej animacji i interpolacja do potwierdzenia zrzutami
 - [x] Interpolacja między klatkami (oryginał też interpoluje: `AnimIpol`, domyślnie włączona); przełącznik `I`
 - [x] Esc zamyka wigview
 - [x] Shader: tekstura × oświetlenie z normalnych `SPHERE.DAT`, alpha test, tryby porównawcze, siatka
@@ -122,12 +133,13 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] 🔬 Dźwięki: porównać z grą głośność `sound play` od odległości kamery i wybór dźwięku po materiale (`sound anim … stone …`)
 
 ## Dokumentacja
-- [x] Przewodnik po silniku [`docs/silnik/`](docs/silnik) (rozdziały 1–10: start i skrypty, świat z szablonów, teren, obiekty, kamera, oświetlenie, tło, klatka, niewiadome) z algorytmami i przykładami liczbowymi
+- [x] Przewodnik po silniku [`docs/silnik/`](docs/silnik): rozdziały 1–16 (start i skrypty, świat, teren, obiekty, kamera, oświetlenie, tło, klatka, nieodkryty teren, obiekty Tcl i pętla, cząsteczki, płyny, gra, dźwięk, rozgrywka) z algorytmami i przykładami liczbowymi
 - [x] Formaty rozdzielone: `blockdb.md`, `szablony.md` (zamiast `mapy.md`); `BAZA_WIEDZY.md` jako dziennik badań
 - [x] Mapa kodu [docs/KOD.md](docs/KOD.md) (podsystem → pliki → rozdział → sprawdzanie), odnośniki z rozdziałów do kodu, [`tools/check_docs.py`](tools/check_docs.py) (drzewo od CLAUDE.md, zepsute linki, nieaktualne ścieżki, `--fix`)
 - [x] Mapa Diggles-Unity [docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md): wszystkie ich dokumenty z odnośnikami, stan u nas, ich kod, plan „dogonić i wyprzedzić”; linia z odnośnikami na końcu każdego rozdziału i formatu
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
-- [ ] Rozdziały do napisania, gdy będzie wiedza: nieodkryty teren, cienie, generator świata, logika obiektów Tcl (osobne interpretery, zdarzenia, timery), interfejs
+- [ ] Rozdziały do napisania, gdy będzie wiedza: cienie, generator świata, praca i produkcja (dyspozytor), interfejs gry (`layout`, `.kft`), walka
+- [ ] Przy pracy nad podsystemem: poprawić jego wiersz w [docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md) (stan u nas, następny krok)
 
 ## Faza 4: mapy i teren
 - [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
@@ -160,7 +172,7 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [x] Nieodkryty teren: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
 - [x] Podgląd nieodkrytego terenu w wigview (tryby `--fow`, szarość w głąb, czerń, lampy wygaszone, obiekty bez viewinfog ukryte)
 - [ ] 🔬 Porównanie mgły ze zrzutami gry (menu z `timer_delete` FogRemover; sprzeczność: notatka „obraz czarny” vs prawo „wygasa do szarości”)
-- [ ] Nieodkryty teren w silniku: obiekty odkrywające (`set_fogofwar`), wygasanie, czarne czworokąty pól nieodkrytych
+- [ ] Nieodkryty teren w silniku: punkt „🔧 Mgła” w Drodze do grywalności; czarne czworokąty pól nieodkrytych
 - [x] Dekoracje bez opcji `anim` stoją w klatce 0 (tryby ANIM_STILL/ONCE/LOOP z `class_defaultanim`, `animrandom`)
 - [x] UV terenu z palety BlockDB (trzy rzuty, ✅ na wszystkich punktach) zamiast trójpłaszczyznowego
 - [x] 🔬 Przejścia gruntów maskami `Msk_*`: grunt w węźle (lewy górny narożnik pola), maska per blok z narożników (✅ eksperyment `ow_flat`)
@@ -177,32 +189,32 @@ Najpierw działa mniej więcej, potem dopracowujemy (punkty „🔧” niżej).
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [x] Menu gry jako scenariusz (`systeminit.tcl`: unq_menue + dwa korytarze + set_view)
 - [x] Składanie świata z szablonów (prawo przezroczystości z exe) i scenariusze stałe z `Gamesave/*.tcl` w wigview (`--scenario`)
-- [ ] Świat generowany proceduralnie (kampania, sandbox: `StoryMgr load_level`, `lg_*`, WORLDGEN_ORIGINAL_RE)
+- [ ] Świat generowany proceduralnie: G13 w „Następnych krokach”
 
 ## Faza 5: skrypty, czyli osadzony Tcl
 - [x] Rozdział 11 przewodnika: interpretery obiektów, klasy, metody, zdarzenia, timery, maszyna stanów, takt gry (za Diggles-Unity i oficjalną pomocą komend)
 - [x] Tempo animacji 10 kl./s (stała gry według Diggles-Unity) w wigview i eksporcie glTF
 - [ ] 🔬 Zrzuty animowanego obiektu w serii: potwierdzić 10 kl./s i rozstrzygnąć, czy gra interpoluje (sprzeczność rejestr vs Diggles-Unity)
-- [ ] 🔬 Timer w klasie z `userstartup.tcl` nie zadziałał: ustalić dlaczego (czas gry? `def_event`?), żeby móc sondować grę w trakcie
-- [ ] Osadzenie Tcl (8.6 z systemu i sprawdzenie zgodności, albo 8.3 jak w oryginale: 🔬 decyzja po testach)
-- [ ] Preprocesor: komentarze `//`, `//# IF/IFNOT/IFNDEF/ELSE/ENDIF/STOPIFNOT`, symbole `FULL` i `NOSTARTSEQ`
-- [ ] `call` i `callnc` z normalizacją ścieżek (`scripts/` → `data/scripts/`, lowercase)
+- [x] Timer w klasie z `userstartup.tcl` działa (zdarzenia co 0,5 s; czas gry rusza po `gametime start`, BAZA §8.7)
+- [x] Osadzenie Tcl: 8.6 z systemu (G7a); zgodność z 8.3 pilnowana w punkcie 🔧 Skrypty
+- [x] Preprocesor: komentarze `//`, `//# IF/IFNOT/IFNDEF/ELSE/ENDIF/STOPIFNOT`, `FULL` zdefiniowany (zachowanie sprawdzone w grze, rozdział 2.2)
+- [x] `call` i `callnc` z normalizacją ścieżek
 - [x] Dokładna lista natywnych komend (z gry, nie ze skanera)
-- [ ] Podział 639 komend na moduły i priorytety
-- [ ] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib`
-- [ ] Stuby dla wszystkich komend natywnych (logują wywołanie), tak by `systeminit.tcl` przeszedł do końca
-- [ ] Kolejka zadań postaci (`tasklist_*`)
+- [ ] Podział 639 komend na moduły i priorytety: zacząć od rankingu Diggles-Unity ([ENGINE_COMMAND_GAP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_COMMAND_GAP.md)) i naszego dziennika zaślepek
+- [x] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib` (G7a)
+- [x] Zaślepki komend natywnych z dziennikiem (`openwiggles_tcl.log`); klasy wczytują się bez błędów
+- [x] Kolejka zadań postaci (`tasklist_*`, G7b)
 
 ## Faza 6: silnik gry
-- [ ] Pętla gry, czas (`gametime`), timery i zdarzenia
-- [ ] Świat: obiekty, pozycje, kamera (`set_view`), nieodkryty teren
-- [ ] Postacie: animacje sterowane skryptem (`set_anim`, `play_anim`), chodzenie i pathfinding, wspinanie, drabiny
-- [ ] Kopanie (`dig_*`) i modyfikacja terenu
-- [ ] Produkcja, ekwipunek, drzewko technologii
+- [x] Pętla gry 10 Hz, timery i zdarzenia (G7a); `gametime` w G12
+- [x] Świat: obiekty, pozycje, kamera gry, nieodkryty teren z zapisu (G1, `MapScene`); `set_view` jako komenda Tcl i odkrywanie: 🔧 Mgła
+- [x] Postacie: animacje sterowane skryptem, chodzenie (G2, G7b); ruch jak w grze i drabiny w „Następnych krokach”
+- [x] Modyfikacja terenu przy kopaniu (G4); kopanie przez skrypty w „Następnych krokach”
+- [ ] Produkcja, ekwipunek, drzewko technologii: G10, G8 w „Następnych krokach”
 - [ ] GUI: `layout`, `textwin`, fonty `.kft` (🔬 format), ikony
 - [ ] Dźwięk (`sound`, `adaptive_sound`) i muzyka: dekodowanie i mikser są gotowe ([`src/lib/sound.h`](src/lib/sound.h), [rozdział 15](docs/silnik/15_dzwiek.md)); brakuje komend Tcl, głośności od odległości i motywów muzyki
-- [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`)
-- [ ] AI (`ai init`, `std_ai.tcl`)
+- [ ] Sekwencje fabularne (`sequencer.tcl`, `seq_audiostream`; linie `-`/`+`, rozdział 15.6). Źródło: [CUTSCENE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/CUTSCENE_SYSTEM.md)
+- [ ] AI przeciwników (`ai init`, `std_ai.tcl`). Źródło: [COMBAT_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COMBAT_SYSTEM_RE.md)
 - [x] Odczyt mapy z zapisu `.sav`: teren, kamera, nieodkryty teren, obiekty ([docs/formaty/sav.md](docs/formaty/sav.md)); wigview: zakładka Zapisy obok Mapy (lista z Data/Gamesave, odświeżanie, wczytanie pliku z dowolnej ścieżki), `--save`, tryb mgły 4, pole „Odkryj mapę”, pasek postępu wczytywania (czasy etapów: `OW_PROGRESS_LOG=1`)
 - [ ] 🔬 Pełny odczyt zapisu (zmienne Tcl obiektów, gracze, ekonomia) i zapis gry: własny format czy zgodność?
 - [ ] Zapis: sprawdzić hipotezy (starszy bajt stanu = wariant tekstury, motyw świata z klas `Info_Fog_*`)
