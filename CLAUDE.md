@@ -43,7 +43,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - Wersja programu (commit) jest w `build/gen/ow_version.h`, generowanym przez [`build.sh`](build.sh); wigview pokazuje ją w rogu ekranu i w tytule okna (zrzuty użytkownika da się przypisać do wersji)
 - **Priorytet: jak najszybciej grywalna gra** (`openwiggles`, [`src/apps/game`](src/apps/game)). Najpierw działające przybliżenie, oznaczone 🔶, a punkt „dopracować” idzie do TODO (sekcja „Droga do grywalności”)
 - Kod:
-  - [`src/lib`](src/lib) (libwiggles): formaty i dane (vfs, tga, model3db, blockdb, szablony, zapisy, `sound`, `sound_refs`), `script/` (silnik Tcl), `map_scene` (scena mapy wspólna dla gry i przeglądarki), `render/` (renderery modeli, terenu, cząsteczek, płynów, panoramy; `render/rhi/` warstwa Vulkan/OpenGL)
+  - [`src/lib`](src/lib) (libwiggles): formaty i dane (vfs z nakładkami modów, tga, model3db, blockdb, szablony, zapisy, `messages` (teksty `lmsg`), `sound`, `sound_refs`), `script/` (silnik Tcl), `map_scene` (scena mapy wspólna dla gry i przeglądarki), `render/` (renderery modeli, terenu, cząsteczek, płynów, panoramy; `render/rhi/` warstwa Vulkan/OpenGL)
   - [`src/apps/wigview`](src/apps/wigview) (przeglądarka: tylko UI) i [`src/apps/game`](src/apps/game) (gra `openwiggles`), [`src/tools`](src/tools) (test3db, export_gltf, owscript), [`src/shaders`](src/shaders)
   - **[`src/lib`](src/lib) nie dołącza niczego z [`src/apps`](src/apps)** (sprawdza to [`build.sh`](build.sh)). Kod potrzebny grze i przeglądarce trafia do biblioteki
 

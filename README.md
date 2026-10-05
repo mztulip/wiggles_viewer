@@ -53,10 +53,12 @@ build/release/wigview --scenario systeminit                   # menu gry z kamer
 build/release/wigview --template unq_menue --center 7.37 12.86 --center-z 12 --dist 6 --pitch 20   # kadr zbliżony do menu gry
 build/release/wigview --scenario OBERWELT --view 123.2 30 1.3 -0.6 0.2   # kamera gry jak set_view x y zoom dx dy
 build/release/wigview --sound Data/Sound/Fenris/fe_schritt1.WAV      # zakładka Dźwięki z plikiem
+build/release/wigview --overlay ../ref/DigglesHDmod-master          # tekstury HD z moda (Data/ + Data_<język>), bez kopiowania do gry
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd nieodkrytego terenu (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy
 OW_PROGRESS_LOG=1 build/release/wigview                                  # czasy etapów wczytywania map i zapisów na stderr
 build/release/openwiggles                                               # gra: najnowszy zapis, LPM zaznacz, PPM idź/kop
+build/release/openwiggles --locale en                                   # teksty gry (lmsg) po angielsku; --overlay jak w wigview
 build/release/wigview --particle 3                                       # zakładka Cząsteczki: typ 3 (ogień kowala)
 build/release/wigview --lang en                                          # język interfejsu (pl, en; nowe: lang/README.md)
 build/release/wigview --renderer opengl                         # wybór backendu (domyślnie Vulkan)

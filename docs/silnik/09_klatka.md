@@ -37,7 +37,7 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 | dywan łąki | nie | nie | nie | SRC_ALPHA, 1−SRC_ALPHA | nie | nie |
 | teren podkład | LESS | tak | nie | nie | alfa otworu > 126/255 | tak (7.1) + nieodkryty teren (10.5) |
 | teren detale | LEQUAL | nie | nie | DST_COLOR, SRC_COLOR | jak podkład | (dziedziczy z podkładu) |
-| modele | LESS | tak (poza `nozwrite`) | nie | nie | alfa tekstury ≥ 0,5 | tak, dwustronnie (7.5) + nieodkryty teren (10.5) |
+| modele | LESS | tak (poza `nozwrite`) | nie | wg `flags` linku: 1 brak, 2 addytywne, 3 SRC_ALPHA/1−SRC_ALPHA ([5.5](05_obiekty.md)) | alfa tekstury ≥ 0,5 (tryb 1) | tak, dwustronnie (7.5) + nieodkryty teren (10.5); tryb 8 bez oświetlenia, 5 mapowanie otoczenia |
 
 ## 9.4 Ramka ekranu (`BorderMask`) ✅
 
