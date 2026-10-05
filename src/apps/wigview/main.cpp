@@ -2291,6 +2291,7 @@ int main(int argc, char** argv)
 		{ // wczytanie wybrane w UI w poprzedniej klatce
 			lastProgress = 0;
 			v.maps.runPending();
+			v.maps.clearSelection(); // indeksy obiektów i pola dotyczyły poprzedniej mapy
 			if (!v.keepCamera) v.frameMap();
 			v.keepCamera = false;
 			v.simActive = false;

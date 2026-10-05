@@ -110,7 +110,11 @@ void MapView::uiSelection()
 	bool open = ImGui::CollapsingHeader(tr("Zaznaczenie###zaznaczenie"), ImGuiTreeNodeFlags_DefaultOpen);
 	ImGui::PopStyleColor();
 	if (!open) return;
-	if (ImGui::SmallButton(tr("Odznacz"))) clearSelection();
+	if (ImGui::SmallButton(tr("Odznacz")))
+	{ // dalej w tej klatce nie ma już czego pokazywać (pole −1, −1 poza siatką)
+		clearSelection();
+		return;
+	}
 	if (selectedObject >= 0)
 	{
 		int i = selectedObject;
