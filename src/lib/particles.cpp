@@ -57,8 +57,8 @@ std::vector<ParticleType> buildTypes()
 
 	{
 		auto& p = T(0, N_("żar kowala (kula ognia)"), E256, 0x10, 100, 4);
-		p.shape = S::Sphere, p.radius = 0.25f, set3(p.jitter, .02f, .02f, .02f), p.rows = 1, p.colour = C::Warm;
-		p.size = 2.6f, p.sizeJitter = .2f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 12;
+		p.shape = S::Sphere, p.radius = 0.08f, set3(p.jitter, .006f, .006f, .006f), p.rows = 1, p.colour = C::Warm;
+		p.size = 4.f, p.sizeJitter = .2f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 12;
 	}
 	{
 		auto& p = T(1, N_("iskry i bryzgi przy ziemi"), A256d, 0x0f, 255, 8);
@@ -73,9 +73,9 @@ std::vector<ParticleType> buildTypes()
 	}
 	{
 		auto& p = T(3, N_("ogień kowala"), A128d, 0x10, 170, 16);
-		p.shape = S::Sphere, p.radius = .12f, set3(p.jitter, .006f, .008f, .006f), p.atlas = A::Flipbook, p.frames = {7, 23, 39, 55};
+		p.shape = S::Sphere, p.radius = .25f, set3(p.jitter, .01f, .008f, .01f), p.atlas = A::Flipbook, p.frames = {7, 23, 39, 55};
 		p.flipSquare = true;
-		p.colour = C::Warm, p.size = 2.8f, p.sizeJitter = .15f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 16;
+		p.colour = C::Warm, p.size = 3.f, p.sizeJitter = .15f, p.sizeCurve = Z::Grow, p.buoyancyFrames = 16;
 	}
 	{
 		auto& p = T(4, N_("litera Z nad śpiącym"), B128d, 0x0f, 255, 8);
@@ -89,7 +89,7 @@ std::vector<ParticleType> buildTypes()
 	{
 		auto& p = T(6, N_("dym z wierzchołków modelu"), A128d, 0x0f, 255, 16);
 		p.shape = S::MeshVerts, p.count = N::Jitter, set3(p.jitter, .04f, .04f, .04f), p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4;
-		p.size = 2.5f, p.sizeCurve = Z::Grow, p.drag = .9f, p.buoyancyFrames = 4, p.wander = true;
+		p.colour = C::Grey, p.size = 3.f, p.sizeCurve = Z::Grow, p.drag = .9f, p.buoyancyFrames = 4, p.wander = true;
 	}
 	{
 		auto& p = T(7, N_("spadające krople"), D256d, 0x0f, 200, 4);
