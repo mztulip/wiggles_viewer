@@ -115,7 +115,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] Okładziny jaskiń po wykopaniu jaskini ze stempla (`cave_skin`, `add_cave_skin_class`; Diggles-Unity DIGGING_MECHANIC)
 - [x] Kobiety krasnali modelem `frau` (`gnome_gender` z zapisu, nowe na przemian; `mann.*` u kobiety zostaje przy `frau`)
 - [x] wigview: ręczne prowadzenie postaci do testów (Enter, strzałki, PPM, Shift/Esc), skrypt postaci wstrzymany (`ScriptObject::external`)
-- [ ] Oświetlone części modeli w trybie 8 (dolne części kolumn lawy) wciąż cieplejsze i jaśniejsze niż w grze: kalibracja oświetlenia modeli lampami
+- [ ] Kolumny lawy w trybie 8 cieplejsze i jaśniejsze niż w grze ([BAZA_WIEDZY §8.13](docs/BAZA_WIEDZY.md)): ❓ głównie inne próbkowanie tekstury `lava_seulen_128` na podstawach i „spódnicach” (różnica już w trybie 11, bez oświetlenia; UV, warianty pliku, odbicie i powtórzenie wykluczone), 🔶 do tego modele ok. 1,4× jaśniejsze pod lampami
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)

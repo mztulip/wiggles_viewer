@@ -383,6 +383,16 @@ Objaw: w wigview i `openwiggles` krasnale w `lava_unq_vampy_tuer` (i innych pły
 Eksperyment (gra w Xvfb, `OW_HIDDEN=1 live2.sh`, szablon w (16, 16)): `new Zwerg "" "20.5 18.9 8"` i `new Zwerg "" "26.5 18.9 13"`, potem `get_pos` co kilka sekund. Pierwszy krasnal po pierwszych krokach: `22.47 18.5 12.5` (z = ściana 11 + 1,5; stopy y = 18,5, czyli podłoga w połowie pola jak u nas `floorY`). Drugi stał na 13. W zapisie kampanii krasnale w jednym polu mają z od 5,2 do 13,8. Wniosek: ✅ postać nie podchodzi bliżej tylnej ściany niż 1,5; 🔶 dalej od ściany zostaje na swojej głębokości. Wuker (`def_class $wukerclass` w `WUKER.TCL`) nie ma `class_defaultanim`; model `wuker` nadaje `set_anim this wuker.stand_atmen_a` w `obj_init`.
 ---
 
+### 8.13 Kolumny lawy: tekstura i jasność modeli pod lampami (2026-10-07)
+
+Cel: punkt TODO „oświetlone części modeli w trybie 8 cieplejsze i jaśniejsze niż w grze”. Kadr `lava_unq_vampy_tuer`, `live2.sh view 8 2 1.8 -0.25 0.1` (gra w Xvfb) i `wigview --lab-lamps --view 8 2 1.8 -0.25 0.1` (lampy laboratorium, bez lamp klas w szablonie). Kolumny (`lava_krst_*`, link `lava_seulen_128`) przełączane `set_link_flags.py` na tryby 11 (bez oświetlenia i maski) i 9 (oświetlone, bez maski), potem plik przywrócony.
+
+- **Tryb 11 (sama tekstura): obraz różny już bez oświetlenia.** W grze trzony to skała z wąskimi smugami lawy od miski w dół, a podstawy (`lava_krst_uv_*`) i „spódnice” (`lava_krst_ov_*`) to drobny wzór skały z pomarańczowymi plamkami. U nas na tych samych ścianach są szerokie pola lawy (górny pas tekstury). Średni kolor fragmentu trzonu: gra (100, 43, 12), u nas (170, 50, 6).
+- Wykluczone: wariant pliku (m128, m064 i Gray mają tę samą treść, ścieżka materiału w `.3db` to `lava_seulen_128.tga`), odbicie osi V (gorzej), powtórzenie tekstury 2× i 4× (gorzej), klatka animacji (obie klatki mają te same UV), zakres UV (wszystkie części mieszczą się w 0…1, np. `lava_krst_uv_h` u 0,22…0,81, v 0,12…0,91), reguła oświetlenia dwustronnego (bez niej jasność 43 → 40).
+- **Tryb 9 (oświetlenie):** stosunek oświetlony / bez oświetlenia w kanale G: gra 0,19, u nas 0,26 (modele ok. 1,4 raza jaśniejsze pod lampami); tylna ściana terenu u nas ok. 1,15 raza jaśniejsza.
+
+Wniosek: ❓ większa część różnicy to inne próbkowanie tekstury na częściach kolumn (przyczyny nie znaleziono; kolejny krok: porównać pojedynczy obiekt kolumny w grze i u nas, np. `lava_krst_uv_h` postawiony skryptem z kamerą z bliska, i sprawdzić parowanie wierzchołków z UV w linkach z wieloma pulami). 🔶 Mniejsza część to oświetlenie modeli lampami (ok. 1,4×), do kalibracji po wyjaśnieniu tekstury.
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅
