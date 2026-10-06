@@ -2176,7 +2176,7 @@ void Engine::tick(double dt)
 		if (traceNow && o->cls && o->cls->type == "gnome")
 			std::fprintf(stderr, "  [%.1f] %d stan=%s licznik=%d chodzi=%d akcja_do=%.1f zdarzenia=%zu\n", time_, o->id, o->state.c_str(),
 			    o->stateCounter, int(o->walking), o->actionUntil, o->queue.size());
-		if (!o->walking && o->actionUntil >= 0 && time_ >= o->actionUntil)
+		if (!o->external && !o->walking && o->actionUntil >= 0 && time_ >= o->actionUntil)
 		{
 			o->actionUntil = -1;
 			std::string done;
@@ -2193,7 +2193,7 @@ void Engine::tick(double dt)
 			o->current = e;
 			runIn(*o, it->second, e.name.c_str());
 		}
-		if (!o->state.empty() && o->stateCounter > 0 && o->actionUntil < 0 && !o->walking)
+		if (!o->external && !o->state.empty() && o->stateCounter > 0 && o->actionUntil < 0 && !o->walking)
 			if (auto it = o->cls->states.find(o->state); it != o->cls->states.end()) runIn(*o, it->second, ("stan " + o->state).c_str());
 	}
 }

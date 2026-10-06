@@ -56,6 +56,7 @@ struct SimUnit
 	bool gnome = true;
 	std::string walkAnim = "gehen_loop", climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop";
 	std::string standAnim = "standard", climbStandAnim = "kletterstand";
+	bool controlled = false; // prowadzony ręcznie w przeglądarce (skrypt postaci wstrzymany)
 };
 
 // Klasy chodzące po siatce nawigacji: krasnal (Zwerg) i wukery. Nazwa klasy małymi literami.
@@ -101,6 +102,12 @@ public:
 	float tileCenterX(int x, int ty) const; // środek wolnej części pola
 	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
 	void snapToFloor(SimUnit& u);
+	// Ręczne sterowanie postacią (dodatek przeglądarki, nie z gry): skrypt postaci wstrzymany, zlecenia chodu
+	// i animacji od skryptu ignorowane. controlStep: krok o pole (dx ±1 w bok, dy −1 w górę, +1 w dół), od celu
+	// bieżącego chodu; controlGoTo: chód do pola. false: nie ma drogi.
+	void setControlled(int unit, bool on);
+	bool controlStep(int unit, int dx, int dy);
+	bool controlGoTo(int unit, int tx, int ty);
 	// Najmniejsza głębokość chodu w polu (x, ty): tylna ściana w kolumnie x + kWallGap (skala skryptu).
 	float walkZ(float x, int ty) const;
 	SimUnit* unitOf(int obj);

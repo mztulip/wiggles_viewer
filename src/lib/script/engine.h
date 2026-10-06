@@ -126,6 +126,9 @@ struct ScriptObject
 	// Domyślnie 0 h (zawsze czas wolny); krasnal przy starcie: auto_choose_workingtime (zwerg.tcl).
 	float workStart = 0, workLen = 0;
 	bool visible = true; // set_visibility / get_visibility
+	// Sterowany z zewnątrz (przeglądarka: gracz prowadzi postać strzałkami): bez akcji i ciała stanu;
+	// zdarzenia (timery potrzeb) działają dalej.
+	bool external = false;
 };
 
 // ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).

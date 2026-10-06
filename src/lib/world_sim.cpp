@@ -454,7 +454,7 @@ float WorldSim::getRotY(int id)
 void WorldSim::setAnim(int id, const std::string& anim, int, int mode)
 {
 	if (!valid(id)) return;
-	if (SimUnit* u = unitOf(idx(id)); u && u->state != SimUnit::Idle) return; // chód i kopanie mają własne animacje
+	if (SimUnit* u = unitOf(idx(id)); u && (u->state != SimUnit::Idle || u->controlled)) return; // chód i kopanie mają własne animacje
 	size_t dot = anim.find('.');
 	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
 	// obiekt.anim innego obiektu .3db niż bieżący (albo obiekt bez modelu): podpięcie modelu po nazwie obiektu;
@@ -477,7 +477,7 @@ double WorldSim::animLength(int id, const std::string& anim)
 bool WorldSim::walkTo(int id, const float t[3], std::function<void(bool)> done)
 {
 	SimUnit* u = unitOf(idx(id));
-	if (!u || u->digJob) return false; // krasnal pracuje dla gracza
+	if (!u || u->digJob || u->controlled) return false; // krasnal pracuje dla gracza albo jest prowadzony ręcznie
 	int tx = int(std::floor(t[0])), ty = tileOfFeet(t[1]);
 	for (int d = 0; d < 4 && !nav.standable(tx, ty) && !nav.climbable(tx, ty); ++d) ++ty;
 	auto path = nav.path(u->tx, u->ty, tx, ty);
@@ -575,6 +575,55 @@ void WorldSim::populate(float cx, float cy, int gnomes, int wukers)
 		idOf(o);
 	}
 	if (selected < 0 && gnomeCount() > 0) selected = 0;
+}
+
+void WorldSim::setControlled(int unit, bool on)
+{
+	if (unit < 0 || unit >= int(units.size())) return;
+	SimUnit& u = units[size_t(unit)];
+	if (u.controlled == on) return;
+	u.controlled = on;
+	if (on)
+	{ // zlecony przez skrypt chód kończy się niepowodzeniem, żeby skrypt nie czekał bez końca
+		if (u.onArrive)
+		{
+			auto f = std::move(u.onArrive);
+			u.onArrive = nullptr;
+			f(false);
+		}
+		u.digJob = false, u.digX = u.digY = -1, u.goalX = u.goalZ = -1;
+		if (u.state == SimUnit::Dig) u.state = SimUnit::Idle;
+	}
+	if (scripts)
+		if (script::ScriptObject* o = scripts->object(idOf(u.obj))) o->external = on;
+}
+
+bool WorldSim::controlGoTo(int unit, int tx, int ty)
+{
+	if (unit < 0 || unit >= int(units.size())) return false;
+	SimUnit& u = units[size_t(unit)];
+	// od pola, do którego właśnie idzie (płynne łączenie kroków przy trzymanym klawiszu)
+	int sx = u.tx, sy = u.ty;
+	if (u.state == SimUnit::Walk && u.step < u.path.size()) sx = u.path[u.step].first, sy = u.path[u.step].second;
+	auto p = nav.path(sx, sy, tx, ty);
+	if (p.empty()) return false;
+	if (u.state == SimUnit::Walk && u.step < u.path.size()) p.insert(p.begin(), u.path[u.step]);
+	u.path = std::move(p), u.step = 0, u.state = SimUnit::Walk;
+	u.digX = u.digY = -1, u.goalX = u.goalZ = -1, u.onArrive = nullptr;
+	return true;
+}
+
+bool WorldSim::controlStep(int unit, int dx, int dy)
+{
+	if (unit < 0 || unit >= int(units.size())) return false;
+	const SimUnit& u = units[size_t(unit)];
+	int sx = u.tx, sy = u.ty;
+	if (u.state == SimUnit::Walk && !u.path.empty()) sx = u.path.back().first, sy = u.path.back().second;
+	if (dx != 0) // w bok: to samo pole wysokości, stopień w górę albo w dół
+		for (int d : {0, -1, 1})
+			if ((nav.standable(sx + dx, sy + d) || nav.climbable(sx + dx, sy + d)) && controlGoTo(unit, sx + dx, sy + d)) return true;
+	if (dy != 0 && nav.open(sx, sy + dy)) return controlGoTo(unit, sx, sy + dy);
+	return false;
 }
 
 void WorldSim::changeParticleSource(int id, int slot, const ParticleSource& s)

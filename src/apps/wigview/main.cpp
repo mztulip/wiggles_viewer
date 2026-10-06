@@ -297,6 +297,28 @@ struct Viewer
 	// Symulacja (skrypty obiektów, krasnale) na scenie map: przełącznik w panelu map, domyślnie wyłączona.
 	std::unique_ptr<WorldSim> sim;
 	bool simulate = false, simActive = false, keepCamera = false;
+	// Ręczne prowadzenie postaci (dodatek przeglądarki do testów, nie z gry): Enter przy zaznaczonej postaci
+	// albo przycisk w panelu; strzałki krok o pole, PPM idź do pola, Shift albo Esc puszcza.
+	int controlUnit = -1; // indeks w sim->units, −1 = brak
+	int unitOfObject(int obj) const
+	{
+		if (!simActive || !sim) return -1;
+		for (size_t k = 0; k < sim->units.size(); ++k)
+			if (sim->units[k].obj == obj) return int(k);
+		return -1;
+	}
+	void takeControl(int unit)
+	{
+		releaseControl();
+		if (!sim || unit < 0) return;
+		sim->setControlled(unit, true);
+		controlUnit = unit;
+	}
+	void releaseControl()
+	{
+		if (sim && controlUnit >= 0 && controlUnit < int(sim->units.size())) sim->setControlled(controlUnit, false);
+		controlUnit = -1;
+	}
 	// Upływ czasu na mapach (animacje obiektów, cząsteczki, symulacja); niezależny od odtwarzacza zakładki Modele.
 	bool mapPlaying = true;
 	// Start symulacji na bieżącej mapie (pierwszy raz: silnik skryptów). progress: okno postępu.
@@ -526,6 +548,17 @@ struct Viewer
 			ImGui::TextDisabled(tr("Stan skryptu: włącz „Symulacja (skrypty)”."));
 			return;
 		}
+		if (int unit = unitOfObject(i); unit >= 0)
+		{
+			if (controlUnit == unit)
+			{
+				if (ImGui::SmallButton(tr("Puść (Shift, Esc)"))) releaseControl();
+			}
+			else if (ImGui::SmallButton(tr("Steruj (Enter)")))
+				takeControl(unit);
+			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): strzałki prowadzą postać o pole,\n"
+			                         "PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."));
+		}
 		int id = i < int(sim->idxToId.size()) ? sim->idxToId[size_t(i)] : 0;
 		const script::ScriptObject* so = id && sim->scripts ? sim->scripts->object(id) : nullptr;
 		if (!so)
@@ -641,6 +674,7 @@ struct Viewer
 
 	void update(float dt)
 	{
+		if (!simActive || !sim || controlUnit >= int(sim->units.size())) controlUnit = -1; // nowa mapa albo restart
 		if (mapPlaying) maps.update(dt);
 		if (mapPlaying && simActive && mapTab()) sim->simUpdate(std::min(dt, 0.1f));
 		if (activeTab == 4) particles.update(dt);
@@ -2058,6 +2092,14 @@ int main(int argc, char** argv)
 				auto* dl = ImGui::GetForegroundDrawList();
 				dl->AddRectFilled(ImVec2(pos.x - 4, pos.y - 2), ImVec2(pos.x + ts.x + 4, pos.y + ts.y + 2), IM_COL32(0, 0, 0, 150), 3.f);
 				dl->AddText(pos, IM_COL32(220, 220, 220, 255), ver);
+				if (v.controlUnit >= 0 && v.mapTab())
+				{ // tryb sterowania: napis na górze sceny
+					std::string msg = strf(tr("Sterowanie: %s  (strzałki: krok, PPM: idź do pola, Shift lub Esc: puść)"),
+					    v.maps.objectClass(v.sim->units[size_t(v.controlUnit)].obj).c_str());
+					ImVec2 ms = ImGui::CalcTextSize(msg.c_str()), mp(v.uiRight + (ds.x - v.uiRight - ms.x) * 0.5f, 12.f);
+					dl->AddRectFilled(ImVec2(mp.x - 8, mp.y - 4), ImVec2(mp.x + ms.x + 8, mp.y + ms.y + 4), IM_COL32(20, 40, 70, 210), 4.f);
+					dl->AddText(mp, IM_COL32(255, 230, 120, 255), msg.c_str());
+				}
 			}
 			ImGui::Render();
 		}
@@ -2190,7 +2232,7 @@ int main(int argc, char** argv)
 
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
-	bool clickArmed = false;
+	bool clickArmed = false, rclickArmed = false;
 	int clickX = 0, clickY = 0;
 	std::string restartGame;
 	while (running)
@@ -2207,6 +2249,48 @@ int main(int argc, char** argv)
 			ImGuiIO& io = ImGui::GetIO();
 			if (e.type == SDL_QUIT) running = false;
 			if (e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+			if (v.controlUnit >= 0 && e.type == SDL_KEYDOWN && !io.WantTextInput)
+			{ // sterowanie postacią przechwytuje strzałki; Shift albo Esc oddaje klawiaturę przeglądarce
+				SDL_Keycode k = e.key.keysym.sym;
+				bool used = true;
+				if (k == SDLK_LEFT) v.sim->controlStep(v.controlUnit, -1, 0);
+				else if (k == SDLK_RIGHT) v.sim->controlStep(v.controlUnit, 1, 0);
+				else if (k == SDLK_UP) v.sim->controlStep(v.controlUnit, 0, -1);
+				else if (k == SDLK_DOWN) v.sim->controlStep(v.controlUnit, 0, 1);
+				else if (k == SDLK_LSHIFT || k == SDLK_RSHIFT || k == SDLK_ESCAPE) v.releaseControl();
+				else used = false;
+				if (used) continue;
+			}
+			if (e.type == SDL_KEYDOWN && !io.WantTextInput && v.controlUnit < 0 &&
+			    (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER) && v.mapTab())
+			{ // zaznaczona postać, a bez zaznaczenia pierwszy krasnal
+				int unit = v.unitOfObject(v.maps.selectedObject);
+				for (size_t k = 0; unit < 0 && v.simActive && v.sim && k < v.sim->units.size(); ++k)
+					if (v.sim->units[k].gnome) unit = int(k);
+				if (unit >= 0)
+				{
+					v.takeControl(unit);
+					continue;
+				}
+			}
+			if (!io.WantCaptureMouse && v.mapTab() && v.controlUnit >= 0)
+			{ // sterowanie: PPM bez przeciągania = idź do pola (przeciąganie dalej przesuwa kamerę)
+				if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_RIGHT)
+					rclickArmed = true, clickX = e.button.x, clickY = e.button.y;
+				if (e.type == SDL_MOUSEMOTION && rclickArmed && std::abs(e.motion.x - clickX) + std::abs(e.motion.y - clickY) > 4)
+					rclickArmed = false;
+				if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT && rclickArmed)
+				{
+					rclickArmed = false;
+					int w, h, tx, ty;
+					drawableSize(w, h);
+					float sc = io.DisplayFramebufferScale.x;
+					glm::vec3 ro, rd;
+					if (v.sceneRay(float(e.button.x) * sc, float(e.button.y) * sc, w, h, int(v.uiRight * sc), ro, rd) &&
+					    v.maps.pickTerrain(ro, rd, tx, ty))
+						v.sim->controlGoTo(v.controlUnit, tx, ty);
+				}
+			}
 			if (!io.WantCaptureMouse && v.mapTab())
 			{ // zaznaczanie obiektów: kliknięcie bez przeciągania (przeciąganie obraca kamerę)
 				if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
