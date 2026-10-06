@@ -379,9 +379,10 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 	}
 	if (u.state == SimUnit::Walk)
 	{
-		if (u.step >= u.path.size() && u.goalZ >= 0 && std::abs(u.goalZ - u.z) > 0.01f)
-		{ // na miejscu w bok, ale jeszcze nie na głębokości celu: w głąb albo do przodu, przodem w stronę ruchu
-			float dz = u.goalZ - u.z, mz = 2.f * kWalkSpeed * dt;
+		if (u.step >= u.path.size() && u.goalZ >= 0 && std::abs(std::max(u.goalZ, walkZ(u.x, u.ty)) - u.z) > 0.01f)
+		{ // na miejscu w bok, ale jeszcze nie na głębokości celu (nie bliżej ściany niż kWallGap, też cel ze skryptu):
+			// w głąb albo do przodu, przodem w stronę ruchu
+			float dz = std::max(u.goalZ, walkZ(u.x, u.ty)) - u.z, mz = 2.f * kWalkSpeed * dt;
 			u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
 			u.facing = dz < 0 ? kSimPi : 0.f;
 			scene_.playAnim(u.obj, u.walkAnim, true);
