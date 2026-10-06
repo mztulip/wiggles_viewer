@@ -63,8 +63,8 @@ struct Animation3db
 {
 	std::string name;
 	std::vector<uint32_t> frames; // indeksy do Model3db::meshes
-	uint16_t unknownFlags = 0; // ❓ najpewniej niezainicjowana pamięć eksportera
-	float unknownF = 0;         // ❓ zwykle 0
+	uint16_t unknownFlags = 0; // ✅ nieużywane: niezainicjowana pamięć eksportera (BAZA_WIEDZY §8.15)
+	float unknownF = 0;         // ✅ nieużywane (jak unknownFlags)
 	std::string sourceFile; // ścieżka do pliku .sex eksportera
 	Vec3f move{};   // ✅ przesunięcie na klatkę (jednostki modelu, −y = do przodu)
 	Vec3f rotate{}; // ✅ obrót na krok między klatkami (radiany)

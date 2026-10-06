@@ -114,8 +114,8 @@ Wartości zachowują się jak tryby (prawdopodobnie zestawy stanów etapów teks
 | *powtórz:* name | `str` | np. `"gehen_loop"`, `"standard"` |
 | frameCount | `u16` | |
 | frames | `u32` × frameCount | indeksy meshy, kolejne klatki |
-| flags | `u16` | ❓ 648 różnych wartości, 1414 animacji ma 0; wygląda na niezainicjowaną pamięć eksportera (np. 26981 = `0x6965` = tekst „ei”). Ignorować |
-| unknownF | `f32` | ❓ 867 różnych wartości, zwykle 0. Ignorować |
+| flags | `u16` | ✅ nieużywane: niezainicjowana pamięć eksportera. 648 różnych wartości, 1414 animacji ma 0; część to tekst (26981 = `0x6965` = „ei”, 29301 = „ur”), część młodsze bajty wskaźników podzielne przez 8 (0x18F8, 0x2EF0). Gra ich nie czyta: wszystkie 1023 animacje `MANN.3DB` z wartością 0xFFFF dają ten sam chód co do pozycji ([BAZA_WIEDZY §8.15](../BAZA_WIEDZY.md)). Ignorować |
+| unknownF | `f32` | ✅ nieużywane (jak `flags`): zwykle 0, poza tym m.in. 1,77·10²⁸ i 225513,25; z wartością 1000 we wszystkich animacjach `MANN.3DB` chód bez zmian. Ignorować |
 | source | `str` | ścieżka do pliku eksportera, np. `...\baby_aufwachen.sex`. Ignorować |
 | move | `vec3` | ✅ przesunięcie postaci **na klatkę** (jednostki modelu; 200 = blok), w układzie modelu (−y = do przodu, z = w górę przy wspinaniu). Przy 10 kl./s: `gehen_loop` 16,22 → 0,81 bloku/s, `laufen_schnell_loop` 34,29 → 1,71 bloku/s; w grze zmierzone 0,85 i 1,59 bloku/s (rozbieg i bieg po rozkazie, [BAZA_WIEDZY §8.8](../BAZA_WIEDZY.md)). Niezerowe w 366 z 6445 animacji |
 | rotate | `vec3` | ✅ obrót **na krok między klatkami**, w radianach: `baby.drehen_links` 13 klatek × 0,1309 → 12 kroków = π/2 (90°), `mann.drehen_links` 4 klatki × 0,5265 → 3 kroki ≈ 90°. Niezerowe w 83 animacjach |

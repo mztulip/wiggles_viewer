@@ -403,6 +403,13 @@ Wniosek: ❓ większa część różnicy to inne próbkowanie tekstury na częś
 
 Wniosek: ✅ przycięcie do 1,0–2,5 obowiązuje tylko poza przerywnikiem; ✅ w przerywniku wzór bez zmian dla R > 0; 🔶 R ≤ 0 nieużyteczne (zdegenerowane).
 
+### 8.15 Pola `flags` i f32 rekordu animacji `.3db` (2026-10-07)
+
+- Statystyka wszystkich modeli gry: `flags` (u16) ma 648 różnych wartości (0 w 1414 animacjach, potem 26981, 44536, 43424, 6392 …); część to znaki ASCII (0x6965 „ei”, 0x7275 „ur”, 0x2C20 „ ,”), część wygląda jak młodsze bajty adresów (0x18F8, 0x2EF0, 0x01F0, podzielne przez 8). f32: 0 w 5835 animacjach, reszta przypadkowa (1,77·10²⁸, 225513,25, 1500, −1, 0,5774).
+- Eksperyment: `live2.sh` (Xvfb), szablon `lava_unq_vampy_tuer`, nowy `Zwerg` w (19; 18,5; 12), `state_disable`, `action $G walk "-target {25 18.5 12} -speedtype 1"`, pozycja co ok. 1,24 s. Oryginał: x 19,80 → 20,78 → 21,75 → 22,72 → 23,70 → 24,75 → 24,98 (koniec, `get_walkresult` 4); ok. 0,80 bloku/s, zgodnie z prędkością z animacji (rozdział 17.6). Kopia `MANN.3DB` z `flags` = 0xFFFF i f32 = 1000 we wszystkich 1023 animacjach: te same kroki i ten sam czas dojścia; plik przywrócony.
+
+Wniosek: ✅ oba pola to śmieci z pamięci eksportera, gra ich nie używa (przynajmniej przy odtwarzaniu i ruchu postaci).
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅
