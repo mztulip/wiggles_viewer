@@ -174,7 +174,22 @@ SimUnit* WorldSim::unitOf(int obj)
 int WorldSim::addUnit(int obj)
 {
 	bool gnome = Vfs::lower(scene_.objectClass(obj)) == "zwerg";
-	if (gnome) scene_.setObjectModel(obj, "mann.3db", "mann");
+	if (gnome)
+	{ // płeć: zmienna gnome_gender z zapisu; dodany krasnal: tak, żeby kobiet i mężczyzn było po równo
+		// (auto_choose_gender). Kobieta: model frau z tymi samymi animacjami (set_alternateanimdb, z_methods.tcl).
+		std::string gender;
+		for (const auto& [k, v] : scene_.objectSource(obj).tclVars)
+			if (k == "gnome_gender") gender = v;
+		if (gender.empty())
+		{
+			int women = 0, men = 0;
+			for (const auto& x : units)
+				if (x.gnome) (scene_.objectModelObject(x.obj) == "frau" ? women : men)++;
+			gender = women < men ? "female" : "male";
+		}
+		bool female = gender == "female";
+		scene_.setObjectModel(obj, female ? "frau.3db" : "mann.3db", female ? "frau" : "mann");
+	}
 	SimUnit u;
 	u.obj = obj;
 	u.gnome = gnome;
@@ -442,9 +457,10 @@ void WorldSim::setAnim(int id, const std::string& anim, int, int mode)
 	if (SimUnit* u = unitOf(idx(id)); u && u->state != SimUnit::Idle) return; // chód i kopanie mają własne animacje
 	size_t dot = anim.find('.');
 	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
-	// obiekt.anim innego obiektu .3db niż bieżący (albo obiekt bez modelu): podpięcie modelu po nazwie obiektu
-	if (dot != std::string::npos && Vfs::lower(scene_.objectModelObject(idx(id))) != Vfs::lower(anim.substr(0, dot)))
-		scene_.setObjectModel(idx(id), "", anim.substr(0, dot));
+	// obiekt.anim innego obiektu .3db niż bieżący (albo obiekt bez modelu): podpięcie modelu po nazwie obiektu;
+	// mann.* u kobiety zostaje przy frau (alternatywna baza animacji, set_alternateanimdb)
+	std::string cur = Vfs::lower(scene_.objectModelObject(idx(id))), want = dot == std::string::npos ? "" : Vfs::lower(anim.substr(0, dot));
+	if (!want.empty() && want != cur && !(want == "mann" && cur == "frau")) scene_.setObjectModel(idx(id), "", anim.substr(0, dot));
 	scene_.playAnim(idx(id), name, mode == 2);
 }
 double WorldSim::animLength(int id, const std::string& anim)

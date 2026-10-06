@@ -112,6 +112,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Postacie w polach otwartych częściowo (krawędzie jaskiń): środek wolnych kolumn zamiast środka pola, z nigdy za ścianą (`kris_caves_1_b`: wuker znikał w skale przy prawej krawędzi)
 - [x] Okładziny jaskiń (`SetCaveSkinClasses`) bez przedrostka `Dummy_`: szablony `*_caves_*` nie pokazują już kryształów/belek, których gra nie tworzy (unknown class)
 - [ ] Okładziny jaskiń po wykopaniu jaskini ze stempla (`cave_skin`, `add_cave_skin_class`; Diggles-Unity DIGGING_MECHANIC)
+- [x] Kobiety krasnali modelem `frau` (`gnome_gender` z zapisu, nowe na przemian; `mann.*` u kobiety zostaje przy `frau`)
 - [ ] Oświetlone części modeli w trybie 8 (dolne części kolumn lawy) wciąż cieplejsze i jaśniejsze niż w grze: kalibracja oświetlenia modeli lampami
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅

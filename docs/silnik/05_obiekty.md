@@ -45,7 +45,7 @@ class_defaultanim <obiekt>.<animacja> [tryb]
 
 4. **Drzwi i kraty** ✅ (`Tuer_kaserne`, `Tuer_verlies`, `Gefaengnis_gitter_*`, `Kristalltuer`…): bez `class_defaultanim`; `obj_init` ustawia `set standanim <obiekt>.<animacja>`, a wspólny `calls/DOORS.TCL` woła `set_anim this $standanim 0 $ANIM_STILL`. Bez wykonywania skryptów weź `set standanim` jako animację domyślną (tryb 0, nieruchomo).
 
-5. **Postacie** ✅: krasnal (`Zwerg`) dostaje model `mann` z `mann.3db`, wuker (`def_class $wukerclass` dla `Wuker` i `Schwefelwuker` w `WUKER.TCL`) obiekt `wuker` przez `set_anim this wuker.stand_atmen_a` w `obj_init`. Ogólnie: `set_anim <obj> <obiekt>.<animacja>` z innym obiektem `.3db` niż bieżący podmienia model obiektu (szukany po nazwie obiektu we wszystkich plikach `.3db`).
+5. **Postacie** ✅: krasnal (`Zwerg`) dostaje model `mann` z `mann.3db`, a kobieta model `frau` z `frau.3db` (te same 1023 animacje; `z_methods.tcl`: `set_objgender`, `set_alternateanimdb this true`, potem `mann.*` z jej skryptów rysuje się modelem `frau`). Płeć z zapisu: zmienna Tcl obiektu `gnome_gender male|female`; nowy krasnal: `auto_choose_gender` wyrównuje liczbę kobiet i mężczyzn, wuker (`def_class $wukerclass` dla `Wuker` i `Schwefelwuker` w `WUKER.TCL`) obiekt `wuker` przez `set_anim this wuker.stand_atmen_a` w `obj_init`. Ogólnie: `set_anim <obj> <obiekt>.<animacja>` z innym obiektem `.3db` niż bieżący podmienia model obiektu (szukany po nazwie obiektu we wszystkich plikach `.3db`).
 
 Te reguły przypisują model do 86,9% z 33 905 obiektów we wszystkich szablonach. Reszta to głównie znaczniki bez wyglądu (`Info_*`, punkty trybów sieciowych `CS_*`, `CF_*`) i klasy, które ustawiają animację dopiero w kodzie (`set_anim` w `obj_init`, np. postacie).
 
