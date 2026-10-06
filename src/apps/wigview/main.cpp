@@ -2402,13 +2402,12 @@ int main(int argc, char** argv)
 				if (e.type == SDL_MOUSEBUTTONUP && e.button.button == SDL_BUTTON_RIGHT && rclickArmed)
 				{
 					rclickArmed = false;
-					int w, h, tx, ty;
+					int w, h;
 					drawableSize(w, h);
 					float sc = io.DisplayFramebufferScale.x;
 					glm::vec3 ro, rd;
-					if (v.sceneRay(float(e.button.x) * sc, float(e.button.y) * sc, w, h, int(v.uiRight * sc), ro, rd) &&
-					    v.maps.pickTerrain(ro, rd, tx, ty))
-						v.sim->controlGoTo(v.controlUnit, tx, ty);
+					if (v.sceneRay(float(e.button.x) * sc, float(e.button.y) * sc, w, h, int(v.uiRight * sc), ro, rd))
+						v.sim->controlGoToRay(v.controlUnit, ro, rd);
 				}
 			}
 			if (!io.WantCaptureMouse && v.mapTab())

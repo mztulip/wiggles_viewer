@@ -265,7 +265,7 @@ t_ui_control() {
 	[ -z "$e" ] && ok "x $x0 → $x1 (1 s), stuknięcie $x2 → $x3, z $z0 → $z1 → $z2" || fail "$e"
 }
 
-test_ ui_goto "interakcja: PPM w podłogę albo w tylną ścianę wysyła prowadzonego krasnala do tego pola"
+test_ ui_goto "interakcja: PPM w podłogę albo w tylną ścianę wysyła prowadzonego krasnala w kliknięte miejsce (pole i głębokość)"
 t_ui_goto() {
 	http_ok || return
 	http_start wigview --template kris_caves_1_b --populate 1 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
@@ -278,8 +278,14 @@ t_ui_goto() {
 	click_at 760 420 3             # tylna ściana po lewej (pole 2)
 	sleep 4; t2=$(cu tx)
 	[ -z "$e" ] && [ "$t2" -le 3 ] 2>/dev/null || e="${e:-PPM w ścianę: krasnal na polu $t2, oczekiwane ≤ 3}"
+	# głębokość klikniętego miejsca: podłoga blisko przodu i blisko tylnej ściany (pole 7)
+	local zf zb
+	click_at 1000 535 3; sleep 4; zf=$(cu z)
+	click_at 1000 470 3; sleep 4; zb=$(cu z)
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if $zf >= 10 and $zb <= 5 else 1)" ||
+		e="${e:-PPM w podłogę z przodu / z tyłu: z $zf / $zb, oczekiwane ≥ 10 / ≤ 5}"
 	ui_stop
-	[ -z "$e" ] && ok "pole 5 → $t1 → $t2" || fail "$e"
+	[ -z "$e" ] && ok "pole 5 → $t1 → $t2, z przód $zf, tył $zb" || fail "$e"
 }
 
 test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), trzymana → idzie animacją chodu z jego modelu, po puszczeniu stoi"

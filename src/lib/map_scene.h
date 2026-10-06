@@ -70,7 +70,7 @@ public:
 	// pickObject: obiekt z najbliższym trójkątem bieżącej klatki na promieniu (bbox w układzie obiektu jako test
 	// wstępny); −1 = brak. pickTerrain: pole terenu trafione promieniem (marsz po mapie wysokości), false = brak.
 	int pickObject(const glm::vec3& o, const glm::vec3& d) const;
-	bool pickTerrain(const glm::vec3& o, const glm::vec3& d, int& tx, int& ty) const;
+	bool pickTerrain(const glm::vec3& o, const glm::vec3& d, int& tx, int& ty, glm::vec3* hit = nullptr) const; // hit: punkt trafienia
 	int hoverObject = -1, selectedObject = -1; // podświetlane przy rysowaniu
 	const Model3db* objectModel(int i) const;
 	std::string objectAnimation(int i) const;

@@ -371,7 +371,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 {
 	if (u.controlled && (u.moveX != 0 || u.moveZ != 0))
 	{ // prowadzona ręcznie, klawisz wciśnięty: ruch zamiast ścieżki
-		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = -1;
+		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1;
 		manualMove(u, dt);
 		u.z = std::max(u.z, walkZ(u.x, u.ty) - kWallGap + 0.5f);
 		scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
@@ -379,7 +379,14 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 	}
 	if (u.state == SimUnit::Walk)
 	{
-		if (u.step >= u.path.size())
+		if (u.step >= u.path.size() && u.goalZ >= 0 && std::abs(u.goalZ - u.z) > 0.01f)
+		{ // na miejscu w bok, ale jeszcze nie na głębokości celu: w głąb albo do przodu, przodem w stronę ruchu
+			float dz = u.goalZ - u.z, mz = 2.f * kWalkSpeed * dt;
+			u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
+			u.facing = dz < 0 ? kSimPi : 0.f;
+			scene_.playAnim(u.obj, u.walkAnim, true);
+		}
+		else if (u.step >= u.path.size())
 		{
 			u.state = u.digX >= 0 ? SimUnit::Dig : SimUnit::Idle;
 			u.digT = 0;
@@ -710,6 +717,30 @@ bool WorldSim::controlGoTo(int unit, int tx, int ty)
 	if (u.state == SimUnit::Walk && u.step < u.path.size()) p.insert(p.begin(), u.path[u.step]);
 	u.path = std::move(p), u.step = 0, u.state = SimUnit::Walk;
 	u.digX = u.digY = -1, u.goalX = u.goalZ = -1, u.onArrive = nullptr;
+	return true;
+}
+
+bool WorldSim::controlGoToRay(int unit, const glm::vec3& ro, const glm::vec3& rd)
+{
+	int tx, ty;
+	glm::vec3 p;
+	if (unit < 0 || unit >= int(units.size()) || !scene_.pickTerrain(ro, rd, tx, ty, &p)) return false;
+	constexpr float B = MapScene::kBlock;
+	float gx = p.x / B, gz = (p.z / B - 7.f) * 2.f; // skala skryptu: z świata = z · 0,5 + 7
+	if (!nav.open(tx, ty) && nav.open(tx, ty - 1))
+	{ // podłoga: mapa wysokości widzi tylko tylną ścianę, więc punkt z przecięcia z poziomą powierzchnią podłogi
+		--ty;
+		float fy = floorY(tx, ty) * B;
+		if (std::abs(rd.y) > 1e-6f)
+		{
+			glm::vec3 q = ro + rd * ((fy - ro.y) / rd.y);
+			if (int(std::floor(q.x / B)) == tx) gx = q.x / B, gz = (q.z / B - 7.f) * 2.f;
+		}
+	}
+	if (!controlGoTo(unit, tx, ty)) return false;
+	SimUnit& u = units[size_t(unit)];
+	u.goalX = gx;
+	u.goalZ = std::clamp(gz, walkZ(gx, ty), 14.f);
 	return true;
 }
 

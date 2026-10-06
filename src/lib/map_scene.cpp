@@ -680,7 +680,7 @@ int MapScene::pickObject(const glm::vec3& ro, const glm::vec3& rd) const
 	return best;
 }
 
-bool MapScene::pickTerrain(const glm::vec3& ro, const glm::vec3& rd, int& tx, int& ty) const
+bool MapScene::pickTerrain(const glm::vec3& ro, const glm::vec3& rd, int& tx, int& ty, glm::vec3* hit) const
 {
 	if (!heights_ || !pmp_ || std::abs(rd.z) < 1e-9f) return false;
 	const Heightfield& h = *heights_;
@@ -698,6 +698,7 @@ bool MapScene::pickTerrain(const glm::vec3& ro, const glm::vec3& rd, int& tx, in
 		if (p.z <= Heightfield::depthZ(h.at(sx, sy)))
 		{
 			tx = sx / Heightfield::kSamplesPerBlock, ty = sy / Heightfield::kSamplesPerBlock;
+			if (hit) *hit = p;
 			return true;
 		}
 	}

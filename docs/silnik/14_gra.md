@@ -124,8 +124,12 @@ skrypt postaci   wstrzymany (akcje i ciało stanu; zdarzenia, np. ubytek potrzeb
 ↑/↓ (trzymane)   w głąb / do przodu (2 · 1,6 jednostki skryptu na s), między tylną ścianą + 1,5 a z = 14
 dwie strzałki    po skosie; postać patrzy w stronę ruchu: obrót = atan2(−ruch_x, ruch_z)
 puszczenie       postać od razu staje (animacja stania); krótkie stuknięcie przesuwa o czas naciśnięcia
-PPM w pole       idź do pola po siatce nawigacji (14.3, A*), także wspinanie; kliknięcie w podłogę trafia
-                 w lite pole pod nią, więc celem jest wolne pole nad nim (WorldSim::controlGoTo)
+PPM w miejsce    idź tam (WorldSim::controlGoToRay): pole po siatce nawigacji (14.3, A*, także wspinanie),
+                 potem x i głębokość klikniętego punktu. Mapa wysokości widzi tylko tylną ścianę, więc
+                 kliknięcie w podłogę trafia w lite pole pod nią: celem jest wolne pole nad podłogą, a punkt
+                 to przecięcie promienia z poziomą powierzchnią podłogi (y = floorY); kliknięcie w tylną
+                 ścianę: głębokość przy ścianie (ściana + 1,5). Na miejscu w bok postać dochodzi w głąb
+                 albo do przodu, przodem w stronę ruchu
 puść             Shift, Esc, LPM obok: postać staje (idle, bez reszty ścieżki), zostaje postacią symulacji,
                  a jej skrypt znów działa
 ```

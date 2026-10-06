@@ -111,6 +111,9 @@ public:
 	void setControlled(int unit, bool on);
 	bool controlStep(int unit, int dx, int dy);
 	bool controlGoTo(int unit, int tx, int ty);
+	// Idź w miejsce pod kursorem (promień w układzie sceny, jak MapScene::pickTerrain): pole, x i głębokość
+	// klikniętego punktu; w podłogę: punkt na jej poziomej powierzchni, w tylną ścianę: przy ścianie.
+	bool controlGoToRay(int unit, const glm::vec3& ro, const glm::vec3& rd);
 	// Kierunek ruchu prowadzonej postaci (trzymane klawisze): dx −1/0/+1 w bok, dz −1 w głąb, +1 do przodu.
 	void controlMove(int unit, float dx, float dz);
 	// Stworzenie z mapy (chomik, pająk, troll…) jako postać symulacji, jeśli jego model ma animację chodu:
