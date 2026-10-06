@@ -45,7 +45,7 @@
 // Sterowanie w oknie: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja play/pauza,
 // strzałki lewo/prawo poprzednia/następna klatka, góra/dół poprzedni/następny plik (model albo
 // tekstura, dźwięk, zależnie od zakładki), PgUp/PgDn poprzednia/następna animacja, I interpolacja,
-// Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Esc wyjście.
+// Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Q wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
 #include "lib/i18n.h"
@@ -2334,7 +2334,10 @@ int main(int argc, char** argv)
 			    (e.key.keysym.sym == SDLK_f || e.key.keysym.sym == SDLK_p))
 				v.searchRequest = true;
 			if (v.searchOpen || v.searchRequest) continue; // klawisze obsługuje okno wyszukiwania
-			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE && !io.WantTextInput) running = false;
+			// Q zamyka program (Esc nie: łatwo go nacisnąć przypadkiem; puszcza sterowaną postać i zamyka wyszukiwarkę)
+			if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_q && !(e.key.keysym.mod & (KMOD_CTRL | KMOD_ALT | KMOD_SHIFT)) &&
+			    !io.WantTextInput)
+				running = false;
 			if (!io.WantTextInput && e.type == SDL_KEYDOWN)
 			{
 				int n = v.frameCount();
