@@ -12,7 +12,7 @@ Otwartoźródłowy silnik do gry Wiggles / Diggles (2001) i osobna przeglądarka
 - [docs/BAZA_WIEDZY.md](docs/BAZA_WIEDZY.md): **dziennik badań**: materiały referencyjne, laboratorium (§8), przebieg eksperymentów (§9)
 - **Diggles-Unity** (grywalny port w Unity, MIT): **[docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md)** to mapa wszystkich ich dokumentów z odnośnikami, stan u nas i plan „dogonić i wyprzedzić”. Przed pracą nad podsystemem przeczytaj ich dokument z tej mapy (lokalnie: `grep -rn "<fraza>" ../ref/Diggles-Unity-main/Docs`), wnioski sprawdź w laboratorium, a po pracy popraw wiersz mapy (stan, następny krok)
 - [CREDITS.md](CREDITS.md): autorzy i linki do repozytoriów źródłowych (zipy w `../` odpowiadają tym repo na GitHubie)
-- [LICENSE](LICENSE): GPL v3
+- [LICENSE](LICENSE): MIT (do 2026-10-06 GPL v3). Nie dołączamy kodu na licencji GPL ani innych wymagających tej samej licencji; z repozytoriów GPL tylko wiedza
 - [docs/natywne_komendy_gry.txt](docs/natywne_komendy_gry.txt): **dokładna** lista 639 komend natywnych zrzucona z działającej gry
 - [tools/lab/README.md](tools/lab/README.md): **instrukcja narzędzi laboratorium** (`capture.sh`, `live.sh`, `live2.sh`): jak uruchamiać, przykłady, pułapki
 - [`tools/lab/capture.sh`](tools/lab/capture.sh) robi zrzut obrazu z oryginalnej gry w niewidocznym Xvfb (`menu`, `template <szablon>`, `scene <plik.tcl>`). Używaj go jako wzorca wizualnego

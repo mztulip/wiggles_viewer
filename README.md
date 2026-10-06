@@ -136,7 +136,7 @@ Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na
 
 ## Licencja
 
-Kod OpenWiggles jest udostępniony na licencji **GNU GPL v3** (plik [`LICENSE`](LICENSE)), tak jak większość repozytoriów społeczności [DigglesMods](https://github.com/DigglesMods).
+Kod OpenWiggles jest udostępniony na licencji **MIT** (plik [`LICENSE`](LICENSE)); do 2026-10-06 był na GNU GPL v3. Z repozytoriów społeczności (także na GPL, np. [DigglesMods](https://github.com/DigglesMods)) bierzemy tylko wiedzę o formatach i działaniu gry, nie kod ([CREDITS.md](CREDITS.md)), a biblioteki w `third_party/` mają licencje zgodne z MIT.
 
 Projekt **nie zawiera** żadnych danych z oryginalnej gry. Do uruchomienia potrzebna jest legalna kopia Wiggles/Diggles. Prawa do gry należą do jej twórców (SEK-Ost, Innonics).
 
