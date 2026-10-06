@@ -91,11 +91,13 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 		if (t.empty() || t.rfind("//", 0) == 0 || t[0] == '#') continue;
 
 		// Listy Set<...>Classes { {Klasa obiekt} ... }: SetDummyClassesAll, SetDummyClassesNoZ,
-		// SetFrontDummyClassesNoPhys, SetCaveSkinClasses (klasy Dummy_<Klasa>), SetWeaponClasses (bez prefiksu).
+		// SetFrontDummyClassesNoPhys (klasy Dummy_<Klasa>); SetWeaponClasses i ✅ SetCaveSkinClasses bez prefiksu
+		// (ANIMINIT.TCL: def_class $classname; „new Dummy_Kris_caves_1_b_a” z szablonu gra odrzuca: unknown class).
+		// Okładziny jaskiń stawia dopiero kopanie jaskini ze stempla (Diggles-Unity DIGGING_MECHANIC, cave skin).
 		if (t.rfind("Set", 0) == 0 && t.find("Classes") != std::string::npos && t.find('{') != std::string::npos)
 		{
 			std::string listName = t.substr(0, t.find_first_of(" \t{"));
-			bool dummy = listName.find("Dummy") != std::string::npos || listName.find("CaveSkin") != std::string::npos;
+			bool dummy = listName.find("Dummy") != std::string::npos;
 			listPrefix = dummy ? "Dummy_" : "";
 			// Parametry listy: SetDummyClassesAll {noviewinfog nophysic} { ... }
 			listViewInFog = t.find("noviewinfog") == std::string::npos;

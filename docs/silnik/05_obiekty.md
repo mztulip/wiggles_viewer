@@ -33,7 +33,8 @@ class_defaultanim <obiekt>.<animacja> [tryb]
 
    | procedura | nazwa klasy | uwagi |
    |---|---|---|
-   | `SetDummyClassesAll`, `SetDummyClassesNoZ`, `SetFrontDummyClassesNoPhys`, `SetCaveSkinClasses` | `Dummy_<Nazwa>` | model = pierwszy obiekt listy, animacja `standard` |
+   | `SetDummyClassesAll`, `SetDummyClassesNoZ`, `SetFrontDummyClassesNoPhys` | `Dummy_<Nazwa>` | model = pierwszy obiekt listy, animacja `standard` |
+   | `SetCaveSkinClasses` (`dummy_auskleidung.tcl`) | `<Nazwa>` (bez przedrostka) ✅ | okładziny jaskiń `{Urw,Met,Kris,Golden}_caves_<1..4>_<wariant>_<detal>`; gra stawia je po wykopaniu jaskini ze stempla (`add_cave_skin_class`, [Diggles-Unity DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md) „cave skin”). Szablony `*_caves_*` tworzą `Dummy_<Nazwa>`, którą gra odrzuca („unknown class”, laboratorium `kris_caves_1_b`), więc **tych obiektów z szablonu nie rysuj** |
    | `SetWeaponClasses` | `<Nazwa>` (bez przedrostka) | narzędzia i broń |
 
    Opcje pozycji listy: `anim` włącza tryb 2 (pętla), `animrandom` dodatkowo losuje klatkę startową, `txtanim …` animację tekstury. **Bez opcji `anim` dekoracja stoi nieruchomo w pierwszej klatce.** Parametry procedury (`noviewinfog`, `nozwrite`, `nophysic`…) ustawiają właściwości klasy; `nozwrite` oznacza rysowanie bez zapisu do bufora głębi (materiał `modelnozwrite`).
