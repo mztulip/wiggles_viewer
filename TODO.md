@@ -15,6 +15,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 4. [ ] **G8 Przedmioty i ekwipunek**: grzyby, kamienie, kryształy po kopaniu, podnoszenie, odkładanie (wolne miejsce), użycie. Źródło: [ITEM_PLACEMENT_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ITEM_PLACEMENT_RE.md)
 5. [ ] **Rozkazy gracza jak w grze**: kliknięcie → `EVENTGEN.TCL` (`evtgen_attrib`) → zdarzenie `evt_task_*` dla krasnala ([rozdział 16.9](docs/silnik/16_rozgrywka.md)), zamiast rozkazów w C++. Przy okazji punkt `/tclshell` w grze (zgodny z WebTraq) dla bota
 6. [ ] **Kopanie przez skrypty gry** (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`, `CObj_DigTask`), oznaczenia kopania, kilku kopaczy. Źródło: [DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md), [re_parts/dig-natives](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/dig-natives.md), [re_parts/tcl-dig-complete](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/tcl-dig-complete.md)
+   - [ ] Okładziny jaskiń po wykopaniu jaskini ze stempla (`cave_skin`, `add_cave_skin_class`, podmiana przy ukończeniu jaskini; Diggles-Unity DIGGING_MECHANIC §9A), przeniesione z fazy 2
 7. [ ] **Ruch jak w grze** ([rozdział 17](docs/silnik/17_ruch.md), etapy P0–P4 za Diggles-Unity): ✅ P0 dane ruchu (podpola, graf pól, zgodność z `.pmp` 99,96%); ✅ P1 Calc1; ✅ P2 chód po podłodze (trasa z głębokością FloorPathMap, wykonawca MetaWalk: prędkość z animacji, obrót w miejscu, start/stop, bieg po 2 s; sterowanie ręczne w wigview na nowych danych); ✅ P3 miejsce do kopania (`get_digedge`, `vector_fixdig`, zadanie kopania gracza tą samą drogą, kopanie wisząc na ścianie); ✅ P4 wspinanie (wejście i zejście animacjami, animacja z kierunku odcinka, prędkość ¼ sumy animacji wspinania, bieg kletter_*_schnell, odstęp od ściany). Za Diggles-Unity zostaje: drabiny i windy (wpływy obiektów, P5), ponowne planowanie po utracie podłogi w trakcie chodu. Dalej przy kopaniu (poza ruchem): `dig_next`, `dig_apply` (wycinanie krawędziami bloków zamiast całego pola). Do sprawdzenia w laboratorium: kierunek animacji obrotu (lewo/prawo) i wspinania w bok i spadanie (🔶 3 bloki/s). Źródło: [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [re_parts/walk-executor](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/walk-executor.md)
 8. [ ] **G13 Generator świata** (nowa gra w kampanii i potyczce: `StoryMgr load_level`, `load_sandbox`, `lg_*`). Źródło: [WORLDGEN_ORIGINAL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORLDGEN_ORIGINAL_RE.md), [LEVEL_GENERATOR](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LEVEL_GENERATOR.md)
 9. [ ] **Szanse na wyprzedzenie Diggles-Unity** (u nich też nie działa): drabiny, windy, drzwi ([LADDER_ELEVATOR_DOOR_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LADDER_ELEVATOR_DOOR_RE.md)); walka, potwory, dyplomacja ([COMBAT_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COMBAT_SYSTEM_RE.md)); energia ([ENERGY_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENERGY_SYSTEM_RE.md)); przejścia między światami; pełny zapis `.sav`
@@ -84,6 +85,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Shadery z jednego źródła GLSL 450 (`glslc` → SPIR-V, tekst dla OpenGL); `build.sh vulkan|opengl|both`; `--renderer`, domyślnie Vulkan z przełączeniem na OpenGL
 - [x] Vulkan w oknie: zmiana rozmiaru (kafel i3), schowanie i pokazanie okna (przełączenie ekranu w i3), siatka; na ekranie użytkownika działa, test `vk_window` (Xvfb, programowe WSI Mesy, warstwa walidacji bez błędów). Minimalizacji do 0×0 (Windows) nie da się sprawdzić w Xvfb: `beginFrame` pomija klatkę przy rozmiarze 0
 - [x] Bufory niezmienne (`createBuffer`: wierzchołki, indeksy, stałe uniformy) w pamięci karty (`DEVICE_LOCAL`), ładowane raz przez bufor pośredni; bufory pierścieniowe klatki zostają widoczne dla procesora
+- [ ] Kolumny lawy w trybie 8 cieplejsze i jaśniejsze niż w grze ([BAZA_WIEDZY §8.13](docs/BAZA_WIEDZY.md)): ❓ głównie inne próbkowanie tekstury `lava_seulen_128` na podstawach i „spódnicach” (różnica już w trybie 11, bez oświetlenia; UV, warianty pliku, odbicie i powtórzenie wykluczone), 🔶 do tego modele ok. 1,4× jaśniejsze pod lampami (przeniesione z fazy 2)
 
 ## Faza 1: szkielet projektu i build
 - [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), [`src/apps/game`](src/apps/game), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów
@@ -93,7 +95,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] `git init` (repo `openwiggles_git`; `ref/` i zipy zostają poza repo)
 - [x] `.gitignore` (`build/`, pliki wynikowe)
 
-## Faza 2: libwiggles, czyli formaty plików
+## Faza 2: libwiggles, czyli formaty plików ✅
 - [x] Wirtualny system plików: wyszukiwanie bez rozróżniania wielkości liter, wiele korzeni
 - [x] VFS: nakładki w układzie modów (`Data/` + `Data_<język>`), `--overlay` w wigview i grze, sprawdzone na DigglesHDmod ([tekstury.md](docs/formaty/tekstury.md)); łatki `change_*.tcl`: faza 7
 - [x] Loader TGA (typy 2/3/10/11, 8–32 bit); gra używa wyłącznie typu 2, 32 bit
@@ -112,10 +114,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Czapki i przedmioty przypięte (`link_obj`): macierz rodzica · punkt · orientacja punktu, interpolowane jak wierzchołki rodzica, punkt bez z×2 (jak Diggles-Unity); wcześniej czapki nad głową i odjeżdżające przy chodzie
 - [x] Postacie w polach otwartych częściowo (krawędzie jaskiń): środek wolnych kolumn zamiast środka pola, z nigdy za ścianą (`kris_caves_1_b`: wuker znikał w skale przy prawej krawędzi)
 - [x] Okładziny jaskiń (`SetCaveSkinClasses`) bez przedrostka `Dummy_`: szablony `*_caves_*` nie pokazują już kryształów/belek, których gra nie tworzy (unknown class)
-- [ ] Okładziny jaskiń po wykopaniu jaskini ze stempla (`cave_skin`, `add_cave_skin_class`; Diggles-Unity DIGGING_MECHANIC)
 - [x] Kobiety krasnali modelem `frau` (`gnome_gender` z zapisu, nowe na przemian; `mann.*` u kobiety zostaje przy `frau`)
 - [x] wigview: ręczne prowadzenie postaci do testów (Enter, strzałki, PPM, Shift/Esc), skrypt postaci wstrzymany (`ScriptObject::external`)
-- [ ] Kolumny lawy w trybie 8 cieplejsze i jaśniejsze niż w grze ([BAZA_WIEDZY §8.13](docs/BAZA_WIEDZY.md)): ❓ głównie inne próbkowanie tekstury `lava_seulen_128` na podstawach i „spódnicach” (różnica już w trybie 11, bez oświetlenia; UV, warianty pliku, odbicie i powtórzenie wykluczone), 🔶 do tego modele ok. 1,4× jaśniejsze pod lampami
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)
