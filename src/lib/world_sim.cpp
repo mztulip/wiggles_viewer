@@ -249,33 +249,41 @@ int WorldSim::adoptUnit(int obj)
 	return k;
 }
 
-bool WorldSim::controlNudge(int unit, int dx, int dz)
+void WorldSim::controlMove(int unit, float dx, float dz)
 {
-	if (unit < 0 || unit >= int(units.size())) return false;
-	SimUnit& u = units[size_t(unit)];
-	if (dz != 0)
-	{ // w głąb (dz < 0, mniejsze z) albo do przodu, między tylną ścianą + kWallGap a przednią płaszczyzną
-		float base = u.zGoal >= 0 ? u.zGoal : u.z;
-		u.zGoal = std::clamp(base + float(dz) * kNudgeZ, walkZ(u.x, u.ty), 14.f);
-	}
-	if (dx == 0) return true;
-	float base = u.state == SimUnit::Walk && u.goalX >= 0 ? u.goalX : u.x, nx = base + float(dx) * kNudgeX;
-	int tx = int(std::floor(nx)), cx = int(std::floor(base));
-	int sy = u.state == SimUnit::Walk && !u.path.empty() ? u.path.back().second : u.ty;
-	float x0, x1;
-	if (tx == cx && openSpan(tx, sy, x0, x1))
-	{ // w tym samym polu: krótki chód do nx (w wolnej części pola)
-		u.path = {{tx, sy}}, u.step = 0, u.state = SimUnit::Walk, u.onArrive = nullptr, u.digX = u.digY = -1;
-		u.goalX = std::clamp(nx, x0 + 0.05f, x1 - 0.05f);
-		return true;
-	}
-	for (int d : {0, -1, 1}) // sąsiednie pole: na tej samej wysokości albo stopień w górę / w dół
-		if ((nav.standable(tx, sy + d) || nav.climbable(tx, sy + d)) && controlGoTo(unit, tx, sy + d))
-		{
-			units[size_t(unit)].goalX = nx;
-			return true;
+	if (unit < 0 || unit >= int(units.size())) return;
+	units[size_t(unit)].moveX = std::clamp(dx, -1.f, 1.f), units[size_t(unit)].moveZ = std::clamp(dz, -1.f, 1.f);
+}
+
+// Ruch ręczny o jeden krok symulacji: w bok po podłożu (wolna część pola, przejście na sąsiednie pole na tej
+// samej wysokości albo o stopień), w głąb między tylną ścianą + kWallGap a przednią płaszczyzną.
+void WorldSim::manualMove(SimUnit& u, float dt)
+{
+	if (u.moveZ != 0)
+		u.z = std::clamp(u.z + u.moveZ * 2.f * kWalkSpeed * dt, walkZ(u.x, u.ty), 14.f);
+	if (u.moveX != 0 && nav.standable(u.tx, u.ty))
+	{
+		float nx = u.x + u.moveX * kWalkSpeed * dt, x0, x1;
+		int tx = int(std::floor(nx));
+		if (tx != u.tx)
+		{ // sąsiednie pole: ta sama wysokość, stopień w górę (nad głową wolne) albo w dół
+			int d = tx - u.tx, ny = -1;
+			if (nav.standable(tx, u.ty)) ny = u.ty;
+			else if (nav.standable(tx, u.ty - 1) && nav.open(u.tx, u.ty - 1)) ny = u.ty - 1;
+			else if (nav.standable(tx, u.ty + 1) && nav.open(tx, u.ty)) ny = u.ty + 1;
+			if (ny >= 0 && openSpan(tx, ny, x0, x1) && (d > 0 ? x0 <= float(tx) + 0.01f : x1 >= float(tx + 1) - 0.01f))
+				u.tx = tx, u.ty = ny;
+			else
+				nx = d > 0 ? float(tx) - 0.02f : float(tx + 1) + 0.02f; // ściana: do krawędzi pola
 		}
-	return false;
+		if (openSpan(u.tx, u.ty, x0, x1)) nx = std::clamp(nx, x0 + 0.02f, x1 - 0.02f);
+		u.x = nx;
+	}
+	float fy = floorY(u.tx, u.ty), dy = fy - u.y, my = 3.f * dt; // stopień: płynnie w górę / w dół
+	u.y += std::abs(dy) <= my ? dy : (dy > 0 ? my : -my);
+	if (u.moveX != 0) u.facing = u.moveX > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f;
+	else u.facing = u.moveZ < 0 ? kSimPi : 0.f;
+	scene_.playAnim(u.obj, u.walkAnim, true);
 }
 
 int WorldSim::spawnUnit(float x, float y, bool gnome)
@@ -361,6 +369,14 @@ void WorldSim::markDig(int x0, int y0, int x1, int y1)
 
 void WorldSim::updateUnit(SimUnit& u, float dt)
 {
+	if (u.controlled && (u.moveX != 0 || u.moveZ != 0))
+	{ // prowadzona ręcznie, klawisz wciśnięty: ruch zamiast ścieżki
+		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = -1;
+		manualMove(u, dt);
+		u.z = std::max(u.z, walkZ(u.x, u.ty) - kWallGap + 0.5f);
+		scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
+		return;
+	}
 	if (u.state == SimUnit::Walk)
 	{
 		if (u.step >= u.path.size())
@@ -385,9 +401,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
 				// ściana pod bieżącym x (pole x może już być następnym polem ścieżki) i w polu docelowym kroku
 				float wz = std::max(walkZ(u.x, u.ty), walkZ(gx, wy));
-				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.controlled && u.zGoal >= 0 ? u.zGoal
-				                                                                          : u.z,
-				    wz);
+				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.z, wz);
 				float dz = gz - u.z, mz = 2.f * kWalkSpeed * dt;
 				u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
 			}
@@ -431,13 +445,6 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 		if (!nav.standable(u.tx, u.ty) && !nav.climbable(u.tx, u.ty) && nav.open(u.tx, u.ty + 1))
 		{
 			u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = SimUnit::Walk; // spada
-		}
-		else if (u.controlled && u.zGoal >= 0 && std::abs(u.zGoal - u.z) > 0.01f)
-		{ // prowadzona ręcznie w głąb albo do przodu: chód w miejscu, przodem w stronę ruchu
-			float dz = u.zGoal - u.z, mz = 2.f * kWalkSpeed * dt;
-			u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
-			u.facing = dz < 0 ? kSimPi : 0.f;
-			scene_.playAnim(u.obj, u.walkAnim, true);
 		}
 		else if (!scripts || u.controlled) // ze skryptami animację w miejscu ustawia skrypt (set_anim); prowadzonej: my
 			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? u.standAnim : u.climbStandAnim, true);
@@ -683,7 +690,7 @@ void WorldSim::setControlled(int unit, bool on)
 	{ // puszczona: stoi tam, gdzie jest (idle, bez reszty ścieżki i celu głębokości); dalej decyduje jej skrypt
 		if (u.state == SimUnit::Walk && !u.path.empty())
 			u.tx = std::clamp(int(std::floor(u.x)), 0, nav.width() - 1), u.ty = tileOfFeet(u.y);
-		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1, u.zGoal = -1;
+		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1, u.moveX = u.moveZ = 0;
 	}
 	if (scripts)
 		if (script::ScriptObject* o = scripts->object(idOf(u.obj))) o->external = on;

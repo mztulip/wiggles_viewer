@@ -221,7 +221,7 @@ ui_ok() {
 	command -v Xvfb >/dev/null && command -v xdotool >/dev/null || { skip "brak Xvfb albo xdotool"; return 1; }
 }
 
-test_ ui_control "interakcja: klik w krasnala przejmuje go, → o ¼ pola, ↑/↓ w głąb i do przodu, po zatrzymaniu animacja stania, ↑ nie przełącza szablonu, Shift puszcza (postać staje, skrypt wraca)"
+test_ ui_control "interakcja: klik w krasnala przejmuje go; trzymana → idzie ze stałą prędkością i staje po puszczeniu, stuknięcie przesuwa o trochę, ↑/↓ w głąb i do przodu, ↑ nie przełącza szablonu, Shift puszcza (skrypt wraca)"
 t_ui_control() {
 	http_ok || return
 	http_start wigview --template kris_caves_1_b --populate 2 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
@@ -229,38 +229,34 @@ t_ui_control() {
 	sleep 3
 	click_at 895 490               # krasnal na polu 5 (kadr startowy wigview 1280×800)
 	grep -q "\[ui\] sterowanie: postać" "$TMP/http.log" || { ui_stop; fail "klik w krasnala nie przejął sterowania"; return; }
-	local e="" x0 x1 z0 z1 z2 anim obj
-	x0=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["x"]')
-	obj=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["obj"]')
-	for i in 1 2 3; do xd key Right; sleep 0.4; done
-	sleep 2
-	x1=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["x"]')
-	python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 0.75) < 0.06 else 1)" || e="3×→: x $x0 → $x1, oczekiwane +0,75"
+	local e="" x0 x1 x2 x3 z0 z1 z2 anim obj id loads
+	cu() { hget /api/units | jget "[u for u in d['units'] if u['controlled']][0]['$1']"; }
+	x0=$(cu x); obj=$(cu obj); id=$(cu id)
+	xd keydown Right; sleep 1; xd keyup Right
+	x1=$(cu x); sleep 1; x2=$(cu x)
+	python3 -c "import sys; sys.exit(0 if 1.2 <= $x1 - $x0 <= 2.0 else 1)" || e="→ trzymana 1 s: x $x0 → $x1, oczekiwane ok. +1,6"
+	[ -z "$e" ] && [ "$x1" = "$x2" ] || e="${e:-po puszczeniu idzie dalej: x $x1 → $x2}"
 	anim=$(hget /api/objects | jget "d['objects'][$obj]['anim']")
-	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po zatrzymaniu animacja $anim zamiast standard}"
-	z0=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
-	xd key Down; sleep 1.5
-	z1=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
-	local loads
+	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po puszczeniu animacja $anim zamiast standard}"
+	xd key Left; sleep 0.5; x3=$(cu x)
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if 0 < $x2 - $x3 < 0.4 else 1)" || e="${e:-stuknięcie ←: x $x2 → $x3, oczekiwane trochę w lewo}"
 	loads=$(grep -c "wczytano mapę" "$TMP/http.log")
-	xd key Up; xd key Up; sleep 1.5
-	z2=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($z1 - $z0 - 0.5) < 0.01 and abs($z1 - $z2 - 1.0) < 0.01 else 1)" ||
-		e="${e:-↓ / 2×↑: z $z0 → $z1 → $z2, oczekiwane +0,5 i −1,0}"
+	z0=$(cu z); xd keydown Up; sleep 0.5; xd keyup Up; z1=$(cu z)
+	xd keydown Down; sleep 0.3; xd keyup Down; z2=$(cu z)
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if 0.8 <= $z0 - $z1 <= 2.0 and 0.4 <= $z2 - $z1 <= 1.4 else 1)" ||
+		e="${e:-↑ 0,5 s / ↓ 0,3 s: z $z0 → $z1 → $z2}"
 	[ -z "$e" ] && [ "$(grep -c "wczytano mapę" "$TMP/http.log")" = "$loads" ] || e="${e:-↑ przełączyła szablon zamiast prowadzić krasnala}"
-	# puszczenie w trakcie ruchu: postać staje (idle, bez ścieżki), skrypt znów działa
-	local id
-	id=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["id"]')
-	xd key Right Right Right Right shift; sleep 1
+	# puszczenie w trakcie ruchu: postać staje, skrypt znów działa
+	xd keydown Right; sleep 0.3; xd key shift; xd keyup Right; sleep 1
 	[ -z "$e" ] && grep -q "\[ui\] sterowanie: puszczone" "$TMP/http.log" || e="${e:-Shift nie puścił postaci}"
 	[ -z "$e" ] && [ "$(hget /api/units | jget "[(u['controlled'], u['path']) for u in d['units'] if u['id'] == $id][0]")" = "(False, [])" ] ||
 		e="${e:-po puszczeniu: $(hget /api/units | jget "[(u['state'], u['controlled'], u['path']) for u in d['units'] if u['id'] == $id]")}"
 	[ -z "$e" ] && hget "/objinfo:$id" | grep -q "Sterowany z zewnątrz: 0" || e="${e:-po puszczeniu skrypt dalej wstrzymany}"
 	ui_stop
-	[ -z "$e" ] && ok "x $x0 → $x1, z $z0 → $z1 → $z2" || fail "$e"
+	[ -z "$e" ] && ok "x $x0 → $x1 (1 s), stuknięcie $x2 → $x3, z $z0 → $z1 → $z2" || fail "$e"
 }
 
-test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), → przesuwa, animacja chodu i stania z jego modelu"
+test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), trzymana → idzie animacją chodu z jego modelu, po puszczeniu stoi"
 t_ui_creature() {
 	http_ok || return
 	http_start wigview --template kris_hol_012_a || { ui_stop; fail "serwer nie odpowiada"; return; }
@@ -272,14 +268,14 @@ t_ui_creature() {
 	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
 	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x0 - 6.668) < 0.01 else 1)" || e="${e:-przeskok przy przejęciu: x $x0, było 6,668}"
 	hpost /api/resume >/dev/null
-	xd key Right Right Right Right; sleep 0.25
+	xd keydown Right; sleep 0.4
 	anim=$(hget /api/objects | jget 'd["objects"][26]["anim"]')
+	sleep 0.2; xd keyup Right; sleep 1
 	[ -z "$e" ] && [ "$anim" = laufen_loop ] || e="${e:-animacja w ruchu $anim zamiast laufen_loop}"
-	sleep 2
 	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
 	anim=$(hget /api/objects | jget 'd["objects"][26]["anim"]')
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 1.0) < 0.06 else 1)" || e="${e:-4×→: x $x0 → $x1, oczekiwane +1}"
-	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po zatrzymaniu animacja $anim zamiast standard}"
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if 0.5 <= $x1 - $x0 <= 1.3 else 1)" || e="${e:-→ 0,6 s: x $x0 → $x1, oczekiwane ok. +1}"
+	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po puszczeniu animacja $anim zamiast standard}"
 	ui_stop
 	[ -z "$e" ] && ok "x $x0 → $x1" || fail "$e"
 }

@@ -311,6 +311,20 @@ struct Viewer
 	// Ręczne prowadzenie postaci (dodatek przeglądarki do testów, nie z gry): Enter przy zaznaczonej postaci
 	// albo przycisk w panelu; strzałki krok o pole, PPM idź do pola, Shift albo Esc puszcza.
 	int controlUnit = -1; // indeks w sim->units, −1 = brak
+	int tapX = 0, tapZ = 0; // strzałka naciśnięta w tej klatce (ruch co najmniej o jedną klatkę)
+	// Kierunek ruchu prowadzonej postaci: ←/→ w bok, ↑ w głąb, ↓ do przodu, dopóki klawisz jest wciśnięty.
+	void controlKeys()
+	{
+		if (controlUnit < 0 || !sim) return;
+		const Uint8* k = SDL_GetKeyboardState(nullptr);
+		bool text = ImGui::GetIO().WantTextInput;
+		int dx = text ? 0 : int(k[SDL_SCANCODE_RIGHT]) - int(k[SDL_SCANCODE_LEFT]);
+		int dz = text ? 0 : int(k[SDL_SCANCODE_DOWN]) - int(k[SDL_SCANCODE_UP]);
+		if (dx == 0) dx = tapX;
+		if (dz == 0) dz = tapZ;
+		tapX = tapZ = 0;
+		sim->controlMove(controlUnit, float(dx), float(dz));
+	}
 	// Klawisz N / Shift+N: nowa postać w polu pod kursorem (gdy symulacja jeszcze nie działa: po jej starcie).
 	struct PendingSpawn
 	{
@@ -585,7 +599,7 @@ struct Viewer
 			else if (ImGui::SmallButton(tr("Steruj (Enter)")))
 				takeControl(unit);
 			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać albo stworzenie z animacją chodu\n"
-			                         "jest prowadzone: ←/→ mały krok, ↑/↓ w głąb / do przodu, PPM bez przeciągania: idź do pola.\n"
+			                         "jest prowadzone: trzymana ←/→ idzie, ↑/↓ w głąb / do przodu, PPM bez przeciągania: idź do pola.\n"
 			                         "Skrypt postaci jest wtedy wstrzymany."));
 		}
 		int id = i < int(sim->idxToId.size()) ? sim->idxToId[size_t(i)] : 0;
@@ -705,6 +719,7 @@ struct Viewer
 	{
 		if (!simActive || !sim || controlUnit >= int(sim->units.size())) controlUnit = -1; // nowa mapa albo restart
 		if (mapPlaying) maps.update(dt);
+		if (simActive && mapTab()) controlKeys();
 		if (mapPlaying && simActive && mapTab()) sim->simUpdate(std::min(dt, 0.1f));
 		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
@@ -2124,7 +2139,7 @@ int main(int argc, char** argv)
 				dl->AddText(pos, IM_COL32(220, 220, 220, 255), ver);
 				if (v.controlUnit >= 0 && v.mapTab())
 				{ // tryb sterowania: napis na górze sceny
-					std::string msg = strf(tr("Sterowanie: %s  (←/→: krok, ↑/↓: w głąb / do przodu, PPM: idź do pola, Shift lub Esc: puść)"),
+					std::string msg = strf(tr("Sterowanie: %s  (←/→: idź, ↑/↓: w głąb / do przodu, PPM: idź do pola, Shift lub Esc: puść)"),
 					    v.maps.objectClass(v.sim->units[size_t(v.controlUnit)].obj).c_str());
 					ImVec2 ms = ImGui::CalcTextSize(msg.c_str()), mp(v.uiRight + (ds.x - v.uiRight - ms.x) * 0.5f, 12.f);
 					dl->AddRectFilled(ImVec2(mp.x - 8, mp.y - 4), ImVec2(mp.x + ms.x + 8, mp.y + ms.y + 4), IM_COL32(20, 40, 70, 210), 4.f);
@@ -2338,11 +2353,12 @@ int main(int argc, char** argv)
 			{ // sterowanie postacią przechwytuje strzałki; Shift albo Esc oddaje klawiaturę przeglądarce
 				SDL_Keycode k = e.key.keysym.sym;
 				bool used = true;
-				// ←/→: mały krok w bok, ↑: w głąb (od kamery), ↓: do przodu; trzymany klawisz powtarza krok
-				if (k == SDLK_LEFT) v.sim->controlNudge(v.controlUnit, -1, 0);
-				else if (k == SDLK_RIGHT) v.sim->controlNudge(v.controlUnit, 1, 0);
-				else if (k == SDLK_UP) v.sim->controlNudge(v.controlUnit, 0, -1);
-				else if (k == SDLK_DOWN) v.sim->controlNudge(v.controlUnit, 0, 1);
+				// strzałki: ruch, dopóki trzymane (stan klawiatury w Viewer::update); tu tylko krótkie stuknięcie,
+				// żeby naciśnięcie krótsze niż klatka też przesunęło postać
+				if (k == SDLK_LEFT) v.tapX = -1;
+				else if (k == SDLK_RIGHT) v.tapX = 1;
+				else if (k == SDLK_UP) v.tapZ = -1;
+				else if (k == SDLK_DOWN) v.tapZ = 1;
 				else if (k == SDLK_LSHIFT || k == SDLK_RSHIFT || k == SDLK_ESCAPE) v.releaseControl();
 				else used = false;
 				if (used) continue;
