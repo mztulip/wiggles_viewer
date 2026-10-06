@@ -396,6 +396,12 @@ bool MapView::ui(bool savesTab)
 	ImGui::SameLine();
 	ImGui::Checkbox(tr("Płyny"), &showFluids_);
 	ImGui::SetItemTooltip(tr("Woda, siarka i lawa z zapisu gry (%d pól)."), fluidCells_);
+	if (playing)
+	{
+		if (ImGui::SmallButton(*playing ? tr("Pauza###mapa_graj") : tr("Graj###mapa_graj"))) *playing = !*playing;
+		ImGui::SetItemTooltip(tr("Zatrzymuje animacje, cząsteczki i symulację na mapie (spacja)."));
+		ImGui::SameLine();
+	}
 	if (simulate)
 	{
 		ImGui::Checkbox(tr("Symulacja (skrypty)"), simulate);

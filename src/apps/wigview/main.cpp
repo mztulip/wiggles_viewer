@@ -293,6 +293,8 @@ struct Viewer
 	// Symulacja (skrypty obiektów, krasnale) na scenie map: przełącznik w panelu map, domyślnie wyłączona.
 	std::unique_ptr<WorldSim> sim;
 	bool simulate = false, simActive = false, keepCamera = false;
+	// Upływ czasu na mapach (animacje obiektów, cząsteczki, symulacja); niezależny od odtwarzacza zakładki Modele.
+	bool mapPlaying = true;
 	// Start symulacji na bieżącej mapie (pierwszy raz: silnik skryptów). progress: okno postępu.
 	void startSim(const std::function<void(float, const char*)>& progress)
 	{
@@ -635,8 +637,8 @@ struct Viewer
 
 	void update(float dt)
 	{
-		if (playing) maps.update(dt);
-		if (playing && simActive && mapTab()) sim->simUpdate(std::min(dt, 0.1f));
+		if (mapPlaying) maps.update(dt);
+		if (mapPlaying && simActive && mapTab()) sim->simUpdate(std::min(dt, 0.1f));
 		if (activeTab == 4) particles.update(dt);
 		int n = frameCount();
 		if (!playing || n <= 1) return;
@@ -1894,6 +1896,7 @@ int main(int argc, char** argv)
 	v.borderMask = args.borderMask;
 	v.maps.borderMask = &v.borderMask;
 	v.maps.simulate = &v.simulate;
+	v.maps.playing = &v.mapPlaying;
 	v.maps.objectExtra = [&v](int i) { v.uiSimObject(i); };
 	v.maps.openModel = [&v](const std::string& obj, const std::string& anim) { v.openAnim(obj, anim, 0); };
 	v.simulate = args.simulate;
@@ -2264,13 +2267,16 @@ int main(int argc, char** argv)
 				case SDLK_PAGEDOWN: v.stepAnim(1); break;
 				case SDLK_SPACE:
 					if (v.activeTab == 5) v.sounds.togglePlay();
+					else if (v.mapTab()) v.mapPlaying = !v.mapPlaying;
 					else v.playing = !v.playing;
 					break;
-				case SDLK_LEFT:
+				case SDLK_LEFT: // klatki modelu (zakładka Modele)
+					if (v.activeTab != 0) break;
 					v.playing = false;
 					v.frame = std::max(0.f, float(int(v.frame) - 1));
 					break;
 				case SDLK_RIGHT:
+					if (v.activeTab != 0) break;
 					v.playing = false;
 					v.frame = float(std::min(n - 1, int(v.frame) + 1));
 					break;
