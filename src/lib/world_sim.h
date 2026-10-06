@@ -143,6 +143,7 @@ public:
 	bool linkOffset(int id, int link, float out[3]) override;
 	void changeParticleSource(int id, int slot, const ParticleSource& s) override;
 	void setParticleSource(int id, int slot, bool on) override;
+	void setVisible(int id, bool v) override;
 
 protected:
 	void attachScripts();

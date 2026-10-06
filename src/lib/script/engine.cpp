@@ -878,6 +878,22 @@ int cmdFincr(Engine&, Tcl_Interp* in, Args& a)
 }
 // Czas gry i plan dnia (rozdział 11.4; prawa za Zimennik/Diggles-Unity DigglesTclEngine: gametime,
 // get_remaining_sparetime, get_worktime, auto_choose_workingtime).
+// set_visibility obj 0|1, get_visibility obj
+int cmdVisibility(Engine& e, Tcl_Interp* in, Args& a)
+{
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	ScriptObject* o = e.object(id);
+	if (a[0] == "get_visibility")
+	{
+		setResult(in, o && !o->visible ? "0" : "1");
+		return TCL_OK;
+	}
+	bool v = a.size() > 2 && a[2] != "0" && a[2] != "false";
+	if (o) o->visible = v;
+	if (e.host_ && id) e.host_->setVisible(id, v);
+	setResult(in, "");
+	return TCL_OK;
+}
 int cmdGethours(Engine& e, Tcl_Interp* in, Args&)
 {
 	setResult(in, fmt(e.time_ / kHourSec));
@@ -1521,6 +1537,8 @@ const Entry kCommands[] = {
     {"land", cmdListOp},
     {"lor", cmdListOp},
     {"get_remaining_sparetime", cmdRemainingSparetime},
+    {"set_visibility", cmdVisibility},
+    {"get_visibility", cmdVisibility},
     {"set_remaining_sparetime", cmdNop},
     {"get_worktime", cmdGetWorktime},
     {"set_worktime", cmdSetWorktime},

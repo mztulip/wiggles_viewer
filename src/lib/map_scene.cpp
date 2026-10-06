@@ -589,7 +589,7 @@ float MapScene::animSeconds(int i, const std::string& anim) const
 
 bool MapScene::objectShown(const PlacedObject& o) const
 {
-	if (!o.slot || o.animation < 0) return false;
+	if (!o.slot || o.animation < 0 || !o.visible) return false;
 	if (!showDetail_[detailIndex(o.src.detail)]) return false;
 	if (o.cls && o.cls->editorOnly && !showEditorOnly_) return false;
 	if (fogMode_ != FogMode::Off && !objectVisibleInFog(o)) return false;

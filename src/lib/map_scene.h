@@ -115,6 +115,10 @@ public:
 	bool linkEuler(int i, int link, Vec3f& out) const; // orientacja punktu (get_linkrot), radiany
 	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
 	void linkObject(int child, int parent, int link);
+	void setObjectVisible(int i, bool v)
+	{
+		if (i >= 0 && i < int(objects_.size())) objects_[size_t(i)].visible = v;
+	}
 	int linkParent(int child) const // rodzic przypiętego obiektu (czapka → krasnal), −1 = brak
 	{
 		auto it = links_.find(child);
@@ -195,6 +199,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 		int animation = -1; // indeks w Model3db::animations
 		int animMode = -1;  // nadpisanie trybu animacji (interfejs gry): 1 raz, 2 pętla
 		float animStart = 0.f;
+		bool visible = true; // set_visibility ze skryptu
 	};
 	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
 	std::map<std::string, ClassModel> gameModels_;

@@ -101,6 +101,7 @@ struct Host
 	// Źródła cząsteczek obiektu (change_particlesource / set_particlesource; docs/silnik/12_czasteczki.md §12.1).
 	virtual void changeParticleSource(int /*id*/, int /*slot*/, const ParticleSource&) {}
 	virtual void setParticleSource(int /*id*/, int /*slot*/, bool /*włączone*/) {}
+	virtual void setVisible(int /*id*/, bool) {} // set_visibility: obiekt rysowany albo ukryty (przedmioty w rękach, półki)
 };
 
 struct ScriptObject
@@ -124,6 +125,7 @@ struct ScriptObject
 	// Okno pracy w godzinach doby (0..12): praca w [workStart, workStart + workLen), poza nim czas wolny.
 	// Domyślnie 0 h (zawsze czas wolny); krasnal przy starcie: auto_choose_workingtime (zwerg.tcl).
 	float workStart = 0, workLen = 0;
+	bool visible = true; // set_visibility / get_visibility
 };
 
 // ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).

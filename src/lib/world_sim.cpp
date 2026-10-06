@@ -582,6 +582,11 @@ void WorldSim::changeParticleSource(int id, int slot, const ParticleSource& s)
 	if (valid(id)) scene_.setObjectParticle(idx(id), slot, s);
 }
 
+void WorldSim::setVisible(int id, bool v)
+{
+	if (valid(id)) scene_.setObjectVisible(idx(id), v);
+}
+
 void WorldSim::setParticleSource(int id, int slot, bool on)
 {
 	if (valid(id)) scene_.enableObjectParticle(idx(id), slot, on);
