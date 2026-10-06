@@ -249,6 +249,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] Zapis: sprawdzić hipotezy (starszy bajt stanu = wariant tekstury, motyw świata z klas `Info_Fog_*`)
 
 ## Faza 7: dodatki
+- [ ] **Serwer HTTP w silniku** (narzędzie deweloperskie, projekt: [docs/SERWER_HTTP.md](docs/SERWER_HTTP.md)): `--http PORT` w wigview i `openwiggles`, tylko `127.0.0.1`; wykonywanie Tcl jak WebTraq w oryginale (`/tclshell`, `/objlist`, `/objinfo`) i własne API JSON (eval, obiekty, postacie, pauza i krok, sterowanie postacią, zrzut, czekanie na warunek), strona podglądu. Kolejno: eval → obiekty/krok + testy bez `xdotool` → sterowanie i zrzut + porównanie tego samego Tcl z laboratorium → strony WebTraq
 - [ ] Mody w formacie DigglesModManager, stosowane w pamięci (`change_*.tcl`, `$if`, `config.json`)
 - [ ] Obsługa tekstur HD (`Data_HD`, HD mod)
 - [ ] **Tryb ulepszony** (opcja w ustawieniach, domyślnie wyłączona; domyślny wygląd zostaje wierny oryginałowi):

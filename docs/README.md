@@ -9,6 +9,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 3. **[Diggles-Unity](DIGGLES_UNITY.md)**: mapa dokumentacji grywalnego portu Unity (wszystkie ich opracowania z odnośnikami), porównanie stanu i plan, jak ich dogonić i wyprzedzić.
 4. **[Mapa kodu](KOD.md)**: gdzie w [`src/`](../src) jest implementacja każdego podsystemu, który rozdział ją opisuje i czym ją sprawdzić.
 5. **[Baza wiedzy](BAZA_WIEDZY.md)**: dziennik badań. Skąd co wiemy, materiały referencyjne, laboratorium, otwarte pytania. Nie trzeba jej czytać, żeby pisać silnik.
+6. **[Serwer HTTP w silniku](SERWER_HTTP.md)** (projekt narzędzia deweloperskiego): Tcl i stan świata przez HTTP, jak WebTraq w oryginale, plus własne API do testów.
 
 ## Przewodnik po silniku
 

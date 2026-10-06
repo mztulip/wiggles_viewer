@@ -318,7 +318,7 @@ tools/lab/live.sh page /objinfo:Ole
 tools/lab/live.sh shot zrzut.png
 tools/lab/live.sh stop
 ```
-To zastępuje wstrzykiwanie sond przez `userstartup.tcl` przy pytaniach o stan gry.
+To zastępuje wstrzykiwanie sond przez `userstartup.tcl` przy pytaniach o stan gry. Odpowiednik w naszym silniku (zgodny z tymi adresami, żeby ten sam Tcl szedł do oryginału i do nas): projekt [SERWER_HTTP.md](SERWER_HTTP.md).
 
 **Przeglądanie szablonów w oryginale** (instrukcja: [tools/lab/README.md](../tools/lab/README.md)): [`tools/lab/live2.sh`](../tools/lab/live2.sh) uruchamia grę w widocznym oknie i podmienia szablony bez restartu (`next lava_unq` przechodzi po kolejnych szablonach pasujących do filtra). ✅ Ustalone przy tym: `map create W H` w działającej grze czyści całą mapę razem ze statycznymi dekoracjami, a obiekty Tcl (`obj_query 0 -limit 100000`) trzeba usunąć osobno (`del`); `fog_remove 0 -N -N` odsłania prostokąt ±N pól przez skałę, a dodatnie wartości to promienie zatrzymywane w skale, więc ich zwiększanie niewiele daje (rozdział 10.4); strona WebTraq `/screenshot` odsyła do `file/screenshot.jpg`, którego serwer nie wydaje. ✅ Wine 11 (WoW64) rysuje Direct3D 7 gry przez OpenGL na **EGL** (`win32u.so` ładuje `libEGL` przez `dlopen` i pobiera funkcje przez `dlsym`/`eglGetProcAddress`; `libGL`/GLX nie jest ładowane), więc zrzut z bufora klatki robi biblioteka [`glgrab.c`](../tools/lab/glgrab.c) przechwytująca `eglSwapBuffers` przez `LD_PRELOAD`; działa przy schowanym oknie. `WINE_D3D_CONFIG=renderer=vulkan` w prefiksie laboratorium daje biały ekran i zawieszenie (w wersji GOG działa), więc warstwa Vulkana `VK_LAYER_LUNARG_screenshot` odpada. Barnacle (SDK do wstrzykiwania kodu do exe) nie jest potrzebny.
 
