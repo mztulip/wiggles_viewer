@@ -1,6 +1,7 @@
 // owscript: test silnika skryptów bez okna (docs/silnik/11_obiekty_tcl_i_petla.md §11.9).
 //
-//   owscript [--game <katalog gry>] [KLASA [SEKUNDY]] [-o dziennik.log]
+//   owscript [--game <katalog gry>] [KLASA [SEKUNDY]] [-o dziennik.log] [--eval SKRYPT]...
+//   --eval: po przewinięciu wykonuje SKRYPT w głównym interpreterze i wypisuje wynik (obiekt testowy ma ID 1).
 //   Bez --game: WIGGLES_DIR, potem OW_GAME, potem instalacja w ~/.wine.
 // Wczytuje skrypty startowe i klasy, tworzy jeden obiekt KLASY (domyślnie Zwerg), przewija logikę
 // o SEKUNDY (domyślnie 30) i zapisuje dziennik: zaślepki komend natywnych i błędy skryptów.
@@ -11,12 +12,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 using namespace ow;
 
 int main(int argc, char** argv)
 {
 	std::string game, cls = "Zwerg", log = "owscript.log";
+	std::vector<std::string> evals;
 	double seconds = 30;
 	int pos = 0;
 	for (int i = 1; i < argc; ++i)
@@ -24,6 +27,7 @@ int main(int argc, char** argv)
 		std::string a = argv[i];
 		if (a == "--game" && i + 1 < argc) game = argv[++i];
 		else if (a == "-o" && i + 1 < argc) log = argv[++i];
+		else if (a == "--eval" && i + 1 < argc) evals.push_back(argv[++i]);
 		else if (pos++ == 0) cls = a;
 		else seconds = std::atof(a.c_str());
 	}
@@ -48,6 +52,12 @@ int main(int argc, char** argv)
 	    o ? o->state.c_str() : "");
 	for (double t = 0; t < seconds; t += 0.1) e.tick(0.1);
 	std::printf("po %.0f s: stan '%s', błędy %zu, zaślepki %zu\n", seconds, o ? o->state.c_str() : "", e.errors().size(), e.stubCalls().size());
+	for (const auto& s : evals)
+	{
+		std::string r;
+		bool ok = e.eval(s, &r);
+		std::printf("%s %s -> %s\n", ok ? "eval" : "BŁĄD", s.c_str(), r.c_str());
+	}
 	e.writeLog(log);
 	std::printf("dziennik: %s\n", log.c_str());
 	return ok ? 0 : 1;

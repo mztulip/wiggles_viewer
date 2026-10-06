@@ -876,6 +876,140 @@ int cmdFincr(Engine&, Tcl_Interp* in, Args& a)
 	setResult(in, s);
 	return TCL_OK;
 }
+// Czas gry i plan dnia (rozdział 11.4; prawa za Zimennik/Diggles-Unity DigglesTclEngine: gametime,
+// get_remaining_sparetime, get_worktime, auto_choose_workingtime).
+int cmdGethours(Engine& e, Tcl_Interp* in, Args&)
+{
+	setResult(in, fmt(e.time_ / kHourSec));
+	return TCL_OK;
+}
+// gametime start|stop|reset|factor [F]: zegar gry (przerywniki zwalniają czas: factor 0.3).
+int cmdGametime(Engine& e, Tcl_Interp* in, Args& a)
+{
+	std::string sub = a.size() > 1 ? a[1] : "";
+	std::string r;
+	if (sub == "start") e.clockRunning_ = true;
+	else if (sub == "stop") e.clockRunning_ = false;
+	else if (sub == "reset") e.time_ = 0;
+	else if (sub == "factor")
+	{
+		if (a.size() > 2) e.timeFactor_ = std::atof(a[2].c_str());
+		else r = fmt(e.timeFactor_);
+	}
+	else r = fmt(e.time_);
+	setResult(in, r);
+	return TCL_OK;
+}
+// Liczba z częścią ułamkową zawsze widoczną: planer czasu wolnego robi switch na „6.0” (z_spare_main.tcl).
+static std::string fmtFloat(double v)
+{
+	std::string s = fmt(v);
+	if (s.find_first_of(".eEni") == std::string::npos) s += ".0";
+	return s;
+}
+// hfloor, hceil (wynik zmiennoprzecinkowy: „6.0”), hf2i (obcięcie do całkowitej), hi2f
+int cmdHround(Engine&, Tcl_Interp* in, Args& a)
+{
+	double v = a.size() > 1 ? std::atof(a[1].c_str()) : 0.0;
+	if (a[0] == "hfloor") setResult(in, fmtFloat(std::floor(v)));
+	else if (a[0] == "hceil") setResult(in, fmtFloat(std::ceil(v)));
+	else if (a[0] == "hf2i") setResult(in, std::to_string((long long)v));
+	else setResult(in, fmtFloat(v));
+	return TCL_OK;
+}
+// 0.0 w oknie pracy, inaczej godziny doby do następnego początku pracy.
+int cmdRemainingSparetime(Engine& e, Tcl_Interp* in, Args& a)
+{
+	ScriptObject* o = e.object(a.size() > 1 ? e.resolveObj(in, a[1]) : e.resolveObj(in, "this"));
+	double phase = std::fmod(e.time_ / kHourSec, kDayHours);
+	double start = o ? o->workStart : 0.0, len = o ? o->workLen : 0.0, rel = phase - start;
+	if (rel < 0) rel += kDayHours;
+	setResult(in, rel < len ? "0.0" : fmtFloat(kDayHours - rel));
+	return TCL_OK;
+}
+// get_worktime obj [start|duration|end|nextstart|laststart|nextend|lastend]: bez podkomendy „start długość”,
+// start/duration/end w godzinach doby, next*/last* w sekundach czasu gry (porównania z gettime).
+int cmdGetWorktime(Engine& e, Tcl_Interp* in, Args& a)
+{
+	ScriptObject* o = e.object(e.resolveObj(in, a.size() > 1 ? a[1] : "this"));
+	if (!o)
+	{
+		setResult(in, "0");
+		return TCL_OK;
+	}
+	if (a.size() <= 2)
+	{
+		setResult(in, fmt(o->workStart) + " " + fmt(o->workLen));
+		return TCL_OK;
+	}
+	double nowH = e.time_ / kHourSec, phase = std::fmod(nowH, kDayHours);
+	auto next = [&](double edge) {
+		double d = edge - phase;
+		if (d <= 0) d += kDayHours;
+		return nowH + d;
+	};
+	double end = std::fmod(o->workStart + o->workLen, kDayHours), v = o->workStart;
+	const std::string& q = a[2];
+	if (q == "duration" || q == "len") v = o->workLen;
+	else if (q == "end") v = end;
+	else if (q == "nextstart") v = next(o->workStart) * kHourSec;
+	else if (q == "laststart") v = (next(o->workStart) - kDayHours) * kHourSec;
+	else if (q == "nextend") v = next(end) * kHourSec;
+	else if (q == "lastend") v = (next(end) - kDayHours) * kHourSec;
+	setResult(in, fmt(v));
+	return TCL_OK;
+}
+int cmdSetWorktime(Engine& e, Tcl_Interp* in, Args& a)
+{
+	if (ScriptObject* o = e.object(e.resolveObj(in, a.size() > 1 ? a[1] : "this")))
+	{
+		if (a.size() > 2) o->workStart = float(std::atof(a[2].c_str()));
+		if (a.size() > 3) o->workLen = float(std::atof(a[3].c_str()));
+	}
+	setResult(in, "");
+	return TCL_OK;
+}
+// auto_choose_workingtime obj: krasnale gracza rozkładają zmiany. Histogram 12 godzin z okien pozostałych
+// krasnali tego samego gracza, ×999/suma, wygładzenie oknem 5 godzin (3 razy), minimum od losowego miejsca;
+// start = minimum − 2 h, długość 6 h. Pierwszy krasnal: 0 h, 6 h.
+int cmdAutoWorktime(Engine& e, Tcl_Interp* in, Args& a)
+{
+	setResult(in, "");
+	ScriptObject* o = e.object(e.resolveObj(in, a.size() > 1 ? a[1] : "this"));
+	auto worker = [](const ScriptObject& x) {
+		std::string c = x.cls ? Vfs::lower(x.cls->name) : "";
+		return c == "zwerg" || c == "baby";
+	};
+	if (!o || !worker(*o)) return TCL_OK;
+	int hist[12] = {}, total = 0;
+	for (auto& [id, p] : e.objects_)
+	{
+		if (p.get() == o || p->owner != o->owner || !worker(*p)) continue;
+		int s = int(p->workStart), d = int(p->workLen);
+		if (d <= 0) continue;
+		total += d;
+		for (int h = s; h < s + d; ++h) hist[((h % 12) + 12) % 12]++;
+	}
+	o->workLen = 6.f;
+	if (total == 0)
+	{
+		o->workStart = 0.f;
+		return TCL_OK;
+	}
+	for (int& h : hist) h = h * 999 / total;
+	for (int pass = 0; pass < 3; ++pass)
+	{
+		int prev[12];
+		std::copy(hist, hist + 12, prev);
+		for (int k = 0; k < 12; ++k) hist[k] = (prev[(k + 10) % 12] + prev[(k + 11) % 12] + prev[k] + prev[(k + 1) % 12] + prev[(k + 2) % 12]) / 5;
+	}
+	int rot = std::rand() % 12, best = rot;
+	for (int k = 1; k < 12; ++k)
+		if (hist[(rot + k) % 12] < hist[best]) best = (rot + k) % 12;
+	o->workStart = float((best + 10) % 12);
+	return TCL_OK;
+}
+
 int cmdHminmax(Engine&, Tcl_Interp* in, Args& a)
 {
 	std::vector<double> v;
@@ -915,7 +1049,6 @@ int cmdListOp(Engine&, Tcl_Interp* in, Args& a)
 int cmdConst(Engine&, Tcl_Interp* in, Args& a)
 { // proste odpowiedzi do czasu prawdziwych systemów (🔶)
 	static const std::map<std::string, std::string> kValues = {
-	    {"get_remaining_sparetime", "1.0"}, // zawsze czas wolny (brak harmonogramu pracy)
 	    {"get_prodautoschedule", "0"}, {"is_contained", "0"}, {"is_wearing_pannier", "0"}, {"get_max_fow", "255"},
 	    {"inv_find", "-1"}, {"inv_find_obj", "-1"}, {"inv_cnt", "0"}, {"inv_list", ""}, {"get_bestexp", ""},
 	    {"get_linked_to", "-1"}, {"sm_get_event", "0"}, {"tasklist_find", "-1"}};
@@ -1387,7 +1520,17 @@ const Entry kCommands[] = {
     {"lnand", cmdListOp},
     {"land", cmdListOp},
     {"lor", cmdListOp},
-    {"get_remaining_sparetime", cmdConst},
+    {"get_remaining_sparetime", cmdRemainingSparetime},
+    {"set_remaining_sparetime", cmdNop},
+    {"get_worktime", cmdGetWorktime},
+    {"set_worktime", cmdSetWorktime},
+    {"auto_choose_workingtime", cmdAutoWorktime},
+    {"gethours", cmdGethours},
+    {"gametime", cmdGametime},
+    {"hfloor", cmdHround},
+    {"hceil", cmdHround},
+    {"hf2i", cmdHround},
+    {"hi2f", cmdHround},
     {"get_prodautoschedule", cmdConst},
     {"is_contained", cmdConst},
     {"is_wearing_pannier", cmdConst},
@@ -1982,7 +2125,7 @@ void Engine::setState(ScriptObject& o, const std::string& st, bool fresh)
 
 void Engine::tick(double dt)
 {
-	time_ += dt;
+	if (clockRunning_) time_ += dt * timeFactor_;
 	// Timery -> zdarzenia.
 	std::vector<Timer> due;
 	for (auto it = timers_.begin(); it != timers_.end();)

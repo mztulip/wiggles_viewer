@@ -121,7 +121,13 @@ struct ScriptObject
 	bool walking = false;     // trwa akcja walk (koniec zgłasza gra)
 	double actionUntil = -1;  // akcja wait/anim: koniec w czasie gry
 	std::string actionDone;   // kod do wykonania po akcji
+	// Okno pracy w godzinach doby (0..12): praca w [workStart, workStart + workLen), poza nim czas wolny.
+	// Domyślnie 0 h (zawsze czas wolny); krasnal przy starcie: auto_choose_workingtime (zwerg.tcl).
+	float workStart = 0, workLen = 0;
 };
+
+// ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).
+constexpr double kHourSec = 150.0, kDayHours = 12.0;
 
 class Engine
 {
@@ -220,6 +226,8 @@ public:
 	bool fromCache_ = false;
 	std::set<std::string> nativeNames_;
 	double time_ = 0;
+	double timeFactor_ = 1;    // gametime factor: tempo upływu czasu gry
+	bool clockRunning_ = true; // gametime start/stop
 	Messages messages_;
 	std::string locale_ = "en";
 	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)

@@ -137,6 +137,23 @@ timer_event this evt_fogremove -repeat -1 -interval 20 -userid 1 -attime [expr {
 
 **Czas gry i doba** (✅): `gettime` zwraca sekundy czasu gry, a `gethours` = `gettime` / 150, czyli godzina gry trwa 150 s. Skrypty liczą godzinę na tarczy zegara jako `int([gethours]) % 12`, więc doba ma 12 godzin gry, czyli **30 minut czasu rzeczywistego** (zgodnie z instrukcją gry; pomiar 97,80 s → 0,652 h, 117,83 s → 0,786 h).
 
+**Zegar i plan dnia** (🔶 prawa za [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `DigglesTclEngine`, kod: `cmdGametime`, `cmdRemainingSparetime`, `cmdGetWorktime`, `cmdAutoWorktime` w [`script/engine.cpp`](../../src/lib/script/engine.cpp)):
+
+```
+gametime start|stop|reset|factor [F]   zegar: czas gry += dt · F tylko gdy działa (przerywniki: factor 0.3)
+okno pracy obiektu: [start, start + długość) w godzinach doby 0..12, domyślnie długość 0 (zawsze wolne)
+get_remaining_sparetime obj = 0.0 w oknie pracy, inaczej 12 − ((godzina − start) mod 12)
+get_worktime obj            = "start długość";  … start|duration|end w godzinach doby,
+                              … nextstart|laststart|nextend|lastend w SEKUNDACH czasu gry (porównania z gettime)
+auto_choose_workingtime obj (zwerg.tcl przy starcie): histogram godzin pracy pozostałych krasnali gracza,
+   ×999 / suma, wygładzenie oknem 5 h (3 razy, po okręgu), minimum od losowej godziny;
+   start = (minimum + 10) mod 12, długość 6 h; pierwszy krasnal: 0 h, 6 h
+hceil / hfloor zwracają liczbę z częścią ułamkową ("6.0"): planer czasu wolnego robi
+   switch [hceil [get_remaining_sparetime this]] { 0.0 … 1.0 … }  (z_spare_main.tcl)
+```
+
+Przykład: pierwszy krasnal pracuje 0–6 h (0–900 s czasu gry), drugi dostaje okno przesunięte tam, gdzie pracujących jest najmniej. Bez tego (`get_remaining_sparetime` stale 1.0) skrypt krasnala w `owscript` kończył w `sparetime_dispatch` z 14 błędami; z oknem pracy przechodzi do `work_idle` jak w zapisie kampanii, bez błędów.
+
 ## 11.5 Maszyna stanów
 
 Każdy obiekt ma co najwyżej jeden **bieżący stan** i **licznik włączeń**.
