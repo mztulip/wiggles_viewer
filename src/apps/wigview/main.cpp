@@ -21,7 +21,8 @@
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
-// --nav-path X0 Y0 X1 Y1 [W]: z --print-nav droga Calc1 między punktami (bloki), W = 1 ze wspinaniem.
+// --nav-path X0 Y0 X1 Y1 [W [Z0 Z1]]: z --print-nav droga Calc1 między punktami (bloki), W = 1 ze wspinaniem,
+//   i trasa chodu z głębokością (Z0, Z1 w skali skryptu, domyślnie 8).
 // --print-nav: z --screenshot wypisuje podpola ruchu (NavWorld: '_' podłoga, '|' ściana, '.' zablokowane) i koszty pól.
 // --print-objects: z --screenshot wypisuje obiekty sceny (indeks, klasa, obiekt .3db, animacja, widoczność, pozycja)
 //   i postacie symulacji, do testów (tools/tests/run.sh).
@@ -57,6 +58,7 @@
 #include "lib/dev_api.h"
 #include "lib/i18n.h"
 #include "lib/nav_world.h"
+#include "lib/walk_plan.h"
 #include "lib/render/border_mask.h"
 #include "lib/world_sim.h"
 #include "lib/render/model_renderer.h"
@@ -164,7 +166,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--nav-path")
 		{
 			for (int j = 0; j < 4; ++j) a.navPath.push_back(float(std::atof(next())));
-			a.navPath.push_back(i + 1 < argc && argv[i + 1][0] != '-' ? float(std::atof(next())) : 0.f);
+			for (int j = 0; j < 3; ++j) a.navPath.push_back(i + 1 < argc && argv[i + 1][0] != '-' ? float(std::atof(next())) : (j ? 8.f : 0.f));
 			a.printNav = true;
 		}
 		else if (k == "--http") a.httpPort = std::atoi(next());
@@ -2257,7 +2259,7 @@ int main(int argc, char** argv)
 			double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
 			std::printf("nav %d×%d pól, podpól do chodzenia %zu, %.0f ms\n", nw.width(), nw.height(), nw.walkableCount(), ms);
 			if (nw.width() <= 48 && nw.height() <= 40) std::printf("%s", nw.ascii(0, 0, nw.width() - 1, nw.height() - 1).c_str());
-			if (args.navPath.size() == 5)
+			if (args.navPath.size() == 7)
 			{
 				auto& np = args.navPath;
 				auto t1 = std::chrono::steady_clock::now();
@@ -2267,6 +2269,12 @@ int main(int argc, char** argv)
 				    path.size(), pms);
 				for (auto& [x, y] : path) std::printf(" (%.3f, %.3f)%s", x / 8.f, y / 8.f, nw.floor(x, y) ? "p" : nw.walkable(x, y) ? "ś"
 					                                                                                                                : "?");
+				std::printf("\n");
+				float s0[3] = {np[0], np[1], np[5]}, g0[3] = {np[2], np[3], np[6]};
+				std::string why;
+				auto route = planWalk(nw, s0, g0, np[4] != 0, false, &why);
+				std::printf("trasa z = %g → %g: %zu punktów%s%s:", np[5], np[6], route.size(), why.empty() ? "" : ", ", why.c_str());
+				for (auto& p : route) std::printf(" (%.3f, %.3f, %.2f)%s", p.x, p.y, p.z, p.wall ? "ś" : "");
 				std::printf("\n");
 			}
 			for (int ty = 0; ty < nw.height() && nw.width() <= 48; ++ty)
@@ -2289,7 +2297,7 @@ int main(int argc, char** argv)
 			if (v.simActive && v.sim)
 				for (const auto& u : v.sim->units)
 					std::printf("postać %s obj=%d x=%.2f y=%.2f pole=%d,%d z=%.2f minz=%.2f\n", u.gnome ? "krasnal" : "wuker", u.obj, u.x, u.y,
-					    u.tx, u.ty, u.z, v.sim->walkZ(u.x, u.ty));
+					    u.tx, u.ty, u.z, v.sim->minDepth(u.x, u.y));
 		}
 		if (args.clickX >= 0)
 		{

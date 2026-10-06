@@ -160,6 +160,38 @@ t_nav_path() {
 	ok
 }
 
+test_ walk_plan "ruch jak w grze (P2): trasa z głębokością w pasie podłogi (FloorPathMap), ze wspinaniem odcinki ściany, prędkość i obrót z animacji, wuker chodzi trasą"
+t_walk_plan() {
+	local o
+	o=$(wv --template lava_unq_vampy_tuer --nav-path 1.5 2.5 14.5 2.5 0 14 5 --screenshot "$TMP/a.png" | grep "^trasa")
+	echo "$o" | grep -q "(1.500, 2.500, 14.00) " && echo "$o" | grep -q "(14.500, 2.500, 11.25)$" ||
+		{ fail "korytarz: cel z = 5 za ścianą 11 powinien trafić na z = 11,25: $o"; return; }
+	echo "$o" | python3 -c "import re,sys; z=[float(m) for m in re.findall(r', ([\d.]+)\)', sys.stdin.read())]; sys.exit(0 if all(a >= b for a, b in zip(z, z[1:])) and min(z) >= 11 else 1)" ||
+		{ fail "korytarz: głębokość nie maleje płynnie do pasa: $o"; return; }
+	o=$(wv --template kris_caves_1_b --nav-path 2.5 6 6 3.5 1 8 8 --screenshot "$TMP/a.png" | grep "^trasa")
+	echo "$o" | grep -q "(6.500, 5.500, 3.00)ś" || { fail "jaskinia: brak odcinka ściany na głębokości podparcia: $o"; return; }
+	OW_TRACE_SIM=2 wv --template lava_unq_vampy_tuer --simulate --populate 1 1 --warmup 12 --screenshot "$TMP/a.png" >"$TMP/w1"
+	grep -q "krasnal: chód 0.811, bieg 1.714, wspinanie 0.416 bloku/s; obrót 0.527 / 0.785" "$TMP/w1" ||
+		{ fail "prędkości krasnala z animacji: $(grep 'postać krasnal:' "$TMP/w1")"; return; }
+	grep -q "walk wuker .*punktów" "$TMP/w1" || { fail "wuker nie dostał trasy: $(grep 'walk wuker' "$TMP/w1" | head -2)"; return; }
+	python3 - "$TMP/w1" <<'PY' || { fail "wuker: ruch szybszy niż z animacji, brak ruchu albo w skale"; return; }
+import re, sys
+prev, bad, moved = None, 0, 0
+for l in open(sys.argv[1]):
+    m = re.search(r"\[sim ([\d.]+)\] wuker x ([\d.-]+) .* z ([\d.-]+) \(min ([\d.-]+)\)", l)
+    if not m: continue
+    t, x, z, mn = map(float, m.groups())
+    if z < mn - 0.3: bad += 1
+    if prev and t > prev[0]:
+        v = abs(x - prev[1]) / (t - prev[0])
+        moved += v > 0.1
+        if v > 0.837 * 1.1: bad += 1
+    prev = (t, x)
+sys.exit(1 if bad or not moved else 0)
+PY
+	ok
+}
+
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
 	[ -f "$GAME/Data/3db/LAVAWELT.3DB" ] || { skip "brak LAVAWELT.3DB"; return; }
@@ -240,14 +272,14 @@ t_ui_control() {
 	http_start wigview --template kris_caves_1_b --populate 2 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
 	click_at 80 190                # lista szablonów ma fokus (jak u użytkownika)
 	sleep 3
-	click_at 895 490               # krasnal na polu 5 (kadr startowy wigview 1280×800)
+	click_at 850 490               # krasnal na x = 4,5 (kadr startowy wigview 1280×800)
 	grep -q "\[ui\] sterowanie: postać" "$TMP/http.log" || { ui_stop; fail "klik w krasnala nie przejął sterowania"; return; }
 	local e="" x0 x1 x2 x3 z0 z1 z2 anim obj id loads
 	cu() { hget /api/units | jget "[u for u in d['units'] if u['controlled']][0]['$1']"; }
 	x0=$(cu x); obj=$(cu obj); id=$(cu id)
 	xd keydown Right; sleep 1; xd keyup Right
 	x1=$(cu x); sleep 1; x2=$(cu x)
-	python3 -c "import sys; sys.exit(0 if 1.2 <= $x1 - $x0 <= 2.0 else 1)" || e="→ trzymana 1 s: x $x0 → $x1, oczekiwane ok. +1,6"
+	python3 -c "import sys; sys.exit(0 if 0.6 <= $x1 - $x0 <= 1.0 else 1)" || e="→ trzymana 1 s: x $x0 → $x1, oczekiwane ok. +0,81 (prędkość marszu)"
 	[ -z "$e" ] && [ "$x1" = "$x2" ] || e="${e:-po puszczeniu idzie dalej: x $x1 → $x2}"
 	anim=$(hget /api/objects | jget "d['objects'][$obj]['anim']")
 	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po puszczeniu animacja $anim zamiast standard}"
@@ -256,17 +288,17 @@ t_ui_control() {
 	loads=$(grep -c "wczytano mapę" "$TMP/http.log")
 	z0=$(cu z); xd keydown Up; sleep 0.5; xd keyup Up; z1=$(cu z)
 	xd keydown Down; sleep 0.3; xd keyup Down; z2=$(cu z)
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if 0.8 <= $z0 - $z1 <= 2.0 and 0.4 <= $z2 - $z1 <= 1.4 else 1)" ||
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if 0.5 <= $z0 - $z1 <= 1.2 and 0.3 <= $z2 - $z1 <= 0.8 else 1)" ||
 		e="${e:-↑ 0,5 s / ↓ 0,3 s: z $z0 → $z1 → $z2}"
 	[ -z "$e" ] && [ "$(grep -c "wczytano mapę" "$TMP/http.log")" = "$loads" ] || e="${e:-↑ przełączyła szablon zamiast prowadzić krasnala}"
 	# po skosie: → i ↑ naraz zmieniają x i z, postać obrócona o −135° (w prawo i w głąb)
 	local xa za xb zb rot
 	xa=$(cu x); za=$(cu z)
-	xd keydown Right; xd keydown Up; sleep 0.4
+	xd keydown Right; xd keydown Up; sleep 0.5
 	rot=$(hget /api/objects | jget "d['objects'][$obj]['roty']")
 	xd keyup Up; xd keyup Right; sleep 0.5
 	xb=$(cu x); zb=$(cu z)
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if $xb - $xa > 0.3 and $za - $zb > 0.3 and abs($rot + 2.356) < 0.05 else 1)" ||
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if $xb - $xa > 0.2 and $za - $zb > 0.3 and abs($rot + 2.356) < 0.05 else 1)" ||
 		e="${e:-po skosie: x $xa → $xb, z $za → $zb, obrót $rot (oczekiwane −2,356)}"
 	# puszczenie w trakcie ruchu: postać staje, skrypt znów działa
 	xd keydown Right; sleep 0.3; xd key shift; xd keyup Right; sleep 1
@@ -278,31 +310,29 @@ t_ui_control() {
 	[ -z "$e" ] && ok "x $x0 → $x1 (1 s), stuknięcie $x2 → $x3, z $z0 → $z1 → $z2" || fail "$e"
 }
 
-test_ ui_goto "interakcja: PPM w podłogę albo w tylną ścianę wysyła prowadzonego krasnala w kliknięte miejsce (pole i głębokość)"
+test_ ui_goto "interakcja: PPM w podłogę albo w tylną ścianę wysyła prowadzonego krasnala w kliknięte miejsce chodem jak w grze (pole, głębokość, obrót po skosie, na ścianę wspinaniem)"
 t_ui_goto() {
 	http_ok || return
 	http_start wigview --template kris_caves_1_b --populate 1 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
-	click_at 895 490               # krasnal na polu 5
-	local e="" t1 t2
+	click_at 850 490               # krasnal na x = 4,5
+	local e="" t1 t2 zf zb rot
 	cu() { hget /api/units | jget "[u for u in d['units'] if u['controlled']][0]['$1']"; }
-	click_at 1100 495 3            # podłoga po prawej (lite pole pod wolnym polem 8)
-	sleep 3; t1=$(cu tx)
-	[ "$t1" -ge 8 ] 2>/dev/null || e="PPM w podłogę: krasnal na polu $t1, oczekiwane ≥ 8"
-	click_at 760 420 3             # tylna ściana po lewej (pole 2)
-	sleep 4; t2=$(cu tx)
-	[ -z "$e" ] && [ "$t2" -le 3 ] 2>/dev/null || e="${e:-PPM w ścianę: krasnal na polu $t2, oczekiwane ≤ 3}"
-	# głębokość klikniętego miejsca: podłoga blisko przodu i blisko tylnej ściany (pole 7)
-	local zf zb rot
-	click_at 1000 535 3; sleep 0.6
-	# w trakcie chodu w prawo i do przodu: przodem po skosie (≈ −45°), nie bokiem (−90°)
+	idle() { for _ in $(seq 1 40); do [ "$(cu state)" = idle ] && return; sleep 0.5; done; }
+	# głębokość klikniętego miejsca: podłoga blisko przodu (x ≈ 7,5); w drodze w prawo i do przodu przodem po
+	# skosie (≈ −45°), nie bokiem (−90°)
+	click_at 1000 535 3; sleep 0.8
 	rot=$(hget /api/objects | jget "[o['roty'] for o in d['objects'] if o['class'] == 'Zwerg'][0]")
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if -1.3 < $rot < -0.3 else 1)" || e="${e:-obrót w chodzie po skosie $rot, oczekiwane ok. −0,785}"
-	sleep 3.4; zf=$(cu z)
-	click_at 1000 470 3; sleep 4; zb=$(cu z)
+	python3 -c "import sys; sys.exit(0 if -1.3 < $rot < -0.3 else 1)" || e="obrót w chodzie po skosie $rot, oczekiwane ok. −0,785"
+	idle; zf=$(cu z)
+	click_at 1000 470 3; idle; zb=$(cu z)       # podłoga blisko tylnej ściany
 	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if $zf >= 10 and $zb <= 5 else 1)" ||
 		e="${e:-PPM w podłogę z przodu / z tyłu: z $zf / $zb, oczekiwane ≥ 10 / ≤ 5}"
+	click_at 1100 520 3; idle; t1=$(cu tx)     # podłoga po prawej (x ≈ 9,7)
+	[ -z "$e" ] && [ "$t1" -ge 8 ] 2>/dev/null || e="${e:-PPM w podłogę: krasnal na polu $t1 (x $(cu x)), oczekiwane ≥ 8}"
+	click_at 760 420 3; idle; t2=$(cu tx)      # tylna ściana po lewej (x ≈ 2,6): wspina się i wisi
+	[ -z "$e" ] && [ "$t2" -le 3 ] 2>/dev/null || e="${e:-PPM w ścianę: krasnal na polu $t2, oczekiwane ≤ 3}"
 	ui_stop
-	[ -z "$e" ] && ok "pole 5 → $t1 → $t2, z przód $zf, tył $zb" || fail "$e"
+	[ -z "$e" ] && ok "z przód $zf, tył $zb, pole → $t1 → $t2" || fail "$e"
 }
 
 test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), trzymana → idzie animacją chodu z jego modelu, po puszczeniu stoi"
@@ -386,9 +416,9 @@ t_http_wigview() {
 	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
 	hpost "/api/control?unit=0" >/dev/null
 	hpost "/api/control/step?dx=1" >/dev/null; hpost "/api/control/step?dx=1" >/dev/null
-	hpost "/api/step?seconds=4" >/dev/null
+	hpost "/api/step?seconds=6" >/dev/null
 	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 2) < 0.01 else 1)" || e="${e:-control/step: x $x0 → $x1, oczekiwane +2}"
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 2) < 0.2 else 1)" || e="${e:-control/step: x $x0 → $x1, oczekiwane +2}"
 	[ -z "$e" ] && [ "$(hget /api/units | jget 'd["units"][0]["controlled"]')" = True ] || e="${e:-postać nie jest oznaczona jako prowadzona}"
 	hpost /api/control/release >/dev/null; hpost /api/resume >/dev/null
 	[ -z "$e" ] && [ "$(hget "/api/wait?cond=%5Bgettime%5D%3E$(python3 -c "print(int($t2) + 3)")&timeout=20" | jget 'd["ok"]')" = True ] || e="${e:-wait: warunek czasu nie spełniony}"
@@ -427,10 +457,10 @@ t_http_game() {
 	n=$(hget /api/units | jget 'len(d["units"])')
 	[ -z "$e" ] && [ "$n" = 5 ] || e="${e:-/api/units: $n postaci, oczekiwane 5}"
 	hpost /api/pause >/dev/null
-	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
-	hpost "/api/control?unit=0" >/dev/null; hpost "/api/control/step?dx=-1" >/dev/null; hpost "/api/step?seconds=2" >/dev/null
-	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
-	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x0 - $x1 - 1) < 0.01 else 1)" || e="${e:-krok w lewo: x $x0 → $x1}"
+	x0=$(hget /api/units | jget 'd["units"][0]["tx"]')
+	hpost "/api/control?unit=0" >/dev/null; hpost "/api/control/step?dx=-1" >/dev/null; hpost "/api/step?seconds=4" >/dev/null
+	x1=$(hget /api/units | jget 'd["units"][0]["tx"]')
+	[ -z "$e" ] && [ "$x1" = "$((x0 - 1))" ] || e="${e:-krok w lewo: pole $x0 → $x1}"
 	ui_stop
 	[ -z "$e" ] && ok || fail "$e"
 }

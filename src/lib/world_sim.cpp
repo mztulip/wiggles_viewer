@@ -41,7 +41,7 @@ void WorldSim::initUnits()
 	digMarks.clear(), glides.clear();
 	for (int i = 0; i < scene_.objectCount(); ++i) idOf(i);
 	selected = -1;
-	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb());
+	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb()), walk.build(*g, scene_.blockDb());
 	for (int i = 0; i < scene_.objectCount(); ++i)
 		if (isWalkerClass(Vfs::lower(scene_.objectClass(i)))) addUnit(i);
 	for (size_t k = 0; k < units.size(); ++k)
@@ -75,7 +75,7 @@ void WorldSim::simUpdate(float dt)
 	if (trace && int((simTime_ + dt) * 2.f) != int(simTime_ * 2.f)) // OW_TRACE_SIM=2: postacie co 0,5 s
 		for (const auto& u : units)
 			std::fprintf(stderr, "[sim %.1f] %s x %.2f y %.2f pole (%d, %d) z %.2f (min %.2f) stan %d\n", simTime_ + dt,
-			    u.gnome ? "krasnal" : "wuker", u.x, u.y, u.tx, u.ty, u.z, walkZ(u.x, u.ty), int(u.state));
+			    u.gnome ? "krasnal" : "wuker", u.x, u.y, u.tx, u.ty, u.z, minDepth(u.x, u.y), int(u.state));
 	simTime_ += dt;
 	fogTimer_ += dt;
 	if (revealFog && fogTimer_ >= 0.4f)
@@ -94,74 +94,99 @@ void WorldSim::simUpdate(float dt)
 	}
 }
 
-// Wysokość stóp w polu (x, ty): podłoże z bloku pod spodem (pierwszy wiersz siatki 8×8 o wysokości ≥ 13
-// w środkowej kolumnie), np. na łące 0,5 pola niżej niż dół pola. Na ścianie: dół pola.
-float WorldSim::floorY(int x, int ty) const
-{
-	if (!nav.standable(x, ty) || !simGrid()) return float(ty) + 1.f;
-	const Pmp* g = simGrid();
-	const BlockRecord* r = scene_.blockDb().record(g->blocks[size_t(ty + 1) * g->width + size_t(x)]);
-	if (!r) return float(ty) + 1.f;
-	int col = std::clamp(int((tileCenterX(x, ty) - float(x)) * 8.f), 0, 7); // kolumna środka wolnej części
-	for (int row = 0; row < 8; ++row)
-		if (r->depth[size_t(row * 8 + col)] >= 13) return float(ty + 1) + float(row) / 8.f;
-	return float(ty) + 1.f;
-}
 
-bool WorldSim::openSpan(int x, int ty, float& x0, float& x1) const
+namespace
 {
-	x0 = float(x), x1 = float(x) + 1.f;
-	const Pmp* g = simGrid();
-	if (!g || x < 0 || ty < 0 || x >= int(g->width) || ty >= int(g->height)) return false;
-	uint32_t block = g->blocks[size_t(ty) * g->width + size_t(x)];
-	const BlockRecord* r = block == 59 ? nullptr : scene_.blockDb().record(block); // 59: puste pole
-	if (!r) return true;
-	int c0 = 8, c1 = -1;
-	for (int c = 0; c < 8; ++c)
-		for (int row = 4; row < 8; ++row)
-			if (r->depth[size_t(row * 8 + c)] < 13)
-			{
-				c0 = std::min(c0, c), c1 = std::max(c1, c);
-				break;
-			}
-	if (c1 < 0) return false;
-	x0 = float(x) + float(c0) / 8.f, x1 = float(x) + float(c1 + 1) / 8.f;
+int sub8(float v)
+{ // podpole współrzędnej (bloki · 8, zaokrąglenie jak w grze)
+	return int(std::nearbyint(v * 8.f));
+}
+float wrapAngle(float a)
+{
+	while (a > kSimPi) a -= 2.f * kSimPi;
+	while (a < -kSimPi) a += 2.f * kSimPi;
+	return a;
+}
+// Kierunek patrzenia na ruch (dx w bok, dz w głąb w jednostkach świata): w prawo −π/2, do przodu 0.
+float facingOf(float dx, float dzWorld)
+{
+	return std::atan2(-dx, dzWorld);
+}
+} // namespace
+
+bool WorldSim::floorSpot(float x, float y, float r, float z, float out[3]) const
+{
+	int cx = sub8(x), cy = sub8(y), R = std::max(1, int(std::ceil(r * 8.f)));
+	long bd = -1;
+	int bx = 0, by = 0;
+	for (int dy = -R; dy <= R; ++dy)
+		for (int dx = -R; dx <= R; ++dx)
+		{
+			int sx = cx + dx, sy = cy + dy;
+			// bliżej w bok i w dół (stopy spadają na podłogę pod spodem) niż w górę
+			long d = long(dx) * dx + long(dy) * dy * (dy < 0 ? 4 : 1);
+			if (bd >= 0 && d >= bd) continue;
+			float z0, z1;
+			if (!walk.floor(sx, sy) || !walk.walkable(sx, sy) || walk.baseCost(sx >> 3, sy >> 3) == -1 || !floorBand(walk, sx, sy, z0, z1)) continue;
+			bd = d, bx = sx, by = sy;
+		}
+	if (bd < 0) return false;
+	out[0] = float(bx) / 8.f, out[1] = float(by) / 8.f, out[2] = fitDepth(out[0], out[1], z);
 	return true;
 }
 
-float WorldSim::tileCenterX(int x, int ty) const
+// Na podłodze: z w pasie podłogi; za tylną ścianą (z przed pasem, np. nowa postać): głębokość stania
+// min(podparcie + 1, 14,5) jak w grze. Poza podłogą (ściana): co najmniej wolne od skały.
+float WorldSim::fitDepth(float x, float y, float z) const
 {
-	float x0, x1;
-	openSpan(x, ty, x0, x1);
-	return (x0 + x1) * 0.5f;
+	int sx = sub8(x), sy = sub8(y);
+	float z0, z1;
+	if (walk.floor(sx, sy) && floorBand(walk, sx, sy, z0, z1))
+	{
+		if (z < z0) return std::clamp(floorLineDepth(walk, sx, sy), z0, z1);
+		return std::min(z, z1);
+	}
+	return std::max(z, airDepth(walk, x, y));
+}
+
+float WorldSim::minDepth(float x, float y) const
+{
+	float z0, z1;
+	if (walk.floor(sub8(x), sub8(y)) && floorBand(walk, sub8(x), sub8(y), z0, z1)) return z0;
+	return airDepth(walk, x, y);
+}
+
+void WorldSim::updateTile(SimUnit& u) const
+{ // pole wolnego podpola nad stopą
+	u.tx = std::clamp(sub8(u.x) >> 3, 0, std::max(0, walk.width() - 1));
+	u.ty = std::clamp((sub8(u.y) - 1) >> 3, 0, std::max(0, walk.height() - 1));
 }
 
 void WorldSim::snapToFloor(SimUnit& u)
-{
-	int x = int(std::floor(u.x)), y = tileOfFeet(u.y);
-	for (int d = 0; d < 40; ++d)
-	{
-		for (int yy : {y + d, y - d})
-			if (nav.standable(x, yy) || (d > 0 && nav.climbable(x, yy)))
+{ // najpierw podłoga w tej samej kolumnie (x bez zmian: bez przeskoku przy przejęciu postaci), pod stopami
+	// albo trochę wyżej; potem najbliższa w promieniu; bez podłogi: ściana w kolumnie (postać wisi)
+	int sx = sub8(u.x), sy = sub8(u.y);
+	for (int d = 0; d < 24; ++d)
+		for (int yy : {sy + d, sy - d / 2})
+		{
+			float z0, z1;
+			if (!walk.floor(sx, yy) || walk.baseCost(sx >> 3, yy >> 3) == -1 || !floorBand(walk, sx, yy, z0, z1)) continue;
+			u.y = float(yy) / 8.f, u.z = fitDepth(u.x, u.y, u.z);
+			updateTile(u);
+			return;
+		}
+	float p[3];
+	if (floorSpot(u.x, u.y, 6.f, u.z, p))
+		u.x = p[0], u.y = p[1], u.z = p[2];
+	else
+		for (int d = 0; d < 48; ++d)
+			if (walk.walkable(sx, sy + d) || walk.walkable(sx, sy - d))
 			{
-				u.tx = x, u.ty = yy;
-				u.x = tileCenterX(x, yy), u.y = floorY(x, yy);
-				return;
+				u.y = float(walk.walkable(sx, sy + d) ? sy + d : sy - d) / 8.f;
+				u.z = fitDepth(u.x, u.y, u.z);
+				break;
 			}
-	}
-	u.tx = x, u.ty = y;
-}
-
-float WorldSim::walkZ(float x, int ty) const
-{
-	const Pmp* g = simGrid();
-	int bx = int(std::floor(x));
-	if (!g || bx < 0 || ty < 0 || bx >= int(g->width) || ty >= int(g->height)) return kGnomeZ;
-	const BlockRecord* r = scene_.blockDb().record(g->blocks[size_t(ty) * g->width + size_t(bx)]);
-	if (!r) return kGnomeZ;
-	int col = std::clamp(int((x - float(bx)) * 8.f), 0, 7), wall = 15;
-	for (int row = 0; row < 8; ++row) wall = std::min(wall, int(r->depth[size_t(row * 8 + col)]));
-	return std::min(float(wall) + kWallGap, 14.5f);
+	updateTile(u);
 }
 
 SimUnit* WorldSim::unitOf(int obj)
@@ -193,24 +218,55 @@ int WorldSim::addUnit(int obj)
 	SimUnit u;
 	u.obj = obj;
 	u.gnome = gnome;
+	std::vector<std::string> climbSide = {"kletter_links_loop", "kletter_rechts_loop"};
 	if (!gnome && isWalkerClass(Vfs::lower(scene_.objectClass(obj))))
-	{ // wuker: animacje bez przyrostka _loop przy wspinaniu; model nadaje obj_init (set_anim this wuker.…),
-		// a klasa ($wukerclass w WUKER.TCL) nie ma class_defaultanim
-		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter", u.standAnim = "stand_atmen_a";
+	{ // wuker: animacje z modelu wuker.3db (obj_init: set_anim this wuker.…); klasa nie ma class_defaultanim
 		if (scene_.objectModelObject(obj).empty()) scene_.setObjectModel(obj, "", "wuker");
+		u.runStart = u.runLoop = u.runStop = "";
+		u.turnLeft = "drehen_links_a", u.turnRight = "drehen_rechts_a", u.turnLeft180 = u.turnRight180 = "drehen_ganz";
+		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter", u.standAnim = "stand_atmen_a";
+		u.fallAnim = "kletter_runterfallen";
+		climbSide = {"kletter_links", "kletter_rechts"};
 	}
 	else if (!gnome)
-	{ // inne stworzenie (adoptUnit): chód i stanie z animacji jego modelu, wspinanie tą samą animacją chodu
+	{ // inne stworzenie (adoptUnit): chód i stanie z animacji jego modelu, bez faz, obrotów i wspinania
 		auto anims = scene_.objectAnimations(obj);
-		u.walkAnim = creatureAnim(anims, true), u.standAnim = creatureAnim(anims, false);
-		u.climbUpAnim = u.climbDownAnim = u.walkAnim, u.climbStandAnim = u.standAnim;
+		u.walkLoop = creatureAnim(anims, true), u.standAnim = creatureAnim(anims, false);
+		u.walkStart = u.walkStop = u.runStart = u.runLoop = u.runStop = "";
+		u.turnLeft = u.turnRight = u.turnLeft180 = u.turnRight180 = "";
+		u.climbUpAnim = u.climbDownAnim = u.walkLoop, u.climbStandAnim = u.fallAnim = u.standAnim;
+		u.canClimb = false;
+		climbSide.clear();
+	}
+	// Prędkości z ruchu zapisanego w animacjach (|move| · 0,05 bloku na sekundę; za Diggles-Unity, odczyt
+	// z pamięci gry: mann gehen_loop 16,22 → 0,811, laufen_schnell 34,29 → 1,714); wspinanie: ¼ sumy czterech.
+	auto speed = [&](const std::string& a) {
+		Vec3f m{}, r{};
+		int f = 0;
+		return !a.empty() && scene_.animMotion(obj, a, m, r, f) ? std::sqrt(m.x * m.x + m.y * m.y + m.z * m.z) * 0.05f : 0.f;
+	};
+	if (float v = speed(u.walkLoop); v > 0.01f) u.walkSpeed = v;
+	if (float v = speed(u.runLoop); v > 0.01f) u.runSpeed = v;
+	u.canRun = !u.runLoop.empty() && speed(u.runLoop) > 0.01f;
+	if (u.canClimb && climbSide.size() == 2)
+	{
+		float c = 0.25f * (speed(u.climbUpAnim) + speed(u.climbDownAnim) + speed(climbSide[0]) + speed(climbSide[1]));
+		if (c > 0.01f) u.climbSpeed = c;
 	}
 	const float* p = scene_.objectPos(obj);
 	u.x = p[0], u.y = p[1], u.z = p[2];
 	snapToFloor(u);
-	// za tylną ścianą albo przed przednią płaszczyzną (dodana postać, stała kGnomeZ): na głębokość chodu
-	float wz = walkZ(u.x, u.ty);
-	if (u.z < wz - kWallGap + 0.5f || u.z > 14.5f) u.z = wz;
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (trace)
+	{
+		auto rot = [&](const std::string& a) {
+			Vec3f m{}, r{};
+			int f = 0;
+			return !a.empty() && scene_.animMotion(obj, a, m, r, f) ? std::max({std::abs(r.x), std::abs(r.y), std::abs(r.z)}) : 0.f;
+		};
+		std::fprintf(stderr, "[sim] postać %s: chód %.3f, bieg %.3f, wspinanie %.3f bloku/s; obrót %.3f / %.3f rad na 0,1 s\n",
+		    gnome ? "krasnal" : "wuker", u.walkSpeed, u.canRun ? u.runSpeed : 0.f, u.climbSpeed, rot(u.turnLeft), rot(u.turnRight180));
+	}
 	units.push_back(u);
 	return int(units.size()) - 1;
 }
@@ -241,12 +297,7 @@ int WorldSim::adoptUnit(int obj)
 		if (units[k].obj == obj) return int(k);
 	if (creatureAnim(scene_.objectAnimations(obj), true).empty()) return -1;
 	idOf(obj);
-	float x = scene_.objectPos(obj)[0];
-	int k = addUnit(obj);
-	SimUnit& u = units[size_t(k)];
-	float x0, x1; // bez przeskoku na środek pola: x zostaje, jeśli leży w wolnej części pola
-	if (openSpan(u.tx, u.ty, x0, x1) && x >= x0 && x <= x1) u.x = x;
-	return k;
+	return addUnit(obj);
 }
 
 void WorldSim::controlMove(int unit, float dx, float dz)
@@ -255,43 +306,36 @@ void WorldSim::controlMove(int unit, float dx, float dz)
 	units[size_t(unit)].moveX = std::clamp(dx, -1.f, 1.f), units[size_t(unit)].moveZ = std::clamp(dz, -1.f, 1.f);
 }
 
-// Ruch ręczny o jeden krok symulacji: w bok po podłożu (wolna część pola, przejście na sąsiednie pole na tej
-// samej wysokości albo o stopień), w głąb między tylną ścianą + kWallGap a przednią płaszczyzną.
+// Ruch ręczny o jeden krok symulacji z prędkością marszu: w bok po linii podłogi (w sąsiedniej kolumnie
+// podpól podłoga najwyżej 3 podpola wyżej albo niżej, inaczej ściana), w głąb w pasie głębokości podłogi.
 void WorldSim::manualMove(SimUnit& u, float dt)
 {
-	if (u.moveZ != 0)
-		u.z = std::clamp(u.z + u.moveZ * 2.f * kWalkSpeed * dt, walkZ(u.x, u.ty), 14.f);
-	if (u.moveX != 0 && nav.standable(u.tx, u.ty))
+	float sp = u.walkSpeed;
+	int sy = sub8(u.y);
+	if (u.moveX != 0 && hasFloorSupport(walk, u.x, u.y))
 	{
-		float nx = u.x + u.moveX * kWalkSpeed * dt, x0, x1;
-		int tx = int(std::floor(nx));
-		if (tx != u.tx)
-		{ // sąsiednie pole: ta sama wysokość, stopień w górę (nad głową wolne) albo w dół
-			int d = tx - u.tx, ny = -1;
-			if (nav.standable(tx, u.ty)) ny = u.ty;
-			else if (nav.standable(tx, u.ty - 1) && nav.open(u.tx, u.ty - 1)) ny = u.ty - 1;
-			else if (nav.standable(tx, u.ty + 1) && nav.open(tx, u.ty)) ny = u.ty + 1;
-			if (ny >= 0 && openSpan(tx, ny, x0, x1) && (d > 0 ? x0 <= float(tx) + 0.01f : x1 >= float(tx + 1) - 0.01f))
-				u.tx = tx, u.ty = ny;
-			else
-				nx = d > 0 ? float(tx) - 0.02f : float(tx + 1) + 0.02f; // ściana: do krawędzi pola
+		float nx = u.x + u.moveX * sp * dt;
+		int sx = sub8(nx);
+		for (int dy : {0, -1, 1, -2, 2, -3, 3})
+		{
+			float z0, z1;
+			if (!walk.floor(sx, sy + dy) || !floorBand(walk, sx, sy + dy, z0, z1)) continue;
+			u.x = nx, u.y = float(sy + dy) / 8.f;
+			break;
 		}
-		if (openSpan(u.tx, u.ty, x0, x1)) nx = std::clamp(nx, x0 + 0.02f, x1 - 0.02f);
-		u.x = nx;
 	}
-	float fy = floorY(u.tx, u.ty), dy = fy - u.y, my = 3.f * dt; // stopień: płynnie w górę / w dół
-	u.y += std::abs(dy) <= my ? dy : (dy > 0 ? my : -my);
-	// przodem w stronę ruchu, także po skosie: w prawo −π/2, w lewo +π/2, do przodu 0, w głąb π
-	u.facing = std::atan2(-u.moveX, u.moveZ);
-	scene_.playAnim(u.obj, u.walkAnim, true);
+	if (u.moveZ != 0) u.z += u.moveZ * 2.f * sp * dt; // z skryptu = 2 · z świata
+	u.z = std::clamp(fitDepth(u.x, u.y, u.z), 0.f, 15.75f);
+	u.facing = facingOf(u.moveX, u.moveZ); // przodem w stronę ruchu, także po skosie
+	scene_.playAnim(u.obj, u.walkLoop, true);
 }
 
 int WorldSim::spawnUnit(float x, float y, bool gnome)
 {
 	const char* cls = gnome ? "Zwerg" : "Wuker";
-	float c[3] = {x, y, kGnomeZ}, p[3] = {x, y, kGnomeZ};
-	if (!findPlace(c, 3.f, p)) p[0] = x, p[1] = y;
-	int o = scene_.addObject(cls, p[0], p[1], kGnomeZ);
+	float p[3] = {x, y, kGnomeZ};
+	floorSpot(x, y, 3.f, kGnomeZ, p);
+	int o = scene_.addObject(cls, p[0], p[1], p[2]);
 	int u = addUnit(o);
 	int id = idOf(o);
 	if (scripts && (!gnome || scriptGnomes)) scripts->attach(id, cls, "");
@@ -311,6 +355,7 @@ void WorldSim::dig(int x, int y)
 	}
 	scene_.setBlock(x, y, 4523, type);
 	nav.updateTile(*simGrid(), scene_.blockDb(), x, y);
+	walk.revalidateTile(x, y);
 	scene_.rebuildTerrain();
 	digMarks.erase({x, y});
 	// Znalezisko jak w dig_execute (z_dignwalk.tcl): 4% szans; rodzaj losowany (🔶 bez stref kampanii).
@@ -318,14 +363,16 @@ void WorldSim::dig(int x, int y)
 	{
 		static const char* kFinds[] = {"Stein", "Eisenerz", "Kohle", "Golderz", "Kristallerz"};
 		const char* cls = kFinds[std::rand() % 5];
-		float pos[3] = {tileCenterX(x, y), floorY(x, y), kGnomeZ}, rot[3] = {0, 0, 0};
+		float pos[3] = {float(x) + 0.5f, float(y) + 1.f, kGnomeZ}, rot[3] = {0, 0, 0};
+		floorSpot(float(x) + 0.5f, float(y) + 1.f, 1.f, kGnomeZ, pos);
 		int id = createObject(cls, "", pos, rot);
 		if (scripts) scripts->attach(id, cls, "");
 		status = std::string(tr("Znalezisko: ")) + cls;
 	}
 }
 
-// Następne zaznaczone pole dla krasnala z zadaniem kopania: najbliższe, do którego da się dojść.
+// Następne zaznaczone pole dla krasnala z zadaniem kopania: najbliższe, do którego da się dojść. 🔶 Stanowisko:
+// punkt wyjścia sąsiedniego pola (z boku, nad, pod); dojście do krawędzi jak w grze to etap P3 (rozdział 17).
 bool WorldSim::nextDigJob(SimUnit& u)
 {
 	std::vector<std::pair<int, std::pair<int, int>>> cand;
@@ -339,17 +386,23 @@ bool WorldSim::nextDigJob(SimUnit& u)
 			digMarks.erase({mx, my});
 			continue;
 		}
-		const int st[4][2] = {{mx - 1, my}, {mx + 1, my}, {mx, my - 1}, {mx, my + 1}};
-		for (auto& c : st)
-		{
-			if (!(nav.standable(c[0], c[1]) || nav.climbable(c[0], c[1]))) continue;
-			auto p = nav.path(u.tx, u.ty, c[0], c[1]);
-			if (p.empty()) continue;
-			u.path = std::move(p), u.step = 0, u.state = SimUnit::Walk, u.digX = mx, u.digY = my;
-			u.goalX = u.goalZ = -1;
-			u.onArrive = nullptr;
-			return true;
-		}
+		if (digAt(u, mx, my)) return true;
+	}
+	return false;
+}
+
+bool WorldSim::digAt(SimUnit& u, int mx, int my)
+{
+	const int st[4][2] = {{mx - 1, my}, {mx + 1, my}, {mx, my - 1}, {mx, my + 1}};
+	for (auto& c : st)
+	{
+		if (walk.baseCost(c[0], c[1]) == -1) continue;
+		uint8_t e = walk.exitPair(c[0], c[1]);
+		float gx = float(c[0] * 8 + (e & 7)) / 8.f, gy = float(c[1] * 8 + ((e >> 3) & 7)) / 8.f;
+		if (!walkUnit(u, gx, gy, u.z, true)) continue;
+		u.digX = mx, u.digY = my;
+		u.onArrive = nullptr;
+		return true;
 	}
 	return false;
 }
@@ -367,72 +420,214 @@ void WorldSim::markDig(int x0, int y0, int x1, int y1)
 	(void)n;
 }
 
-void WorldSim::updateUnit(SimUnit& u, float dt)
+bool WorldSim::walkUnit(SimUnit& u, float x, float y, float z, bool keepGoal, std::string* why)
 {
-	if (u.controlled && (u.moveX != 0 || u.moveZ != 0))
-	{ // prowadzona ręcznie, klawisz wciśnięty: ruch zamiast ścieżki
-		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1;
-		manualMove(u, dt);
-		u.z = std::max(u.z, walkZ(u.x, u.ty) - kWallGap + 0.5f);
-		scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
+	float s[3] = {u.x, u.y, u.z}, g[3] = {x, y, z};
+	auto r = planWalk(walk, s, g, u.canClimb, keepGoal, why);
+	if (r.empty()) return false;
+	u.route = std::move(r), u.next = 0;
+	u.started = u.turning = false;
+	u.speedtype = 0, u.walkMayRun = true; // opcje action walk ustawia walkTo
+	u.state = SimUnit::Walk;
+	return true;
+}
+
+void WorldSim::finishWalk(SimUnit& u, bool ok)
+{
+	u.route.clear(), u.next = 0;
+	u.started = u.turning = u.running = false;
+	u.stride = 0;
+	u.state = ok && u.digX >= 0 ? SimUnit::Dig : SimUnit::Idle;
+	u.digT = 0;
+	if (!ok) u.digX = u.digY = -1;
+	if (u.onArrive)
+	{
+		auto f = std::move(u.onArrive);
+		u.onArrive = nullptr;
+		f(ok);
+	}
+}
+
+// Wykonawca chodu (za Diggles-Unity MetaWalkAction, odczyt gry FUN_00418280/00418850/004185a0): postać zużywa
+// w każdym kroku prędkość · dt drogi wzdłuż punktów trasy (odległość w świecie: dx, dy, dz · 0,5). Przed
+// ruchem i na załamaniach: błąd kierunku ≥ π/4 → obrót w miejscu animacją drehen (|rotate| animacji rad na
+// 0,1 s), potem od nowa start. W marszu dryf kierunku 0,1 rad na 0,1 s (poniżej 0,051 rad od razu).
+// Fazy: start (animacja raz, ruch już z pełną prędkością), pętla, stop (animacja raz w miejscu), stanie.
+// Odcinki ściany: 🔶 wspinanie uproszczone (etap P4).
+void WorldSim::stepWalk(SimUnit& u, float dt)
+{
+	auto& R = u.route;
+	auto metric = [](float dx, float dy, float dz) { return std::sqrt(dx * dx + dy * dy + dz * dz * 0.25f); };
+	if (!u.started)
+	{ // pierwszy punkt dalej niż 0,2 w bok i w głąb (na ścianie też w pionie); żaden: od razu na miejscu
+		u.next = 0;
+		while (u.next < R.size())
+		{
+			const auto& p = R[u.next];
+			float dy = p.wall ? p.y - u.y : 0.f;
+			if (metric(p.x - u.x, dy, p.z - u.z) > 0.2f) break;
+			++u.next;
+		}
+		if (u.next >= R.size())
+		{
+			finishWalk(u, true);
+			return;
+		}
+		u.started = true, u.phase = SimUnit::Start, u.entered = false, u.stride = 0;
+		u.running = u.speedtype == 2 && u.canRun && u.walkMayRun;
+	}
+	if (u.next >= R.size() && u.phase != SimUnit::Stop) u.phase = SimUnit::Stop, u.entered = false;
+	bool climb = u.next < R.size() && (R[u.next].wall || (u.next > 0 && R[u.next - 1].wall));
+	// Zużycie drogi wzdłuż punktów; kierunek dryfuje w stronę ruchu (na ścianie twarzą do ściany).
+	auto advance = [&](float dist) {
+		for (int guard = 0; dist > 0 && u.next < R.size() && guard < 256; ++guard)
+		{
+			const auto& p = R[u.next];
+			float dx = p.x - u.x, dy = p.y - u.y, dz = p.z - u.z, seg = metric(dx, dy, dz);
+			if (seg <= 1e-4f)
+			{
+				++u.next;
+				continue;
+			}
+			if (!climb && std::hypot(dx, dz * 0.5f) > 1e-3f)
+			{
+				float err = wrapAngle(facingOf(dx, dz * 0.5f) - u.facing);
+				float mx = 0.1f * dt * 10.f;
+				u.facing = wrapAngle(u.facing + (std::abs(err) <= 0.051f ? err : std::clamp(err, -mx, mx)));
+			}
+			if (dist >= seg)
+			{
+				u.x = p.x, u.y = p.y, u.z = p.z;
+				++u.next, dist -= seg;
+			}
+			else
+			{
+				float k = dist / seg;
+				u.x += dx * k, u.y += dy * k, u.z += dz * k;
+				dist = 0;
+			}
+		}
+	};
+	if (climb)
+	{ // 🔶 P4: animacja wspinania w górę albo w dół, prędkość z animacji, twarzą do ściany
+		u.climbing = true, u.turning = false;
+		u.facing = kSimPi;
+		scene_.playAnim(u.obj, R[u.next].y < u.y - 1e-3f ? u.climbUpAnim : u.climbDownAnim, true);
+		advance(u.climbSpeed * dt);
+		if (u.next >= R.size())
+		{
+			if (R.back().wall) scene_.playAnim(u.obj, u.climbStandAnim, true);
+			finishWalk(u, true);
+		}
 		return;
 	}
-	if (u.state == SimUnit::Walk)
-	{
-		if (u.step >= u.path.size() && u.goalZ >= 0 && std::abs(std::max(u.goalZ, walkZ(u.x, u.ty)) - u.z) > 0.01f)
-		{ // na miejscu w bok, ale jeszcze nie na głębokości celu (nie bliżej ściany niż kWallGap, też cel ze skryptu):
-			// w głąb albo do przodu, przodem w stronę ruchu
-			float dz = std::max(u.goalZ, walkZ(u.x, u.ty)) - u.z, mz = 2.f * kWalkSpeed * dt;
-			u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
-			u.facing = dz < 0 ? kSimPi : 0.f;
-			scene_.playAnim(u.obj, u.walkAnim, true);
-		}
-		else if (u.step >= u.path.size())
+	if (u.climbing) u.climbing = false, u.phase = SimUnit::Start, u.entered = false;
+	if (u.phase != SimUnit::Stop && u.next < R.size())
+	{ // obrót w miejscu
+		const auto& p = R[u.next];
+		float dx = p.x - u.x, dz = (p.z - u.z) * 0.5f;
+		if (std::hypot(dx, dz) > 1e-3f)
 		{
-			u.state = u.digX >= 0 ? SimUnit::Dig : SimUnit::Idle;
-			u.digT = 0;
-			if (u.onArrive)
+			float want = facingOf(dx, dz), err = wrapAngle(want - u.facing), a = std::abs(err);
+			if (!u.turning && a >= kSimPi * 0.25f)
 			{
-				auto f = std::move(u.onArrive);
-				u.onArrive = nullptr;
-				f(true);
+				u.turning = true;
+				bool big = a > kSimPi * 0.75f, left = err < 0; // ku malejącemu kątowi = w lewo postaci (🔶 znak)
+				const std::string& clip = left ? (big ? u.turnLeft180 : u.turnLeft) : (big ? u.turnRight180 : u.turnRight);
+				Vec3f m{}, r{};
+				int f = 0;
+				u.turnRate = 0;
+				if (!clip.empty() && scene_.animMotion(u.obj, clip, m, r, f))
+				{
+					scene_.playAnim(u.obj, clip, true);
+					u.turnRate = std::max({std::abs(r.x), std::abs(r.y), std::abs(r.z)});
+				}
+				if (u.turnRate <= 1e-4f) u.turnRate = big ? 0.15f : 0.1f;
+			}
+			if (u.turning)
+			{
+				float step = u.turnRate * dt * 10.f;
+				if (a <= step + 1e-4f || a <= u.turnRate * 0.05f + 0.001f)
+				{
+					u.facing = want, u.turning = false;
+					u.phase = SimUnit::Start, u.entered = false;
+				}
+				else
+					u.facing = wrapAngle(u.facing + (err > 0 ? step : -step));
+				return;
 			}
 		}
 		else
-		{
-			auto [wx, wy] = u.path[u.step];
-			float sx0, sx1;
-			openSpan(wx, wy, sx0, sx1);
-			float gx = (sx0 + sx1) * 0.5f, gy = floorY(wx, wy);
-			bool last = u.step + 1 == u.path.size();
-			if (last && u.goalX >= 0) gx = std::clamp(u.goalX, std::min(sx0 + 0.1f, gx), std::max(sx1 - 0.1f, gx));
-			const float x0 = u.x, z0 = u.z;
-			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
-				// ściana pod bieżącym x (pole x może już być następnym polem ścieżki) i w polu docelowym kroku
-				float wz = std::max(walkZ(u.x, u.ty), walkZ(gx, wy));
-				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.z, wz);
-				float dz = gz - u.z, mz = 2.f * kWalkSpeed * dt;
-				u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
-			}
-			bool vertical = wx == u.tx && wy != u.ty;
-			float speed = vertical ? kClimbSpeed : kWalkSpeed;
-			float ddx = gx - u.x, ddy = gy - u.y, len = std::hypot(ddx, ddy), mv = speed * dt;
-			if (len <= mv)
-			{
-				u.x = gx, u.y = gy, u.tx = wx, u.ty = wy;
-				++u.step;
-			}
-			else
-				u.x += ddx / len * mv, u.y += ddy / len * mv;
-			const std::string& anim = !vertical ? u.walkAnim : (ddy < 0 ? u.climbUpAnim : u.climbDownAnim);
-			// przodem w stronę faktycznego ruchu w tym kroku (w bok i w głąb; z skryptu = 2 · z świata),
-			// także po skosie; przy wspinaniu twarzą do ściany
-			float mx = u.x - x0, mz = (u.z - z0) * 0.5f;
-			if (vertical) u.facing = kSimPi;
-			else if (std::hypot(mx, mz) > 1e-5f) u.facing = std::atan2(-mx, mz);
-			scene_.playAnim(u.obj, anim, true);
-		}
+			u.turning = false;
 	}
+	float cruise = u.running ? u.runSpeed : u.walkSpeed;
+	switch (u.phase)
+	{
+	case SimUnit::Start:
+		if (!u.entered)
+		{
+			u.entered = true;
+			const std::string& a = u.running ? u.runStart : u.walkStart;
+			Vec3f m{}, r{};
+			int f = 0;
+			if (a.empty() || !scene_.animMotion(u.obj, a, m, r, f) || f <= 0)
+			{
+				u.phase = SimUnit::Loop, u.entered = false;
+				return;
+			}
+			scene_.playAnim(u.obj, a, false);
+			u.phaseRem = float(f) / 10.f;
+		}
+		advance(cruise * dt);
+		u.stride += dt, u.phaseRem -= dt;
+		if (u.next >= R.size()) u.phase = SimUnit::Stop, u.entered = false;
+		else if (u.phaseRem <= 0)
+			u.phase = SimUnit::Loop, u.entered = false;
+		break;
+	case SimUnit::Loop:
+		if (!u.entered) u.entered = true, scene_.playAnim(u.obj, u.running ? u.runLoop : u.walkLoop, true);
+		advance(cruise * dt);
+		u.stride += dt;
+		if (!u.running && u.speedtype == 0 && u.canRun && u.walkMayRun && u.stride >= 2.f)
+			u.running = true, u.phase = SimUnit::Start, u.entered = false; // po 2 s marszu bieg (start biegu, pętla)
+		if (u.next >= R.size()) u.phase = SimUnit::Stop, u.entered = false;
+		break;
+	case SimUnit::Stop:
+		if (!u.entered)
+		{
+			u.entered = true;
+			const std::string& a = u.running ? u.runStop : u.walkStop;
+			Vec3f m{}, r{};
+			int f = 0;
+			u.phaseRem = 0;
+			if (!a.empty() && scene_.animMotion(u.obj, a, m, r, f))
+			{
+				scene_.playAnim(u.obj, a, false);
+				u.phaseRem = float(f) / 10.f;
+			}
+		}
+		u.phaseRem -= dt;
+		if (u.phaseRem <= 0)
+		{
+			scene_.playAnim(u.obj, u.standAnim, true);
+			finishWalk(u, true);
+		}
+		break;
+	}
+}
+
+void WorldSim::updateUnit(SimUnit& u, float dt)
+{
+	if (u.controlled && (u.moveX != 0 || u.moveZ != 0))
+	{ // prowadzona ręcznie, klawisz wciśnięty: ruch zamiast trasy
+		if (u.state == SimUnit::Walk) finishWalk(u, false);
+		u.state = SimUnit::Idle;
+		manualMove(u, dt);
+		updateTile(u);
+		scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
+		return;
+	}
+	if (u.state == SimUnit::Walk) stepWalk(u, dt);
 	if (u.state == SimUnit::Dig)
 	{
 		const char* anim = u.digY > u.ty ? "buddeln_unten" : u.digY < u.ty ? "buddeln_oben_normal"
@@ -444,25 +639,38 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 		{
 			dig(u.digX, u.digY);
 			u.digX = u.digY = -1;
-			u.state = SimUnit::Idle;
-			snapToFloor(u); // pod krasnalem mogło zniknąć podłoże
+			u.state = SimUnit::Idle; // pod postacią mogła zniknąć podłoga: spadanie niżej
 		}
 	}
 	if (u.state == SimUnit::Idle && u.digJob)
 	{
 		if (digMarks.empty() || !nextDigJob(u)) u.digJob = false; // nic osiągalnego: koniec zadania
 	}
+	int sx = sub8(u.x);
 	if (u.state == SimUnit::Idle)
 	{
-		if (!nav.standable(u.tx, u.ty) && !nav.climbable(u.tx, u.ty) && nav.open(u.tx, u.ty + 1))
-		{
-			u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = SimUnit::Walk; // spada
-		}
+		bool onFloor = hasFloorSupport(walk, u.x, u.y);
+		if (!onFloor && !walk.walkable(sx, sub8(u.y))) u.state = SimUnit::Fall, u.climbing = false;
 		else if (!scripts || u.controlled) // ze skryptami animację w miejscu ustawia skrypt (set_anim); prowadzonej: my
-			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? u.standAnim : u.climbStandAnim, true);
+			scene_.playAnim(u.obj, onFloor ? u.standAnim : u.climbStandAnim, true);
 	}
-	// Nigdy za tylną ścianą (też po set_pos i glide ze skryptu): co najmniej 0,5 przed nią w kolumnie stóp.
-	u.z = std::max(u.z, walkZ(u.x, u.ty) - kWallGap + 0.5f);
+	if (u.state == SimUnit::Fall)
+	{ // 🔶 spadanie w pionie do pierwszej podłogi pod stopami
+		int sy = sub8(u.y), land = -1;
+		for (int d = 0; d < walk.subH() && land < 0; ++d)
+			if (walk.floor(sx, sy + d)) land = sy + d;
+		scene_.playAnim(u.obj, u.fallAnim, true);
+		float ly = land < 0 ? u.y : float(land) / 8.f;
+		u.y = std::min(ly, u.y + kFallSpeed * dt);
+		if (u.y >= ly - 1e-4f)
+		{
+			u.y = ly, u.state = SimUnit::Idle;
+			u.z = fitDepth(u.x, u.y, u.z);
+		}
+	}
+	// Nigdy w skale (też po set_pos i glide ze skryptu): co najmniej wolne od skały w punkcie stóp.
+	u.z = std::max(u.z, airDepth(walk, u.x, u.y));
+	updateTile(u);
 	scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
 }
 
@@ -538,7 +746,7 @@ void WorldSim::setPos(int id, const float pos[3])
 	if (SimUnit* u = unitOf(idx(id)))
 	{
 		u->x = pos[0], u->y = pos[1], u->z = pos[2];
-		u->path.clear(), u->state = SimUnit::Idle;
+		u->route.clear(), u->started = false, u->state = SimUnit::Idle;
 		snapToFloor(*u);
 		return;
 	}
@@ -578,16 +786,19 @@ double WorldSim::animLength(int id, const std::string& anim)
 	}
 	return 1.5; // 🔶 nieznana animacja albo db_animlength bez obiektu
 }
-bool WorldSim::walkTo(int id, const float t[3], std::function<void(bool)> done)
+bool WorldSim::walkTo(int id, const float t[3], const WalkOpts& o, std::function<void(bool)> done)
 {
 	SimUnit* u = unitOf(idx(id));
 	if (!u || u->digJob || u->controlled) return false; // krasnal pracuje dla gracza albo jest prowadzony ręcznie
-	int tx = int(std::floor(t[0])), ty = tileOfFeet(t[1]);
-	for (int d = 0; d < 4 && !nav.standable(tx, ty) && !nav.climbable(tx, ty); ++d) ++ty;
-	auto path = nav.path(u->tx, u->ty, tx, ty);
-	if (path.empty()) return false;
-	u->path = std::move(path), u->step = 0, u->state = SimUnit::Walk, u->digX = -1;
-	u->goalX = t[0], u->goalZ = t[2];
+	std::string why;
+	bool ok = walkUnit(*u, t[0], t[1], t[2], o.dig, &why);
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (trace)
+		std::fprintf(stderr, "[sim %.1f] walk %s (%.2f, %.2f, %.2f) → (%.2f, %.2f, %.2f): %s\n", simTime_, u->gnome ? "krasnal" : "wuker", u->x,
+		    u->y, u->z, t[0], t[1], t[2], ok ? (std::to_string(u->route.size()) + " punktów").c_str() : why.c_str());
+	if (!ok) return false;
+	u->speedtype = o.speedtype, u->walkMayRun = o.canRun;
+	u->digX = u->digY = -1;
 	u->onArrive = std::move(done);
 	return true;
 }
@@ -606,24 +817,7 @@ bool WorldSim::underwater(const float p[3])
 }
 bool WorldSim::findPlace(const float c[3], float r, float out[3])
 {
-	int cx = int(std::floor(c[0])), cy = tileOfFeet(c[1]);
-	if (nav.standable(cx, cy))
-	{ // pole celu jest dobre: zostaje x i głębokość, y na podłożu
-		float x0, x1;
-		openSpan(cx, cy, x0, x1);
-		out[0] = std::clamp(c[0], x0, x1), out[1] = floorY(cx, cy), out[2] = c[2];
-		return true;
-	}
-	int rad = std::max(1, int(std::ceil(r)));
-	for (int d = 0; d <= rad; ++d)
-		for (int dy = -d; dy <= d; ++dy)
-			for (int dx = -d; dx <= d; ++dx)
-			{
-				if (std::max(std::abs(dx), std::abs(dy)) != d || !nav.standable(cx + dx, cy + dy)) continue;
-				out[0] = tileCenterX(cx + dx, cy + dy), out[1] = floorY(cx + dx, cy + dy), out[2] = c[2];
-				return true;
-			}
-	return false;
+	return floorSpot(c[0], c[1], std::max(r, 1.f), c[2], out);
 }
 void WorldSim::glide(int id, const float to[3], float seconds)
 {
@@ -651,30 +845,36 @@ bool WorldSim::linkOffset(int id, int link, float out[3])
 int WorldSim::gnomePosition(int id)
 {
 	SimUnit* u = unitOf(idx(id));
-	return u && !nav.standable(u->tx, u->ty) ? 1 : 0;
+	return u && !hasFloorSupport(walk, u->x, u->y) ? 1 : 0;
 }
 
 void WorldSim::populate(float cx, float cy, int gnomes, int wukers)
 {
 	const Pmp* g = simGrid();
 	if (!g) return;
-	std::vector<std::pair<int, int>> spots;
-	int x0 = int(std::floor(cx)), y0 = int(std::floor(cy));
-	for (int r = 0; r < 40 && int(spots.size()) < gnomes + wukers; ++r)
-		for (int dy = -r; dy <= r && int(spots.size()) < gnomes + wukers; ++dy)
-			for (int dx = -r; dx <= r && int(spots.size()) < gnomes + wukers; ++dx)
+	std::vector<std::pair<int, int>> spots; // podpola: punkty wyjścia pól z podłogą
+	int x0 = int(std::floor(cx)), y0 = int(std::floor(cy)), want = gnomes + wukers;
+	for (int r = 0; r < 40 && int(spots.size()) < want; ++r)
+		for (int dy = -r; dy <= r && int(spots.size()) < want; ++dy)
+			for (int dx = -r; dx <= r && int(spots.size()) < want; ++dx)
 			{
-				if (std::max(std::abs(dx), std::abs(dy)) != r || !nav.standable(x0 + dx, y0 + dy)) continue;
-				if (scene_.fluidFill(x0 + dx, y0 + dy) > 0.05f) continue; // nie na dnie zalanej komory
+				int tx = x0 + dx, ty = y0 + dy;
+				if (std::max(std::abs(dx), std::abs(dy)) != r || walk.baseCost(tx, ty) == -1 || !walk.tileFloor(tx, ty)) continue;
+				uint8_t e = walk.exitPair(tx, ty);
+				int sx = tx * 8 + (e & 7), sy = ty * 8 + ((e >> 3) & 7);
+				float z0, z1;
+				if (!walk.floor(sx, sy) || !floorBand(walk, sx, sy, z0, z1)) continue;
+				if (scene_.fluidFill((sx - 1) >> 3, (sy - 1) >> 3) > 0.05f) continue; // nie na dnie zalanej komory
 				bool far = true;
-				for (auto& s : spots) far = far && std::max(std::abs(s.first - (x0 + dx)), std::abs(s.second - (y0 + dy))) >= 2;
-				if (far) spots.push_back({x0 + dx, y0 + dy});
+				for (auto& s : spots) far = far && std::max(std::abs(s.first - sx), std::abs(s.second - sy)) >= 16;
+				if (far) spots.push_back({sx, sy});
 			}
 	for (size_t i = 0; i < spots.size(); ++i)
 	{
-		auto [x, y] = spots[i];
+		auto [sx, sy] = spots[i];
 		const char* cls = int(i) < gnomes ? "Zwerg" : "Wuker";
-		int o = scene_.addObject(cls, tileCenterX(x, y), floorY(x, y), kGnomeZ);
+		float x = float(sx) / 8.f, y = float(sy) / 8.f;
+		int o = scene_.addObject(cls, x, y, fitDepth(x, y, kGnomeZ));
 		addUnit(o);
 		idOf(o);
 	}
@@ -689,20 +889,14 @@ void WorldSim::setControlled(int unit, bool on)
 	u.controlled = on;
 	if (on)
 	{ // zlecony przez skrypt chód kończy się niepowodzeniem, żeby skrypt nie czekał bez końca
-		if (u.onArrive)
-		{
-			auto f = std::move(u.onArrive);
-			u.onArrive = nullptr;
-			f(false);
-		}
-		u.digJob = false, u.digX = u.digY = -1, u.goalX = u.goalZ = -1;
+		u.digJob = false, u.digX = u.digY = -1;
+		if (u.state == SimUnit::Walk) finishWalk(u, false);
 		if (u.state == SimUnit::Dig) u.state = SimUnit::Idle;
 	}
 	else
-	{ // puszczona: stoi tam, gdzie jest (idle, bez reszty ścieżki i celu głębokości); dalej decyduje jej skrypt
-		if (u.state == SimUnit::Walk && !u.path.empty())
-			u.tx = std::clamp(int(std::floor(u.x)), 0, nav.width() - 1), u.ty = tileOfFeet(u.y);
-		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1, u.moveX = u.moveZ = 0;
+	{ // puszczona: stoi tam, gdzie jest (idle, bez reszty trasy); dalej decyduje jej skrypt
+		if (u.state == SimUnit::Walk) finishWalk(u, false);
+		u.moveX = u.moveZ = 0;
 	}
 	if (scripts)
 		if (script::ScriptObject* o = scripts->object(idOf(u.obj))) o->external = on;
@@ -711,18 +905,17 @@ void WorldSim::setControlled(int unit, bool on)
 bool WorldSim::controlGoTo(int unit, int tx, int ty)
 {
 	if (unit < 0 || unit >= int(units.size())) return false;
-	// kliknięcie w podłogę trafia w lite pole pod nią: celem jest wolne pole nad podłogą
-	if (!nav.open(tx, ty) && nav.open(tx, ty - 1)) --ty;
 	SimUnit& u = units[size_t(unit)];
-	// od pola, do którego właśnie idzie (płynne łączenie kroków przy trzymanym klawiszu)
-	int sx = u.tx, sy = u.ty;
-	if (u.state == SimUnit::Walk && u.step < u.path.size()) sx = u.path[u.step].first, sy = u.path[u.step].second;
-	auto p = nav.path(sx, sy, tx, ty);
-	if (p.empty()) return false;
-	if (u.state == SimUnit::Walk && u.step < u.path.size()) p.insert(p.begin(), u.path[u.step]);
-	u.path = std::move(p), u.step = 0, u.state = SimUnit::Walk;
-	u.digX = u.digY = -1, u.goalX = u.goalZ = -1, u.onArrive = nullptr;
-	return true;
+	// punkt wyjścia pola (najlepsze podpole do chodzenia); pole lite: jego środek, cel dociągnie wyszukiwanie
+	float gx = float(tx) + 0.5f, gy = float(ty) + 0.5f;
+	if (walk.baseCost(tx, ty) != -1)
+	{
+		uint8_t e = walk.exitPair(tx, ty);
+		gx = float(tx * 8 + (e & 7)) / 8.f, gy = float(ty * 8 + ((e >> 3) & 7)) / 8.f;
+	}
+	if (u.state == SimUnit::Walk) finishWalk(u, false);
+	u.digX = u.digY = -1;
+	return walkUnit(u, gx, gy, u.z);
 }
 
 bool WorldSim::controlGoToRay(int unit, const glm::vec3& ro, const glm::vec3& rd)
@@ -731,22 +924,12 @@ bool WorldSim::controlGoToRay(int unit, const glm::vec3& ro, const glm::vec3& rd
 	glm::vec3 p;
 	if (unit < 0 || unit >= int(units.size()) || !scene_.pickTerrain(ro, rd, tx, ty, &p)) return false;
 	constexpr float B = MapScene::kBlock;
-	float gx = p.x / B, gz = (p.z / B - 7.f) * 2.f; // skala skryptu: z świata = z · 0,5 + 7
-	if (!nav.open(tx, ty) && nav.open(tx, ty - 1))
-	{ // podłoga: mapa wysokości widzi tylko tylną ścianę, więc punkt z przecięcia z poziomą powierzchnią podłogi
-		--ty;
-		float fy = floorY(tx, ty) * B;
-		if (std::abs(rd.y) > 1e-6f)
-		{
-			glm::vec3 q = ro + rd * ((fy - ro.y) / rd.y);
-			if (int(std::floor(q.x / B)) == tx) gx = q.x / B, gz = (q.z / B - 7.f) * 2.f;
-		}
-	}
-	if (!controlGoTo(unit, tx, ty)) return false;
 	SimUnit& u = units[size_t(unit)];
-	u.goalX = gx;
-	u.goalZ = std::clamp(gz, walkZ(gx, ty), 14.f);
-	return true;
+	// trafiony punkt terenu jako cel jak w grze: x, y (podłoga albo ściana), głębokość (z świata = z · 0,5 + 7)
+	float gx = p.x / B, gy = p.y / B, gz = std::clamp((p.z / B - 7.f) * 2.f, 0.f, 15.75f);
+	if (u.state == SimUnit::Walk) finishWalk(u, false);
+	u.digX = u.digY = -1;
+	return walkUnit(u, gx, gy, gz);
 }
 
 bool WorldSim::controlStep(int unit, int dx, int dy)
@@ -754,11 +937,12 @@ bool WorldSim::controlStep(int unit, int dx, int dy)
 	if (unit < 0 || unit >= int(units.size())) return false;
 	const SimUnit& u = units[size_t(unit)];
 	int sx = u.tx, sy = u.ty;
-	if (u.state == SimUnit::Walk && !u.path.empty()) sx = u.path.back().first, sy = u.path.back().second;
+	if (u.state == SimUnit::Walk && !u.route.empty()) // kolejny krok od celu bieżącego chodu
+		sx = sub8(u.route.back().x) >> 3, sy = (sub8(u.route.back().y) - 1) >> 3;
 	if (dx != 0) // w bok: to samo pole wysokości, stopień w górę albo w dół
 		for (int d : {0, -1, 1})
-			if ((nav.standable(sx + dx, sy + d) || nav.climbable(sx + dx, sy + d)) && controlGoTo(unit, sx + dx, sy + d)) return true;
-	if (dy != 0 && nav.open(sx, sy + dy)) return controlGoTo(unit, sx, sy + dy);
+			if (walk.baseCost(sx + dx, sy + d) != -1 && controlGoTo(unit, sx + dx, sy + d)) return true;
+	if (dy != 0 && walk.baseCost(sx, sy + dy) != -1) return controlGoTo(unit, sx, sy + dy);
 	return false;
 }
 

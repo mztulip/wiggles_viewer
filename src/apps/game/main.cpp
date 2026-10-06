@@ -16,7 +16,7 @@
 // WASD / strzałki / środkowy przycisk myszy przesuwają kamerę, kółko przybliża, N = nowy krasnal
 // przy kursorze, Esc wychodzi.
 //
-// Scena i rysowanie: MapScene (lib/map_scene.h). 🔶 Tymczasowo: ruch po siatce pól (lib/nav.h), kopanie
+// Scena i rysowanie: MapScene (lib/map_scene.h). Ruch jak w grze (lib/walk_plan.h, rozdział 17); 🔶 kopanie
 // zamienia blok na pusty (59). Zachowania krasnali z Tcl (Scripts/classes/zwerg) jeszcze nie działają.
 #include "lib/blockdb.h"
 #include "lib/dev_api.h"
@@ -268,36 +268,30 @@ struct Game : WorldSim
 		if (selected < 0 || selected >= int(units.size())) return;
 		Unit& u = units[size_t(selected)];
 		if (nav.open(tx, ty))
-		{
-			int gx = tx, gy = ty;
-			for (int d = 0; d < 6 && !nav.standable(gx, gy) && !nav.climbable(gx, gy); ++d) ++gy; // cel w powietrzu: na ziemię
-			auto p = nav.path(u.tx, u.ty, gx, gy);
-			if (p.empty())
+		{ // punkt wyjścia pola (najlepsze podpole do chodzenia), cel w powietrzu dociągnie wyszukiwanie drogi
+			if (u.state == Unit::Walk) finishWalk(u, false);
+			u.digX = u.digY = -1;
+			float gx = float(tx) + 0.5f, gy = float(ty) + 0.5f;
+			if (walk.baseCost(tx, ty) != -1)
+			{
+				uint8_t e = walk.exitPair(tx, ty);
+				gx = float(tx * 8 + (e & 7)) / 8.f, gy = float(ty * 8 + ((e >> 3) & 7)) / 8.f;
+			}
+			if (!walkUnit(u, gx, gy, u.z))
 			{
 				status = tr("Nie ma drogi.");
 				return;
 			}
-			u.path = std::move(p), u.step = 0, u.state = Unit::Walk, u.digX = -1;
-			u.goalX = u.goalZ = -1;
 			status.clear();
 			return;
 		}
-		// Kopanie: stanowisko obok pola (z boku, nad nim albo pod nim przy ścianie), najkrótsza droga.
-		std::vector<std::pair<int, int>> best;
-		const int cand[4][2] = {{tx - 1, ty}, {tx + 1, ty}, {tx, ty - 1}, {tx, ty + 1}};
-		for (auto& c : cand)
-		{
-			if (!(nav.standable(c[0], c[1]) || nav.climbable(c[0], c[1]))) continue;
-			auto p = nav.path(u.tx, u.ty, c[0], c[1]);
-			if (!p.empty() && (best.empty() || p.size() < best.size())) best = std::move(p);
-		}
-		if (best.empty())
+		// Kopanie: stanowisko obok pola (z boku, nad nim albo pod nim)
+		if (u.state == Unit::Walk) finishWalk(u, false);
+		if (!digAt(u, tx, ty))
 		{
 			status = tr("Nie da się dojść do tej skały.");
 			return;
 		}
-		u.path = std::move(best), u.step = 0, u.state = Unit::Walk, u.digX = tx, u.digY = ty;
-		u.goalX = u.goalZ = -1;
 		status.clear();
 	}
 
@@ -510,7 +504,7 @@ struct Game : WorldSim
 			if (Unit* u = unitOf(idx))
 			{
 				u->x = p[0], u->y = p[1], u->z = p[2], u->facing = rot[1];
-				u->path.clear(), u->state = Unit::Idle, u->onArrive = nullptr;
+				u->route.clear(), u->started = false, u->state = Unit::Idle, u->onArrive = nullptr;
 				snapToFloor(*u);
 			}
 			if (r.u32())
@@ -577,7 +571,7 @@ struct Game : WorldSim
 		cursorRay(mx, my, w, h, p0, p1);
 		float zs = kGnomeZ;
 		int htx, hty;
-		if (maps.pickTerrain(p0, p1 - p0, htx, hty)) zs = nav.open(htx, hty) ? walkZ(float(htx) + 0.5f, hty) : 15.f;
+		if (maps.pickTerrain(p0, p1 - p0, htx, hty)) zs = nav.open(htx, hty) ? minDepth(float(htx) + 0.5f, float(hty) + 0.5f) : 15.f;
 		float zPlane = (zs * 0.5f + 7.f) * kBlock;
 		if (std::abs(p1.z - p0.z) < 1e-4f) return false;
 		float t = (zPlane - p0.z) / (p1.z - p0.z);

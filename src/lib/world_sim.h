@@ -1,5 +1,5 @@
 // Symulacja świata wspólna dla gry (openwiggles) i przeglądarki (wigview): skrypty Tcl obiektów na scenie mapy,
-// krasnale chodzące po siatce nawigacji (chód, wspinanie, spadanie, kopanie), płynne ruchy obiektów zlecane
+// postacie chodzące jak w grze (NavWorld + walk_plan, rozdział 17: chód, wspinanie, spadanie, kopanie), płynne ruchy obiektów zlecane
 // przez skrypty. Most skrypty ↔ scena: ID obiektu skryptu = ID z zapisu albo kolejne od 100000, idx(id) to
 // indeks obiektu MapScene. Zasady: docs/silnik/11_obiekty_tcl_i_petla.md, docs/silnik/14_gra.md.
 //
@@ -9,6 +9,8 @@
 
 #include "lib/map_scene.h"
 #include "lib/nav.h"
+#include "lib/nav_world.h"
+#include "lib/walk_plan.h"
 #include "lib/script/engine.h"
 
 #include <functional>
@@ -22,43 +24,55 @@
 namespace ow
 {
 
-constexpr float kGnomeZ = 8.0f;    // głębokość krasnala w skali skryptu (świat 11 bloków), jak w scenariuszach
-// ✅ Idąca postać trzyma się co najmniej 1,5 przed tylną ścianą pola (skala skryptu: wartość siatki 8×8 BlockDB).
-// W korytarzu GNG_004 (ściana 11) krasnal postawiony na z = 8 po pierwszych krokach ma w grze z = 12,5;
-// 🔶 dalej od ściany zostaje na swojej głębokości (krasnale z zapisu mają w jednym polu z 5,2 … 13,8). BAZA_WIEDZY §8.12.
-constexpr float kWallGap = 1.5f;
-constexpr float kWalkSpeed = 1.6f; // pola na sekundę (🔶)
-constexpr float kClimbSpeed = 0.9f;
+constexpr float kGnomeZ = 8.0f; // głębokość nowej postaci przed dopasowaniem do podłogi (skala skryptu)
 constexpr float kDigTime = 2.0f; // sekundy kopania jednego pola (🔶)
+constexpr float kFallSpeed = 3.0f; // spadanie, bloki na sekundę (🔶)
 constexpr float kSimPi = 3.14159265f;
 
 struct SimUnit
 {
 	int obj = -1;
-	float x = 0, y = 0; // stopy: x środka, y dołu pola (bloki)
-	int tx = 0, ty = 0; // bieżące pole
-	std::vector<std::pair<int, int>> path;
-	size_t step = 0;
+	float x = 0, y = 0; // stopy (bloki): na linii podłogi albo na ścianie
+	int tx = 0, ty = 0; // pole stóp (podpole round(x · 8), round(y · 8) >> 3)
 	enum State
 	{
 		Idle,
 		Walk,
-		Dig
+		Dig,
+		Fall
 	} state = Idle;
 	int digX = -1, digY = -1;
 	float digT = 0;
-	float facing = -kSimPi * 0.5f;      // −π/2 = w prawo, +π/2 = w lewo (obserwacja modelu mann)
-	float z = kGnomeZ;                  // głębokość (skala skryptu), z zapisu albo scenariusza
+	float facing = -kSimPi * 0.5f;      // −π/2 = w prawo, +π/2 = w lewo, 0 = do przodu, π = w głąb
+	float z = kGnomeZ;                  // głębokość (skala skryptu)
 	std::function<void(bool)> onArrive; // akcja walk zlecona przez skrypt
 	bool digJob = false;                // przydzielony do kopania zaznaczonych pól (gracz)
-	float goalX = -1, goalZ = -1;       // dokładny cel chodu skryptu (x w polu, głębokość), −1 = środek pola
-	// Rodzaj postaci i jej animacje ruchu (krasnal: mann.3db; wuker: model klasy).
 	bool gnome = true;
-	std::string walkAnim = "gehen_loop", climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop";
-	std::string standAnim = "standard", climbStandAnim = "kletterstand";
+	bool canClimb = true;
+	// Trasa (walk_plan) i wykonawca chodu (MetaWalk, docs/silnik/17_ruch.md §17.6): faza start / pętla / stop,
+	// obrót w miejscu przy błędzie kierunku ≥ π/4, po 2 s marszu bieg (speedtype 0).
+	std::vector<WalkPoint> route;
+	size_t next = 0; // indeks punktu, do którego idzie
+	enum Phase
+	{
+		Start,
+		Loop,
+		Stop
+	} phase = Start;
+	bool entered = false, started = false, turning = false, running = false, canRun = true, climbing = false;
+	int speedtype = 0;       // action walk -speedtype
+	bool walkMayRun = true;  // action walk -animsets {… −1}: ten chód bez biegu
+	float phaseRem = 0, turnRate = 0, stride = 0;
+	// Animacje (krasnal: mann.3db, set_class_anim w ACTORS.TCL; wuker i stworzenia: z modelu).
+	std::string walkStart = "gehen_start", walkLoop = "gehen_loop", walkStop = "gehen_end";
+	std::string runStart = "laufen_schnell_start", runLoop = "laufen_schnell_loop", runStop = "laufen_schnell_end";
+	std::string turnLeft = "drehen_links", turnRight = "drehen_rechts", turnLeft180 = "drehen_ganz_links", turnRight180 = "drehen_ganz";
+	std::string climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop", climbStandAnim = "kletterstand";
+	std::string standAnim = "standard", fallAnim = "fallen_loop";
+	float walkSpeed = 0.8111f, runSpeed = 1.7143f, climbSpeed = 0.4155f; // bloki na sekundę, z animacji (addUnit)
 	bool controlled = false; // prowadzony ręcznie w przeglądarce (skrypt postaci wstrzymany)
 	// Prowadzony ręcznie: kierunek ruchu z wciśniętych klawiszy (−1, 0, +1): moveX w bok, moveZ w głąb (−1)
-	// albo do przodu (+1). Ruch ze stałą prędkością chodu w każdym kroku symulacji; 0, 0 = stoi.
+	// albo do przodu (+1). Ruch z prędkością marszu w każdym kroku symulacji; 0, 0 = stoi.
 	float moveX = 0, moveZ = 0;
 };
 
@@ -92,27 +106,30 @@ public:
 	std::vector<int> idxToId;
 	int nextScriptId = 100000;
 
-	// Krasnale i nawigacja
-	NavGrid nav;
+	// Postacie i ruch
+	NavGrid nav;     // pola otwarte / lite (zaznaczanie kopania, podpowiedzi); ruch: walk
+	NavWorld walk;   // dane ruchu jak w grze (rozdział 17)
 	std::vector<SimUnit> units;
 	int selected = -1;  // zaznaczony krasnal (gra), −1 = brak
 	std::string status; // ostatni komunikat (znalezisko, brak drogi)
-	float floorY(int x, int ty) const;
-	// Wolna część pola w poziomie (bloki, [x0, x1]): kolumny siatki 8×8 z komórką < 13 w dolnej połowie, jak
-	// NavGrid::openBlock. Pola przy krawędzi jaskini bywają otwarte tylko z jednej strony (kris_caves_1_b,
-	// blok 43: lewa połowa półka, prawa lita skała), więc postać nie może stawać na środku pola.
-	bool openSpan(int x, int ty, float& x0, float& x1) const;
-	float tileCenterX(int x, int ty) const; // środek wolnej części pola
-	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
+	// Najbliższe miejsce do stania przy (x, y) (bloki): podpole podłogi w promieniu r bloków, x i y na nim,
+	// z wpasowane w pas głębokości podłogi. false: brak.
+	bool floorSpot(float x, float y, float r, float z, float out[3]) const;
+	// Głębokość z wpasowana w pas podłogi w punkcie (x, y); poza podłogą co najmniej wolne od skały.
+	float fitDepth(float x, float y, float z) const;
+	float minDepth(float x, float y) const; // najmniejsza dozwolona głębokość w punkcie (dev API, ślad)
 	void snapToFloor(SimUnit& u);
+	void updateTile(SimUnit& u) const;
+	// Chód postaci do punktu (x, y, z): trasa walk_plan i wykonawca. false: brak drogi (why: powód).
+	bool walkUnit(SimUnit& u, float x, float y, float z, bool keepGoal = false, std::string* why = nullptr);
 	// Ręczne sterowanie postacią (dodatek przeglądarki, nie z gry): skrypt postaci wstrzymany, zlecenia chodu
-	// i animacji od skryptu ignorowane. controlStep: krok o pole (dx ±1 w bok, dy −1 w górę, +1 w dół), od celu
-	// bieżącego chodu; controlGoTo: chód do pola. false: nie ma drogi.
+	// i animacji od skryptu ignorowane. controlStep: krok o pole (dx ±1 w bok, dy −1 w górę, +1 w dół);
+	// controlGoTo: chód do pola. false: nie ma drogi.
 	void setControlled(int unit, bool on);
 	bool controlStep(int unit, int dx, int dy);
 	bool controlGoTo(int unit, int tx, int ty);
-	// Idź w miejsce pod kursorem (promień w układzie sceny, jak MapScene::pickTerrain): pole, x i głębokość
-	// klikniętego punktu; w podłogę: punkt na jej poziomej powierzchni, w tylną ścianę: przy ścianie.
+	// Idź w miejsce pod kursorem (promień w układzie sceny, jak MapScene::pickTerrain): trafiony punkt terenu
+	// (x, y, głębokość) jako cel chodu jak w grze.
 	bool controlGoToRay(int unit, const glm::vec3& ro, const glm::vec3& rd);
 	// Kierunek ruchu prowadzonej postaci (trzymane klawisze): dx −1/0/+1 w bok, dz −1 w głąb, +1 do przodu.
 	void controlMove(int unit, float dx, float dz);
@@ -120,8 +137,6 @@ public:
 	// indeks w units albo −1. Krasnale i wukery już są postaciami (initUnits).
 	int adoptUnit(int obj);
 	static std::string creatureAnim(const std::vector<std::string>& anims, bool walk);
-	// Najmniejsza głębokość chodu w polu (x, ty): tylna ściana w kolumnie x + kWallGap (skala skryptu).
-	float walkZ(float x, int ty) const;
 	void manualMove(SimUnit& u, float dt); // krok ruchu ręcznego (controlMove)
 	SimUnit* unitOf(int obj);
 	int addUnit(int obj); // krasnal albo wuker (wg klasy obiektu)
@@ -129,14 +144,18 @@ public:
 	// Nowa postać (krasnal albo wuker) w najbliższym miejscu do stania przy (x, y) w blokach (y: stopy), ze
 	// skryptem klasy, gdy silnik skryptów działa. Zwraca indeks w units.
 	int spawnUnit(float x, float y, bool gnome = true);
-	// Zaludnienie mapy bez krasnali (przeglądarka): krasnale i wukery na wolnych, suchych polach z podłożem
+	// Zaludnienie mapy bez krasnali (przeglądarka): krasnale i wukery na wolnych, suchych polach z podłogą
 	// najbliżej punktu (cx, cy), co najmniej 2 pola od siebie. Przed startScripts (obiekty dostaną wtedy skrypty).
 	void populate(float cx, float cy, int gnomes, int wukers);
 	void updateUnit(SimUnit& u, float dt);
+	void stepWalk(SimUnit& u, float dt); // wykonawca chodu (MetaWalk)
+	void finishWalk(SimUnit& u, bool ok);
 	// Kopanie
 	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania
 	void dig(int x, int y);
 	bool nextDigJob(SimUnit& u);
+	// Kopanie pola (mx, my): chód na stanowisko obok (🔶 punkt wyjścia sąsiedniego pola), potem kopanie.
+	bool digAt(SimUnit& u, int mx, int my);
 	void markDig(int x0, int y0, int x1, int y1);
 
 	struct Glide
@@ -155,7 +174,7 @@ public:
 	float getRotY(int id) override;
 	void setAnim(int id, const std::string& anim, int, int mode) override;
 	double animLength(int id, const std::string& anim) override;
-	bool walkTo(int id, const float target[3], std::function<void(bool)> done) override;
+	bool walkTo(int id, const float target[3], const WalkOpts& o, std::function<void(bool)> done) override;
 	float hmap(float x, float y) override;
 	bool underwater(const float p[3]) override;
 	bool findPlace(const float c[3], float r, float out[3]) override;

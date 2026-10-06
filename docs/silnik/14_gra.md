@@ -27,25 +27,15 @@ Wskazywanie pola: promień z kamery przez piksel kursora najpierw trafia w teren
 
 **Pola otwarte częściowo** 🔶: nawigacja uznaje pole za wolne, gdy dolna połowa siatki 8×8 ma ≥ 16 komórek < 13, więc przy krawędzi jaskini wolna bywa tylko jedna strona pola (`kris_caves_1_b`, blok 43: lewa połowa półka na 11, prawa lita skała 15). Postać celuje wtedy w środek wolnych kolumn, a nie w środek pola, jej x zostaje w wolnej części, a podłoże (`floorY`) mierzymy w tej kolumnie. Wcześniej wuker przy prawej krawędzi wchodził w skałę i znikał. Ślad postaci co 0,5 s: `OW_TRACE_SIM=2`. Wcześniej stała z = 8 chowała krasnale za ścianą płytkich korytarzy (ściana 11 w `GNG_004`; BAZA_WIEDZY §8.12).
 
-## 14.3 Ruch (🔶 uproszczenie)
+## 14.3 Ruch ✅ (rozdział 17)
 
-Siatka pól ([`src/lib/nav.h`](../../src/lib/nav.h)):
+Postacie chodzą jak w grze: dane ruchu (podpola 8×8, graf pól), droga Calc1, trasa z głębokością i wykonawca chodu z prędkością z animacji opisuje [rozdział 17](17_ruch.md) ([`lib/nav_world`](../../src/lib/nav_world.h), [`lib/walk_plan`](../../src/lib/walk_plan.h), `WorldSim::stepWalk`). Stara siatka pól ([`src/lib/nav.h`](../../src/lib/nav.h): pole otwarte, gdy w dolnej połowie bloku ≥ 16 drobnych pól ma wysokość < 13) zostaje tylko do pytania „czy pole jest lite” przy zaznaczaniu kopania i w podpowiedziach.
 
-```
-otwarte(x, y)  = w dolnej połowie bloku (wiersze 4..7 siatki 8×8 BlockDB) ≥ 16 drobnych pól ma wysokość < 13
-stoi(x, y)     = otwarte(x, y) i nie otwarte(x, y + 1)
-wspina(x, y)   = otwarte(x, y) i (lita skała z lewej albo z prawej)
-```
-
-Ruchy (koszt): w bok między polami „stoi” (10), stopień ±1 wiersz po skosie (14), zejście z krawędzi (12), w górę po ścianie (20), w dół (15); w powietrzu tylko spadanie. Droga: A* z heurystyką Manhattan.
-
-Krasnal stoi stopami w `(x + 0,5, y + 1)`, na głębokości skryptu 8 (świat 11). Prędkość: chód 1,6 pola/s, wspinanie 0,9 pola/s. Animacja: `gehen_loop` w bok, `kletter_hoch_loop` / `kletter_runter_loop` w pionie, `standard` w miejscu, `kletterstand` na ścianie. Obrót: −π/2 = twarzą w prawo, +π/2 = w lewo, π = do ściany.
-
-Gra ma tu znacznie bogatsze prawa (drobna siatka 8×8, maska ruchu w `.pmp`, drabiny, windy): Diggles-Unity `ORIGINAL_PATHFINDING_RE.md`, `NAVIGATION_AND_MOVEMENT.md`.
+Krasnal stoi stopami na linii podłogi (y = wiersz podpola / 8), na głębokości w pasie podłogi (17.5); nowa postać na głębokości stania min(podparcie + 1, 14,5). Obrót: −π/2 = twarzą w prawo, +π/2 = w lewo, 0 = do przodu, π = do ściany.
 
 ## 14.4 Kopanie (🔶 uproszczenie)
 
-PPM na polu skały: krasnal idzie na najbliższe stanowisko obok (z boku, nad albo pod polem), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`), a potem pole dostaje blok 4523 (tunel: płaska tylna ściana na wysokości 7, czyli z = 10,5). Rodzaj gruntu pola zostaje, więc ściana tunelu pokazuje materiał, w którym kopano (szara skała A, żółta glina C…); tylko „otwór do tła” (typ 5, np. wiersz powierzchni) zamieniamy na grunt pola niżej, bo inaczej ściana dostaje kolor strefy horyzontu. Warstwę detali `.l2m` pola zerujemy. Teren, wysokości i płyny przebudowujemy w całości.
+PPM na polu skały: krasnal idzie na najbliższe stanowisko obok (z boku, nad albo pod polem; 🔶 punkt wyjścia sąsiedniego pola, dojście do krawędzi jak w grze to etap P3 rozdziału 17), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`), a potem pole dostaje blok 4523 (tunel: płaska tylna ściana na wysokości 7, czyli z = 10,5). Rodzaj gruntu pola zostaje, więc ściana tunelu pokazuje materiał, w którym kopano (szara skała A, żółta glina C…); tylko „otwór do tła” (typ 5, np. wiersz powierzchni) zamieniamy na grunt pola niżej, bo inaczej ściana dostaje kolor strefy horyzontu. Warstwę detali `.l2m` pola zerujemy. Teren, wysokości i płyny przebudowujemy w całości.
 
 **Obszar do kopania**: przeciągnięcie PPM zaznacza prostokąt pól skały (żółte znaczniki na przedniej płaszczyźnie). Zaznaczony krasnal dostaje zadanie: sam wybiera najbliższe zaznaczone pole, do którego prowadzi droga, i kopie kolejne, aż skończą się osiągalne. W tym czasie skrypt nie może nim chodzić (`walkTo` odmawia). Pojedyncze kliknięcie PPM zdejmuje zadanie.
 
@@ -119,19 +109,19 @@ przejęcie        LPM w postać (albo Enter: pierwszy krasnal; API: POST /api/co
                  stanie = standard | stand_anim | standanim | stand; bez animacji chodu: nie da się przejąć
 skrypt postaci   wstrzymany (akcje i ciało stanu; zdarzenia, np. ubytek potrzeb, działają), zlecenia chodu
                  i animacji od skryptu ignorowane
-←/→ (trzymane)   ruch ze stałą prędkością chodu (1,6 pola/s) po podłożu (WorldSim::manualMove): w wolnej
-                 części pola, na sąsiednie pole na tej samej wysokości albo o stopień, ściana zatrzymuje
-↑/↓ (trzymane)   w głąb / do przodu (2 · 1,6 jednostki skryptu na s), między tylną ścianą + 1,5 a z = 14
+←/→ (trzymane)   ruch z prędkością marszu postaci (krasnal 0,811 bloku/s, 17.6) po linii podłogi
+                 (WorldSim::manualMove): w sąsiedniej kolumnie podpól podłoga najwyżej 3 podpola wyżej
+                 albo niżej, inaczej ściana zatrzymuje
+↑/↓ (trzymane)   w głąb / do przodu (2 · prędkość marszu jednostki skryptu na s) w pasie głębokości podłogi
+                 (17.5: od tylnej ściany + 0,25 do przedniej krawędzi)
 dwie strzałki    po skosie; postać patrzy w stronę ruchu: obrót = atan2(−ruch_x, ruch_z)
 puszczenie       postać od razu staje (animacja stania); krótkie stuknięcie przesuwa o czas naciśnięcia
-PPM w miejsce    idź tam (WorldSim::controlGoToRay): pole po siatce nawigacji (14.3, A*, także wspinanie),
-                 potem x i głębokość klikniętego punktu. Mapa wysokości widzi tylko tylną ścianę, więc
-                 kliknięcie w podłogę trafia w lite pole pod nią: celem jest wolne pole nad podłogą, a punkt
-                 to przecięcie promienia z poziomą powierzchnią podłogi (y = floorY); kliknięcie w tylną
-                 ścianę: głębokość przy ścianie (ściana + 1,5). Na miejscu w bok postać dochodzi w głąb
-                 albo do przodu, przodem w stronę ruchu
+PPM w miejsce    idź tam (WorldSim::controlGoToRay): trafiony punkt terenu (x, y, głębokość) jako cel
+                 chodu jak w grze (rozdział 17: droga Calc1, głębokość FloorPathMap, wykonawca MetaWalk
+                 z obrotem, startem, stopem i biegiem po 2 s). Kliknięcie w tylną ścianę: krasnal wspina
+                 się na nią i tam wisi, jak w grze przy celu na ścianie
 puść             Shift, Esc, LPM obok: postać staje (idle, bez reszty ścieżki), zostaje postacią symulacji,
                  a jej skrypt znów działa
 ```
 
-Ruch ręczny i „idź do pola” to przybliżenia (🔶) z tej samej siatki pól co reszta symulacji (14.3), nie prawa ruchu gry (drobna siatka 8×8 i maska `.pmp`: Diggles-Unity `ORIGINAL_PATHFINDING_RE.md`). Testy: `ui_control`, `ui_creature`, `ui_goto` w [`tools/tests/run.sh`](../../tools/tests/README.md).
+Ruch ręczny to dodatek (nie z gry) na danych ruchu z rozdziału 17; „idź do pola” to już chód jak w grze. Testy: `ui_control`, `ui_creature`, `ui_goto` w [`tools/tests/run.sh`](../../tools/tests/README.md).

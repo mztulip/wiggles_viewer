@@ -111,6 +111,8 @@ public:
 	bool playAnim(int i, const std::string& anim, bool loop);
 	float animLength(int i) const; // długość bieżącej animacji w sekundach (10 kl./s)
 	float animSeconds(int i, const std::string& anim) const; // długość animacji obiektu po nazwie, 0 = brak
+	// Ruch zapisany w animacji (Animation3db::move, rotate: na klatkę) i liczba klatek; false = brak animacji.
+	bool animMotion(int i, const std::string& anim, Vec3f& move, Vec3f& rotate, int& frames) const;
 	// Punkt zaczepienia obiektu w bieżącej klatce, obrócony jak obiekt: przesunięcie x, y (bloki), z (skala skryptu).
 	bool linkOffset(int i, int link, float out[3], bool scriptZ = true) const; // scriptZ: z×2 jak get_linkpos
 	bool linkEuler(int i, int link, Vec3f& out) const; // orientacja punktu (get_linkrot), radiany

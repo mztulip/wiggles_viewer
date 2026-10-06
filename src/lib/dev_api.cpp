@@ -84,6 +84,7 @@ refresh();setInterval(refresh,1000);
 const char* stateName(int s)
 {
 	return s == 1 ? "walk" : s == 2 ? "dig"
+	    : s == 3                    ? "fall"
 	                                : "idle";
 }
 
@@ -221,12 +222,12 @@ void registerDevApi(DevServer& srv, DevHooks hooks)
 			const SimUnit& u = w->units[k];
 			int id = u.obj < int(w->idxToId.size()) ? w->idxToId[size_t(u.obj)] : 0;
 			std::string path;
-			for (size_t s = u.step; s < u.path.size(); ++s)
-				path += std::string(path.empty() ? "" : ",") + "[" + std::to_string(u.path[s].first) + "," + std::to_string(u.path[s].second) + "]";
+			for (size_t s = u.next; s < u.route.size(); ++s)
+				path += std::string(path.empty() ? "" : ",") + "[" + num(u.route[s].x) + "," + num(u.route[s].y) + "," + num(u.route[s].z) + "]";
 			j += std::string(k ? "," : "") + "{\"index\":" + std::to_string(k) + ",\"obj\":" + std::to_string(u.obj) + ",\"id\":" +
 			    std::to_string(id) + ",\"gnome\":" + (u.gnome ? "true" : "false") + ",\"x\":" + num(u.x) + ",\"y\":" + num(u.y) +
 			    ",\"tx\":" + std::to_string(u.tx) + ",\"ty\":" + std::to_string(u.ty) + ",\"z\":" + num(u.z) + ",\"minz\":" +
-			    num(w->walkZ(u.x, u.ty)) + ",\"state\":\"" + stateName(int(u.state)) + "\",\"controlled\":" +
+			    num(w->minDepth(u.x, u.y)) + ",\"state\":\"" + stateName(int(u.state)) + "\",\"controlled\":" +
 			    (u.controlled ? "true" : "false") + ",\"path\":[" + path + "]}";
 		}
 		return DevReply::json(j + "]}");

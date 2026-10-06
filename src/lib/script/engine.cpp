@@ -674,7 +674,15 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a)
 			o->walking = true;
 			o->walkResult = 2; // WS_NOTFINISHED do końca chodu
 			int id = o->id;
-			bool ok = e.host_->walkTo(id, t, [&e, id](bool reached) {
+			Host::WalkOpts wo;
+			if (p.count("speedtype")) wo.speedtype = std::atoi(p["speedtype"].c_str());
+			if (p.count("dig")) wo.dig = std::atoi(p["dig"].c_str()) != 0;
+			if (p.count("animsets"))
+			{
+				auto sets = listItems(in, p["animsets"]);
+				if (sets.size() > 1 && std::atoi(sets[1].c_str()) < 0) wo.canRun = false;
+			}
+			bool ok = e.host_->walkTo(id, t, wo, [&e, id](bool reached) {
 				if (ScriptObject* x = e.object(id)) e.finishAction(*x, reached);
 			});
 			if (ok)

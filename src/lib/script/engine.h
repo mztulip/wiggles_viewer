@@ -83,8 +83,16 @@ struct Host
 	virtual void setRotY(int, float) {}
 	virtual void setAnim(int, const std::string& /*obiekt.anim*/, int /*klatka*/, int /*tryb*/) {}
 	virtual double animLength(int /*id*/, const std::string& /*obiekt.anim*/) { return 1.0; } // sekundy
+	// Opcje action walk: -speedtype (0 marsz, po 2 s bieg; 1 sam marsz; 2 od razu bieg), -animsets {chód bieg}
+	// (bieg −1: bez biegu), -dig 1 (cel na ścianie zostaje).
+	struct WalkOpts
+	{
+		int speedtype = 0;
+		bool canRun = true;
+		bool dig = false;
+	};
 	// Akcja chodzenia: true = przyjęta; done(true) po dojściu, done(false) gdy nie ma drogi.
-	virtual bool walkTo(int, const float[3], std::function<void(bool)>) { return false; }
+	virtual bool walkTo(int, const float[3], const WalkOpts&, std::function<void(bool)>) { return false; }
 	virtual float getRotY(int) { return 0.f; }
 	virtual float hmap(float, float) { return 0.f; }          // get_hmap: głębokość tylnej ściany (skala skryptu)
 	virtual bool underwater(const float[3]) { return false; }

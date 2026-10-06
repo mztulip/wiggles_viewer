@@ -587,6 +587,25 @@ float MapScene::animSeconds(int i, const std::string& anim) const
 	return 0.f;
 }
 
+bool MapScene::animMotion(int i, const std::string& anim, Vec3f& move, Vec3f& rotate, int& frames) const
+{
+	const auto& o = objects_[size_t(i)];
+	if (!o.slot || !o.cls) return false;
+	std::string want = Vfs::lower(anim);
+	for (const auto& ob : o.slot->model->objects)
+	{
+		if (Vfs::lower(ob.name) != Vfs::lower(o.cls->object)) continue;
+		for (uint32_t a : ob.animations)
+		{
+			const auto& an = o.slot->model->animations[a];
+			if (Vfs::lower(an.name) != want) continue;
+			move = an.move, rotate = an.rotate, frames = int(an.frames.size());
+			return true;
+		}
+	}
+	return false;
+}
+
 bool MapScene::objectShown(const PlacedObject& o) const
 {
 	if (!o.slot || o.animation < 0 || !o.visible) return false;
