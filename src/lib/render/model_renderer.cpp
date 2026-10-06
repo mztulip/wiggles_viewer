@@ -173,7 +173,7 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	u.params = glm::vec4(t, opt.horizonZOffset, opt.base, opt.highlight);
 	u.flags = glm::ivec4(int(opt.lighting), opt.alphaTest ? 1 : 0, opt.gameLights ? 1 : 0, 0);
 	// Przebiegi: 0 nieprzezroczyste (wszystko poza trybami 0, 2, 6, 7; tryb 3 tylko alfa ≥ 0,5), 1 przezroczyste:
-	// miękkie brzegi trybu 3 (w shaderze 103: tylko alfa < 0,5) i całe linki 6, 7 (106, 107), 2 blask trybu 2.
+	// miękkie brzegi trybu 3 (w shaderze 103: tylko alfa < 0,5) i całe linki 7 (107), 2 addytywne: 2 i 6.
 	using Phase = ModelDrawOptions::Phase;
 	int firstPass = opt.phase == Phase::Transparent ? 1 : 0, lastPass = opt.phase == Phase::Opaque || !opt.drawModes ? 0 : 2;
 	for (int pass = firstPass; pass <= lastPass; ++pass)
@@ -183,9 +183,9 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 		{
 			const auto& l = linksA[i];
 			int mode = opt.drawModes ? l.flags : 1;
-			bool glass = mode == 6 || mode == 7; // 🔶 półprzezroczyste z mapowaniem otoczenia (BAZA_WIEDZY §8.10)
-			bool take = pass == 0 ? mode != 0 && mode != 2 && !glass : pass == 1 ? mode == 3 || glass
-			                                                                     : mode == 2;
+			bool glass = mode == 7, add = mode == 2 || mode == 6; // 🔶 7: przezroczysty z otoczeniem; 6: addytywny oświetlony
+			bool take = pass == 0 ? mode != 0 && !add && !glass : pass == 1 ? mode == 3 || glass
+			                                                                : add;
 			if (!take) continue;
 			if (!pipeBound)
 			{

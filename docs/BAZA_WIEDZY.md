@@ -364,6 +364,8 @@ Metoda: [`tools/lab/set_link_flags.py`](../tools/lab/set_link_flags.py) ustawia 
 - 6, 7: słabo widoczne, półprzezroczyste; 7 ma inny układ wzoru niż 6.
 - 2: tylko jasne części (addytywnie, ważone alfą).
 
+Dalej (2026-10-06): te same tryby u nas (`wigview --game ../lab/Wiggles` z podmienionym plikiem) i łąka `wiese_rund_a` w `urw_gng_021_a` w trybach 1, 5, 6, 7 (zbliżenie `set_view 18 18.6 1.0`): w 6 i 7 trawa jaśniejsza niż w 1. Hipoteza „6 bez oświetlenia” odpadła (u nas misy wtedy jaśniały, w grze znikają); 🔶 6 = addytywnie z oświetleniem i zwykłym UV, 7 = mapowanie otoczenia z mieszaniem alfą i oświetleniem: kolumny zgadzają się z grą (7 słabsze smugi).
+
 Wniosek: ✅ 8, 9 i 11 nie wycinają alfą; ✅ 4 = 1; 🔶 w 8 alfa działa jak maska samoświecenia (porównanie 8 i 11) z progiem 0,5: w trybie 8 świecą te same fragmenty, które zostają w trybie 1 (liniowa maska dawała u nas pomarańczowe dolne części kolumn). Zrzut trybu 3 nieudany (kamera odjechała), tryb znany z §8.9. Plik w laboratorium przywrócony. Uwaga do metody: widoczne okno `live2.sh` przejmuje klawiaturę użytkownika; serie zrzutów robić w Xvfb (`OW_HIDDEN=1 live2.sh start`).
 
 ### 8.11 Teren lawy: detale i jasność (2026-10-06)

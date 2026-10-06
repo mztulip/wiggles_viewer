@@ -28,7 +28,7 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
      oświetlenie dwustronne (7.5), zanikanie w kolor strefy dla z < 0 (8.1)
    (teren i modele: po oświetleniu szara mgła i czerń z rozdziału 10.5)
 8. modele, faza przezroczysta (🔶 nasz podział): obiekty od najdalszego (najmniejsze z),
-     miękkie brzegi trybu 3 (alfa < 0,5) i całe linki 6, 7 mieszaniem alfa, blask trybu 2 addytywnie,
+     miękkie brzegi trybu 3 (alfa < 0,5) i całe linki 7 mieszaniem alfa, tryby 2 i 6 addytywnie,
      bez zapisu głębi
 9. płyny (13), potem cząsteczki: addytywnie, test głębi bez zapisu (12)
 10. ramka ekranu (9.4), gdy włączona w ustawieniach
@@ -44,7 +44,7 @@ Ten rozdział zbiera w jednym miejscu kolejność rysowania i stany renderu. Wsz
 | teren podkład | LESS | tak | nie | nie | alfa otworu > 126/255 | tak (7.1) + nieodkryty teren (10.5) |
 | teren detale | LEQUAL | nie | nie | DST_COLOR, SRC_COLOR; lawa: SRC_ALPHA/1−SRC_ALPHA (🔶) | jak podkład | (dziedziczy z podkładu); lawa bez oświetlenia |
 | modele, faza nieprzezroczysta | LESS | tak (poza `nozwrite`) | nie | wg `flags` linku: 1 brak, 2 addytywne, 3 SRC_ALPHA/1−SRC_ALPHA ([5.5](05_obiekty.md)) | alfa tekstury ≥ 0,5 (tryby 1, 3, 4; nie 8, 9, 11) | tak, dwustronnie (7.5) + nieodkryty teren (10.5); 8: alfa ≥ 0,5 bez oświetlenia, 11 bez oświetlenia, 5 mapowanie otoczenia |
-| modele, faza przezroczysta (🔶) | LESS | nie | nie | tryby 3, 6, 7: SRC_ALPHA/1−SRC_ALPHA, tryb 2: ONE/ONE | tryb 3: tylko alfa < 0,5 | jak wyżej; tryb 2 bez oświetlenia |
+| modele, faza przezroczysta (🔶) | LESS | nie | nie | tryby 3, 7: SRC_ALPHA/1−SRC_ALPHA, tryby 2, 6: ONE/ONE | tryb 3: tylko alfa < 0,5 | jak wyżej; tryb 2 bez oświetlenia |
 | cząsteczki | LESS | nie | nie | ONE/ONE (addytywne) | nie | nie |
 | ramka ekranu | nie | nie | nie | SRC_ALPHA/1−SRC_ALPHA, kolor czarny | nie | nie |
 
