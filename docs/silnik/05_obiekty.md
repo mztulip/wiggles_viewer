@@ -42,6 +42,10 @@ class_defaultanim <obiekt>.<animacja> [tryb]
 
 3. **Klasy z modelem tylko w edytorze**: `if {[get_mapedit]} {class_defaultanim …}` (światła `Misc_LightSrc_*`, część `Info_*`). W grze **nie rysuj** ich modelu, ale zachowaj ich działanie (światło, strefa).
 
+4. **Drzwi i kraty** ✅ (`Tuer_kaserne`, `Tuer_verlies`, `Gefaengnis_gitter_*`, `Kristalltuer`…): bez `class_defaultanim`; `obj_init` ustawia `set standanim <obiekt>.<animacja>`, a wspólny `calls/DOORS.TCL` woła `set_anim this $standanim 0 $ANIM_STILL`. Bez wykonywania skryptów weź `set standanim` jako animację domyślną (tryb 0, nieruchomo).
+
+5. **Postacie** ✅: krasnal (`Zwerg`) dostaje model `mann` z `mann.3db`, wuker (`def_class $wukerclass` dla `Wuker` i `Schwefelwuker` w `WUKER.TCL`) obiekt `wuker` przez `set_anim this wuker.stand_atmen_a` w `obj_init`. Ogólnie: `set_anim <obj> <obiekt>.<animacja>` z innym obiektem `.3db` niż bieżący podmienia model obiektu (szukany po nazwie obiektu we wszystkich plikach `.3db`).
+
 Te reguły przypisują model do 86,9% z 33 905 obiektów we wszystkich szablonach. Reszta to głównie znaczniki bez wyglądu (`Info_*`, punkty trybów sieciowych `CS_*`, `CF_*`) i klasy, które ustawiają animację dopiero w kodzie (`set_anim` w `obj_init`, np. postacie).
 
 ## 5.3 Ustawienie w świecie ✅
@@ -73,8 +77,8 @@ Odtwarzanie opisuje [3db.md](../formaty/3db.md) §8:
 |---|---|
 | geometria | dla każdego linku klatki: pozycje (po dekwantyzacji), UV, indeks normalnej; trójkąty z puli |
 | tekstura | materiał linku → plik TGA ([3db.md](../formaty/3db.md) §6); filtrowanie liniowe, zawijanie REPEAT |
-| tryb rysowania | **z pola `flags` linku** ✅: 1 zwykły, 2 addytywnie (blaski), 3 mieszanie alfa (postacie), 5 mapowanie otoczenia (kryształy, chrom), 8 bez oświetlenia (lawa), 0 niewidoczny; tabela i rzadkie tryby w [3db.md](../formaty/3db.md) „Tryb rysowania linku” |
-| przezroczystość | w trybie 1 **alpha test** alfa ≥ 0,5 (liście, włosy, kraty), bez mieszania 🔶. Tryb 3: rdzeń (alfa ≥ 0,5) jak 1, a miękkie brzegi i blask trybu 2 w osobnej fazie po wszystkich obiektach sceny, bez zapisu głębi, od najdalszego (rozdział 9.2); inaczej miękki brzeg zasłania obiekty rysowane później |
+| tryb rysowania | **z pola `flags` linku** ✅: 0 niewidoczny, 1 i 4 zwykły, 2 addytywnie (blaski), 3 mieszanie alfa (postacie), 5 mapowanie otoczenia (kryształy, chrom), 6 i 7 półprzezroczyste z mapowaniem otoczenia (🔶 szkło, woda), 8 samoświecący według alfy (kolumny lawy), 9 nieprzezroczysty oświetlony, 11 nieprzezroczysty bez oświetlenia; tabela i eksperymenty w [3db.md](../formaty/3db.md) „Tryb rysowania linku” |
+| przezroczystość | w trybach 1 i 4 **alpha test** alfa ≥ 0,5 (liście, włosy, kraty), bez mieszania 🔶. **8, 9 i 11 alfą nie wycinają** ✅ (bez tego znikały trzony kolumn lawy o alfie < 0,5 na 79% tekstury); w 8 piksele z alfą ≥ 0,5 mają własny kolor bez oświetlenia, reszta jest oświetlona (🔶). 6 i 7 w całości w fazie przezroczystej, mieszane alfą tekstury (🔶). Tryb 3: rdzeń (alfa ≥ 0,5) jak 1, a miękkie brzegi i blask trybu 2 w osobnej fazie po wszystkich obiektach sceny, bez zapisu głębi, od najdalszego (rozdział 9.2); inaczej miękki brzeg zasłania obiekty rysowane później |
 | culling | wyłączony: modele mają cienkie, dwustronne elementy |
 | głębia | test i zapis (poza klasami `nozwrite`) |
 | oświetlenie | per wierzchołek, prawo z rozdziału 7, z jasnością bazową B w punkcie (x, y) obiektu |
