@@ -19,6 +19,7 @@ struct WalkPoint
 {
 	float x = 0, y = 0, z = 0;
 	bool wall = false; // punkt na ścianie (wspinanie), inaczej na podłodze
+	float clear = 0;   // na ścianie: o ile podpole wystaje przed głębokość podparcia (stopień ściany, skala z)
 };
 
 // Trasa od start do goal (x, y, z). Pierwszy punkt to start bez zmian; dalej odcinki podłogi z głębokością
@@ -30,6 +31,9 @@ std::vector<WalkPoint> planWalk(const NavWorld& nav, const float start[3], const
 // Głębokość podparcia podpola (FUN_004238e0): wysokość wiersz wyżej; 15 (lita skała) → najmniejsza z czterech
 // sąsiednich (sx ± 1 w wierszu wyżej, sy − 2 i sy).
 int supportDepth(const NavWorld& nav, int sx, int sy);
+// Zapas przed ścianą na stopniu głębokości: wys(sx, sy) − podparcie, gdy dodatni i podpole nie jest litą
+// skałą (15); inaczej 0.
+float climbClearance(const NavWorld& nav, int sx, int sy, int support);
 // Głębokość stania na linii podłogi: min(podparcie + 1, 14,5).
 float floorLineDepth(const NavWorld& nav, int sx, int sy);
 // Dozwolone głębokości na podłodze w podpolu (pas FloorPathMap: wiersze [h(sy − 1) · 4 + 1, h(sy + 1) · 4 − 1)

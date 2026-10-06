@@ -8,7 +8,7 @@ Rozdział opisuje, jak gra wyznacza, gdzie postać może stać i chodzić, jak s
 | P1 | wyszukiwanie drogi Calc1 | ✅ |
 | P2 | chód po podłodze (głębokość, prędkość z animacji, obroty, start i zatrzymanie) | ✅ |
 | P3 | kopanie: dojście do krawędzi | ✅ |
-| P4 | wspinanie po ścianach | |
+| P4 | wspinanie po ścianach | ✅ |
 
 ## 17.1 Układ: widok z boku
 
@@ -110,7 +110,7 @@ Za Diggles-Unity `MetaWalkAction` (odczyt gry FUN_00418280, 00418850, 004185a0):
 - **Dryf w marszu**: mniejsze różnice kierunku poprawia o 0,1 rad na 0,1 s; poniżej 0,051 rad od razu.
 - **Pierwszy punkt** to pierwszy dalej niż 0,2 (w bok i w głąb); gdy żaden, chód kończy się od razu, bez animacji.
 
-🔶 Kierunek obrotu (lewo/prawo) dobrany z układu modelu, niesprawdzony w grze. Wspinanie na odcinkach ściany na razie uproszczone (animacja w górę albo w dół, twarzą do ściany, prędkość z animacji); wejście na ścianę i zejście to P4. Spadanie (brak podłogi pod stopami i nie na ścianie): 🔶 w pionie 3 bloki/s do pierwszej podłogi, animacja `fallen_loop`.
+🔶 Kierunek obrotu (lewo/prawo) dobrany z układu modelu, niesprawdzony w grze. Odcinki ściany wykonuje wspinanie (17.8). Spadanie (brak podłogi pod stopami i nie na ścianie): 🔶 w pionie 3 bloki/s do pierwszej podłogi, animacja `fallen_loop`.
 
 **Ręczne sterowanie w wigview** (dodatek do testów, nie z gry, [14.8](14_gra.md)) używa tych samych danych: w bok po linii podłogi (w sąsiedniej kolumnie podpól podłoga najwyżej 3 podpola wyżej albo niżej, inaczej ściana zatrzymuje), w głąb w pasie podłogi, z prędkością marszu postaci. PPM wysyła trafiony punkt terenu (x, y, głębokość) jako cel chodu jak w grze.
 
@@ -141,3 +141,23 @@ dig_continue: kolejny punkt, vector_fixdig, chód tylko gdy dalej niż 0,5 (kilo
 Przykład: `vector_fixdig {6 5 8} {4.5 6.5 8}` w `kris_caves_1_b` daje punkt na linii podłogi y = 6,5 między postacią a ścianą (test `http_wigview`).
 
 U nas zadanie kopania (`WorldSim::digAt`, gracz) idzie tą samą drogą; animacja z kierunku do środka pola od tułowia (0,8 nad stopami): z boku `buddeln_vorn`, w dół `buddeln_unten`, w górę `buddeln_oben_normal`, a wisząc na ścianie `kletter_hack_links/rechts/oben/unten`. 🔶 Wycinanie terenu jest dalej uproszczone (całe pole naraz, blok 4523, [14.4](14_gra.md)); `dig_next`, `dig_apply`, krawędzie i narożniki bloków przy kopaniu to osobny punkt TODO. Test: `dig_standoff`.
+
+## 17.8 Wspinanie (CAct_Climb) ✅
+
+Bieg punktów ściany trasy (17.5) wykonuje osobny wykonawca (za Diggles-Unity `ClimbAction` i `re_parts/climb-exec.md`, odczyt gry FUN_00415e10, 0040bf80, 00418db0, 00418c70):
+
+```
+wejście (ostatni punkt był podłogą, postać stoi):  ground_to_wall = stand_zu_kletterstand raz, w miejscu,
+                                                    obrót twarzą do ściany (roty = π)
+ruch:  zużycie drogi jak w marszu (17.6), prędkość stała: ¼ · Σ |move| animacji climb_up, climb_down,
+       climb_right, climb_left · 0,05 (krasnal: kletter_hoch/runter/rechts/links_loop → 0,416 bloku/s,
+       wuker 0,314); przy -speedtype 2 zestaw kletter_*_schnell z jego własną prędkością
+       animacja z kierunku odcinka: przeważa pion → w dół climb_down, w górę climb_up;
+       przeważa bok → w prawo (+x) climb_right, w lewo climb_left; w miejscu climb_standard (kletterstand)
+koniec trasy na ścianie: kletterstand (wisi, gnomePosition = 1)
+zejście (następny punkt to podłoga):  wall_to_ground = kletterstand_zu_stand raz, w miejscu, potem marsz od fazy startu
+```
+
+Głębokość ciała na ścianie: punkt trasy (głębokość podparcia) + 0,5 (0,25 bloku od ściany) + zapas na stopniu ściany (wys(sx, sy) − podparcie, gdy dodatni). 🔶 Gra wiesza ciało pozą animacji i orientacją z tablicy animacji (nieodczytaną); odstęp jest z Diggles-Unity. 🔶 Prawo/lewo animacji w bok przyjęte jak u nich (postać plecami do kamery, jej prawa = ekranowa prawa), niesprawdzone w laboratorium.
+
+Przykład (`kris_caves_1_b`, test `climb`): krasnal z podłogi y = 6,5 idzie na ścianę w polu (6, 4): marsz, po 2 s bieg, `stand_zu_kletterstand`, `kletter_hoch_loop` 0,2 bloku na 0,5 s do y = 4,5, `kletterstand`; potem w dół `kletter_runter_loop`, `kletterstand_zu_stand`, obrót `drehen_rechts`, marsz.

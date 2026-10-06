@@ -219,7 +219,6 @@ int WorldSim::addUnit(int obj)
 	SimUnit u;
 	u.obj = obj;
 	u.gnome = gnome;
-	std::vector<std::string> climbSide = {"kletter_links_loop", "kletter_rechts_loop"};
 	if (!gnome && isWalkerClass(Vfs::lower(scene_.objectClass(obj))))
 	{ // wuker: animacje z modelu wuker.3db (obj_init: set_anim this wuker.…); klasa nie ma class_defaultanim
 		if (scene_.objectModelObject(obj).empty()) scene_.setObjectModel(obj, "", "wuker");
@@ -227,7 +226,8 @@ int WorldSim::addUnit(int obj)
 		u.turnLeft = "drehen_links_a", u.turnRight = "drehen_rechts_a", u.turnLeft180 = u.turnRight180 = "drehen_ganz";
 		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter", u.standAnim = "stand_atmen_a";
 		u.fallAnim = "kletter_runterfallen";
-		climbSide = {"kletter_links", "kletter_rechts"};
+		u.climbRightAnim = "kletter_rechts", u.climbLeftAnim = "kletter_links";
+		for (auto& c : u.climbFast) c.clear();
 	}
 	else if (!gnome)
 	{ // inne stworzenie (adoptUnit): chód i stanie z animacji jego modelu, bez faz, obrotów i wspinania
@@ -237,7 +237,8 @@ int WorldSim::addUnit(int obj)
 		u.turnLeft = u.turnRight = u.turnLeft180 = u.turnRight180 = "";
 		u.climbUpAnim = u.climbDownAnim = u.walkLoop, u.climbStandAnim = u.fallAnim = u.standAnim;
 		u.canClimb = false;
-		climbSide.clear();
+		u.climbRightAnim = u.climbLeftAnim = u.mountAnim = u.dismountAnim = "";
+		for (auto& c : u.climbFast) c.clear();
 	}
 	// Prędkości z ruchu zapisanego w animacjach (|move| · 0,05 bloku na sekundę; za Diggles-Unity, odczyt
 	// z pamięci gry: mann gehen_loop 16,22 → 0,811, laufen_schnell 34,29 → 1,714); wspinanie: ¼ sumy czterech.
@@ -249,10 +250,11 @@ int WorldSim::addUnit(int obj)
 	if (float v = speed(u.walkLoop); v > 0.01f) u.walkSpeed = v;
 	if (float v = speed(u.runLoop); v > 0.01f) u.runSpeed = v;
 	u.canRun = !u.runLoop.empty() && speed(u.runLoop) > 0.01f;
-	if (u.canClimb && climbSide.size() == 2)
+	if (u.canClimb)
 	{
-		float c = 0.25f * (speed(u.climbUpAnim) + speed(u.climbDownAnim) + speed(climbSide[0]) + speed(climbSide[1]));
+		float c = 0.25f * (speed(u.climbUpAnim) + speed(u.climbDownAnim) + speed(u.climbRightAnim) + speed(u.climbLeftAnim));
 		if (c > 0.01f) u.climbSpeed = c;
+		u.climbFastSpeed = 0.25f * (speed(u.climbFast[0]) + speed(u.climbFast[1]) + speed(u.climbFast[2]) + speed(u.climbFast[3]));
 	}
 	const float* p = scene_.objectPos(obj);
 	u.x = p[0], u.y = p[1], u.z = p[2];
@@ -523,6 +525,9 @@ bool WorldSim::walkUnit(SimUnit& u, float x, float y, float z, bool keepGoal, st
 	u.route = std::move(r), u.next = 0;
 	u.started = u.turning = false;
 	u.speedtype = 0, u.walkMayRun = true; // opcje action walk ustawia walkTo
+	// na ścianie (wisi): wspinanie bez wejścia; przerwane wejście albo zejście nie wraca
+	u.climbPhase = SimUnit::NoClimb, u.climbClip.clear();
+	u.climbing = !hasFloorSupport(walk, u.x, u.y) && walk.walkable(sub8(u.x), sub8(u.y));
 	u.state = SimUnit::Walk;
 	return true;
 }
@@ -573,12 +578,15 @@ void WorldSim::stepWalk(SimUnit& u, float dt)
 	}
 	if (u.next >= R.size() && u.phase != SimUnit::Stop) u.phase = SimUnit::Stop, u.entered = false;
 	bool climb = u.next < R.size() && (R[u.next].wall || (u.next > 0 && R[u.next - 1].wall));
-	// Zużycie drogi wzdłuż punktów; kierunek dryfuje w stronę ruchu (na ścianie twarzą do ściany).
+	// Głębokość punktu, do którego idzie ciało: na ścianie 0,25 bloku (0,5 skali z) przed punktem podparcia
+	// i zapas na stopniu ściany (Diggles-Unity ClimbAction: gra wiesza ciało pozą animacji, której nie mamy).
+	auto zOf = [](const WalkPoint& p) { return p.wall ? p.z + 0.5f + p.clear : p.z; };
+	// Zużycie drogi wzdłuż punktów; w marszu kierunek dryfuje w stronę ruchu.
 	auto advance = [&](float dist) {
 		for (int guard = 0; dist > 0 && u.next < R.size() && guard < 256; ++guard)
 		{
 			const auto& p = R[u.next];
-			float dx = p.x - u.x, dy = p.y - u.y, dz = p.z - u.z, seg = metric(dx, dy, dz);
+			float pz = zOf(p), dx = p.x - u.x, dy = p.y - u.y, dz = pz - u.z, seg = metric(dx, dy, dz);
 			if (seg <= 1e-4f)
 			{
 				++u.next;
@@ -592,7 +600,7 @@ void WorldSim::stepWalk(SimUnit& u, float dt)
 			}
 			if (dist >= seg)
 			{
-				u.x = p.x, u.y = p.y, u.z = p.z;
+				u.x = p.x, u.y = p.y, u.z = pz;
 				++u.next, dist -= seg;
 			}
 			else
@@ -603,20 +611,75 @@ void WorldSim::stepWalk(SimUnit& u, float dt)
 			}
 		}
 	};
-	if (climb)
-	{ // 🔶 P4: animacja wspinania w górę albo w dół, prędkość z animacji, twarzą do ściany
-		u.climbing = true, u.turning = false;
-		u.facing = kSimPi;
-		scene_.playAnim(u.obj, R[u.next].y < u.y - 1e-3f ? u.climbUpAnim : u.climbDownAnim, true);
-		advance(u.climbSpeed * dt);
+	// Animacja raz (wejście, zejście): czas trwania, 0 = brak animacji.
+	auto once = [&](const std::string& a) {
+		Vec3f m{}, r{};
+		int f = 0;
+		if (a.empty() || !scene_.animMotion(u.obj, a, m, r, f) || f <= 0) return 0.f;
+		scene_.playAnim(u.obj, a, false);
+		return float(f) / 10.f;
+	};
+	auto faceWall = [&]() { // twarzą do ściany (roty = π), obrót 540°/s
+		float err = wrapAngle(kSimPi - u.facing), mx = 9.42f * dt;
+		u.facing = wrapAngle(u.facing + std::clamp(err, -mx, mx));
+	};
+	if (u.climbPhase == SimUnit::Mount)
+	{ // stand_zu_kletterstand w miejscu
+		faceWall();
+		u.phaseRem -= dt;
+		if (u.phaseRem <= 0) u.climbPhase = SimUnit::Advance;
+		return;
+	}
+	if (u.climbPhase == SimUnit::Dismount)
+	{ // kletterstand_zu_stand w miejscu, potem marsz od startu
+		u.phaseRem -= dt;
+		if (u.phaseRem > 0) return;
+		u.climbPhase = SimUnit::NoClimb, u.climbing = false, u.climbClip.clear();
+		u.phase = SimUnit::Start, u.entered = false;
 		if (u.next >= R.size())
 		{
-			if (R.back().wall) scene_.playAnim(u.obj, u.climbStandAnim, true);
+			scene_.playAnim(u.obj, u.standAnim, true);
 			finishWalk(u, true);
 		}
 		return;
 	}
-	if (u.climbing) u.climbing = false, u.phase = SimUnit::Start, u.entered = false;
+	if (climb)
+	{ // wspinanie (CAct_Climb, Diggles-Unity ClimbAction)
+		if (!u.climbing)
+		{
+			u.climbing = true, u.turning = false, u.climbClip.clear();
+			bool fromFloor = !(u.next > 0 && R[u.next - 1].wall) && hasFloorSupport(walk, u.x, u.y);
+			if (fromFloor && (u.phaseRem = once(u.mountAnim)) > 0)
+			{
+				u.climbPhase = SimUnit::Mount;
+				return;
+			}
+			u.climbPhase = SimUnit::Advance;
+		}
+		faceWall();
+		bool fast = u.running && u.speedtype == 2 && u.climbFastSpeed > 0.01f;
+		const auto& p = R[u.next];
+		float dx = p.x - u.x, dy = p.y - u.y;
+		int dir = std::abs(dx) < 1e-4f && std::abs(dy) < 1e-4f ? -1 : std::abs(dy) >= std::abs(dx) ? (dy > 0 ? 1 : 0)
+		                                                                                           : (dx > 0 ? 2 : 3);
+		const std::string* clips[4] = {&u.climbUpAnim, &u.climbDownAnim, &u.climbRightAnim, &u.climbLeftAnim};
+		const std::string& clip = dir < 0 ? u.climbStandAnim : fast ? u.climbFast[dir]
+		                                                            : *clips[dir];
+		if (clip != u.climbClip && !clip.empty() && scene_.playAnim(u.obj, clip, true)) u.climbClip = clip;
+		advance((fast ? u.climbFastSpeed : u.climbSpeed) * dt);
+		bool stillClimb = u.next < R.size() && (R[u.next].wall || (u.next > 0 && R[u.next - 1].wall));
+		if (stillClimb) return;
+		if (u.next >= R.size() && R.back().wall)
+		{ // koniec na ścianie: wisi
+			scene_.playAnim(u.obj, u.climbStandAnim, true);
+			u.climbPhase = SimUnit::NoClimb, u.climbClip.clear();
+			finishWalk(u, true);
+			return;
+		}
+		u.climbPhase = SimUnit::Dismount; // zejście na podłogę w miejscu
+		u.phaseRem = once(u.dismountAnim);
+		return;
+	}
 	if (u.phase != SimUnit::Stop && u.next < R.size())
 	{ // obrót w miejscu
 		const auto& p = R[u.next];
@@ -751,7 +814,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 	if (u.state == SimUnit::Idle)
 	{
 		bool onFloor = hasFloorSupport(walk, u.x, u.y);
-		if (!onFloor && !walk.walkable(sx, sub8(u.y))) u.state = SimUnit::Fall, u.climbing = false;
+		if (!onFloor && !walk.walkable(sx, sub8(u.y))) u.state = SimUnit::Fall, u.climbing = false, u.climbPhase = SimUnit::NoClimb;
 		else if (!scripts || u.controlled) // ze skryptami animację w miejscu ustawia skrypt (set_anim); prowadzonej: my
 			scene_.playAnim(u.obj, onFloor ? u.standAnim : u.climbStandAnim, true);
 	}

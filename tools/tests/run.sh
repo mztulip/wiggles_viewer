@@ -418,6 +418,40 @@ http_ok() {
 	command -v Xvfb >/dev/null && command -v curl >/dev/null || { skip "brak Xvfb albo curl"; return 1; }
 }
 
+test_ climb "ruch jak w grze (P4): wejście na ścianę (stand_zu_kletterstand), wspinanie kletter_hoch z prędkością z animacji, wiszenie twarzą do ściany, zejście (kletterstand_zu_stand) i marsz"
+t_climb() {
+	http_ok || return
+	http_start wigview --template kris_caves_1_b --populate 1 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
+	hpost /api/pause >/dev/null
+	hpost "/api/control?unit=0" >/dev/null
+	local e="" anims="" k u
+	sample() { # krok 0,5 s; dopisuje animację do listy
+		hpost "/api/step?seconds=0.5" >/dev/null
+		u=$(hget /api/units | jget "d['units'][0]")
+		anims="$anims $(hget /api/objects | jget "d['objects'][$(echo "$u" | python3 -c "import ast,sys; print(ast.literal_eval(sys.stdin.read())['obj'])")]['anim']")"
+	}
+	hpost "/api/control/goto?unit=0&x=6&y=4" >/dev/null
+	for k in $(seq 1 30); do sample; done
+	local st
+	st=$(echo "$u" | python3 -c "import ast,sys; u=ast.literal_eval(sys.stdin.read()); print(u['state'], round(u['y'], 2))")
+	[ "$st" = "idle 4.5" ] || e="na ścianie: stan i y $st, oczekiwane idle 4.5"
+	for a in stand_zu_kletterstand kletter_hoch_loop kletterstand; do
+		[ -z "$e" ] && echo "$anims" | grep -qw "$a" || e="${e:-w drodze na ścianę brak animacji $a: $anims}"
+	done
+	[ -z "$e" ] && [ "$(hget /api/objects | jget "[round(o['roty'], 2) for o in d['objects'] if o['class'] == 'Zwerg'][0]")" = 3.14 ] ||
+		e="${e:-na ścianie nie twarzą do ściany}"
+	anims=""
+	hpost "/api/control/goto?unit=0&x=9&y=6" >/dev/null
+	for k in $(seq 1 24); do sample; done
+	for a in kletter_runter_loop kletterstand_zu_stand gehen_loop; do
+		[ -z "$e" ] && echo "$anims" | grep -qw "$a" || e="${e:-w drodze ze ściany brak animacji $a: $anims}"
+	done
+	st=$(echo "$u" | python3 -c "import ast,sys; u=ast.literal_eval(sys.stdin.read()); print(u['state'], round(u['y'], 2))")
+	[ -z "$e" ] && [ "$st" = "idle 6.5" ] || e="${e:-po zejściu: stan i y $st, oczekiwane idle 6.5}"
+	ui_stop
+	[ -z "$e" ] && ok || fail "$e"
+}
+
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"
 t_http_wigview() {
 	http_ok || return

@@ -68,8 +68,21 @@ struct SimUnit
 	std::string runStart = "laufen_schnell_start", runLoop = "laufen_schnell_loop", runStop = "laufen_schnell_end";
 	std::string turnLeft = "drehen_links", turnRight = "drehen_rechts", turnLeft180 = "drehen_ganz_links", turnRight180 = "drehen_ganz";
 	std::string climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop", climbStandAnim = "kletterstand";
+	std::string climbRightAnim = "kletter_rechts_loop", climbLeftAnim = "kletter_links_loop";
+	std::string climbFast[4] = {"kletter_hoch_schnell", "kletter_runter_schnell", "kletter_rechts_schnell", "kletter_links_schnell"};
+	std::string mountAnim = "stand_zu_kletterstand", dismountAnim = "kletterstand_zu_stand";
 	std::string standAnim = "standard", fallAnim = "fallen_loop";
 	float walkSpeed = 0.8111f, runSpeed = 1.7143f, climbSpeed = 0.4155f; // bloki na sekundę, z animacji (addUnit)
+	float climbFastSpeed = 0;                                            // wspinanie biegiem (-speedtype 2), 0 = brak
+	// Wspinanie (CAct_Climb, rozdział 17.8): wejście na ścianę, ruch po niej, zejście.
+	enum ClimbPhase
+	{
+		NoClimb,
+		Mount,
+		Advance,
+		Dismount
+	} climbPhase = NoClimb;
+	std::string climbClip; // bieżąca animacja ruchu po ścianie
 	bool controlled = false; // prowadzony ręcznie w przeglądarce (skrypt postaci wstrzymany)
 	// Prowadzony ręcznie: kierunek ruchu z wciśniętych klawiszy (−1, 0, +1): moveX w bok, moveZ w głąb (−1)
 	// albo do przodu (+1). Ruch z prędkością marszu w każdym kroku symulacji; 0, 0 = stoi.

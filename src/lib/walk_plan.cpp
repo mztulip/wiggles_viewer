@@ -367,6 +367,12 @@ int supportDepth(const NavWorld& nav, int sx, int sy)
 	return std::min(hx, hy);
 }
 
+float climbClearance(const NavWorld& nav, int sx, int sy, int support)
+{
+	int own = nav.detail(sx, sy);
+	return own < 15 && own > support ? float(own - support) : 0.f;
+}
+
 float floorLineDepth(const NavWorld& nav, int sx, int sy)
 {
 	return std::min(float(supportDepth(nav, sx, sy)) + 1.f, 14.5f);
@@ -453,8 +459,9 @@ std::vector<WalkPoint> planWalk(const NavWorld& nav, const float start[3], const
 			for (size_t k = i; k < j; ++k)
 			{
 				auto [sx, sy] = subs[k];
-				cur = {float(sx) * 0.125f, float(sy) * 0.125f, float(supportDepth(nav, sx, sy))};
-				wps.push_back({cur.x, cur.y, cur.z, true});
+				int sup = supportDepth(nav, sx, sy);
+				cur = {float(sx) * 0.125f, float(sy) * 0.125f, float(sup)};
+				wps.push_back({cur.x, cur.y, cur.z, true, climbClearance(nav, sx, sy, sup)});
 			}
 			if (j < subs.size())
 			{ // wspinanie zajmuje pierwsze podpole podłogi dalej (zejście ze ściany) z głębokością ściany
