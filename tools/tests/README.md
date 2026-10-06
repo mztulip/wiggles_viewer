@@ -20,10 +20,11 @@ Gra: `WIGGLES_DIR` albo kopia w laboratorium `../lab/Wiggles` (tam są też zapi
 | scena i symulacja | `wigview --screenshot` z `--print-objects` (obiekty: klasa, obiekt `.3db`, animacja; postacie: x, y, z, najmniejsza głębokość) i śladem `OW_TRACE_SIM=2` (postacie co 0,5 s) | `classes`, `sim_walls`, `sim_corridor` |
 | obraz wzorcowy | zrzut porównany z `../lab/testref/<nazwa>.png` (RMSE pomniejszonych obrazów ≤ `OW_REF_TOL`, domyślnie 2; render jest deterministyczny, bez zmian RMSE = 0). Wzorce leżą **poza repozytorium** (obrazy z danych gry); brakujący wzorzec test zapisuje i przechodzi | `ref_lava`, `ref_hats` |
 | interakcja | wigview w niewidocznym Xvfb (OpenGL), `xdotool`; zdarzenia w śladzie: `[ui] sterowanie: …`, `[ui] wczytano mapę` | `ui_control`, `ui_keys` |
+| serwer HTTP | program w Xvfb z `--http` (losowy port), zapytania `curl`, JSON przez `jget 'd["units"][0]["x"]'` ([SERWER_HTTP.md](../../docs/SERWER_HTTP.md)); preferowany sposób sprawdzania stanu w nowych testach | `http_wigview`, `http_game` |
 
 ## Dopisywanie testu
 
-W `run.sh`: `test_ nazwa "opis"` i funkcja `t_nazwa`, która kończy się `ok [komentarz]`, `fail "co nie tak"` albo `skip "dlaczego"`. Pomocnicze: `wv …` (wigview bez okna, 640×480), `check_trace plik` (postacie w skale albo za ścianą), `compare_ref nazwa plik`, `ui_start …` / `ui_stop`, `click_at x y`, `xd …` (xdotool).
+W `run.sh`: `test_ nazwa "opis"` i funkcja `t_nazwa`, która kończy się `ok [komentarz]`, `fail "co nie tak"` albo `skip "dlaczego"`. Pomocnicze: `http_start program …` / `hget` / `hpost` / `jget` (serwer HTTP), `wv …` (wigview bez okna, 640×480), `check_trace plik` (postacie w skale albo za ścianą), `compare_ref nazwa plik`, `ui_start …` / `ui_stop`, `click_at x y`, `xd …` (xdotool).
 
 Pułapki:
 - w Xvfb mysz najpierw przesunąć, odczekać i dopiero kliknąć: natychmiastowy klik ImGui przypisuje panelowi z poprzedniej klatki;

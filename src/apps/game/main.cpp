@@ -6,6 +6,7 @@
 //               [--view X Y ZOOM DX DY] [--warmup SEKUNDY] [--load plik.ows] [--save-to plik.ows]
 // F5 / F9: szybki zapis i wczytanie najnowszego zapisu (~/.local/share/openwiggles/saves/, .sav jak w grze albo .ows).
 // Bez --game: zmienna WIGGLES_DIR, potem OW_GAME, potem ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
+// --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
 // --overlay KATALOG: nakładka w układzie modów (Data/ i Data_<język> przykrywają pliki gry), można podać kilka razy.
 // --no-border-mask: bez czarnej ramki ekranu z Data/GUI/bordermask.tga (w grze rejestr Performance\BorderMask, domyślnie 1).
 // --locale: język tekstów gry (lmsg, MESSAGES.TXT); domyślnie język interfejsu, jeśli dane go mają, inaczej język wydania.
@@ -18,6 +19,7 @@
 // Scena i rysowanie: MapScene (lib/map_scene.h). 🔶 Tymczasowo: ruch po siatce pól (lib/nav.h), kopanie
 // zamienia blok na pusty (59). Zachowania krasnali z Tcl (Scripts/classes/zwerg) jeszcze nie działają.
 #include "lib/blockdb.h"
+#include "lib/dev_api.h"
 #include "lib/render/border_mask.h"
 #include "lib/render/model_renderer.h"
 #include "lib/render/texture_cache.h"
@@ -76,6 +78,7 @@ struct Args
 	bool reveal = false;          // --reveal: bez nieodkrytego terenu
 	bool borderMask = true;       // --no-border-mask: bez ramki ekranu
 	float warmup = 0;            // --warmup S: przewiń symulację o S sekund (zrzuty, testy)
+	int httpPort = 0;             // --http PORT: serwer deweloperski (0 = wyłączony)
 	std::string load, saveTo;     // --load plik.ows, --save-to plik.ows (zapis po --warmup; testy)
 	std::optional<GameView> view; // --view x y zoom dx dy
 };
@@ -88,6 +91,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		auto next = [&]() -> const char* { return i + 1 < argc ? argv[++i] : ""; };
 		if (k == "--game") a.game = next();
 		else if (k == "--scenario") a.scenario = next();
+		else if (k == "--http") a.httpPort = std::atoi(next());
 		else if (k == "--save") a.save = next();
 		else if (k == "--template") a.templ = next();
 		else if (k == "--screenshot") a.screenshot = next();
@@ -1021,10 +1025,46 @@ int main(int argc, char** argv)
 		return ok2 ? 0 : 1;
 	}
 
+	// Serwer deweloperski: żądania wykonywane w pętli głównej (devServer.poll() raz na klatkę).
+	DevServer devServer;
+	int devControl = -1; // postać prowadzona przez API
+	if (args.httpPort == 0 && std::getenv("OW_HTTP")) args.httpPort = std::atoi(std::getenv("OW_HTTP"));
+	if (args.httpPort > 0)
+	{
+		DevHooks hk;
+		hk.program = "openwiggles";
+		hk.sim = [&g]() -> WorldSim* { return g.loaded ? &g : nullptr; };
+		hk.scene = [&g]() -> MapScene* { return g.loaded ? &g.maps : nullptr; };
+		hk.paused = [&g]() { return g.paused; };
+		hk.setPaused = [&g](bool p) { g.paused = p; };
+		hk.advance = [&g](double s) {
+			for (double t = 0; t < s - 1e-6 && g.loaded; t += 0.1) g.update(float(std::min(0.1, s - t)));
+		};
+		hk.screenshot = [&](int& w, int& h, std::vector<uint8_t>& px) {
+			frame(&px);
+			SDL_GetWindowSizeInPixels(win, &w, &h);
+			return !px.empty();
+		};
+		hk.controlled = [&devControl]() { return devControl; };
+		hk.setControlled = [&g, &devControl](int k) {
+			if (devControl >= 0) g.setControlled(devControl, false);
+			devControl = k >= 0 && k < int(g.units.size()) ? k : -1;
+			if (devControl >= 0) g.setControlled(devControl, true), g.selected = devControl;
+		};
+		hk.mapName = [&g]() { return g.source.name; };
+		registerDevApi(devServer, hk);
+		std::string err;
+		if (devServer.start(args.httpPort, err)) std::printf("serwer deweloperski: http://127.0.0.1:%d/\n", args.httpPort);
+		else std::fprintf(stderr, "serwer deweloperski: %s\n", err.c_str());
+		std::fflush(stdout);
+	}
+
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true, dragging = false;
 	while (running)
 	{
+		devServer.poll();
+		if (devControl >= int(g.units.size())) devControl = -1; // nowa mapa
 		SDL_Event e;
 		int w, h;
 		SDL_GetWindowSize(win, &w, &h);

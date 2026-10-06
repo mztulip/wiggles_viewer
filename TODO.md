@@ -249,7 +249,9 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] Zapis: sprawdzić hipotezy (starszy bajt stanu = wariant tekstury, motyw świata z klas `Info_Fog_*`)
 
 ## Faza 7: dodatki
-- [ ] **Serwer HTTP w silniku** (narzędzie deweloperskie, projekt: [docs/SERWER_HTTP.md](docs/SERWER_HTTP.md)): `--http PORT` w wigview i `openwiggles`, tylko `127.0.0.1`; wykonywanie Tcl jak WebTraq w oryginale (`/tclshell`, `/objlist`, `/objinfo`) i własne API JSON (eval, obiekty, postacie, pauza i krok, sterowanie postacią, zrzut, czekanie na warunek), strona podglądu. Kolejno: eval → obiekty/krok + testy bez `xdotool` → sterowanie i zrzut + porównanie tego samego Tcl z laboratorium → strony WebTraq
+- [x] **Serwer HTTP w silniku** ([docs/SERWER_HTTP.md](docs/SERWER_HTTP.md)): `--http PORT` w wigview i `openwiggles`, tylko `127.0.0.1`; Tcl i strony jak WebTraq (`/tclshell`, `/objlist`, `/objinfo`, `/classinfo`), API JSON (eval, stan, obiekty, postacie, pauza i krok, sterowanie postacią, zrzut, czekanie na warunek), strona podglądu; testy `http_*`
+- [ ] Skrypt porównujący ten sam Tcl w laboratorium (`live.sh tcl`) i u nas (`--http`): pozycje, atrybuty, stany po tym samym czasie
+- [ ] Czas gry z zapisu: po wczytaniu `.sav` silnik skryptów startuje od 0 s zamiast od czasu zapisu (np. 82 s w `save_kampania.sav`), a od niego zależy okno pracy i plan dnia
 - [ ] Mody w formacie DigglesModManager, stosowane w pamięci (`change_*.tcl`, `$if`, `config.json`)
 - [ ] Obsługa tekstur HD (`Data_HD`, HD mod)
 - [ ] **Tryb ulepszony** (opcja w ustawieniach, domyślnie wyłączona; domyślny wygląd zostaje wierny oryginałowi):

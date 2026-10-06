@@ -37,6 +37,7 @@ Wszelkie prawa do gry *Wiggles / Diggles – The Myth of Fenris* należą do jej
 | Biblioteka | Licencja | Użycie |
 |---|---|---|
 | [Dear ImGui](https://github.com/ocornut/imgui) v1.92.9 (`third_party/imgui`) | MIT | interfejs wigview |
+| [cpp-httplib](https://github.com/yhirose/cpp-httplib) v0.18.3 (Yuji Hirose, `third_party/cpp-httplib`) | MIT | serwer deweloperski `--http` |
 | [SDL2](https://www.libsdl.org/) (systemowa) | zlib | okno, wejście, kontekst OpenGL |
 | [GLM](https://github.com/g-truc/glm) (systemowa) | MIT | matematyka 3D |
 | [dr_mp3](https://github.com/mackron/dr_libs) (David Reid, `third_party/dr_libs/dr_mp3.h`) | public domain / MIT-0 | dekodowanie MP3 (dialogi, muzyka) |

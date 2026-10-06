@@ -80,11 +80,12 @@ t_script_visibility() {
 	echo "$r" | grep -q -- '-> 1 0$' && ok || fail "$(echo "$r" | grep eval)"
 }
 
-test_ script_gnome "skrypt krasnala: 120 s bez błędów, przejście do pracy (work_idle)"
+test_ script_gnome "skrypt krasnala: 120 s bez błędów, przejście do pracy (work_idle, prodfill_dispatch…)"
 t_script_gnome() {
 	"$B/owscript" --game "$GAME" Zwerg 120 -o "$TMP/ow.log" >"$TMP/ow" 2>&1
 	grep -q "błędy 0" "$TMP/ow" || { fail "$(grep '^po' "$TMP/ow")"; return; }
-	grep -q "stan 'work_idle'" "$TMP/ow" && ok "$(grep '^po' "$TMP/ow" | cut -c1-60)" || fail "$(grep '^po' "$TMP/ow")"
+	# skrypt ma losowość: po 120 s w oknie pracy (0–6 h) któryś ze stanów pracy, nie czas wolny
+	grep -Eq "stan '(work_idle|prodfill_dispatch|work_dispatch)'" "$TMP/ow" && ok "$(grep '^po' "$TMP/ow" | cut -c1-60)" || fail "$(grep '^po' "$TMP/ow")"
 }
 
 test_ classes "modele klas: okładziny jaskiń bez modelu, drzwi z set standanim, dekoracje Dummy_*"
@@ -251,6 +252,80 @@ t_ui_keys() {
 	xd key q
 	for i in $(seq 1 10); do kill -0 "$UIPID" 2>/dev/null || break; sleep 0.5; done
 	if kill -0 "$UIPID" 2>/dev/null; then ui_stop; fail "Q nie zamknął programu"; else ui_stop; ok; fi
+}
+
+# ---------------------------------------------------------------------------------------------------
+# Serwer deweloperski (--http, docs/SERWER_HTTP.md): program w Xvfb, zapytania curl.
+HPORT=""
+http_start() { # program argumenty… → serwer odpowiada
+	DISP=":$((90 + RANDOM % 9))"
+	while [ -e "/tmp/.X${DISP#:}-lock" ]; do DISP=":$((90 + RANDOM % 9))"; done
+	HPORT=$((18000 + RANDOM % 2000))
+	Xvfb "$DISP" -screen 0 1280x800x24 +extension GLX >/dev/null 2>&1 & XPID=$!
+	sleep 2
+	local prog="$1"; shift
+	DISPLAY="$DISP" "$B/$prog" --game "$GAME" --renderer opengl --http "$HPORT" "$@" >"$TMP/http.log" 2>&1 & UIPID=$!
+	for i in $(seq 1 90); do
+		curl -s -m 2 "http://127.0.0.1:$HPORT/api/state" 2>/dev/null | grep -q '"simulation":true' && return 0
+		sleep 1
+	done
+	return 1
+}
+hget() { curl -s -m 30 "http://127.0.0.1:$HPORT$1"; }
+hpost() { curl -s -m 30 -X POST ${2:+--data-binary "$2"} "http://127.0.0.1:$HPORT$1"; }
+jget() { python3 -c "import json,sys; d=json.load(sys.stdin); print(eval(sys.argv[1], {}, {'d': d}))" "$1"; } # wyrażenie na d
+http_ok() {
+	[ "$UI" = 1 ] || { skip "--no-ui"; return 1; }
+	command -v Xvfb >/dev/null && command -v curl >/dev/null || { skip "brak Xvfb albo curl"; return 1; }
+}
+
+test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"
+t_http_wigview() {
+	http_ok || return
+	http_start wigview --template kris_caves_1_b --simulate --populate 2 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	local e=""
+	hget "/tclshell?script=expr%206*7" | tr '\n' '|' | grep -q 'Result:||Ok.|42|' || e="/tclshell: format odpowiedzi"
+	[ -z "$e" ] && [ "$(hpost /api/eval 'expr {6*7}' | jget 'd["result"]')" = 42 ] || e="${e:-eval}"
+	[ -z "$e" ] && [ "$(hpost /api/eval 'error test_bledu' | jget 'd["ok"]')" = False ] || e="${e:-eval błędnego skryptu nie zgłasza błędu}"
+	hpost /api/pause >/dev/null
+	local t0 t1 t2 x0 x1
+	t0=$(hget /api/state | jget 'd["time"]'); sleep 1; t1=$(hget /api/state | jget 'd["time"]')
+	[ -z "$e" ] && [ "$t0" = "$t1" ] || e="${e:-pauza nie zatrzymała czasu ($t0 → $t1)}"
+	t2=$(hpost "/api/step?seconds=2" | jget 'd["time"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($t2 - $t1 - 2) < 0.05 else 1)" || e="${e:-step 2 s: $t1 → $t2}"
+	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
+	hpost "/api/control?unit=0" >/dev/null
+	hpost "/api/control/step?dx=1" >/dev/null; hpost "/api/control/step?dx=1" >/dev/null
+	hpost "/api/step?seconds=4" >/dev/null
+	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 2) < 0.01 else 1)" || e="${e:-control/step: x $x0 → $x1, oczekiwane +2}"
+	[ -z "$e" ] && [ "$(hget /api/units | jget 'd["units"][0]["controlled"]')" = True ] || e="${e:-postać nie jest oznaczona jako prowadzona}"
+	hpost /api/control/release >/dev/null; hpost /api/resume >/dev/null
+	[ -z "$e" ] && [ "$(hget "/api/wait?cond=%5Bgettime%5D%3E$(python3 -c "print(int($t2) + 3)")&timeout=20" | jget 'd["ok"]')" = True ] || e="${e:-wait: warunek czasu nie spełniony}"
+	[ -z "$e" ] && hget /api/screenshot | python3 -c "import sys; sys.exit(0 if sys.stdin.buffer.read()[:4] == b'\\x89PNG' else 1)" || e="${e:-zrzut nie jest PNG}"
+	[ -z "$e" ] && hget /objlist | grep -q "^100003 " || e="${e:-/objlist bez postaci}"
+	[ -z "$e" ] && hget "/objinfo:100003" | grep -q "^Klasa: Zwerg" || e="${e:-/objinfo}"
+	[ -z "$e" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$HPORT/api/nie_ma")" = 404 ] || e="${e:-nieznany adres nie daje 404}"
+	ui_stop
+	[ -z "$e" ] && ok "port $HPORT" || fail "$e"
+}
+
+test_ http_game "serwer HTTP w openwiggles: eval, postacie z zapisu, krok sterowanej postaci"
+t_http_game() {
+	http_ok || return
+	[ -f "$GAME/Data/Gamesave/save_kampania.sav" ] || { skip "brak save_kampania.sav"; return; }
+	http_start openwiggles --save save_kampania.sav || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	local e="" n x0 x1
+	[ "$(hpost /api/eval 'llength [obj_query 0 -class Zwerg -limit 100]' | jget 'd["result"]')" = 5 ] || e="eval obj_query: liczba krasnali"
+	n=$(hget /api/units | jget 'len(d["units"])')
+	[ -z "$e" ] && [ "$n" = 5 ] || e="${e:-/api/units: $n postaci, oczekiwane 5}"
+	hpost /api/pause >/dev/null
+	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
+	hpost "/api/control?unit=0" >/dev/null; hpost "/api/control/step?dx=-1" >/dev/null; hpost "/api/step?seconds=2" >/dev/null
+	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x0 - $x1 - 1) < 0.01 else 1)" || e="${e:-krok w lewo: x $x0 → $x1}"
+	ui_stop
+	[ -z "$e" ] && ok || fail "$e"
 }
 
 # ---------------------------------------------------------------------------------------------------

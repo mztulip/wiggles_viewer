@@ -1,6 +1,18 @@
-# Serwer HTTP w silniku (projekt, jeszcze nie zaimplementowany)
+# Serwer HTTP w silniku
 
-Narzędzie deweloperskie, nie element gry: wigview i `openwiggles` uruchomione z flagą `--http PORT` wystawiają serwer HTTP, przez który wykonujemy Tcl w działającym silniku i odczytujemy stan świata, tak jak w oryginale przez **WebTraq** ([BAZA_WIEDZY §8.6](BAZA_WIEDZY.md)). Punkt w [TODO](../TODO.md): „Faza 7: dodatki”.
+Narzędzie deweloperskie, nie element gry: wigview i `openwiggles` uruchomione z `--http PORT` (albo zmienną `OW_HTTP=PORT`) wystawiają na `127.0.0.1:PORT` serwer HTTP, przez który wykonujemy Tcl w działającym silniku i odczytujemy stan świata, tak jak w oryginale przez **WebTraq** ([BAZA_WIEDZY §8.6](BAZA_WIEDZY.md)). Kod: [`lib/dev_server`](../src/lib/dev_server.h) (serwer i kolejka), [`lib/dev_api`](../src/lib/dev_api.h) (trasy); testy: `tools/tests/run.sh http`.
+
+```
+wigview --template kris_caves_1_b --simulate --populate 2 0 --http 8083
+curl 'http://127.0.0.1:8083/tclshell?script=list%20%5Bgettime%5D%20%5Bgethours%5D'
+curl -X POST --data 'llength [obj_query 0 -class Zwerg -limit 100]' http://127.0.0.1:8083/api/eval
+curl http://127.0.0.1:8083/api/units
+curl -X POST 'http://127.0.0.1:8083/api/control?unit=0'; curl -X POST 'http://127.0.0.1:8083/api/control/step?dx=1'
+curl -o klatka.png http://127.0.0.1:8083/api/screenshot
+xdg-open http://127.0.0.1:8083/          # strona podglądu: pole Tcl, pauza, krok, tabela postaci z „steruj”
+```
+
+Pełna lista adresów: `GET /api` (tekst). W wigview Tcl działa po włączeniu symulacji (`POST /api/simulate?on=1`); bez niej `/api/eval` zwraca błąd z tą podpowiedzią.
 
 ## Po co
 
@@ -10,14 +22,14 @@ Narzędzie deweloperskie, nie element gry: wigview i `openwiggles` uruchomione z
 
 ## Dwa interfejsy na jednym serwerze
 
-**1. Zgodny z WebTraq** (narzędzia z `tools/lab` działają bez zmian także z naszym silnikiem, inny tylko port):
+**1. Zgodny z WebTraq** (ten sam Tcl i to samo czytanie odpowiedzi co w `tools/lab/live.sh`, inny tylko port):
 
 | Adres | Odpowiedź |
 |---|---|
 | `/tclshell?script=…` | wykonanie w głównym interpreterze; strona jak w grze: `Result:`, potem `Ok.` albo `Error:` ze stosem |
 | `/objlist`, `/objinfo:<nazwa>` | obiekty; karta obiektu (klasa, pozycja, obrót, stan, właściciel, zadania) |
 | `/classlist`, `/classinfo:<klasa>` | klasy, metody, stany |
-| `/index` | wersja, czas gry, klatki |
+| `/index` | program, mapa, czas gry |
 
 Błędu WebTraq z ucinaniem skryptu na pierwszym `:` **nie** powtarzamy.
 
@@ -26,13 +38,17 @@ Błędu WebTraq z ucinaniem skryptu na pierwszym `:` **nie** powtarzamy.
 | Adres | Działanie |
 |---|---|
 | `POST /api/eval` (treść: skrypt) | `{"ok": true, "result": "…"}` albo `{"ok": false, "error": "…"}` |
-| `GET /api/objects` | obiekty sceny: indeks, ID skryptu, klasa, obiekt `.3db`, animacja, pozycja, widoczność |
+| `GET /api/state` | program, mapa, czas gry, pauza, symulacja, prowadzona postać |
+| `GET /api/objects` | obiekty sceny: indeks, ID skryptu, klasa, nazwa, obiekt `.3db`, animacja, pozycja, obrót |
 | `GET /api/units` | postacie symulacji: pole, x, y, z, najmniejsza głębokość, stan, sterowanie |
-| `POST /api/pause`, `/api/resume`, `/api/step?ticks=N` | pauza mapy i krok o N tur logiki (deterministyczne testy) |
-| `POST /api/control?unit=K`, `/api/control/step?dx=1`, `/api/control/goto?x=…&y=…`, `/api/control/release` | ręczne prowadzenie postaci (to samo co klik i strzałki w wigview) |
+| `POST /api/simulate?on=1\|0` | wigview: symulacja (skrypty) |
+| `POST /api/pause`, `/api/resume`, `/api/step?seconds=S` | pauza mapy i przewinięcie świata o S s (domyślnie 0,1 = jedna tura logiki), także w pauzie: deterministyczne testy |
+| `POST /api/control?unit=K`, `/api/control/step?dx=1&dy=0`, `/api/control/goto?x=…&y=…`, `/api/control/release` | ręczne prowadzenie postaci (to samo co klik i strzałki w wigview; skrypt postaci wstrzymany) |
 | `GET /api/screenshot` | bieżąca klatka jako PNG |
-| `GET /api/wait?cond=…&timeout=S` | czekanie na warunek Tcl (np. „krasnal doszedł”) |
+| `GET /api/wait?cond=TCL&timeout=S` | czekanie, aż `expr {TCL}` da prawdę (sprawdzane co 0,1 s w wątku głównym); 408 po czasie |
 | `GET /` | prosta strona podglądu w przeglądarce: lista obiektów, karta obiektu, pole Tcl |
+
+Odpowiedzi: 404 z podpowiedzią przy nieznanym adresie, 503, gdy pętla główna nie odebrała żądania w 30 s (np. trwa wczytywanie mapy). Nieznane komendy Tcl są w silniku zaślepkami (wynik 0), więc błąd zgłasza dopiero prawdziwy błąd skryptu (`error …`).
 
 ## Zasady budowy
 
@@ -41,9 +57,8 @@ Błędu WebTraq z ucinaniem skryptu na pierwszym `:` **nie** powtarzamy.
 - **Miejsce w kodzie:** moduł w `src/lib` (np. `lib/dev_server.{h,cpp}`), wspólny dla obu programów; [`src/lib`](../src/lib) nie dołącza niczego z `src/apps`, więc aplikacja przekazuje wywołania zwrotne (zrzut, pauza, sterowanie). Wpis do [KOD.md](KOD.md).
 - **HTTP:** mała biblioteka w jednym nagłówku (np. [cpp-httplib](https://github.com/yhirose/cpp-httplib), MIT) w `third_party/` zamiast własnej obsługi gniazd; budowanie w [`build.sh`](../build.sh) bez CMake.
 
-## Kolejność prac
+## Stan
 
-1. Serwer z `/tclshell` i `POST /api/eval`, kolejka do pętli głównej, flaga `--http`; test w zestawie: eval `gethours` i `get_pos` przez `curl`.
-2. `/api/objects`, `/api/units`, pauza i krok; przeniesienie testów interakcji z `xdotool` na API (szybsze i pewniejsze).
-3. Sterowanie postacią i zrzut przez API; skrypt porównujący ten sam Tcl w laboratorium i u nas.
-4. Strony zgodne z WebTraq (`/objlist`, `/objinfo`, `/classinfo`) i strona podglądu `/`.
+✅ Zrobione wszystkie cztery kroki planu: Tcl i strony WebTraq (`/tclshell`, `/objlist`, `/objinfo:`, `/classlist`, `/classinfo:`, `/index`), API JSON (eval, stan, obiekty, postacie, symulacja, pauza i krok, sterowanie, zrzut, czekanie), strona podglądu `/`, w wigview i `openwiggles`. Testy `http_wigview` i `http_game` w [`tools/tests/run.sh`](../tools/tests/README.md).
+
+Dalej: skrypt porównujący ten sam Tcl w laboratorium (`live.sh tcl`) i u nas; przeniesienie testów interakcji z `xdotool` tam, gdzie nie chodzi o samo wejście (klawisze, mysz).

@@ -49,7 +49,7 @@ gen_version() {
 }
 gen_version
 
-CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -Ibuild/gen -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
+CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -Ibuild/gen -Ithird_party -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
 case "$MODE" in
 	debug)   CXXFLAGS+=(-O0 -g -DOW_DEBUG) ;;
 	release) CXXFLAGS+=(-O2 -DNDEBUG) ;;

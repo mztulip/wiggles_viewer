@@ -19,6 +19,7 @@
 // --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
+// --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
 // --print-objects: z --screenshot wypisuje obiekty sceny (indeks, klasa, obiekt .3db, animacja, widoczność, pozycja)
 //   i postacie symulacji, do testów (tools/tests/run.sh).
 // --click X Y: z --screenshot zaznacza obiekt albo pole w punkcie obrazu (piksele) przed zrzutem, jak kliknięcie.
@@ -50,6 +51,7 @@
 // Ctrl+F wyszukiwarka (modele, obiekty w modelach, tekstury, szablony), Q wyjście.
 // --frame przyjmuje też ułamki (np. 2.5 = połowa drogi między klatką 2 i 3, z interpolacją).
 
+#include "lib/dev_api.h"
 #include "lib/i18n.h"
 #include "lib/render/border_mask.h"
 #include "lib/world_sim.h"
@@ -110,6 +112,7 @@ struct Args
 	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
 	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
 	bool printObjects = false;               // --print-objects: lista obiektów sceny (testy)
+	int httpPort = 0;                        // --http PORT: serwer deweloperski (0 = wyłączony)
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
@@ -150,6 +153,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--saves-dir") a.savesDir = next();
 		else if (k == "--paths") a.paths = true;
 		else if (k == "--print-objects") a.printObjects = true;
+		else if (k == "--http") a.httpPort = std::atoi(next());
 		else if (k == "--click")
 		{
 			a.clickX = std::atoi(next());
@@ -2250,6 +2254,46 @@ int main(int argc, char** argv)
 		return ok;
 	}
 
+	// Serwer deweloperski: żądania wykonywane w tej pętli (devServer.poll() raz na klatkę), w wątku głównym.
+	DevServer devServer;
+	if (args.httpPort == 0 && std::getenv("OW_HTTP")) args.httpPort = std::atoi(std::getenv("OW_HTTP"));
+	if (args.httpPort > 0)
+	{
+		DevHooks hk;
+		hk.program = "wigview";
+		hk.sim = [&v]() { return v.simActive ? v.sim.get() : nullptr; };
+		hk.scene = [&v]() -> MapScene* { return v.maps.hasTemplate() ? &v.maps : nullptr; };
+		hk.setSimulate = [&v](bool on) {
+			v.simulate = on;
+			return v.maps.hasTemplate();
+		};
+		hk.paused = [&v]() { return !v.mapPlaying; };
+		hk.setPaused = [&v](bool p) { v.mapPlaying = !p; };
+		hk.advance = [&v](double s) {
+			for (double t = 0; t < s - 1e-6; t += 0.1)
+			{
+				float d = float(std::min(0.1, s - t));
+				v.maps.update(d);
+				if (v.simActive && v.sim) v.sim->simUpdate(d);
+			}
+		};
+		hk.screenshot = [&](int& w, int& h, std::vector<uint8_t>& px) {
+			drawableSize(w, h);
+			return renderFrame(w, h, &px);
+		};
+		hk.controlled = [&v]() { return v.controlUnit; };
+		hk.setControlled = [&v](int k) {
+			if (k >= 0) v.takeControl(k);
+			else v.releaseControl();
+		};
+		hk.mapName = [&v]() { return v.maps.current(); };
+		registerDevApi(devServer, hk);
+		std::string err;
+		if (devServer.start(args.httpPort, err)) std::printf("serwer deweloperski: http://127.0.0.1:%d/\n", args.httpPort);
+		else std::fprintf(stderr, "serwer deweloperski: %s\n", err.c_str());
+		std::fflush(stdout);
+	}
+
 	Uint64 last = SDL_GetPerformanceCounter();
 	bool running = true;
 	bool clickArmed = false, rclickArmed = false;
@@ -2257,6 +2301,7 @@ int main(int argc, char** argv)
 	std::string restartGame;
 	while (running)
 	{
+		devServer.poll();
 		if (!v.restartGame.empty())
 		{
 			restartGame = v.restartGame; // okno „Ścieżki”: nowy katalog gry
