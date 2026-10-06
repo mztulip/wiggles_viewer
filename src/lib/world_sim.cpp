@@ -281,8 +281,8 @@ void WorldSim::manualMove(SimUnit& u, float dt)
 	}
 	float fy = floorY(u.tx, u.ty), dy = fy - u.y, my = 3.f * dt; // stopień: płynnie w górę / w dół
 	u.y += std::abs(dy) <= my ? dy : (dy > 0 ? my : -my);
-	if (u.moveX != 0) u.facing = u.moveX > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f;
-	else u.facing = u.moveZ < 0 ? kSimPi : 0.f;
+	// przodem w stronę ruchu, także po skosie: w prawo −π/2, w lewo +π/2, do przodu 0, w głąb π
+	u.facing = std::atan2(-u.moveX, u.moveZ);
 	scene_.playAnim(u.obj, u.walkAnim, true);
 }
 
