@@ -117,6 +117,13 @@ case "${1:-}" in
 		fi
 		mkdir -p "$GRAB"; rm -f "$GRAB/grab.request"
 		export LD_PRELOAD="$LAB/glgrab.so" OW_GRAB_DIR="$GRAB"
+		if [ -n "${OW_HIDDEN:-}" ]; then # niewidoczny Xvfb: okno nie przejmuje klawiatury użytkownika
+			D=77; while [ -e "/tmp/.X$D-lock" ]; do D=$((D+1)); done
+			Xvfb ":$D" -screen 0 1024x768x24 +extension GLX >/dev/null 2>&1 &
+			state_set xvfb "$!"
+			export DISPLAY=":$D"
+			sleep 2
+		fi
 		cd "$LAB/Wiggles"
 		setsid wine explorer /desktop=OWLab2,1024x768 'C:\Wiggles\Wiggles.exe' ${OW_ARGS:-} >/dev/null 2>&1 &
 		echo -n "czekam na grę"
@@ -152,6 +159,7 @@ case "${1:-}" in
 		done ;;
 	stop)
 		wineserver -k 2>/dev/null
+		XP="$(state_get xvfb)"; [ -n "$XP" ] && { kill "$XP" 2>/dev/null; state_set xvfb ""; }
 		rm -f "$LAB/Wiggles/Data/userstartup.tcl"
 		wine reg add "$KEY" /v WebServer /d 0 /f >/dev/null; wineserver -w
 		echo "zatrzymano (ostatni szablon: $(state_get cur))" ;;

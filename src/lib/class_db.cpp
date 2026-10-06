@@ -172,6 +172,17 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 			HorizonZone z;
 			if (ws >> z.r >> z.g >> z.b >> z.depth >> z.size) horizons_.emplace(Vfs::lower(currentClass), z);
 		}
+		// set standanim <obiekt>.<anim> (obj_init drzwi i krat, potem set_anim this $standanim): zastępcza
+		// domyślna animacja dla klas bez class_defaultanim; model nadaje dopiero skrypt.
+		size_t sp = t.find("set standanim ");
+		if (sp != std::string::npos && !currentClass.empty())
+		{
+			std::string anim = trim(t.substr(sp + 14));
+			size_t e = 0;
+			while (e < anim.size() && (isIdent(anim[e]) || anim[e] == '.')) ++e;
+			anim = anim.substr(0, e);
+			if (!anim.empty()) standAnims_.emplace(Vfs::lower(currentClass), anim);
+		}
 		size_t p = t.find("class_defaultanim ");
 		if (p != std::string::npos && !currentClass.empty())
 		{
@@ -208,6 +219,7 @@ void ClassDb::load(const Vfs& vfs)
 	lights_.clear();
 	particles_.clear();
 	viewInFog_.clear();
+	standAnims_.clear();
 	// Najpierw dekoracje: tu nazwa pliku wskazuje model.
 	for (const auto& f : vfs.list("Data/Scripts/classes/deco"))
 	{
@@ -228,6 +240,15 @@ void ClassDb::load(const Vfs& vfs)
 			if (low.size() < 4 || low.substr(low.size() - 4) != ".tcl") continue;
 			if (auto data = vfs.read(d + "/" + f)) parseScript(std::string(data->begin(), data->end()), "");
 		}
+	}
+	for (const auto& [name, anim] : standAnims_)
+	{
+		if (classes_.count(name)) continue;
+		size_t dot = anim.find('.');
+		ClassModel cm;
+		cm.object = anim.substr(0, dot);
+		cm.animation = dot == std::string::npos ? "standard" : anim.substr(dot + 1);
+		classes_[name] = cm; // ANIM_STILL jak set_anim this $standanim 0 $ANIM_STILL
 	}
 	for (auto& [name, v] : viewInFog_)
 		if (auto it = classes_.find(name); it != classes_.end()) it->second.viewInFog = v;

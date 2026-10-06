@@ -364,7 +364,15 @@ Metoda: [`tools/lab/set_link_flags.py`](../tools/lab/set_link_flags.py) ustawia 
 - 6, 7: słabo widoczne, półprzezroczyste; 7 ma inny układ wzoru niż 6.
 - 2: tylko jasne części (addytywnie, ważone alfą).
 
-Wniosek: ✅ 8, 9 i 11 nie wycinają alfą; ✅ 4 = 1; 🔶 w 8 alfa działa jak maska samoświecenia (porównanie 8 i 11). Zrzut trybu 3 nieudany (kamera odjechała), tryb znany z §8.9. Plik w laboratorium przywrócony. Uwaga do metody: widoczne okno `live2.sh` przejmuje klawiaturę użytkownika; serie zrzutów robić w Xvfb (`live.sh`).
+Wniosek: ✅ 8, 9 i 11 nie wycinają alfą; ✅ 4 = 1; 🔶 w 8 alfa działa jak maska samoświecenia (porównanie 8 i 11) z progiem 0,5: w trybie 8 świecą te same fragmenty, które zostają w trybie 1 (liniowa maska dawała u nas pomarańczowe dolne części kolumn). Zrzut trybu 3 nieudany (kamera odjechała), tryb znany z §8.9. Plik w laboratorium przywrócony. Uwaga do metody: widoczne okno `live2.sh` przejmuje klawiaturę użytkownika; serie zrzutów robić w Xvfb (`OW_HIDDEN=1 live2.sh start`).
+
+### 8.11 Teren lawy: detale i jasność (2026-10-06)
+
+W `lava_unq_vampy_tuer` wigview pokazywał czerwone placki i jasny grunt, gra ciemną skałę z cienkimi żyłkami.
+- Jasność: lampy laboratorium (`ow_show`: `Misc_LightSrc_a` co 5 bloków, z = 14) odtworzone w wigview opcją `--lab-lamps`; z nimi grunt jest ciemny jak w grze. Jasny piasek dawała lampa podglądu wigview, nie błąd terenu.
+- Detale: tekstury `detail/lava*` jako jedyne mają alfę (maska żyłek). Bez maski modulate ×2 barwił cały blok, z maską żyłki były ciemne; w grze świecą. 🔶 Rysujemy je mieszaniem alfa bez oświetlenia: wzór i jasność żyłek zgadzają się ze zrzutem.
+- Wariant pełnego pokrycia: własny `ow_full.l2m` (cały szablon `0x5560`) nałożony w działającej grze `map_setlayer2 16 16 data/templates/ow_full.l2m` (gra w Xvfb, `OW_HIDDEN=1 live2.sh`). Gra rysuje we wszystkich blokach jednolite żyłki, bez plam z `lava_1111_c` … `_f`: ✅ używa pliku bez litery (`lava_1111.tga`). Plik usunięty z laboratorium.
+- Drzwi `Tuer_kaserne` nie mają `class_defaultanim`; model nadaje `obj_init` przez `set standanim tuer_kaserne.standard` i `set_anim this $standanim` (`calls/DOORS.TCL`). Teraz `ClassDb` bierze `set standanim` jako zastępczą animację, a `set_anim obiekt.anim` w symulacji podpina model.
 ---
 
 ## 9. Mapy i teren: przebieg badań

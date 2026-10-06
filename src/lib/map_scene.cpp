@@ -322,17 +322,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 	buildFluids();
 	allLights_.clear();
 	if (script_)
-		for (const auto& o : script_->objects)
-			if (const auto* ls = classes_.lights(o.className))
-				for (const auto& l : *ls)
-				{
-					GameLight g;
-					g.posRadius = glm::vec4(o.pos[0] + l.offset[0], o.pos[1] + l.offset[1],
-					    (o.pos[2] + l.offset[2]) * 0.5f + 7.f, l.radius);
-					g.color = glm::vec4(std::floor(l.color[0] * 31.f) * 0.5f, std::floor(l.color[1] * 31.f) * 0.5f,
-					    std::floor(l.color[2] * 31.f) * 0.5f, 0.f);
-					allLights_.push_back(g);
-				}
+		for (const auto& o : script_->objects) pushClassLights(o.className, o.pos[0], o.pos[1], o.pos[2]);
 	previewLamp_ = !scenarioMode_ && allLights_.empty();
 	// Kadr na cały teren (x, y w blokach; z między dnem a przednią płaszczyzną).
 	float w = pmp_ ? float(pmp_->width) : 4.f, h = pmp_ ? float(pmp_->height) : 4.f;
@@ -504,6 +494,34 @@ void MapScene::update(float dt)
 		++steps;
 	}
 	if (steps == 4) particleAcc_ = 0.f;
+}
+
+std::string MapScene::objectModelObject(int i) const
+{
+	const auto& o = objects_[size_t(i)];
+	return o.slot && o.cls ? o.cls->object : std::string();
+}
+
+bool MapScene::pushClassLights(const std::string& className, float x, float y, float zScript)
+{
+	const auto* ls = classes_.lights(className);
+	if (!ls) return false;
+	for (const auto& l : *ls)
+	{
+		GameLight g;
+		g.posRadius = glm::vec4(x + l.offset[0], y + l.offset[1], (zScript + l.offset[2]) * 0.5f + 7.f, l.radius);
+		g.color = glm::vec4(std::floor(l.color[0] * 31.f) * 0.5f, std::floor(l.color[1] * 31.f) * 0.5f,
+		    std::floor(l.color[2] * 31.f) * 0.5f, 0.f);
+		allLights_.push_back(g);
+	}
+	return true;
+}
+
+bool MapScene::addClassLights(const std::string& className, float x, float y, float zScript)
+{
+	if (!pushClassLights(className, x, y, zScript)) return false;
+	previewLamp_ = false;
+	return true;
 }
 
 bool MapScene::setObjectModel(int i, const std::string& modelFile, const std::string& object)

@@ -60,6 +60,11 @@ public:
 	// Dodatkowe źródło cząsteczek w punkcie (x, y bloki sceny, y w dół; zWorld = z świata w blokach), jak
 	// change_particlesource na obiekcie stojącym w tym punkcie (porównania ze zrzutami gry). false: nieznany typ.
 	bool addEmitter(const ParticleSource& s, float x, float y, float zWorld);
+	// Światła klasy (class_light) w punkcie jak obiekt skryptu (x, y bloki, z skryptu), np. lampy laboratorium
+	// Misc_LightSrc_a z tools/lab/live2.sh; wyłącza lampę podglądu. false: klasa bez świateł.
+	bool addClassLights(const std::string& className, float x, float y, float zScript);
+	int mapWidth() const { return pmp_ ? int(pmp_->width) : 0; }
+	int mapHeight() const { return pmp_ ? int(pmp_->height) : 0; }
 	float floorDrop(float x, float y) const;
 	// Wskazywanie (przeglądarka). Promień w układzie sceny (przed macierzą world, jednostki modelu): o + t·d.
 	// pickObject: obiekt z najbliższym trójkątem bieżącej klatki na promieniu (bbox w układzie obiektu jako test
@@ -69,6 +74,8 @@ public:
 	int hoverObject = -1, selectedObject = -1; // podświetlane przy rysowaniu
 	const Model3db* objectModel(int i) const;
 	std::string objectAnimation(int i) const;
+	// Nazwa obiektu .3db, którym rysowany jest obiekt mapy; pusta bez modelu.
+	std::string objectModelObject(int i) const;
 	const TemplateObject& objectSource(int i) const { return objects_[size_t(i)].src; }
 	int currentMeshOf(int i) const { return currentMesh(objects_[size_t(i)]); }
 	static glm::mat4 objectMatrixOf(const TemplateObject& o) { return objectMatrix(o); }
@@ -189,6 +196,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	int currentMesh(const PlacedObject& o) const; // indeks meshu bieżącej klatki animacji
 	bool objectShown(const PlacedObject& o) const; // jak przy rysowaniu: detale, obiekty edytora, mgła
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
+	bool pushClassLights(const std::string& className, float x, float y, float zScript); // do allLights_
 
 	ModelSlot* model(const std::string& file);
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.

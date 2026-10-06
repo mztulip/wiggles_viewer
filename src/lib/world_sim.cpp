@@ -383,7 +383,11 @@ void WorldSim::setAnim(int id, const std::string& anim, int, int mode)
 	if (!valid(id)) return;
 	if (SimUnit* u = unitOf(idx(id)); u && u->state != SimUnit::Idle) return; // chód i kopanie mają własne animacje
 	size_t dot = anim.find('.');
-	scene_.playAnim(idx(id), dot == std::string::npos ? anim : anim.substr(dot + 1), mode == 2);
+	std::string name = dot == std::string::npos ? anim : anim.substr(dot + 1);
+	// obiekt.anim innego obiektu .3db niż bieżący (albo obiekt bez modelu): podpięcie modelu po nazwie obiektu
+	if (dot != std::string::npos && Vfs::lower(scene_.objectModelObject(idx(id))) != Vfs::lower(anim.substr(0, dot)))
+		scene_.setObjectModel(idx(id), "", anim.substr(0, dot));
+	scene_.playAnim(idx(id), name, mode == 2);
 }
 double WorldSim::animLength(int id, const std::string& anim)
 { // klatki animacji modelu / 10 kl./s

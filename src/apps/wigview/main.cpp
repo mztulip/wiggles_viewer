@@ -33,6 +33,8 @@
 // --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
 // --emit TYP X Y Z [MAX NAKLATKĘ]: dodatkowe źródło cząsteczek na mapie w punkcie gry (x, y bloki, z jak w skrypcie:
 //                 świat = z·0,5 + 7), domyślnie 64 cząsteczki i 2 na klatkę; do porównań ze zrzutami gry (§12.6).
+// --lab-lamps: lampy jak tools/lab/live2.sh (Misc_LightSrc_a co 5 bloków od rogu szablonu, z = 14) zamiast
+//   lampy podglądu, do porównań jasności ze zrzutami z laboratorium.
 // --border-mask: ramka ekranu gry (Data/GUI/bordermask.tga) na scenie map, jak w grze z BorderMask=1.
 // --no-draw-modes: wszystkie linki modeli rysowane jak tryb 1 (bez trybów z flags linku), do porównań.
 // --shadow-cmap: w zakładce Modele rozwija sekcję „Cień i cmap” (cień 32×32 i maska kolizji bieżącej klatki).
@@ -97,6 +99,7 @@ struct Args
 	bool shadowCmap = false;
 	bool drawModes = true; // --no-draw-modes
 	bool borderMask = false; // --border-mask
+	bool labLamps = false;   // --lab-lamps
 	std::vector<std::array<float, 6>> emits; // --emit TYP X Y Z MAX NAKLATKĘ
 	std::string savesDir;                    // --saves-dir
 	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
@@ -175,6 +178,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 			a.emits.push_back(e);
 		}
 		else if (k == "--overlay") a.overlays.push_back(next());
+		else if (k == "--lab-lamps") a.labLamps = true;
 		else if (k == "--scenario" || k == "--save") a.scenario = next();
 		else if (k == "--search") a.search = next();
 		else if (k == "--center")
@@ -2017,6 +2021,10 @@ int main(int argc, char** argv)
 			v.gameCamView = g;
 			v.center = glm::vec3(g.x, g.y, 14.f) * MapView::kBlock;
 		}
+		if (args.labLamps) // jak ow_show w tools/lab/live2.sh: szablon w (16, 16), lampy w (16 + x + 1, 16 + y + 1, 14)
+			for (int y = 0; y <= v.maps.mapHeight(); y += 5)
+				for (int x = 0; x <= v.maps.mapWidth(); x += 5)
+					v.maps.addClassLights("Misc_LightSrc_a", float(x + 1), float(y + 1), 14.f);
 		for (const auto& e : args.emits)
 		{
 			ParticleSource s;

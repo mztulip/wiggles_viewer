@@ -6,7 +6,8 @@
 //    (SetWeaponClasses w items/waffen.tcl tworzy klasy bez prefiksu),
 //  - def_class <Klasa> ... { ... class_defaultanim <obiekt>.<animacja> ... }.
 // Plik dummy_<plik>.tcl wskazuje model Data/3db/<plik>.3db.
-// Dla innych klas zbieramy class_defaultanim ze wszystkich skryptów w Data/Scripts/classes.
+// Dla innych klas zbieramy class_defaultanim ze wszystkich skryptów w Data/Scripts/classes, a gdy go brak,
+// „set standanim <obiekt>.<anim>” z obj_init (drzwi, kraty: model nadaje set_anim this $standanim).
 #pragma once
 
 #include "lib/particles.h"
@@ -73,6 +74,7 @@ private:
 	std::unordered_map<std::string, std::vector<ClassLight>> lights_;
 	std::unordered_map<std::string, std::vector<ParticleSource>> particles_;
 	std::unordered_map<std::string, bool> viewInFog_; // class_viewinfog z ciał def_class
+	std::unordered_map<std::string, std::string> standAnims_; // set standanim <obiekt>.<anim> (drzwi, kraty)
 };
 
 } // namespace ow

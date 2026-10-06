@@ -42,8 +42,9 @@ void main()
 		vec3 n = normalize(vNormal);
 		c *= uLightDirAmb.w + (1.0 - uLightDirAmb.w) * max(dot(n, uLightDirAmb.xyz), 0.0);
 	}
-	// 🔶 8: alfa tekstury to maska samoświecenia (1 = własny kolor bez oświetlenia, 0 = oświetlony jak 1).
-	if (draw == 8 && mode != 3) c = mix(c, unlit, t.a);
+	// 🔶 8: alfa tekstury to maska samoświecenia z progiem 0,5 (te same piksele, które tryb 1 zostawia po teście
+	// alfy, świecą własnym kolorem; reszta oświetlona jak 1). BAZA_WIEDZY §8.10.
+	if (draw == 8 && mode != 3 && t.a >= 0.5) c = unlit;
 	if (opaque) t.a = 1.0;
 	// Podświetlenie w przeglądarce (obiekt pod kursorem / zaznaczony): rozjaśnienie w stronę jasnego błękitu.
 	if (uParams.w > 0.0) c = mix(c, vec3(0.55, 0.8, 1.0), uParams.w);

@@ -33,7 +33,10 @@ tools/lab/live2.sh tcl 'get_view'          # dowolny Tcl w działającej grze (b
 tools/lab/live2.sh shot plik.png           # zrzut prosto z bufora klatki gry (1024×768; .png, .jpg albo .ppm)
 tools/lab/live2.sh shot-all zrzuty/ lava_unq   # wszystkie szablony pasujące do filtra po kolei: zrzuty/<szablon>.png
 tools/lab/live2.sh stop                    # zamknij grę
+OW_HIDDEN=1 tools/lab/live2.sh start X     # to samo w niewidocznym Xvfb (okno nie przejmuje klawiatury; shot działa)
 ```
+
+Porównanie jasności z wigview: `--lab-lamps` stawia te same lampy co `ow_show` (zamiast lampy podglądu), np. `build/release/wigview --template lava_unq_vampy_tuer --lab-lamps --view 8 2 1.8 -0.25 0.1 --size 1024x768 --screenshot nasz.png`.
 
 Co robi podmiana szablonu (procedura `ow_show` w grze, zdefiniowana przez `userstartup.tcl`):
 1. usuwa obiekty Tcl poprzedniego szablonu i czyści mapę (`map create`; znikają też statyczne dekoracje),

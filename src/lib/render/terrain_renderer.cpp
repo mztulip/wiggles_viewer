@@ -47,6 +47,9 @@ bool TerrainRenderer::init(rhi::Device& dev, std::string& err)
 	dd.depth = rhi::DepthTest::LessEqual;
 	dd.depthWrite = false;
 	if (!(pipeDetail_ = dev.createPipeline(dd, err))) return false;
+	// 🔶 Detale lawy (alfa = maska żyłek): żyłki świecą na ciemnej skale, więc mieszanie alfa bez oświetlenia.
+	dd.blend = rhi::Blend::Alpha;
+	if (!(pipeGlow_ = dev.createPipeline(dd, err))) return false;
 	rhi::PipelineDesc dw = d;
 	dw.wireframe = true;
 	dw.depth = rhi::DepthTest::LessEqual;
@@ -130,7 +133,8 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 	}
 
 	// Nakładki detali z .l2m: starszy bajt = 4 narożniki po 2 bity (TL, TR, BL, BR; 0 brak, 1 zestaw
-	// <świat>, 2 zestaw <świat>2). Plik detail/<świat>[2]_<kod>.tga, pełne pokrycie 1111 z wariantami _a.._f.
+	// <świat>, 2 zestaw <świat>2). Plik detail/<świat>[2]_<kod>.tga; ✅ pełne pokrycie 1111 to plik bez litery
+	// (warianty _a.._f gra pomija: BAZA_WIEDZY §8.11).
 	if (layer2 && int(layer2->width) == mesh.width && int(layer2->height) == mesh.height)
 	{
 		std::map<std::string, std::vector<uint32_t>> byDetail;
@@ -145,7 +149,6 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 					for (int c : corner) bits += c == set ? '1' : '0';
 					if (bits == "0000") continue;
 					std::string name = "Data/Ground/detail/" + world + (set == 2 ? "2" : "") + "_" + bits;
-					if (bits == "1111") name += std::string("_") + char('a' + (bx * 7 + by * 13) % 6);
 					blockIndices(bx, by, byDetail[name + ".tga"]);
 				}
 			}
@@ -153,6 +156,7 @@ void TerrainRenderer::build(const TerrainMesh& mesh, TextureCache& textures, con
 		{
 			Group g;
 			g.texture = textures.getPath(name).id;
+			g.glow = world == "lava"; // tylko detale lava*/lava2* mają alfę (maskę)
 			upload(idx, g, detail_);
 		}
 	}
@@ -182,15 +186,24 @@ void TerrainRenderer::draw(const glm::mat4& viewProj, const glm::mat4& world, co
 	}
 	if (showDetail && !detail_.empty())
 	{
-		u.flags.y = 1;
-		dev_->bindPipeline(pipeDetail_);
-		dev_->setUniforms(rhi::kBindDraw, &u, sizeof u);
-		dev_->bindVertexBuffer(0, vbo_);
-		for (const auto& g : detail_)
+		for (int glow = 0; glow < 2; ++glow)
 		{
-			dev_->bindTexture(0, g.texture);
-			dev_->bindIndexBuffer(g.ebo);
-			dev_->drawIndexed(g.count);
+			u.flags.y = glow ? 2 : 1;
+			bool bound = false;
+			for (const auto& g : detail_)
+			{
+				if (g.glow != bool(glow)) continue;
+				if (!bound)
+				{
+					dev_->bindPipeline(glow ? pipeGlow_ : pipeDetail_);
+					dev_->setUniforms(rhi::kBindDraw, &u, sizeof u);
+					dev_->bindVertexBuffer(0, vbo_);
+					bound = true;
+				}
+				dev_->bindTexture(0, g.texture);
+				dev_->bindIndexBuffer(g.ebo);
+				dev_->drawIndexed(g.count);
+			}
 		}
 	}
 	if (wireframe)

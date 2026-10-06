@@ -44,9 +44,10 @@ private:
 		rhi::Handle textureB = rhi::kNull, textureC = rhi::kNull; // podkład: Gnd_B, Gnd_C
 		rhi::Handle ebo = rhi::kNull;
 		uint32_t count = 0;
+		bool glow = false; // nakładka z maską alfa (lava*): mieszanie alfa bez oświetlenia zamiast modulate ×2
 	};
 	rhi::Device* dev_ = nullptr;
-	rhi::Handle pipe_ = rhi::kNull, pipeDetail_ = rhi::kNull, pipeWire_ = rhi::kNull;
+	rhi::Handle pipe_ = rhi::kNull, pipeDetail_ = rhi::kNull, pipeGlow_ = rhi::kNull, pipeWire_ = rhi::kNull;
 	rhi::Handle vbo_ = rhi::kNull;
 	std::vector<Group> groups_;
 	std::vector<Group> detail_;
