@@ -115,6 +115,11 @@ public:
 	bool linkEuler(int i, int link, Vec3f& out) const; // orientacja punktu (get_linkrot), radiany
 	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
 	void linkObject(int child, int parent, int link);
+	int linkParent(int child) const // rodzic przypiętego obiektu (czapka → krasnal), −1 = brak
+	{
+		auto it = links_.find(child);
+		return it == links_.end() ? -1 : it->second.first;
+	}
 	int addObject(const std::string& className, float x, float y, float zScript);
 	const Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
 	const BlockDb& blockDb() const { return blocks_; }

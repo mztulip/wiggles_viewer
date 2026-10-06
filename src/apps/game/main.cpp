@@ -557,14 +557,20 @@ struct Game : WorldSim
 
 	// Pole pod kursorem: promień kamery przecięty z płaszczyzną głębokości krasnali w trafionym miejscu terenu
 	// (wolne pole: głębokość chodu przed tylną ścianą; skała: przednia płaszczyzna), bez trafienia z = kGnomeZ.
-	bool pickTile(int mx, int my, int w, int h, int& tx, int& ty, float& fx, float& fy)
+	// Promień spod kursora w układzie sceny (przed macierzą world, jednostki modelu): p0 + t·(p1 − p0).
+	void cursorRay(int mx, int my, int w, int h, glm::vec3& p0, glm::vec3& p1)
 	{
 		glm::mat4 vp, world;
 		gameCamera(cam, float(w) / float(std::max(h, 1)), vp, world);
 		glm::mat4 inv = glm::inverse(vp * world);
 		float nx = 2.f * float(mx) / float(w) - 1.f, ny = 1.f - 2.f * float(my) / float(h);
 		glm::vec4 a = inv * glm::vec4(nx, ny, -1.f, 1.f), b = inv * glm::vec4(nx, ny, 1.f, 1.f);
-		glm::vec3 p0 = glm::vec3(a) / a.w, p1 = glm::vec3(b) / b.w;
+		p0 = glm::vec3(a) / a.w, p1 = glm::vec3(b) / b.w;
+	}
+	bool pickTile(int mx, int my, int w, int h, int& tx, int& ty, float& fx, float& fy)
+	{
+		glm::vec3 p0, p1;
+		cursorRay(mx, my, w, h, p0, p1);
 		float zs = kGnomeZ;
 		int htx, hty;
 		if (maps.pickTerrain(p0, p1 - p0, htx, hty)) zs = nav.open(htx, hty) ? walkZ(float(htx) + 0.5f, hty) : 15.f;
@@ -584,6 +590,17 @@ struct Game : WorldSim
 		if (!pickTile(mx, my, w, h, tx, ty, fx, fy)) return;
 		if (button == SDL_BUTTON_LEFT)
 		{
+			// Najpierw trafienie w model (trójkąty bieżącej klatki, jak w wigview); czapka wybiera swojego krasnala.
+			glm::vec3 p0, p1;
+			cursorRay(mx, my, w, h, p0, p1);
+			int hit = maps.pickObject(p0, p1 - p0);
+			for (int k = 0; k < 3 && hit >= 0 && maps.linkParent(hit) >= 0; ++k) hit = maps.linkParent(hit);
+			for (size_t i = 0; i < units.size() && hit >= 0; ++i)
+				if (units[i].obj == hit && units[i].gnome)
+				{
+					selected = int(i);
+					return;
+				}
 			int best = -1;
 			float bd = 1.2f;
 			for (size_t i = 0; i < units.size(); ++i)
