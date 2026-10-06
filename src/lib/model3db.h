@@ -10,6 +10,7 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -112,8 +113,9 @@ struct Model3db
 
 	const Object3db* findObject(const std::string& name) const;
 	// Punkt zaczepienia `link` (0..31) w klatce (meshu) `mesh`, w jednostkach modelu (jak wierzchołki).
-	// x, y = dequant(u16); z = 2·dequant(u16) (gra skaluje z punktów podwójnie). false = brak punktu.
-	bool linkOffset(uint32_t mesh, int link, Vec3f& out) const
+	// x, y, z = dequant(u16). scriptZ: z = 2·dequant (get_linkpos w skryptach: gra skaluje z punktów podwójnie);
+	// bez tego punkt w przestrzeni wierzchołków, w którym gra osadza przypięty model (czapkę). false = brak punktu.
+	bool linkOffset(uint32_t mesh, int link, Vec3f& out, bool scriptZ = true) const
 	{
 		if (mesh >= meshes.size() || link < 0 || link >= 32) return false;
 		const auto& t = meshes[mesh].linkTable;
@@ -122,7 +124,21 @@ struct Model3db
 		if (slot >= linkRecords.size()) return false;
 		const auto& r = linkRecords[slot];
 		auto u = [&](int o) { return uint16_t(r[size_t(o)] | (r[size_t(o) + 1] << 8)); };
-		out = {dequant(u(0)), dequant(u(2)), 2.f * dequant(u(4))};
+		out = {dequant(u(0)), dequant(u(2)), (scriptZ ? 2.f : 1.f) * dequant(u(4))};
+		return true;
+	}
+	// Orientacja punktu zaczepienia: kąty Eulera X, Y, Z (radiany, bajty 8–19 rekordu; get_linkrot).
+	bool linkEuler(uint32_t mesh, int link, Vec3f& out) const
+	{
+		if (mesh >= meshes.size() || link < 0 || link >= 32) return false;
+		const auto& t = meshes[mesh].linkTable;
+		uint32_t slot = uint32_t(t[size_t(link) * 4]) | uint32_t(t[size_t(link) * 4 + 1]) << 8 |
+		    uint32_t(t[size_t(link) * 4 + 2]) << 16 | uint32_t(t[size_t(link) * 4 + 3]) << 24;
+		if (slot >= linkRecords.size()) return false;
+		const auto& r = linkRecords[slot];
+		float a[3];
+		std::memcpy(a, r.data() + 8, sizeof a);
+		out = {a[0], a[1], a[2]};
 		return true;
 	}
 };

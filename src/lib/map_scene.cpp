@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace ow
 {
@@ -692,25 +693,79 @@ bool MapScene::pickTerrain(const glm::vec3& ro, const glm::vec3& rd, int& tx, in
 	return false;
 }
 
-int MapScene::currentMesh(const PlacedObject& o) const
+bool MapScene::currentFrames(const PlacedObject& o, uint32_t& a, uint32_t& b, float& t) const
 {
-	if (!o.slot || o.animation < 0) return -1;
+	if (!o.slot || o.animation < 0) return false;
 	const auto& an = o.slot->model->animations[size_t(o.animation)];
-	if (an.frames.empty()) return -1;
+	if (an.frames.empty()) return false;
 	int n = int(an.frames.size());
+	// Tryb animacji klasy: 0 = ANIM_STILL (klatka 0), 1 = raz, 2 = pętla; animrandom = losowy start.
 	int mode = o.animMode >= 0 ? o.animMode : o.cls ? o.cls->animMode
 	                                                : 2;
-	float f = mode != 0 ? (time_ - o.animStart) * 10.f : 0.f;
-	if (mode == 1) f = std::min(f, float(n - 1));
-	return int(an.frames[size_t(int(f) % n)]);
+	float f = 0.f;
+	if (mode != 0)
+	{
+		f = (time_ - o.animStart) * 10.f; // tempo animacji gry, §11.6
+		if (o.cls && o.cls->animRandom) f += float((unsigned(o.src.pos[0] * 131.f) * 2654435761u >> 8) % unsigned(n));
+		if (mode == 1) f = std::min(f, float(n - 1));
+	}
+	int i = int(f) % n, j = mode == 2 ? (i + 1) % n : std::min(i + 1, n - 1);
+	a = an.frames[size_t(i)], b = an.frames[size_t(j)], t = f - std::floor(f);
+	return true;
 }
 
-bool MapScene::linkOffset(int i, int link, float out[3]) const
+int MapScene::currentMesh(const PlacedObject& o) const
+{
+	uint32_t a, b;
+	float t;
+	return currentFrames(o, a, b, t) ? int(a) : -1;
+}
+
+bool MapScene::linkedMatrix(int child, glm::mat4& out, int depth) const
+{
+	auto it = links_.find(child);
+	if (it == links_.end() || depth > 4) return false;
+	int parent = it->second.first, link = it->second.second;
+	if (parent < 0 || parent >= int(objects_.size())) return false;
+	const PlacedObject& p = objects_[size_t(parent)];
+	glm::mat4 pm;
+	if (!linkedMatrix(parent, pm, depth + 1)) pm = objectMatrix(p.src);
+	uint32_t a, b;
+	float t;
+	Vec3f oa, ob, ea{0, 0, 0}, eb{0, 0, 0};
+	if (!currentFrames(p, a, b, t) || !p.slot->model->linkOffset(a, link, oa, false))
+	{
+		out = pm * glm::translate(glm::mat4(1.f), glm::vec3(0.f, -kBlock, 0.f));
+		return true;
+	}
+	if (!p.slot->model->linkOffset(b, link, ob, false)) ob = oa, b = a;
+	p.slot->model->linkEuler(a, link, ea);
+	if (!p.slot->model->linkEuler(b, link, eb)) eb = ea;
+	glm::vec3 pos = glm::mix(glm::vec3(oa.x, oa.y, oa.z), glm::vec3(ob.x, ob.y, ob.z), t);
+	// Orientacja punktu: kąty Eulera jak obrót obiektu w objectMatrix (Ry·Rx·Rz, kąty z minusem); klatki a, b
+	// łączone sferycznie (kwaterniony), żeby obrót przez ±π nie wirował.
+	auto quat = [](const Vec3f& e) {
+		return glm::angleAxis(-e.y, glm::vec3(0, 1, 0)) * glm::angleAxis(-e.x, glm::vec3(1, 0, 0)) *
+		    glm::angleAxis(-e.z, glm::vec3(0, 0, 1));
+	};
+	glm::quat q = glm::slerp(quat(ea), quat(eb), t);
+	out = pm * glm::translate(glm::mat4(1.f), pos) * glm::mat4_cast(q);
+	return true;
+}
+
+bool MapScene::linkEuler(int i, int link, Vec3f& out) const
+{
+	const auto& o = objects_[size_t(i)];
+	int mesh = currentMesh(o);
+	return mesh >= 0 && o.slot->model->linkEuler(uint32_t(mesh), link, out);
+}
+
+bool MapScene::linkOffset(int i, int link, float out[3], bool scriptZ) const
 {
 	const auto& o = objects_[size_t(i)];
 	int mesh = currentMesh(o);
 	Vec3f v;
-	if (mesh < 0 || !o.slot->model->linkOffset(uint32_t(mesh), link, v)) return false;
+	if (mesh < 0 || !o.slot->model->linkOffset(uint32_t(mesh), link, v, scriptZ)) return false;
 	// Obrót jak w objectMatrix (oś pionowa, kąt −ry), potem jednostki modelu -> bloki; z świata -> skala skryptu (×2).
 	float c = std::cos(-o.src.rot[1]), s = std::sin(-o.src.rot[1]);
 	float x = c * v.x + s * v.z, z = -s * v.x + c * v.z;
@@ -729,12 +784,17 @@ void MapScene::applyLinks()
 	for (auto& [child, pl] : links_)
 	{
 		if (child >= int(objects_.size()) || pl.first >= int(objects_.size())) continue;
+		// Gra osadza początek modelu dziecka w punkcie rodzica liczonym jak wierzchołki (bez z×2 z get_linkpos)
+		// i obraca go orientacją punktu (głowa przechyla czapkę). Diggles-Unity HAT_LINK_SYSTEM §5.
 		float off[3];
 		const auto& p = objects_[size_t(pl.first)].src;
 		auto& c = objects_[size_t(child)].src;
-		if (!linkOffset(pl.first, pl.second, off)) off[0] = off[2] = 0, off[1] = -1.f;
+		Vec3f e{0, 0, 0};
+		if (!linkOffset(pl.first, pl.second, off, false)) off[0] = off[2] = 0, off[1] = -1.f;
+		else linkEuler(pl.first, pl.second, e);
 		c.pos[0] = p.pos[0] + off[0], c.pos[1] = p.pos[1] + off[1], c.pos[2] = p.pos[2] + off[2];
-		c.rot[0] = p.rot[0], c.rot[1] = p.rot[1], c.rot[2] = p.rot[2];
+		// objectMatrix: Ry(−ry)·Rx(−rx)·Rz(−rz); rodzic obraca tylko wokół osi pionowej, więc kąt Y się sumuje.
+		c.rot[0] = p.rot[0] + e.x, c.rot[1] = p.rot[1] + e.y, c.rot[2] = p.rot[2] + e.z;
 	}
 }
 
@@ -857,7 +917,6 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 		opt.horizon = glm::vec4(z->r, z->g, z->b, z->depth);
 		opt.horizonZOffset = gameZOffset;
 	}
-	const float fps = 10.f; // tempo animacji gry, §11.6
 	// Obiekty do faz rysowania: najpierw wszystkie nieprzezroczyste, potem miękkie brzegi i blask od najdalszego.
 	struct Draw
 	{
@@ -872,21 +931,12 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 	for (const auto& o : objects_)
 	{
 		if (!objectShown(o)) continue;
-		const auto& an = o.slot->model->animations[size_t(o.animation)];
-		if (an.frames.empty()) continue;
-		int n = int(an.frames.size());
-		// Tryb animacji klasy: 0 = ANIM_STILL (klatka 0), 1 = raz, 2 = pętla; animrandom = losowy start.
-		int mode = o.animMode >= 0 ? o.animMode : o.cls ? o.cls->animMode
-		                                                : 2;
-		float f = 0.f;
-		if (mode != 0)
-		{
-			f = (time_ - o.animStart) * fps;
-			if (o.cls && o.cls->animRandom) f += float((unsigned(o.src.pos[0] * 131.f) * 2654435761u >> 8) % unsigned(n));
-			if (mode == 1) f = std::min(f, float(n - 1));
-		}
-		int i = int(f) % n, j = mode == 2 ? (i + 1) % n : std::min(i + 1, n - 1);
-		draws.push_back({&o, an.frames[size_t(i)], an.frames[size_t(j)], f - std::floor(f), objectMatrix(o.src), baseLight(o.src.pos[0], o.src.pos[1])});
+		uint32_t fa, fb;
+		float ft;
+		if (!currentFrames(o, fa, fb, ft)) continue;
+		glm::mat4 gm;
+		if (!linkedMatrix(int(&o - objects_.data()), gm)) gm = objectMatrix(o.src); // przypięte: za punktem rodzica
+		draws.push_back({&o, fa, fb, ft, gm, baseLight(o.src.pos[0], o.src.pos[1])});
 	}
 	auto drawAll = [&](ModelDrawOptions::Phase phase) {
 		opt.phase = phase;

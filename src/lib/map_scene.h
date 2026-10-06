@@ -111,7 +111,8 @@ public:
 	float animLength(int i) const; // długość bieżącej animacji w sekundach (10 kl./s)
 	float animSeconds(int i, const std::string& anim) const; // długość animacji obiektu po nazwie, 0 = brak
 	// Punkt zaczepienia obiektu w bieżącej klatce, obrócony jak obiekt: przesunięcie x, y (bloki), z (skala skryptu).
-	bool linkOffset(int i, int link, float out[3]) const;
+	bool linkOffset(int i, int link, float out[3], bool scriptZ = true) const; // scriptZ: z×2 jak get_linkpos
+	bool linkEuler(int i, int link, Vec3f& out) const; // orientacja punktu (get_linkrot), radiany
 	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
 	void linkObject(int child, int parent, int link);
 	int addObject(const std::string& className, float x, float y, float zScript);
@@ -194,6 +195,11 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	std::map<std::string, ClassModel> gameModels_;
 	std::map<int, std::pair<int, int>> links_; // dziecko -> (rodzic, punkt)
 	int currentMesh(const PlacedObject& o) const; // indeks meshu bieżącej klatki animacji
+	// Bieżące klatki animacji do interpolacji: meshe a → b, udział t (jak przy rysowaniu). false: bez animacji.
+	bool currentFrames(const PlacedObject& o, uint32_t& a, uint32_t& b, float& t) const;
+	// Macierz dziecka przypiętego (link_obj) w przestrzeni modelu rodzica: rodzic · T(punkt) · R(orientacja
+	// punktu), punkt i orientacja interpolowane jak wierzchołki rodzica (Diggles-Unity HAT_LINK_SYSTEM §5).
+	bool linkedMatrix(int child, glm::mat4& out, int depth = 0) const;
 	bool objectShown(const PlacedObject& o) const; // jak przy rysowaniu: detale, obiekty edytora, mgła
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
 	bool pushClassLights(const std::string& className, float x, float y, float zScript); // do allLights_
