@@ -648,6 +648,26 @@ struct Viewer
 		}
 	}
 
+	// Wyjście z kamery gry na orbitalną bez przeskoku (kółko albo przeciągnięcie myszą po wczytaniu zapisu z
+	// kamerą blisko): ten sam cel (pan), kierunek patrzenia (yaw, pitch) i odległość przeliczona tak, żeby przy
+	// kącie widzenia orbity (40° w pionie) kadr był ten sam co w kamerze gry.
+	void leaveGameCam(int w, int h)
+	{
+		if (!gameCam) return;
+		gameCam = false;
+		if (!mapTab()) return;
+		float aspect = h > 0 ? float(w) / float(h) : 1.f;
+		const auto& g = gameCamView;
+		float Rb = std::clamp(g.zoom, kGameZoomMin, kGameZoomMax) * 16.f - 10.f;
+		float R = std::max(0.5f, Rb) * MapView::kBlock;
+		float lim = gameViewAngleLimit(Rb), dx = std::clamp(g.dx, -lim, lim), dy = std::clamp(g.dy, -lim, lim);
+		glm::vec3 eye(std::cos(dx) * -std::sin(dy), -std::sin(dx), std::cos(dx) * std::cos(dy)); // jak viewProj, po odbiciu y
+		yaw = glm::degrees(std::atan2(eye.x, eye.z));
+		pitch = std::clamp(glm::degrees(std::asin(std::clamp(eye.y, -1.f, 1.f))), -89.f, 89.f);
+		float tanV = std::tan(0.3f * aspect) / aspect; // pół-kąt pionowy kamery gry (tangens)
+		dist = R * tanV / std::tan(glm::radians(20.f));
+	}
+
 	glm::mat4 viewProj(int w, int h) const
 	{
 		float aspect = h > 0 ? float(w) / float(h) : 1.f;
@@ -2492,7 +2512,11 @@ int main(int argc, char** argv)
 			{
 				if ((e.type == SDL_MOUSEMOTION && (e.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK))) ||
 				    e.type == SDL_MOUSEWHEEL)
-					v.gameCam = false; // przejście na kamerę orbitalną
+				{ // przejście na kamerę orbitalną od bieżącego widoku
+					int ww, wh;
+					drawableSize(ww, wh);
+					v.leaveGameCam(ww - int(v.uiRight * io.DisplayFramebufferScale.x), wh);
+				}
 				if (e.type == SDL_MOUSEMOTION && (e.motion.state & SDL_BUTTON_LMASK))
 				{
 					v.yaw -= float(e.motion.xrel) * 0.4f;

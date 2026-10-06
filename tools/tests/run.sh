@@ -496,6 +496,32 @@ PY
 	[ -z "$e" ] && ok "krawędzie siatki ${r% *} px" || fail "$e"
 }
 
+test_ ui_save_zoom "interakcja: zapis z kamerą gry, kółko myszy przechodzi na kamerę orbitalną od bieżącego widoku (bez skoku do dużej odległości)"
+t_ui_save_zoom() {
+	http_ok || return
+	[ -f "$GAME/Data/Gamesave/save_kampania.sav" ] || { skip "brak save_kampania.sav"; return; }
+	http_start wigview --save save_kampania.sav || { ui_stop; fail "serwer nie odpowiada"; return; }
+	hpost /api/pause >/dev/null; sleep 1
+	hget /api/screenshot >"$TMP/z0.png"
+	local win
+	win=$(xd search --name wigview | head -1)
+	xd mousemove --window "$win" 900 400; sleep 0.5
+	xd click 4; sleep 0.7; xd click 5; sleep 0.7 # ząbek do przodu i z powrotem: ta sama odległość
+	hget /api/screenshot >"$TMP/z1.png"
+	ui_stop
+	local r
+	r=$(python3 - "$TMP/z0.png" "$TMP/z1.png" <<'PY'
+import sys
+from PIL import Image, ImageChops, ImageStat
+a, b = (Image.open(p).convert('RGB').crop((580, 0, 1280, 800)).resize((35, 40)) for p in sys.argv[1:])
+print(round(sum(ImageStat.Stat(ImageChops.difference(a, b)).rms) / 3, 1))
+PY
+)
+	# kadr ten sam: różnice tylko od animacji (ok. 23); skok na kamerę orbitalną z dużą odległością: ok. 110
+	python3 -c "import sys; sys.exit(0 if $r < 50 else 1)" && ok "RMSE pomniejszonych kadrów $r" ||
+		fail "kadr po kółku tam i z powrotem inny niż z kamery zapisu: RMSE $r (skok kamery)"
+}
+
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"
 t_http_wigview() {
 	http_ok || return

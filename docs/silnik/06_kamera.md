@@ -93,4 +93,6 @@ Wszystkie wielkości w tej samej skali (bloki albo jednostki modelu, × 200).
 ---
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [COORDINATE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COORDINATE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
 
+**Przeglądarka (wigview):** zapis i `--view` ustawiają kamerę gry, a kółko albo przeciągnięcie myszą przełącza na kamerę orbitalną przeglądarki od bieżącego kadru (`leaveGameCam`): ten sam cel, kierunek z kątów `dx`, `dy` (po przycięciu z 6.3), a odległość przeliczona na kąt widzenia orbity (40° w pionie): `dist = R · tanV / tan 20°`, gdzie `tanV = tan(0,3 · proporcje) / proporcje` to pionowy pół-kąt kamery gry. Bez tego pierwszy ruch kółka skakał do odległości obejmującej całą mapę (test `ui_save_zoom`).
+
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`lib/map_world.h`](../../src/lib/map_world.h) (`GameView`), [`apps/wigview/main.cpp`](../../src/apps/wigview/main.cpp) (`viewProj`, `gameViewAngleLimit`), [`apps/game/main.cpp`](../../src/apps/game/main.cpp). Wszystkie moduły: [mapa kodu](../KOD.md).
