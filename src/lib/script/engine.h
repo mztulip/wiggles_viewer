@@ -102,6 +102,10 @@ struct Host
 		return true;
 	}
 	virtual int gnomePosition(int) { return 0; } // 0 stoi, 1 wisi na ścianie
+	// get_digedge: pole, z którego zacząć kopanie oznaczonej skały w start (out: x, y pola); false = brak.
+	virtual bool digEdge(const float /*start*/[3], int /*id kopiącego*/, float /*out*/[3]) { return false; }
+	// vector_fixdig: miejsce do stania przy kopanym punkcie wall, od strony postaci w gnome.
+	virtual bool fixDig(const float /*wall*/[3], const float /*gnome*/[3], float /*out*/[3]) { return false; }
 	// Płynny lot/przesunięcie obiektu do punktu w podanym czasie (action fly, move).
 	virtual void glide(int id, const float to[3], float /*sekundy*/) { setPos(id, to); }
 	virtual void link(int /*dziecko*/, int /*rodzic, 0 = odepnij*/, int /*punkt*/) {}

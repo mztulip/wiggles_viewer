@@ -154,8 +154,14 @@ public:
 	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania
 	void dig(int x, int y);
 	bool nextDigJob(SimUnit& u);
-	// Kopanie pola (mx, my): chód na stanowisko obok (🔶 punkt wyjścia sąsiedniego pola), potem kopanie.
+	// Kopanie pola (mx, my) jak dig_starttask gry: pole startu get_digedge, miejsce vector_fixdig, chód
+	// z -dig 1 (bez chodu, gdy miejsce bliżej niż 0,5), potem kopanie.
 	bool digAt(SimUnit& u, int mx, int my);
+	// get_digedge (rozdział 17.7): przeszukanie wszerz od pola (sx, sy) przez pola zaznaczone do kopania;
+	// wynik: otwarte pole (wysokość lewego górnego podpola bloku < 12), odkryte, najbliższe polu (rx, ry).
+	bool digEdgeTile(int sx, int sy, int rx, int ry, int& ex, int& ey) const;
+	// vector_fixdig (rozdział 17.7): miejsce do stania przy kopanym punkcie wall od strony postaci.
+	bool fixDigPos(const float wall[3], const float gnome[3], float out[3]) const;
 	void markDig(int x0, int y0, int x1, int y1);
 
 	struct Glide
@@ -179,6 +185,8 @@ public:
 	bool underwater(const float p[3]) override;
 	bool findPlace(const float c[3], float r, float out[3]) override;
 	int gnomePosition(int id) override;
+	bool digEdge(const float start[3], int id, float out[3]) override;
+	bool fixDig(const float wall[3], const float gnome[3], float out[3]) override { return fixDigPos(wall, gnome, out); }
 	void glide(int id, const float to[3], float seconds) override;
 	void link(int child, int parent, int link) override;
 	bool linkOffset(int id, int link, float out[3]) override;

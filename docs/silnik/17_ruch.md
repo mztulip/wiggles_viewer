@@ -7,7 +7,7 @@ Rozdział opisuje, jak gra wyznacza, gdzie postać może stać i chodzić, jak s
 | P0 | dane ruchu: podpola 8×8 (podłoga, ściana), graf pól | ✅ |
 | P1 | wyszukiwanie drogi Calc1 | ✅ |
 | P2 | chód po podłodze (głębokość, prędkość z animacji, obroty, start i zatrzymanie) | ✅ |
-| P3 | kopanie: dojście do krawędzi | |
+| P3 | kopanie: dojście do krawędzi | ✅ |
 | P4 | wspinanie po ścianach | |
 
 ## 17.1 Układ: widok z boku
@@ -113,3 +113,31 @@ Za Diggles-Unity `MetaWalkAction` (odczyt gry FUN_00418280, 00418850, 004185a0):
 🔶 Kierunek obrotu (lewo/prawo) dobrany z układu modelu, niesprawdzony w grze. Wspinanie na odcinkach ściany na razie uproszczone (animacja w górę albo w dół, twarzą do ściany, prędkość z animacji); wejście na ścianę i zejście to P4. Spadanie (brak podłogi pod stopami i nie na ścianie): 🔶 w pionie 3 bloki/s do pierwszej podłogi, animacja `fallen_loop`.
 
 **Ręczne sterowanie w wigview** (dodatek do testów, nie z gry, [14.8](14_gra.md)) używa tych samych danych: w bok po linii podłogi (w sąsiedniej kolumnie podpól podłoga najwyżej 3 podpola wyżej albo niżej, inaczej ściana zatrzymuje), w głąb w pasie podłogi, z prędkością marszu postaci. PPM wysyła trafiony punkt terenu (x, y, głębokość) jako cel chodu jak w grze.
+
+## 17.7 Miejsce do kopania (get_digedge, vector_fixdig) ✅
+
+Krasnal nie idzie „do pola skały”, tylko na miejsce, z którego sięga kopanej ściany. Skrypt `dig_starttask` (`z_dignwalk.tcl`, za Diggles-Unity `re_parts/tcl-dig-complete.md`) robi to tak:
+
+```
+edgepos = get_digedge $startpos this          pole startu (x, y pola; z zawsze 14)
+walkpos = vector_fixdig $edgepos [get_pos this]
+lrep walkpos 2 14                             głębokość z get_digedge (przód pasa podłogi)
+walk_pos_dig: action walk -target walkpos -dig 1     (cel na ścianie zostaje na ścianie)
+dig_continue: kolejny punkt, vector_fixdig, chód tylko gdy dalej niż 0,5 (kilof; młot 1,1)
+```
+
+**get_digedge** (FUN_005981d0, za `re_parts/dig-edge.md`; środek funkcji odtworzony przez Diggles-Unity z wnioskowania): pole startu w pasie jednego pola od brzegu świata (inaczej brak); przeszukanie wszerz od niego, rozszerzane tylko z pól zaznaczonych do kopania; kandydat = pole odkryte i otwarte (wysokość lewego górnego podpola bloku < 12); wynik: kandydat najbliższy polu postaci (round(x + 0,5), round(y + 0,5)), odległość w kwadracie, pierwszy ściśle mniejszy.
+
+**vector_fixdig** (FUN_00594e00):
+
+```
+1. punkt o 1 blok w stronę postaci (bliżej niż 1: pozycja postaci)
+2. środek szukania: podpole (round(x · 8), round(y · 8) + 8)   (jedno pole niżej: stopy pod ścianą)
+   najbliższe euklidesowo podpole do chodzenia w promieniu 50 podpól
+3. do 8 podpól niżej pierwsza podłoga; bez podłogi zostaje na ścianie (krasnal kopie wisząc)
+4. z = min(max(z postaci, wys(x, y − 5) + 1), 14,5)
+```
+
+Przykład: `vector_fixdig {6 5 8} {4.5 6.5 8}` w `kris_caves_1_b` daje punkt na linii podłogi y = 6,5 między postacią a ścianą (test `http_wigview`).
+
+U nas zadanie kopania (`WorldSim::digAt`, gracz) idzie tą samą drogą; animacja z kierunku do środka pola od tułowia (0,8 nad stopami): z boku `buddeln_vorn`, w dół `buddeln_unten`, w górę `buddeln_oben_normal`, a wisząc na ścianie `kletter_hack_links/rechts/oben/unten`. 🔶 Wycinanie terenu jest dalej uproszczone (całe pole naraz, blok 4523, [14.4](14_gra.md)); `dig_next`, `dig_apply`, krawędzie i narożniki bloków przy kopaniu to osobny punkt TODO. Test: `dig_standoff`.

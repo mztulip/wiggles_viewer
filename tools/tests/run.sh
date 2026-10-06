@@ -192,6 +192,25 @@ PY
 	ok
 }
 
+test_ dig_standoff "ruch jak w grze (P3): kopanie 3×2 pól w zapisie, pole startu get_digedge i miejsce vector_fixdig przy kopanym polu"
+t_dig_standoff() {
+	[ -f "$GAME/Data/Gamesave/save_kampania.sav" ] || { skip "brak save_kampania.sav"; return; }
+	OW_TEST_DIG=400 OW_TRACE_SIM=2 "$B/openwiggles" --game "$GAME" --save save_kampania.sav --size 640x480 --screenshot "$TMP/a.png" >"$TMP/d1" 2>&1
+	local n
+	n=$(grep -c "kopanie pola" "$TMP/d1")
+	[ "$n" = 6 ] || { fail "wykopane pola: $n, oczekiwane 6 ($(grep 'kopanie pola' "$TMP/d1" | head -2))"; return; }
+	python3 - "$TMP/d1" <<'PY' || { fail "miejsce do kopania daleko od pola: $(grep 'kopanie pola' "$TMP/d1" | head -3)"; return; }
+import re, sys
+for l in open(sys.argv[1]):
+    m = re.search(r"kopanie pola \((\d+), (\d+)\): start \((\d+), (\d+)\), miejsce \(([\d.]+), ([\d.]+)\)", l)
+    if not m: continue
+    mx, my, ex, ey = map(int, m.groups()[:4])
+    wx, wy = map(float, m.groups()[4:])
+    if abs(wx - (mx + 0.5)) > 1.6 or abs(wy - (my + 0.5)) > 2.6: sys.exit(1)
+PY
+	ok
+}
+
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
 	[ -f "$GAME/Data/3db/LAVAWELT.3DB" ] || { skip "brak LAVAWELT.3DB"; return; }
@@ -407,6 +426,11 @@ t_http_wigview() {
 	hget "/tclshell?script=expr%206*7" | tr '\n' '|' | grep -q 'Result:||Ok.|42|' || e="/tclshell: format odpowiedzi"
 	[ -z "$e" ] && [ "$(hpost /api/eval 'expr {6*7}' | jget 'd["result"]')" = 42 ] || e="${e:-eval}"
 	[ -z "$e" ] && [ "$(hpost /api/eval 'error test_bledu' | jget 'd["ok"]')" = False ] || e="${e:-eval błędnego skryptu nie zgłasza błędu}"
+	# vector_fixdig (P3): miejsce przy ścianie (6, 5) od strony postaci na (4,5; 6,5) na linii podłogi y = 6,5
+	local fd
+	fd=$(hpost /api/eval 'vector_fixdig {6 5 8} {4.5 6.5 8}' | jget 'd["result"]')
+	[ -z "$e" ] && python3 -c "import sys; v=list(map(float,'$fd'.split())); sys.exit(0 if abs(v[1] - 6.5) < 0.01 and 4.5 <= v[0] <= 6 else 1)" ||
+		e="${e:-vector_fixdig: $fd, oczekiwane na podłodze y = 6,5}"
 	hpost /api/pause >/dev/null
 	local t0 t1 t2 x0 x1
 	t0=$(hget /api/state | jget 'd["time"]'); sleep 1; t1=$(hget /api/state | jget 'd["time"]')

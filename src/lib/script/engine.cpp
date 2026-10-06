@@ -1163,6 +1163,25 @@ int cmdGnomePos(Engine& e, Tcl_Interp* in, Args& a)
 	setResult(in, std::to_string(e.host_ && id ? e.host_->gnomePosition(id) : 0));
 	return TCL_OK;
 }
+// get_digedge startpos obj: {x y 14} pola, z którego zacząć kopanie; brak: {-1 -1 14} (z zawsze 14, jak w grze).
+int cmdDigEdge(Engine& e, Tcl_Interp* in, Args& a)
+{
+	float p[3] = {0, 0, 0}, out[3] = {-1, -1, 14};
+	int id = a.size() > 2 ? e.resolveObj(in, a[2]) : 0;
+	if (!(a.size() > 1 && parseVec(in, a[1], p) && e.host_ && e.host_->digEdge(p, id, out))) out[0] = out[1] = -1;
+	out[2] = 14.f;
+	setResult(in, vecStr(out));
+	return TCL_OK;
+}
+// vector_fixdig punkt pozycja_postaci: miejsce do stania przy kopanym punkcie.
+int cmdFixDig(Engine& e, Tcl_Interp* in, Args& a)
+{
+	float w[3] = {0, 0, 0}, g[3] = {0, 0, 0}, out[3];
+	if (a.size() > 1) parseVec(in, a[1], w);
+	if (a.size() > 2) parseVec(in, a[2], g);
+	setResult(in, vecStr(e.host_ && e.host_->fixDig(w, g, out) ? out : w));
+	return TCL_OK;
+}
 int cmdWalkResult(Engine& e, Tcl_Interp* in, Args& a)
 {
 	ScriptObject* o = a.size() > 1 ? e.object(e.resolveObj(in, a[1])) : nullptr;
@@ -1596,6 +1615,8 @@ const Entry kCommands[] = {
     {"get_hmap", cmdHmap},
     {"isunderwater", cmdUnderwater},
     {"get_gnomeposition", cmdGnomePos},
+    {"get_digedge", cmdDigEdge},
+    {"vector_fixdig", cmdFixDig},
     {"get_walkresult", cmdWalkResult},
     {"get_place", cmdGetPlace},
     {"placelock_set", cmdPlacelock},

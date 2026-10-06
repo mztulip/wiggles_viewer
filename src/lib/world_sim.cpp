@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 
 namespace ow
 {
@@ -393,18 +394,112 @@ bool WorldSim::nextDigJob(SimUnit& u)
 
 bool WorldSim::digAt(SimUnit& u, int mx, int my)
 {
-	const int st[4][2] = {{mx - 1, my}, {mx + 1, my}, {mx, my - 1}, {mx, my + 1}};
-	for (auto& c : st)
+	int ex, ey;
+	if (!digEdgeTile(mx, my, int(std::nearbyint(u.x + 0.5f)), int(std::nearbyint(u.y + 0.5f)), ex, ey)) return false;
+	// miejsce przy polu startu; z = 14 jak w grze (lrep walkpos 2 originalz), w pas podłogi wpasuje trasa
+	float edge[3] = {float(ex), float(ey), 14.f}, g[3] = {u.x, u.y, u.z}, w[3];
+	if (!fixDigPos(edge, g, w)) return false;
+	w[2] = 14.f;
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (trace)
+		std::fprintf(stderr, "[sim %.1f] kopanie pola (%d, %d): start (%d, %d), miejsce (%.2f, %.2f)\n", simTime_, mx, my, ex, ey, w[0], w[1]);
+	float d = std::sqrt((w[0] - u.x) * (w[0] - u.x) + (w[1] - u.y) * (w[1] - u.y) + (w[2] - u.z) * (w[2] - u.z));
+	if (d > 0.5f && !walkUnit(u, w[0], w[1], w[2], true)) return false;
+	if (d <= 0.5f) u.state = SimUnit::Dig, u.digT = 0; // nonewwalk 0,5: kopie z miejsca
+	u.digX = mx, u.digY = my;
+	u.onArrive = nullptr;
+	return true;
+}
+
+bool WorldSim::digEdgeTile(int sx, int sy, int rx, int ry, int& ex, int& ey) const
+{
+	ex = ey = -1;
+	const Pmp* g = simGrid();
+	if (!g) return false;
+	int W = int(g->width), H = int(g->height);
+	if (sx < 1 || sy < 1 || sx >= W - 1 || sy >= H - 1) return false; // pas jednego pola przy brzegu świata
+	const auto& fog = scene_.fogBytes();
+	auto open = [&](int tx, int ty) {
+		const BlockRecord* r = scene_.blockDb().record(g->blocks[size_t(ty) * g->width + size_t(tx)]);
+		return r && r->depth[0] < 12;
+	};
+	std::vector<uint8_t> seen(size_t(W) * H, 0);
+	std::deque<std::pair<int, int>> q{{sx, sy}};
+	seen[size_t(sy) * W + sx] = 1;
+	long best = -1;
+	while (!q.empty())
 	{
-		if (walk.baseCost(c[0], c[1]) == -1) continue;
-		uint8_t e = walk.exitPair(c[0], c[1]);
-		float gx = float(c[0] * 8 + (e & 7)) / 8.f, gy = float(c[1] * 8 + ((e >> 3) & 7)) / 8.f;
-		if (!walkUnit(u, gx, gy, u.z, true)) continue;
-		u.digX = mx, u.digY = my;
-		u.onArrive = nullptr;
-		return true;
+		auto [tx, ty] = q.front();
+		q.pop_front();
+		if (tx < 1 || ty < 1 || tx >= W - 1 || ty >= H - 1) continue;
+		bool explored = fog.empty() || fog[size_t(ty) * W + tx] != 0;
+		if (explored && open(tx, ty))
+		{
+			long d = long(tx - rx) * (tx - rx) + long(ty - ry) * (ty - ry);
+			if (best < 0 || d < best) best = d, ex = tx, ey = ty;
+		}
+		if (!(tx == sx && ty == sy) && !digMarks.count({tx, ty})) continue; // dalej z pola startu (znacznik) i pól zaznaczonych do kopania
+		for (auto [nx, ny] : {std::pair{tx + 1, ty}, {tx - 1, ty}, {tx, ty + 1}, {tx, ty - 1}})
+		{
+			if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[size_t(ny) * W + nx]) continue;
+			seen[size_t(ny) * W + nx] = 1;
+			q.push_back({nx, ny});
+		}
 	}
-	return false;
+	return ex >= 0;
+}
+
+bool WorldSim::fixDigPos(const float wall[3], const float gnome[3], float out[3]) const
+{
+	// 1. jeden blok od punktu w stronę postaci (bliżej niż 1: pozycja postaci)
+	float fx = wall[0], fy = wall[1], dx = gnome[0] - fx, dy = gnome[1] - fy, d = std::sqrt(dx * dx + dy * dy);
+	if (d >= 1.f) fx += dx / d, fy += dy / d;
+	else
+		fx = gnome[0], fy = gnome[1];
+	// 2. najbliższe podpole do chodzenia (euklidesowo, do 50 podpól) wokół punktu jedno pole niżej (stopy
+	// pod kopaną ścianą)
+	int px = sub8(fx), py = sub8(fy) + 8, bx = px, by = py;
+	long bd = walk.walkable(px, py) ? 0 : -1;
+	for (int r = 1; r <= 50 && bd != 0; ++r)
+	{
+		if (bd > 0 && long(r) * r > bd) break;
+		for (int yy = -r; yy <= r; ++yy)
+			for (int xx = -r; xx <= r; ++xx)
+			{
+				if (std::abs(xx) != r && std::abs(yy) != r) continue;
+				if (!walk.walkable(px + xx, py + yy)) continue;
+				long dd = long(xx) * xx + long(yy) * yy;
+				if (bd < 0 || dd < bd) bd = dd, bx = px + xx, by = py + yy;
+			}
+	}
+	if (bd < 0) return false;
+	// 3. podłoga do 8 podpól niżej; bez podłogi zostaje na ścianie (kopie wisząc)
+	for (int k = 0; k < 8; ++k)
+		if (walk.floor(bx, by + k))
+		{
+			by += k;
+			break;
+		}
+	// 4. głębokość: co najmniej podpole 5 wierszy wyżej + 1, najwyżej 14,5
+	float z = std::max(gnome[2], float(walk.detail(bx, by - 5) + 1));
+	out[0] = float(bx) / 8.f, out[1] = float(by) / 8.f, out[2] = std::min(z, 14.5f);
+	return true;
+}
+
+bool WorldSim::digEdge(const float start[3], int id, float out[3])
+{
+	float ref[2] = {start[0], start[1]};
+	if (valid(id))
+	{
+		const float* p = scene_.objectPos(idx(id));
+		ref[0] = p[0], ref[1] = p[1];
+	}
+	int ex, ey;
+	if (!digEdgeTile(int(std::nearbyint(start[0])), int(std::nearbyint(start[1])), int(std::nearbyint(ref[0] + 0.5f)),
+	        int(std::nearbyint(ref[1] + 0.5f)), ex, ey))
+		return false;
+	out[0] = float(ex), out[1] = float(ey), out[2] = 14.f;
+	return true;
 }
 
 // Zaznaczenie prostokąta pól skały do kopania; zadanie dostaje zaznaczony krasnal.
@@ -629,10 +724,16 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 	}
 	if (u.state == SimUnit::Walk) stepWalk(u, dt);
 	if (u.state == SimUnit::Dig)
-	{
-		const char* anim = u.digY > u.ty ? "buddeln_unten" : u.digY < u.ty ? "buddeln_oben_normal"
-		                                                                   : "buddeln_vorn";
-		if (u.digY == u.ty) u.facing = u.digX > u.tx ? -kSimPi * 0.5f : kSimPi * 0.5f;
+	{ // kierunek do środka pola od tułowia (0,8 nad stopami, jak dig_check); na ścianie kopie wisząc
+		float dx = float(u.digX) + 0.5f - u.x, dy = float(u.digY) + 0.5f - (u.y - 0.8f);
+		bool side = std::abs(dx) >= std::abs(dy), wall = !hasFloorSupport(walk, u.x, u.y);
+		const char* anim = wall ? (side ? (dx > 0 ? "kletter_hack_rechts" : "kletter_hack_links") : dy > 0 ? "kletter_hack_unten"
+		                                                                                                   : "kletter_hack_oben")
+		                        : (side ? "buddeln_vorn" : dy > 0 ? "buddeln_unten"
+		                                                          : "buddeln_oben_normal");
+		if (wall) u.facing = kSimPi;
+		else if (side)
+			u.facing = dx > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f;
 		scene_.playAnim(u.obj, anim, true);
 		u.digT += dt;
 		if (u.digT >= kDigTime)
