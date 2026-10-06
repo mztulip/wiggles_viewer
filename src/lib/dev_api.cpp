@@ -210,7 +210,8 @@ void registerDevApi(DevServer& srv, DevHooks hooks)
 			j += std::string(i ? "," : "") + "{\"index\":" + std::to_string(i) + ",\"id\":" + std::to_string(id) +
 			    ",\"class\":" + jsonStr(src.className) + ",\"name\":" + jsonStr(utf8(src.instanceName)) +
 			    ",\"model\":" + jsonStr(s->objectModelObject(i)) + ",\"anim\":" + jsonStr(s->objectAnimation(i)) + ",\"pos\":[" +
-			    num(p[0]) + "," + num(p[1]) + "," + num(p[2]) + "],\"roty\":" + num(s->objectRotY(i)) + "}";
+			    num(p[0]) + "," + num(p[1]) + "," + num(p[2]) + "],\"roty\":" + num(s->objectRotY(i)) +
+			    ",\"particles\":" + std::to_string(s->objectParticles(i)) + "}";
 		}
 		return DevReply::json(j + "]}");
 	});

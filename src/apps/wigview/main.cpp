@@ -2311,8 +2311,8 @@ int main(int argc, char** argv)
 			{
 				const auto& s = v.maps.objectSource(i);
 				std::string obj = v.maps.objectModelObject(i), anim = v.maps.objectAnimation(i);
-				std::printf("obiekt %d %s model=%s anim=%s pos=%.2f,%.2f,%.2f znacznik=%d\n", i, s.className.c_str(), obj.empty() ? "-" : obj.c_str(),
-				    anim.empty() ? "-" : anim.c_str(), s.pos[0], s.pos[1], s.pos[2], v.maps.objectMarker(i));
+				std::printf("obiekt %d %s model=%s anim=%s pos=%.2f,%.2f,%.2f lampy=%d znacznik=%d\n", i, s.className.c_str(), obj.empty() ? "-" : obj.c_str(),
+				    anim.empty() ? "-" : anim.c_str(), s.pos[0], s.pos[1], s.pos[2], v.maps.objectLights(i), v.maps.objectMarker(i));
 			}
 			if (v.simActive && v.sim)
 				for (const auto& u : v.sim->units)

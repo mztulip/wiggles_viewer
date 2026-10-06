@@ -717,11 +717,19 @@ int cmdAction(Engine& e, Tcl_Interp* in, Args& a)
 		done = a.size() > 4 ? a[4] : "";
 	}
 	else if (kind == "move" && a.size() > 3)
-	{ // move "{x y z} prędkość": krótki ruch bez szukania drogi
+	{ // move "{x y z} prędkość": ruch w linii prostej od bieżącej pozycji, bez obrotu; prędkość w jednostkach
+		// na turę logiki 0,1 s: kroki = round(odległość / prędkość + 0,5), czas = kroki · 0,1 s (CAct_Move,
+		// za Zimennik/Diggles-Unity MoveAction; np. robak z prędkością 0,03 przechodzi blok w ok. 3,3 s)
 		auto v = listItems(in, a[3]);
-		float p[3];
-		if (e.host_ && !v.empty() && parseVec(in, v[0], p)) e.host_->setPos(o->id, p);
-		dur = 0.3;
+		float p[3], cur[3] = {0, 0, 0};
+		dur = 0.1;
+		if (e.host_ && !v.empty() && parseVec(in, v[0], p) && e.host_->getPos(o->id, cur))
+		{
+			float speed = std::max(v.size() > 1 ? std::strtof(v[1].c_str(), nullptr) : 0.f, 1e-3f);
+			float d = std::sqrt((p[0] - cur[0]) * (p[0] - cur[0]) + (p[1] - cur[1]) * (p[1] - cur[1]) + (p[2] - cur[2]) * (p[2] - cur[2]));
+			dur = std::max(1, int(std::nearbyint(d / speed + 0.5f))) * 0.1;
+			e.host_->glide(o->id, p, float(dur), false);
+		}
 		done = a.size() > 4 ? a[4] : "";
 	}
 	else if (kind == "rotate" && a.size() > 3)

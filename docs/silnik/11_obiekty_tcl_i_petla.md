@@ -179,7 +179,7 @@ state_disable this                         ;# nie myśl, dopóki animacja trwa
 action this wait 1 {state_enable this}     ;# po sekundzie włącz z powrotem
 ```
 
-Akcje (`action this walk …`, `wait`, `anim` …) to wbudowane zachowania silnika (chodzenie, wspinanie, czekanie), które trwają wiele tur i na koniec wykonują podany kod. Kolejka zadań (`tasklist_add`, `tasklist_get`, `tasklist_rem` …) to lista napisów ze zleceniami dla postaci, z której korzystają skrypty krasnali.
+Akcje (`action this walk …`, `wait`, `anim` …) to wbudowane zachowania silnika (chodzenie, wspinanie, czekanie), które trwają wiele tur i na koniec wykonują podany kod. ✅ `action <obj> move "{x y z} prędkość"` (CAct_Move, za [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `MoveAction.cs`): ruch w linii prostej od bieżącej pozycji do celu, bez obracania obiektu; prędkość to jednostki (x, y i z skryptu, odległość euklidesowa) na turę logiki 0,1 s, `kroki = round(odległość / prędkość + 0,5)`, czas = kroki · 0,1 s. Przykład: robak (`RAUPE.TCL`, `move $place` z prędkością 0,03) przechodzi 1 blok w ok. 3,3 s; uproszczenie „od razu w celu” dawało skoki o kilka bloków (test `script_motion`). Kolejka zadań (`tasklist_add`, `tasklist_get`, `tasklist_rem` …) to lista napisów ze zleceniami dla postaci, z której korzystają skrypty krasnali.
 
 ## 11.6 Animacja sterowana skryptem 🔶
 

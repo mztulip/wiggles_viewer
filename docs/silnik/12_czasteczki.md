@@ -11,7 +11,7 @@ Ogień w kielichach i lampach, mgiełka przy kryształach, iskry w kuźni, wiór
 ```tcl
 class_particle         <typ> {rx ry rz} {dx dy dz} <max> <naKlatkę> <widoczneWMgle> <?> <?> [<?>]
 change_particlesource  <obiekt> <slot> <typ> {rx ry rz} {dx dy dz} <max> <naKlatkę> <widoczneWMgle> [...]
-set_particlesource     <obiekt> <slot> 0|1         ;# wyłącz / włącz
+set_particlesource     <obiekt> <slot> 0|1         ;# wyłącz / włącz (✅ każda wartość ≠ 0 włącza, np. 5)
 create_particlesource  <typ> <pozycja> {dx dy dz} <ile> ...   ;# jednorazowy wybuch w świecie
 blow_particlesource    ...                          ;# podmuch (przesuwa emiter)
 free_particlesource    ...
@@ -39,6 +39,8 @@ def_class Dummy_Haengelicht ... {            ;# lampa wisząca na łańcuchach
 }
 class_particle 21 {-0.05 -0.75 0.4} {0 -0.005 0} 60 1 0 0 0.5   ;# kryształ: mgiełka unosząca się
 ```
+
+✅ `change_particlesource` tylko ustawia źródło: nowe źródło stoi, dopóki `set_particlesource` go nie włączy (za Diggles-Unity `ParticleSystemState.Configure`; ponowna konfiguracja zostawia włączenie bez zmian). Beczka skarbów `Schatztonne` (`misc_items.tcl`) w `obj_init` konfiguruje typ 13 (300 cząsteczek, 50 na klatkę), a włącza go (`set_particlesource this 0 5`) dopiero `release_content`, czyli otwarcie beczki; włączanie przy konfiguracji dawało błysk co chwilę na każdej beczce (test `script_motion`, liczba żywych cząsteczek obiektu w `/api/objects`).
 
 Źródła z `class_particle` mają sloty 0, 1, … w kolejności deklaracji, więc `set_particlesource obiekt 0 0|1` wyłącza i włącza także je. ✅ Część obiektów ustawia źródła dopiero w skrypcie: pierścienie (`Ring_Der_Luft`, `Ring_Des_Wassers`, `Ring_Des_Feuers` w `Scripts/classes/story/Ringe.tcl`) wołają w `obj_init` metodę `reset`, a ta `change_particlesource this 0 <typ> …` i `set_particlesource this 0 1` (i `set_anim … drehen`, obrót). Bez wykonywania skryptów (wigview bez symulacji) takich efektów nie ma; nasz silnik obsługuje obie komendy ([`lib/script/engine.cpp`](../../src/lib/script/engine.cpp), emitery przypięte do obiektu w `MapScene::setObjectParticle`).
 

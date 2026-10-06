@@ -148,6 +148,20 @@ void MapView::uiSelection()
 			ImGui::TextWrapped(tr("Klasa: tryb animacji %s%s%s%s"), modes[std::clamp(o.cls->animMode, 0, 2)],
 			    o.cls->animRandom ? ", animrandom" : "", o.cls->viewInFog ? ", viewinfog" : "", o.cls->editorOnly ? tr(", tylko edytor") : "");
 		}
+		if (const auto* ls = classes_.lights(s.className))
+		{ // lampy klasy (class_light, rozdział 7.4): wkład w kolor wierzchołka c · exp(−2 · d² / R²) · max(N · L, 0,1), zero od d ≥ R
+			for (size_t k = 0; k < ls->size(); ++k)
+			{
+				const ClassLight& l = (*ls)[k];
+				float c[3];
+				for (int j = 0; j < 3; ++j) c[j] = float(int(l.color[j] * 31.f)) * 0.5f;
+				ImGui::Text(tr("Lampa %zu (class_light): promień R %.2f bloku"), k + 1, l.radius);
+				ImGui::TextWrapped(tr("  kolor %.2f %.2f %.2f → c = %.1f %.1f %.1f (int(kolor · 31) · 0,5)"), l.color[0], l.color[1], l.color[2], c[0],
+				    c[1], c[2]);
+				ImGui::TextWrapped(tr("  przesunięcie %.2f %.2f %.2f → lampa w x %.2f  y %.2f  z %.2f bloku świata"), l.offset[0], l.offset[1],
+				    l.offset[2], s.pos[0] + l.offset[0], s.pos[1] + l.offset[1], (s.pos[2] + l.offset[2]) * 0.5f + 7.f);
+			}
+		}
 		if (!s.detail.empty()) ImGui::TextDisabled(tr("Poziom detali: %s"), s.detail.c_str());
 		if (s.owner >= 0) ImGui::Text(tr("Właściciel: gracz %d"), s.owner);
 		if (s.linkParent >= 0) ImGui::Text(tr("Przypięty do obiektu %d, punkt %d"), s.linkParent, s.linkPoint);

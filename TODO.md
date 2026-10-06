@@ -27,6 +27,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
+- [ ] Lampy ustawiane skryptem: `change_light obiekt {ox oy oz} R "r g b"`, `set_light obiekt 0|1` (ognisko `Feuerstelle` u nas nie świeci; rozdział 7.4)
 - [ ] 🔧 Płyny: zatyczki, odpływy, `-height`/`-ventil`, źródła z zapisu, kolor wody bliżej gry, rzadka lista pól zamiast pełnego prostokąta
 - [x] G7a Osadzony Tcl 8.6: preprocesor, `call`, wirtualny katalog, 2684 klasy bez błędów, interpreter na obiekt, `obj_init`, timery, zdarzenia, stany, zaślepki z dziennikiem (`owscript`, rozdział 11.9)
 - [x] G7b Krasnale sterowane skryptami gry (czas wolny): atrybuty z `def_attrib`, `action walk/rotate/anim/wait` przez nawigację gry, `obj_query`, `get_place`, `placelock_*`, wektory i listy; zapis kampanii: 0 błędów skryptów w 60 s

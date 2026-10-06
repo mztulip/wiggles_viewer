@@ -90,7 +90,8 @@ void WorldSim::simUpdate(float dt)
 		float k = it->dur > 0 ? it->t / it->dur : 1.f, p[3];
 		for (int i = 0; i < 3; ++i) p[i] = it->from[i] + (it->to[i] - it->from[i]) * k;
 		float dx = it->to[0] - it->from[0];
-		scene_.setObjectPose(it->obj, p[0], p[1], p[2], std::abs(dx) > 1e-3f ? (dx > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f) : scene_.objectRotY(it->obj));
+		scene_.setObjectPose(it->obj, p[0], p[1], p[2],
+		    it->face && std::abs(dx) > 1e-3f ? (dx > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f) : scene_.objectRotY(it->obj));
 		it = it->t >= it->dur ? glides.erase(it) : it + 1;
 	}
 }
@@ -983,11 +984,11 @@ bool WorldSim::findPlace(const float c[3], float r, float out[3])
 {
 	return floorSpot(c[0], c[1], std::max(r, 1.f), c[2], out);
 }
-void WorldSim::glide(int id, const float to[3], float seconds)
+void WorldSim::glide(int id, const float to[3], float seconds, bool face)
 {
 	if (!valid(id) || unitOf(idx(id))) return;
 	const float* p = scene_.objectPos(idx(id));
-	Glide gl{idx(id), {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds};
+	Glide gl{idx(id), {p[0], p[1], p[2]}, {to[0], to[1], to[2]}, 0.f, seconds, face};
 	for (auto& x : glides)
 		if (x.obj == gl.obj)
 		{

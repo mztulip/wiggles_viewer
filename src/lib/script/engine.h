@@ -107,7 +107,8 @@ struct Host
 	// vector_fixdig: miejsce do stania przy kopanym punkcie wall, od strony postaci w gnome.
 	virtual bool fixDig(const float /*wall*/[3], const float /*gnome*/[3], float /*out*/[3]) { return false; }
 	// Płynny lot/przesunięcie obiektu do punktu w podanym czasie (action fly, move).
-	virtual void glide(int id, const float to[3], float /*sekundy*/) { setPos(id, to); }
+	// face: obiekt zwrócony w stronę ruchu w bok (action fly); action move nie obraca.
+	virtual void glide(int id, const float to[3], float /*sekundy*/, bool /*face*/ = true) { setPos(id, to); }
 	virtual void link(int /*dziecko*/, int /*rodzic, 0 = odepnij*/, int /*punkt*/) {}
 	virtual bool linkOffset(int, int, float[3]) { return false; } // get_linkpos
 	// Źródła cząsteczek obiektu (change_particlesource / set_particlesource; docs/silnik/12_czasteczki.md §12.1).

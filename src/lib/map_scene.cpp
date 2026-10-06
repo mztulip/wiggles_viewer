@@ -394,7 +394,16 @@ void MapScene::setObjectParticle(int obj, int slot, const ParticleSource& s)
 	MapEmitter m;
 	m.slot = slot;
 	configureEmitter(m, *t, s, obj);
+	m.emitter.setActive(false); // nowe źródło ze skryptu stoi, dopóki set_particlesource go nie włączy
 	emitters_.push_back(std::move(m));
+}
+
+int MapScene::objectParticles(int obj) const
+{
+	int n = 0;
+	for (const auto& e : emitters_)
+		if (e.obj == obj) n += e.emitter.alive();
+	return n;
 }
 
 void MapScene::enableObjectParticle(int obj, int slot, bool on)

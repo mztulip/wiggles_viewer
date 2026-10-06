@@ -160,6 +160,9 @@ print(sum(1 for i in range(0, len(d), 3) if d[i] > 200 and d[i + 1] > 160 and d[
 	# grupy znaczników (osobne pola w wigview): 1 źródła świateł i efektów, 2 obiekty Info, 3 bryły kolizji
 	wv --template kris_unq_start_skirm --print-objects --screenshot "$TMP/info.png" >"$TMP/info.txt"
 	local c
+	# lampy klasy (class_light) w panelu zaznaczenia: Kris_LightSrc_a ma jedną, krasnal żadnej
+	grep -q " Kris_LightSrc_a .* lampy=1 " "$TMP/info.txt" && grep " Zwerg " "$TMP/info.txt" | grep -q " lampy=0 " ||
+		{ fail "liczba lamp klasy: $(grep -m1 ' Kris_LightSrc_a ' "$TMP/info.txt")"; return; }
 	for c in "Info_Coll_a 3" "Info_Coll_d 3" "Info_Fog_Kris_a 2" "Kris_LightSrc_a 1" "Zwerg 0" "Dummy_Kris_um_j 0"; do
 		grep " ${c% *} " "$TMP/info.txt" | grep -qv "znacznik=${c#* }$" && { fail "${c% *}: grupa znacznika inna niż ${c#* }: $(grep " ${c% *} " "$TMP/info.txt" | head -1)"; return; }
 		grep -q " ${c% *} .*znacznik=${c#* }$" "$TMP/info.txt" || { fail "brak ${c% *} w wypisie"; return; }
@@ -540,6 +543,37 @@ PY
 	# kadr ten sam: różnice tylko od animacji (ok. 23); skok na kamerę orbitalną z dużą odległością: ok. 110
 	python3 -c "import sys; sys.exit(0 if $r < 50 else 1)" && ok "RMSE pomniejszonych kadrów $r" ||
 		fail "kadr po kółku tam i z powrotem inny niż z kamery zapisu: RMSE $r (skok kamery)"
+}
+
+test_ script_motion "skrypty (kris_unq_start_skirm): change_particlesource nie włącza źródła (beczki bez cząsteczek, ognisko z set_particlesource tak), action move płynnie z prędkością (robaki bez skoków)"
+t_script_motion() {
+	http_ok || return
+	http_start wigview --template kris_unq_start_skirm || { ui_stop; fail "serwer nie odpowiada"; return; }
+	hpost /api/pause >/dev/null
+	hpost "/api/step?seconds=3" >/dev/null
+	local e="" p
+	p=$(hget /api/objects | jget "[sum(o['particles'] for o in d['objects'] if o['class'] == 'Schatztonne'), sum(o['particles'] for o in d['objects'] if o['class'] == 'Feuerstelle')]")
+	[ "${p%%,*}" = "[0" ] || e="beczki (Schatztonne) emitują bez set_particlesource: cząsteczki [beczki, ognisko] = $p"
+	[ -z "$e" ] && [ "${p##* }" != "0]" ] || e="${e:-ognisko bez cząsteczek: $p}"
+	# robaki (Raupe): action move "{cel} 0.03" = 0,03 na turę 0,1 s, czyli ok. 0,12 na 0,4 s; dawniej skoki do 3
+	local k prev="" cur jump=0 moved=0
+	for k in $(seq 1 12); do
+		hpost "/api/step?seconds=0.4" >/dev/null
+		cur=$(hget /api/objects | jget "[o['pos'] for o in d['objects'] if o['class'] == 'Raupe']")
+		if [ -n "$prev" ]; then
+			read -r j m < <(python3 -c "
+import math
+a, b = $prev, $cur
+d = [math.dist(p, q) for p, q in zip(a, b)]
+print(int(max(d) > 0.3), int(max(d) > 0.02))")
+			jump=$((jump + j)) moved=$((moved + m))
+		fi
+		prev=$cur
+	done
+	[ -z "$e" ] && [ "$jump" = 0 ] || e="${e:-robaki przeskakują (krok > 0,3 na 0,4 s) w $jump z 11 próbek}"
+	[ -z "$e" ] && [ "$moved" -gt 0 ] || e="${e:-robaki stoją}"
+	ui_stop
+	[ -z "$e" ] && ok "cząsteczki [beczki, ognisko] $p" || fail "$e"
 }
 
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"

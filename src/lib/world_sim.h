@@ -181,6 +181,7 @@ public:
 	{
 		int obj;
 		float from[3], to[3], t, dur;
+		bool face = true; // obrót w stronę ruchu w bok
 	};
 	std::vector<Glide> glides; // płynne ruchy obiektów zlecone przez skrypty
 
@@ -200,7 +201,7 @@ public:
 	int gnomePosition(int id) override;
 	bool digEdge(const float start[3], int id, float out[3]) override;
 	bool fixDig(const float wall[3], const float gnome[3], float out[3]) override { return fixDigPos(wall, gnome, out); }
-	void glide(int id, const float to[3], float seconds) override;
+	void glide(int id, const float to[3], float seconds, bool face = true) override;
 	void link(int child, int parent, int link) override;
 	bool linkOffset(int id, int link, float out[3]) override;
 	void changeParticleSource(int id, int slot, const ParticleSource& s) override;

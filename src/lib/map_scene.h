@@ -79,6 +79,12 @@ public:
 	std::string objectModelObject(int i) const;
 	// Grupa znacznika edytora obiektu: 0 zwykły, 1 źródło światła albo efektu, 2 obiekt Info, 3 bryła kolizji.
 	int objectMarker(int i) const { return objects_[size_t(i)].marker; }
+	int objectParticles(int i) const; // żywe cząsteczki emiterów obiektu (wszystkie sloty)
+	int objectLights(int i) const // lampy klasy obiektu (class_light)
+	{
+		const auto* l = classes_.lights(objects_[size_t(i)].src.className);
+		return l ? int(l->size()) : 0;
+	}
 	const TemplateObject& objectSource(int i) const { return objects_[size_t(i)].src; }
 	int currentMeshOf(int i) const { return currentMesh(objects_[size_t(i)]); }
 	static glm::mat4 objectMatrixOf(const TemplateObject& o) { return objectMatrix(o); }

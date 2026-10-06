@@ -28,6 +28,8 @@ kolor       = tekstura · rozproszone + dodatek
 
 Gra liczy to per wierzchołek, a kolor interpoluje po trójkącie (Gouraud).
 
+**Nie są to światła Direct3D 7.** Sprzętowe światła D3D7 (`D3DLIGHT7`) mają tłumienie `1 / (a0 + a1 · d + a2 · d²)` i ostrą granicę zasięgu. Gra ich do tego nie używa: liczy kolor wierzchołków sama (prawo wyżej) i podaje go do D3D7 jako gotowy kolor wierzchołka (diffuse, a nadmiar jako specular). Spadek lampy to **funkcja Gaussa** `exp(−2 · d² / R²)`, a nie odwrotność kwadratu: w środku 1, przy d = R/2 około 0,61, przy d = R około 0,14 i dalej ucięte do zera. U nas ten sam wzór liczy shader ([`game_lighting.glsl`](../../src/shaders/game_lighting.glsl), wspólny dla terenu i modeli).
+
 ## 7.2 Jasność bazowa B ✅
 
 Każde pole świata ma bajt światła bazowego (`warstwa2`, rozdział 3.1). Wartości:
@@ -91,7 +93,7 @@ class_light {ox oy oz} R {r g b}
 - R to promień w blokach (zasięg i szerokość spadku);
 - kolor c = `int(kolor · 31) · 0,5` dla każdego kanału, np. pochodnia {0,9 0,9 0,8} daje c = (13,5; 13,5; 12).
 
-Klasa może mieć kilka `class_light`. Typowe źródła: niewidoczne w grze `Misc_LightSrc_*` w szablonach, ogniska, pochodnie. Gra składa listę lamp dla każdego pola z emiterów w pobliżu. Nasza przeglądarka bierze do 32 lamp najbliższych środkowi kadru (🔶 uproszczenie).
+Klasa może mieć kilka `class_light`. Typowe źródła: niewidoczne w grze `Misc_LightSrc_*` w szablonach, ogniska, pochodnie. W wigview kliknięty obiekt z lampą pokazuje w panelu „Zaznaczenie” jej parametry: promień R, kolor ze skryptu i c, przesunięcie i pozycję lampy w świecie (znaczniki `*_LightSrc_*` po włączeniu pola „Źródła świateł i efektów”). ❓ Lampy ustawiane skryptem (`change_light obiekt {ox oy oz} R "r g b"`, `set_light obiekt 0|1`, np. ognisko `Feuerstelle` w `classes/work/feuerstelle.tcl`) nie są jeszcze obsługiwane, więc ognisko u nas nie świeci. Gra składa listę lamp dla każdego pola z emiterów w pobliżu. Nasza przeglądarka bierze do 32 lamp najbliższych środkowi kadru (🔶 uproszczenie).
 
 **Pochodnie krasnali** (❓ nie wdrożone): krasnale z flagą autolight co jakiś czas stawiają na ścianach obiekty `Misc_Light` (pochodnie), więc przebyte tunele są oświetlone. Opis zachowania: [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `Docs/TUNNEL_TORCH_LIGHTING_RE.md` §1–5.
 
