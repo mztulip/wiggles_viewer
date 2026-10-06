@@ -71,6 +71,12 @@ void WorldSim::simUpdate(float dt)
 		}
 	}
 	for (auto& u : units) updateUnit(u, dt);
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (trace && int((simTime_ + dt) * 2.f) != int(simTime_ * 2.f)) // OW_TRACE_SIM=2: postacie co 0,5 s
+		for (const auto& u : units)
+			std::fprintf(stderr, "[sim %.1f] %s x %.2f y %.2f pole (%d, %d) z %.2f (min %.2f) stan %d\n", simTime_ + dt,
+			    u.gnome ? "krasnal" : "wuker", u.x, u.y, u.tx, u.ty, u.z, walkZ(u.x, u.ty), int(u.state));
+	simTime_ += dt;
 	fogTimer_ += dt;
 	if (revealFog && fogTimer_ >= 0.4f)
 	{ // mgła co 4 tury logiki (rozdział 10.2)
@@ -96,9 +102,38 @@ float WorldSim::floorY(int x, int ty) const
 	const Pmp* g = simGrid();
 	const BlockRecord* r = scene_.blockDb().record(g->blocks[size_t(ty + 1) * g->width + size_t(x)]);
 	if (!r) return float(ty) + 1.f;
+	int col = std::clamp(int((tileCenterX(x, ty) - float(x)) * 8.f), 0, 7); // kolumna środka wolnej części
 	for (int row = 0; row < 8; ++row)
-		if (r->depth[size_t(row * 8 + 4)] >= 13) return float(ty + 1) + float(row) / 8.f;
+		if (r->depth[size_t(row * 8 + col)] >= 13) return float(ty + 1) + float(row) / 8.f;
 	return float(ty) + 1.f;
+}
+
+bool WorldSim::openSpan(int x, int ty, float& x0, float& x1) const
+{
+	x0 = float(x), x1 = float(x) + 1.f;
+	const Pmp* g = simGrid();
+	if (!g || x < 0 || ty < 0 || x >= int(g->width) || ty >= int(g->height)) return false;
+	uint32_t block = g->blocks[size_t(ty) * g->width + size_t(x)];
+	const BlockRecord* r = block == 59 ? nullptr : scene_.blockDb().record(block); // 59: puste pole
+	if (!r) return true;
+	int c0 = 8, c1 = -1;
+	for (int c = 0; c < 8; ++c)
+		for (int row = 4; row < 8; ++row)
+			if (r->depth[size_t(row * 8 + c)] < 13)
+			{
+				c0 = std::min(c0, c), c1 = std::max(c1, c);
+				break;
+			}
+	if (c1 < 0) return false;
+	x0 = float(x) + float(c0) / 8.f, x1 = float(x) + float(c1 + 1) / 8.f;
+	return true;
+}
+
+float WorldSim::tileCenterX(int x, int ty) const
+{
+	float x0, x1;
+	openSpan(x, ty, x0, x1);
+	return (x0 + x1) * 0.5f;
 }
 
 void WorldSim::snapToFloor(SimUnit& u)
@@ -110,7 +145,7 @@ void WorldSim::snapToFloor(SimUnit& u)
 			if (nav.standable(x, yy) || (d > 0 && nav.climbable(x, yy)))
 			{
 				u.tx = x, u.ty = yy;
-				u.x = float(x) + 0.5f, u.y = floorY(x, yy);
+				u.x = tileCenterX(x, yy), u.y = floorY(x, yy);
 				return;
 			}
 	}
@@ -184,7 +219,7 @@ void WorldSim::dig(int x, int y)
 	{
 		static const char* kFinds[] = {"Stein", "Eisenerz", "Kohle", "Golderz", "Kristallerz"};
 		const char* cls = kFinds[std::rand() % 5];
-		float pos[3] = {float(x) + 0.5f, floorY(x, y), kGnomeZ}, rot[3] = {0, 0, 0};
+		float pos[3] = {tileCenterX(x, y), floorY(x, y), kGnomeZ}, rot[3] = {0, 0, 0};
 		int id = createObject(cls, "", pos, rot);
 		if (scripts) scripts->attach(id, cls, "");
 		status = std::string(tr("Znalezisko: ")) + cls;
@@ -251,11 +286,14 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 		else
 		{
 			auto [wx, wy] = u.path[u.step];
-			float gx = float(wx) + 0.5f, gy = floorY(wx, wy);
+			float sx0, sx1;
+			openSpan(wx, wy, sx0, sx1);
+			float gx = (sx0 + sx1) * 0.5f, gy = floorY(wx, wy);
 			bool last = u.step + 1 == u.path.size();
-			if (last && u.goalX >= 0) gx = std::clamp(u.goalX, float(wx) + 0.1f, float(wx) + 0.9f);
+			if (last && u.goalX >= 0) gx = std::clamp(u.goalX, std::min(sx0 + 0.1f, gx), std::max(sx1 - 0.1f, gx));
 			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
-				float wz = walkZ(u.x, u.ty);
+				// ściana pod bieżącym x (pole x może już być następnym polem ścieżki) i w polu docelowym kroku
+				float wz = std::max(walkZ(u.x, u.ty), walkZ(gx, wy));
 				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.z, wz);
 				float dz = gz - u.z, mz = 2.f * kWalkSpeed * dt;
 				u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
@@ -304,6 +342,8 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 		else if (!scripts) // ze skryptami animację w miejscu ustawia skrypt (set_anim)
 			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? u.standAnim : u.climbStandAnim, true);
 	}
+	// Nigdy za tylną ścianą (też po set_pos i glide ze skryptu): co najmniej 0,5 przed nią w kolumnie stóp.
+	u.z = std::max(u.z, walkZ(u.x, u.ty) - kWallGap + 0.5f);
 	scene_.setObjectPose(u.obj, u.x, u.y, u.z, u.facing);
 }
 
@@ -449,7 +489,9 @@ bool WorldSim::findPlace(const float c[3], float r, float out[3])
 	int cx = int(std::floor(c[0])), cy = tileOfFeet(c[1]);
 	if (nav.standable(cx, cy))
 	{ // pole celu jest dobre: zostaje x i głębokość, y na podłożu
-		out[0] = c[0], out[1] = floorY(cx, cy), out[2] = c[2];
+		float x0, x1;
+		openSpan(cx, cy, x0, x1);
+		out[0] = std::clamp(c[0], x0, x1), out[1] = floorY(cx, cy), out[2] = c[2];
 		return true;
 	}
 	int rad = std::max(1, int(std::ceil(r)));
@@ -458,7 +500,7 @@ bool WorldSim::findPlace(const float c[3], float r, float out[3])
 			for (int dx = -d; dx <= d; ++dx)
 			{
 				if (std::max(std::abs(dx), std::abs(dy)) != d || !nav.standable(cx + dx, cy + dy)) continue;
-				out[0] = float(cx + dx) + 0.5f, out[1] = floorY(cx + dx, cy + dy), out[2] = c[2];
+				out[0] = tileCenterX(cx + dx, cy + dy), out[1] = floorY(cx + dx, cy + dy), out[2] = c[2];
 				return true;
 			}
 	return false;
@@ -512,7 +554,7 @@ void WorldSim::populate(float cx, float cy, int gnomes, int wukers)
 	{
 		auto [x, y] = spots[i];
 		const char* cls = int(i) < gnomes ? "Zwerg" : "Wuker";
-		int o = scene_.addObject(cls, float(x) + 0.5f, floorY(x, y), kGnomeZ);
+		int o = scene_.addObject(cls, tileCenterX(x, y), floorY(x, y), kGnomeZ);
 		addUnit(o);
 		idOf(o);
 	}

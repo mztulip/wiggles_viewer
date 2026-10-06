@@ -23,7 +23,9 @@ Prawo `set_view` z rozdziału 6: cel (x, y) w blokach, `zoom`, kąty. Gracz prze
 
 Wskazywanie pola: promień z kamery przez piksel kursora najpierw trafia w teren (marsz po mapie wysokości, `MapScene::pickTerrain`); potem przecinamy go z płaszczyzną głębokości krasnali w tym miejscu (wolne pole: tylna ściana + 1,5; skała: przednia płaszczyzna; bez trafienia z skryptu 8). Pole = `floor(x), floor(y)` punktu przecięcia.
 
-**Głębokość postaci** ✅: idąca postać trzyma się co najmniej 1,5 przed tylną ścianą pola (wartość siatki 8×8 bloku w kolumnie stóp, skala skryptu), a dalej od ściany zostaje na swojej głębokości (🔶). Postać dodana albo wczytana za ścianą (z < ściana + 0,5) od razu dostaje ściana + 1,5. Wcześniej stała z = 8 chowała krasnale za ścianą płytkich korytarzy (ściana 11 w `GNG_004`; BAZA_WIEDZY §8.12).
+**Głębokość postaci** ✅: idąca postać trzyma się co najmniej 1,5 przed tylną ścianą pola (wartość siatki 8×8 bloku w kolumnie stóp, skala skryptu), a dalej od ściany zostaje na swojej głębokości (🔶). Postać dodana albo wczytana za ścianą (z < ściana + 0,5) od razu dostaje ściana + 1,5. Ścianę bierzemy w kolumnie pod bieżącym x i w polu, do którego prowadzi krok ścieżki (inaczej przy wejściu z głębokiej jaskini do płytkiej półki postać przez chwilę szła za ścianą), a po każdym kroku symulacji (także po `set_pos` i `glide` skryptu) z nie spada poniżej ściana + 0,5.
+
+**Pola otwarte częściowo** 🔶: nawigacja uznaje pole za wolne, gdy dolna połowa siatki 8×8 ma ≥ 16 komórek < 13, więc przy krawędzi jaskini wolna bywa tylko jedna strona pola (`kris_caves_1_b`, blok 43: lewa połowa półka na 11, prawa lita skała 15). Postać celuje wtedy w środek wolnych kolumn, a nie w środek pola, jej x zostaje w wolnej części, a podłoże (`floorY`) mierzymy w tej kolumnie. Wcześniej wuker przy prawej krawędzi wchodził w skałę i znikał. Ślad postaci co 0,5 s: `OW_TRACE_SIM=2`. Wcześniej stała z = 8 chowała krasnale za ścianą płytkich korytarzy (ściana 11 w `GNG_004`; BAZA_WIEDZY §8.12).
 
 ## 14.3 Ruch (🔶 uproszczenie)
 

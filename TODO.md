@@ -109,6 +109,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Szablony lawy (`lava_unq_vampy_tuer`) w porównaniu z grą (BAZA_WIEDZY §8.11): jasny grunt to lampa podglądu (`--lab-lamps` jak w laboratorium daje ciemną skałę), żyłki lawy świecą (mieszanie alfa bez oświetlenia 🔶), pełne pokrycie detalu `<świat>_1111.tga` bez litery ✅, drzwi `Tuer_kaserne` i kraty z `set standanim` ✅, tryb 8 z progiem alfy 0,5 🔶
 - [x] Krasnale i wukery w płytkich korytarzach: głębokość co najmniej 1,5 przed tylną ścianą (eksperyment w grze, BAZA_WIEDZY §8.12), dodawane postacie na właściwej głębokości, wuker z modelem `wuker`, wskazywanie pól w `openwiggles` przez trafienie w teren
 - [x] Czapki i przedmioty przypięte (`link_obj`): macierz rodzica · punkt · orientacja punktu, interpolowane jak wierzchołki rodzica, punkt bez z×2 (jak Diggles-Unity); wcześniej czapki nad głową i odjeżdżające przy chodzie
+- [x] Postacie w polach otwartych częściowo (krawędzie jaskiń): środek wolnych kolumn zamiast środka pola, z nigdy za ścianą (`kris_caves_1_b`: wuker znikał w skale przy prawej krawędzi)
 - [ ] Oświetlone części modeli w trybie 8 (dolne części kolumn lawy) wciąż cieplejsze i jaśniejsze niż w grze: kalibracja oświetlenia modeli lampami
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅

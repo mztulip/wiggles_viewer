@@ -94,6 +94,11 @@ public:
 	int selected = -1;  // zaznaczony krasnal (gra), −1 = brak
 	std::string status; // ostatni komunikat (znalezisko, brak drogi)
 	float floorY(int x, int ty) const;
+	// Wolna część pola w poziomie (bloki, [x0, x1]): kolumny siatki 8×8 z komórką < 13 w dolnej połowie, jak
+	// NavGrid::openBlock. Pola przy krawędzi jaskini bywają otwarte tylko z jednej strony (kris_caves_1_b,
+	// blok 43: lewa połowa półka, prawa lita skała), więc postać nie może stawać na środku pola.
+	bool openSpan(int x, int ty, float& x0, float& x1) const;
+	float tileCenterX(int x, int ty) const; // środek wolnej części pola
 	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
 	void snapToFloor(SimUnit& u);
 	// Najmniejsza głębokość chodu w polu (x, ty): tylna ściana w kolumnie x + kWallGap (skala skryptu).
@@ -144,6 +149,7 @@ protected:
 	const Pmp* simGrid() const { return scene_.grid(); }
 	MapScene& scene_;
 	double scriptAcc_ = 0;
+	float simTime_ = 0; // czas symulacji (ślad OW_TRACE_SIM=2)
 	float fogTimer_ = 0;
 };
 
