@@ -107,3 +107,27 @@ Napisy: u32 długość i bajty, liczby little-endian. Wczytanie: źródło jak p
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [GNOME_BEHAVIOR_COMPLETE_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/GNOME_BEHAVIOR_COMPLETE_RE.md), [re_parts/](https://github.com/Zimennik/Diggles-Unity/tree/main/Docs/re_parts/), [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [NAVIGATION_AND_MOVEMENT](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/NAVIGATION_AND_MOVEMENT.md), [DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md), [WORK_DISPATCHER_NATIVE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORK_DISPATCHER_NATIVE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
 
 **W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`apps/game/main.cpp`](../../src/apps/game/main.cpp), [`lib/nav.h`](../../src/lib/nav.h), [`lib/map_scene.h`](../../src/lib/map_scene.h). Wszystkie moduły: [mapa kodu](../KOD.md).
+
+## 14.8 Ręczne prowadzenie postaci w przeglądarce (dodatek do testów, nie z gry)
+
+W wigview, z włączoną symulacją, kliknięta postać (krasnal, wuker albo stworzenie, którego model ma animację chodu: chomik, pająk, troll…) przechodzi pod ręczne sterowanie. **W oryginale tak się nie gra:** gracz nie prowadzi krasnala klawiszami, a kliknięcie w miejsce nie przesuwa postaci bezpośrednio. Przez `EVENTGEN.TCL` wysyła ono krasnalowi zdarzenie rozkazu `evt_task_walk` (i inne `evt_task_*`), które obsługuje jego skrypt ([16.9](16_rozgrywka.md)). Dodatek służy do sprawdzania ruchu, głębokości i kolizji na mapach; rozkazy jak w grze to osobny punkt TODO („Rozkazy gracza jak w grze”).
+
+```
+przejęcie        LPM w postać (albo Enter: pierwszy krasnal; API: POST /api/control?unit=K)
+                 stworzenie spoza krasnali i wukerów staje się postacią symulacji (WorldSim::adoptUnit):
+                 chód = gehen_loop | laufen_loop | lauf_a_loop | stehen_gehen | pierwsza z „geh”/„lauf”,
+                 stanie = standard | stand_anim | standanim | stand; bez animacji chodu: nie da się przejąć
+skrypt postaci   wstrzymany (akcje i ciało stanu; zdarzenia, np. ubytek potrzeb, działają), zlecenia chodu
+                 i animacji od skryptu ignorowane
+←/→ (trzymane)   ruch ze stałą prędkością chodu (1,6 pola/s) po podłożu (WorldSim::manualMove): w wolnej
+                 części pola, na sąsiednie pole na tej samej wysokości albo o stopień, ściana zatrzymuje
+↑/↓ (trzymane)   w głąb / do przodu (2 · 1,6 jednostki skryptu na s), między tylną ścianą + 1,5 a z = 14
+dwie strzałki    po skosie; postać patrzy w stronę ruchu: obrót = atan2(−ruch_x, ruch_z)
+puszczenie       postać od razu staje (animacja stania); krótkie stuknięcie przesuwa o czas naciśnięcia
+PPM w pole       idź do pola po siatce nawigacji (14.3, A*), także wspinanie; kliknięcie w podłogę trafia
+                 w lite pole pod nią, więc celem jest wolne pole nad nim (WorldSim::controlGoTo)
+puść             Shift, Esc, LPM obok: postać staje (idle, bez reszty ścieżki), zostaje postacią symulacji,
+                 a jej skrypt znów działa
+```
+
+Ruch ręczny i „idź do pola” to przybliżenia (🔶) z tej samej siatki pól co reszta symulacji (14.3), nie prawa ruchu gry (drobna siatka 8×8 i maska `.pmp`: Diggles-Unity `ORIGINAL_PATHFINDING_RE.md`). Testy: `ui_control`, `ui_creature`, `ui_goto` w [`tools/tests/run.sh`](../../tools/tests/README.md).
