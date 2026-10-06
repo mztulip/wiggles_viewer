@@ -699,6 +699,8 @@ void WorldSim::setControlled(int unit, bool on)
 bool WorldSim::controlGoTo(int unit, int tx, int ty)
 {
 	if (unit < 0 || unit >= int(units.size())) return false;
+	// kliknięcie w podłogę trafia w lite pole pod nią: celem jest wolne pole nad podłogą
+	if (!nav.open(tx, ty) && nav.open(tx, ty - 1)) --ty;
 	SimUnit& u = units[size_t(unit)];
 	// od pola, do którego właśnie idzie (płynne łączenie kroków przy trzymanym klawiszu)
 	int sx = u.tx, sy = u.ty;

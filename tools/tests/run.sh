@@ -265,6 +265,23 @@ t_ui_control() {
 	[ -z "$e" ] && ok "x $x0 → $x1 (1 s), stuknięcie $x2 → $x3, z $z0 → $z1 → $z2" || fail "$e"
 }
 
+test_ ui_goto "interakcja: PPM w podłogę albo w tylną ścianę wysyła prowadzonego krasnala do tego pola"
+t_ui_goto() {
+	http_ok || return
+	http_start wigview --template kris_caves_1_b --populate 1 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
+	click_at 895 490               # krasnal na polu 5
+	local e="" t1 t2
+	cu() { hget /api/units | jget "[u for u in d['units'] if u['controlled']][0]['$1']"; }
+	click_at 1100 495 3            # podłoga po prawej (lite pole pod wolnym polem 8)
+	sleep 3; t1=$(cu tx)
+	[ "$t1" -ge 8 ] 2>/dev/null || e="PPM w podłogę: krasnal na polu $t1, oczekiwane ≥ 8"
+	click_at 760 420 3             # tylna ściana po lewej (pole 2)
+	sleep 4; t2=$(cu tx)
+	[ -z "$e" ] && [ "$t2" -le 3 ] 2>/dev/null || e="${e:-PPM w ścianę: krasnal na polu $t2, oczekiwane ≤ 3}"
+	ui_stop
+	[ -z "$e" ] && ok "pole 5 → $t1 → $t2" || fail "$e"
+}
+
 test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), trzymana → idzie animacją chodu z jego modelu, po puszczeniu stoi"
 t_ui_creature() {
 	http_ok || return
