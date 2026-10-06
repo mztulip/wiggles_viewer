@@ -17,7 +17,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Prędkość animacji; pola `move`/`rotate` animacji | 🔶 | 10 kl./s według Diggles-Unity; `move`/`rotate` ✅ na klatkę ([3db.md](../formaty/3db.md) §3.5). Interpolacja: nie badamy, u nas zawsze włączona (decyzja, [11.6](11_obiekty_tcl_i_petla.md)) |
 | Cząsteczki: dokładne prawa typów | 🔶 | wspólny model skalibrowany do zrzutów wszystkich 43 typów (rozmiar, emisja, podłoże; [rozdział 12](12_czasteczki.md) §12.5–12.6); barwy części typów i znaczenie pól `class_particle` ❓ |
 | Kamera w przerywnikach | ❓ | w rozgrywce `zoom` przycięty do [1,0; 2,5] ✅ ([6.1](06_kamera.md)); skrypty przerywników używają 0,5–6,0 |
-| Tryby rysowania linków 4, 6, 7, 9, 11 | ❓ | tabela w [3db.md](../formaty/3db.md) §3.2; u nas 4, 9, 11 jak 1, a 6, 7 jak 5 |
+| Tryby rysowania linków 6, 7 (i maska trybu 8) | 🔶 | tabela w [3db.md](../formaty/3db.md) §3.2: 4 = 1, 9 i 11 nieprzezroczyste ✅; 6 i 7 półprzezroczyste z mapowaniem otoczenia (dokładny wzór ❓) |
 | Płyny: symulacja przepływu | ❓ | dane i rysowanie: [rozdział 13](13_plyny.md); prawa przepływu: Diggles-Unity `FLUID_SYSTEM_RE.md` |
 | Animacje tekstur (`txtanim`), materiały `shader.tcl` | ❓ | |
 

@@ -15,6 +15,8 @@ Skrypty uruchamiamy z katalogu repozytorium (`openwiggles_git`).
 | [`live.sh`](live.sh) | niewidoczne (Xvfb) | gra działa w tle; wykonywanie Tcl w działającej grze i zrzuty bez restartów |
 | [`live2.sh`](live2.sh) | **widoczne** | przeglądanie szablonów map w oryginale, podmiana szablonu w ok. 2 s |
 
+Do eksperymentów z trybem rysowania linków `.3db`: [`set_link_flags.py`](set_link_flags.py) (podmiana `flags` w kopii pliku modelu, `--list`, `--restore`).
+
 `live.sh` i `live2.sh` używają tego samego portu WebTraq (8082), więc nie działają równocześnie.
 
 ## `live2.sh`: przeglądanie szablonów w oryginale

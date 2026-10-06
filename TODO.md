@@ -103,7 +103,9 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] `.3db`: `flags` linku to tryby rysowania (0 niewidoczny, 1 zwykły, 2 addytywnie, 3 mieszanie alfa, 5 mapowanie otoczenia, 8 bez oświetlenia; zrzuty z gry); bajty 6–7 rekordu zaczepienia to dopełnienie wyrównania
 - [x] Renderer modeli: tryby rysowania wg `flags` linku: 0 pominięty, 2 addytywnie (osobny przebieg bez zapisu głębi, bez oświetlenia 🔶), 5–7 mapowanie otoczenia z normalnej 🔶, 8 bez oświetlenia; przełącznik „Tryby rysowania” i `--no-draw-modes` w wigview
 - [x] Tryb 3 (miękka alfa): fazy rysowania w scenie (`ModelDrawOptions::phase`): najpierw rdzenie (alfa ≥ 0,5) z zapisem głębi, potem miękkie brzegi i blask trybu 2 bez zapisu, od najdalszego obiektu; bez tego w menu przez brzegi lian prześwitywało niebo
-- [ ] 🔬 Tryby 4, 6, 7, 9, 11 (dziś 4, 9, 11 jak 1, a 6, 7 jak 5)
+- [x] 🔬 Tryby 4, 9, 11 i alfa trybu 8 (eksperyment na kolumnach lawy, BAZA_WIEDZY §8.10): 4 = 1, 8/9/11 nieprzezroczyste (alfa nie wycina; w wigview brakowało trzonów kolumn w `lava_unq_vampy_tuer`), 9 oświetlony, 11 bez oświetlenia, 8 z alfą jako maską samoświecenia 🔶
+- [ ] 🔬 Tryby 6, 7: dziś półprzezroczyste z mapowaniem otoczenia w fazie przezroczystej 🔶; dokładny wzór mieszania i różnica 6/7 (zrzuty w Xvfb przez `live.sh`)
+- [ ] Szablony lawy (`lava_unq_vampy_tuer`) w porównaniu z grą: teren u nas w czerwono-beżowe kwadraty, w grze ciemna skała z żyłkami lawy (shadery `scape_lav_mt0/1`); brak drzwi `Tuer_kaserne`; oświetlenie jaśniejsze niż w grze
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅
 - [x] Dekoder tekstów CP1250/CP1252 → UTF-8 ([`src/lib/text.h`](src/lib/text.h), skrypty w silniku)

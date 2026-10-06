@@ -351,6 +351,20 @@ Sondy: [`tools/lab/owprobe_deep.tcl`](../tools/lab/owprobe_deep.tcl) (świat z j
 ### 8.9 Flagi linku `.3db`: eksperyment w laboratorium (2026-10-05)
 
 Metoda: w kopii `Data/3db/flusslandschaft.3db` w laboratorium podmieniona flaga obu klatek łąki `wiese_rund_a` (offsety 83 647 i 83 865, drugie słowo rekordu linku), scena: szablon `urw_gng_021_a`, łąka `Dummy_Wiese_rund` na środku, `set_view 18 18 1.2 -0.25 0`, z lampami i bez. Wyniki (jasność i maks. G w obszarze trawy): 1 → 41/154, 0 → trawa znika, 2 → 60/255 (addytywnie), 3 → 38/154 (miękko przejrzysta), 4 → 40/154 (jak 1), 8 → 45/198, 9 → 35/89. Bez lamp: 1 → maks. G 57, 8 → 198 (bez oświetlenia). Z teksturą `Character_Drache_b_256` podstawioną za mech: 1 i 4 mają ten sam układ wzoru, 5 inny (mapowanie otoczenia). Statystyki: flaga nie zależy od alfy tekstury; Diggles-Unity flag nie używa (rodzaj rysowania zgaduje z alfy TGA). Opis: [3db.md](formaty/3db.md) „Tryb rysowania linku”. Plik w laboratorium przywrócony.
+
+### 8.10 Tryby 4, 6, 7, 9, 11 i alfa trybu 8: kolumny lawy (2026-10-06)
+
+Powód: w wigview w szablonie `lava_unq_vampy_tuer` nie było trzonów kolumn lawy (`Dummy_Lava_krst_*`, tylko misy i strużki). Kolumny mają wszystkie linki w trybie 8, a tekstura `lava_seulen_128` ma alfę < 0,5 na 79% powierzchni (biała u góry, gdzie lawa, i w plamkach; jest też wariant `_noalpha`). Nasz shader wycinał alfą < 0,5 także w trybie 8.
+
+Metoda: [`tools/lab/set_link_flags.py`](../tools/lab/set_link_flags.py) ustawia wszystkim 170 linkom obiektów `lava_krst_*` w kopii `LAVAWELT.3DB` jeden tryb (oryginał w `.orig`, potem `--restore`); dla każdego trybu restart gry, szablon `lava_unq_vampy_tuer`, `set_view 24 18 1.8 -0.25 0.1`, zrzut z bufora klatki. Wyniki:
+- 1 i 4: identyczne; trzony wycięte alfą (zostają lawa u góry i plamki), całość ciemna (oświetlona lampami szablonu). Dokładnie to, co rysował wigview.
+- 8 (oryginał): pełne trzony, nieprzezroczyste; lawa i plamki jasne, reszta ciemna skała.
+- 9: pełne trzony, nieprzezroczyste i ciemne (oświetlone).
+- 11: pełne trzony, nieprzezroczyste i jasne, z wyraźnym wzorem skały w dolnej części tekstury (bez oświetlenia i bez maski).
+- 6, 7: słabo widoczne, półprzezroczyste; 7 ma inny układ wzoru niż 6.
+- 2: tylko jasne części (addytywnie, ważone alfą).
+
+Wniosek: ✅ 8, 9 i 11 nie wycinają alfą; ✅ 4 = 1; 🔶 w 8 alfa działa jak maska samoświecenia (porównanie 8 i 11). Zrzut trybu 3 nieudany (kamera odjechała), tryb znany z §8.9. Plik w laboratorium przywrócony. Uwaga do metody: widoczne okno `live2.sh` przejmuje klawiaturę użytkownika; serie zrzutów robić w Xvfb (`live.sh`).
 ---
 
 ## 9. Mapy i teren: przebieg badań

@@ -12,24 +12,28 @@ layout(location = 0) out vec4 oColor;
 void main()
 {
 	int draw = uFlags.w % 100; // tryb rysowania linku
-	bool fringe = uFlags.w >= 100; // faza przezroczysta trybu 3: tylko miękkie brzegi
+	bool fringe = uFlags.w >= 100; // faza przezroczysta: miękkie brzegi trybu 3, całe linki 6 i 7
 	// 🔶 5–7: mapowanie otoczenia, współrzędne tekstury z normalnej (kamera gry patrzy prawie wzdłuż −z).
 	vec2 uv = (draw >= 5 && draw <= 7) ? normalize(vNormal).xy * 0.5 + 0.5 : vUV;
 	vec4 t = texture(uTex, uv);
 	// 2 (addytywny) bez progu alfa. 3: rdzeń (alfa ≥ 0,5) jak 1, a miękkie brzegi w osobnej fazie bez zapisu
 	// głębi, po wszystkich nieprzezroczystych obiektach sceny (inaczej brzeg zasłania obiekty rysowane później).
+	// 🔶 6, 7: w całości w tej fazie, mieszane alfą tekstury. ✅ 8, 9, 11 nieprzezroczyste: alfa nie wycina
+	// (BAZA_WIEDZY §8.10); 1 i 4 wycinają progiem 0,5.
+	bool opaque = draw == 8 || draw == 9 || draw == 11;
 	if (draw == 2)
 	{
 		if (t.a < 1.0 / 255.0) discard;
 	}
 	else if (fringe)
 	{
-		if (t.a >= 0.5 || t.a < 1.0 / 255.0) discard;
+		if ((draw == 3 && t.a >= 0.5) || t.a < 1.0 / 255.0) discard;
 	}
-	else if (uFlags.y != 0 && t.a < 0.5) discard;
+	else if (uFlags.y != 0 && !opaque && t.a < 0.5) discard;
 	vec3 c = t.rgb;
 	int mode = uFlags.x;
-	bool lit = draw != 8 && draw != 2; // 8 bez oświetlenia; 🔶 2 (blask) też
+	bool lit = draw != 2 && draw != 11; // 🔶 2 (blask) bez oświetlenia; ✅ 11 bez oświetlenia i bez maski
+	vec3 unlit = c;
 	if (mode == 3) c = normalize(vNormal) * 0.5 + 0.5;
 	else if (lit && uFlags.z == 1) c = c * vGameDiffuse + vGameSpec;
 	else if (lit && mode == 1) c *= vByte;
@@ -38,6 +42,9 @@ void main()
 		vec3 n = normalize(vNormal);
 		c *= uLightDirAmb.w + (1.0 - uLightDirAmb.w) * max(dot(n, uLightDirAmb.xyz), 0.0);
 	}
+	// 🔶 8: alfa tekstury to maska samoświecenia (1 = własny kolor bez oświetlenia, 0 = oświetlony jak 1).
+	if (draw == 8 && mode != 3) c = mix(c, unlit, t.a);
+	if (opaque) t.a = 1.0;
 	// Podświetlenie w przeglądarce (obiekt pod kursorem / zaznaczony): rozjaśnienie w stronę jasnego błękitu.
 	if (uParams.w > 0.0) c = mix(c, vec3(0.55, 0.8, 1.0), uParams.w);
 	// Strefa horyzontu (docs/silnik/08_tlo.md §8.1): modele za terenem przechodzą w kolor strefy.

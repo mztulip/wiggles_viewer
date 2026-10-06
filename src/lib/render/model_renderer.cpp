@@ -172,8 +172,8 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 	u.tint = glm::vec4(1.f);
 	u.params = glm::vec4(t, opt.horizonZOffset, opt.base, opt.highlight);
 	u.flags = glm::ivec4(int(opt.lighting), opt.alphaTest ? 1 : 0, opt.gameLights ? 1 : 0, 0);
-	// Przebiegi: 0 nieprzezroczyste (wszystko poza trybami 0 i 2; tryb 3 tylko alfa ≥ 0,5), 1 miękkie brzegi
-	// trybu 3 (w shaderze tryb 103: tylko alfa < 0,5), 2 blask trybu 2.
+	// Przebiegi: 0 nieprzezroczyste (wszystko poza trybami 0, 2, 6, 7; tryb 3 tylko alfa ≥ 0,5), 1 przezroczyste:
+	// miękkie brzegi trybu 3 (w shaderze 103: tylko alfa < 0,5) i całe linki 6, 7 (106, 107), 2 blask trybu 2.
 	using Phase = ModelDrawOptions::Phase;
 	int firstPass = opt.phase == Phase::Transparent ? 1 : 0, lastPass = opt.phase == Phase::Opaque || !opt.drawModes ? 0 : 2;
 	for (int pass = firstPass; pass <= lastPass; ++pass)
@@ -183,8 +183,9 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 		{
 			const auto& l = linksA[i];
 			int mode = opt.drawModes ? l.flags : 1;
-			bool take = pass == 0 ? mode != 0 && mode != 2 : pass == 1 ? mode == 3
-			                                                           : mode == 2;
+			bool glass = mode == 6 || mode == 7; // 🔶 półprzezroczyste z mapowaniem otoczenia (BAZA_WIEDZY §8.10)
+			bool take = pass == 0 ? mode != 0 && mode != 2 && !glass : pass == 1 ? mode == 3 || glass
+			                                                                     : mode == 2;
 			if (!take) continue;
 			if (!pipeBound)
 			{
@@ -193,7 +194,7 @@ void ModelRenderer::drawFrames(uint32_t meshA, uint32_t meshB, float t, const gl
 				dev_->bindUniformBuffer(rhi::kBindStatic, sphereBuf_);
 				pipeBound = true;
 			}
-			u.flags.w = pass == 1 ? 103 : mode;
+			u.flags.w = pass == 1 ? 100 + mode : mode;
 			dev_->setUniforms(rhi::kBindDraw, &u, sizeof u);
 			dev_->bindTexture(0, textures_ ? textures_->get(model_->materials[l.material].name).id : rhi::kNull);
 			dev_->bindVertexBuffer(0, l.vbo);

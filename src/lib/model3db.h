@@ -38,7 +38,7 @@ struct Material3db
 struct MeshLink
 {
 	uint16_t material = 0;
-	uint16_t flags = 0; // ✅ tryb rysowania: 0 niewidoczny, 1 zwykły, 2 addytywnie, 3 alfa, 5 otoczenie, 8 bez światła (3db.md)
+	uint16_t flags = 0; // ✅ tryb rysowania: 0 niewidoczny, 1/4 zwykły, 2 addytywnie, 3 alfa, 5 otoczenie, 8/9/11 nieprzezroczyste (3db.md)
 	uint16_t triangles = 0;
 	uint16_t texcoords = 0;
 	uint16_t points = 0;
