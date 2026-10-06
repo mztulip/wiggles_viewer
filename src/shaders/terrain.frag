@@ -20,7 +20,9 @@ void main()
 	if (uFlags.y == 1)
 	{
 		// Detal .l2m w trybie modulate ×2 (szary 128 = bez zmian), UV z palety jak grunt (§4.4).
-		oColor = vec4(texture(uTex, vUV).rgb, 1.0);
+		// 🔶 Alfa detalu to maska (tylko lava_*/lava2_*: żyłki lawy); poza nią detal neutralny.
+		vec4 d = texture(uTex, vUV);
+		oColor = vec4(mix(vec3(0.5), d.rgb, d.a), 1.0);
 		return;
 	}
 	vec3 tex[3];
