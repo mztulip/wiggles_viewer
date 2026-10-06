@@ -62,6 +62,11 @@ const ClassModel* ClassDb::find(const std::string& className) const
 	return it == classes_.end() ? nullptr : &it->second;
 }
 
+bool ClassDb::isInfo(const std::string& className) const
+{
+	return infoClasses_.count(Vfs::lower(className)) != 0;
+}
+
 const HorizonZone* ClassDb::horizon(const std::string& className) const
 {
 	auto it = horizons_.find(Vfs::lower(className));
@@ -140,7 +145,9 @@ void ClassDb::parseScript(const std::string& text, const std::string& modelHint)
 		if (t.rfind("def_class ", 0) == 0)
 		{
 			std::istringstream ws(t.substr(10));
-			ws >> currentClass;
+			std::string parent, kind;
+			ws >> currentClass >> parent >> kind;
+			if (kind == "info") infoClasses_.insert(Vfs::lower(currentClass));
 			continue;
 		}
 		// class_viewinfog 0|1 (widoczność w szarej nieodkrytym terenie)
@@ -222,6 +229,7 @@ void ClassDb::load(const Vfs& vfs)
 	particles_.clear();
 	viewInFog_.clear();
 	standAnims_.clear();
+	infoClasses_.clear();
 	// Najpierw dekoracje: tu nazwa pliku wskazuje model.
 	for (const auto& f : vfs.list("Data/Scripts/classes/deco"))
 	{

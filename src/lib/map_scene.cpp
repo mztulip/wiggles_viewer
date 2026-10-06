@@ -301,6 +301,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 			PlacedObject p;
 			p.src = o;
 			p.cls = classes_.find(o.className);
+			p.info = classes_.isInfo(o.className);
 			if (p.cls) resolve(*p.cls, p.slot, p.animation);
 			objects_.push_back(p);
 		}
@@ -610,7 +611,7 @@ bool MapScene::objectShown(const PlacedObject& o) const
 {
 	if (!o.slot || o.animation < 0 || !o.visible) return false;
 	if (!showDetail_[detailIndex(o.src.detail)]) return false;
-	if (o.cls && o.cls->editorOnly && !showEditorOnly_) return false;
+	if ((o.info || (o.cls && o.cls->editorOnly)) && !showEditorOnly_) return false;
 	if (fogMode_ != FogMode::Off && !objectVisibleInFog(o)) return false;
 	return true;
 }
@@ -835,6 +836,7 @@ int MapScene::addObject(const std::string& className, float x, float y, float zS
 	p.src.className = className;
 	p.src.pos[0] = x, p.src.pos[1] = y, p.src.pos[2] = zScript;
 	p.cls = classes_.find(className);
+	p.info = classes_.isInfo(className);
 	if (p.cls) resolve(*p.cls, p.slot, p.animation);
 	objects_.push_back(p);
 	return int(objects_.size()) - 1;

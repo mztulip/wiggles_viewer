@@ -14,6 +14,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace ow
@@ -66,6 +67,9 @@ public:
 	const std::vector<ClassLight>* lights(const std::string& className) const;
 	// Źródła cząsteczek klasy: class_particle typ {relpos} {dir} max naKlatkę widocznyWMgle … (docs/silnik/12).
 	const std::vector<ParticleSource>* particles(const std::string& className) const;
+	// Klasa pomocnicza „info” (def_class Nazwa rodzic info …: Info_Coll_*, Info_Fog_*, Info_Pos_*, FogRemover…):
+	// znacznik dla skryptów, w grze niewidoczny, choć obj_init nadaje mu model edytora (kolli_box, fog_kreuz).
+	bool isInfo(const std::string& className) const;
 
 private:
 	void parseScript(const std::string& text, const std::string& modelHint);
@@ -75,6 +79,7 @@ private:
 	std::unordered_map<std::string, std::vector<ParticleSource>> particles_;
 	std::unordered_map<std::string, bool> viewInFog_; // class_viewinfog z ciał def_class
 	std::unordered_map<std::string, std::string> standAnims_; // set standanim <obiekt>.<anim> (drzwi, kraty)
+	std::unordered_set<std::string> infoClasses_;             // klasy „info”
 };
 
 } // namespace ow

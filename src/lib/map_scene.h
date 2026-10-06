@@ -203,6 +203,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 		int animMode = -1;  // nadpisanie trybu animacji (interfejs gry): 1 raz, 2 pętla
 		float animStart = 0.f;
 		bool visible = true; // set_visibility ze skryptu
+		bool info = false;   // klasa pomocnicza „info” (ClassDb::isInfo): tylko ze znacznikami edytora
 	};
 	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
 	std::map<std::string, ClassModel> gameModels_;

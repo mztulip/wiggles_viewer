@@ -147,6 +147,18 @@ t_sim_gender() {
 	[ "$f" -ge 1 ] && [ "$m" -ge 1 ] && ok "frau $f, mann $m" || fail "frau $f, mann $m"
 }
 
+test_ info_hidden "klasy pomocnicze info (Info_Coll_* z modelem kolli_box po obj_init) niewidoczne w symulacji (kris_unq_start_skirm)"
+t_info_hidden() {
+	wv --template kris_unq_start_skirm --simulate --warmup 1 --center 22 9.5 --dist 9 --screenshot "$TMP/info.png" >/dev/null
+	local n
+	n=$(python3 -c "
+from PIL import Image
+d = Image.open('$TMP/info.png').convert('RGB').tobytes()
+print(sum(1 for i in range(0, len(d), 3) if d[i] > 200 and d[i + 1] > 160 and d[i + 2] > 150))")
+	# bryły kolizji kolli_box są jasne, różowo-białe (przed poprawką ok. 15 tys. takich pikseli w tym kadrze), scena ciemna
+	[ "$n" -lt 500 ] 2>/dev/null && ok "jasnych pikseli $n" || fail "widać bryły kolizji Info_Coll: $n jasnych pikseli"
+}
+
 test_ nav_path "ruch jak w grze (P0–P1): linia podłogi w korytarzu, droga Calc1 po podłodze, bez wspinania brak drogi na ścianę, ze wspinaniem po ścianie"
 t_nav_path() {
 	local o
@@ -482,9 +494,9 @@ t_vk_window() {
 	r=$(python3 - "$TMP/full.png" "$TMP/wire.png" <<'PY'
 import sys
 from PIL import Image
-a = Image.open(sys.argv[1]).convert('RGB').crop((600, 40, 1280, 780)).getdata()
-b = Image.open(sys.argv[2]).convert('RGB').crop((600, 40, 1280, 780)).getdata()
-darker = sum(1 for p, q in zip(a, b) if sum(p) - sum(q) > 90)
+a = Image.open(sys.argv[1]).convert('L').crop((600, 40, 1280, 780)).tobytes()
+b = Image.open(sys.argv[2]).convert('L').crop((600, 40, 1280, 780)).tobytes()
+darker = sum(1 for p, q in zip(a, b) if p - q > 30)
 print(darker, "ok" if darker > 3000 else "zle")
 PY
 )
