@@ -679,6 +679,12 @@ void WorldSim::setControlled(int unit, bool on)
 		u.digJob = false, u.digX = u.digY = -1, u.goalX = u.goalZ = -1;
 		if (u.state == SimUnit::Dig) u.state = SimUnit::Idle;
 	}
+	else
+	{ // puszczona: stoi tam, gdzie jest (idle, bez reszty ścieżki i celu głębokości); dalej decyduje jej skrypt
+		if (u.state == SimUnit::Walk && !u.path.empty())
+			u.tx = std::clamp(int(std::floor(u.x)), 0, nav.width() - 1), u.ty = tileOfFeet(u.y);
+		u.state = SimUnit::Idle, u.path.clear(), u.step = 0, u.goalX = u.goalZ = -1, u.zGoal = -1;
+	}
 	if (scripts)
 		if (script::ScriptObject* o = scripts->object(idOf(u.obj))) o->external = on;
 }

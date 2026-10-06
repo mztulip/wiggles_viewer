@@ -221,7 +221,7 @@ ui_ok() {
 	command -v Xvfb >/dev/null && command -v xdotool >/dev/null || { skip "brak Xvfb albo xdotool"; return 1; }
 }
 
-test_ ui_control "interakcja: klik w krasnala przejmuje go, → o ¼ pola, ↑/↓ w głąb i do przodu, po zatrzymaniu animacja stania, ↑ nie przełącza szablonu, Shift puszcza"
+test_ ui_control "interakcja: klik w krasnala przejmuje go, → o ¼ pola, ↑/↓ w głąb i do przodu, po zatrzymaniu animacja stania, ↑ nie przełącza szablonu, Shift puszcza (postać staje, skrypt wraca)"
 t_ui_control() {
 	http_ok || return
 	http_start wigview --template kris_caves_1_b --populate 2 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
@@ -248,8 +248,14 @@ t_ui_control() {
 	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($z1 - $z0 - 0.5) < 0.01 and abs($z1 - $z2 - 1.0) < 0.01 else 1)" ||
 		e="${e:-↓ / 2×↑: z $z0 → $z1 → $z2, oczekiwane +0,5 i −1,0}"
 	[ -z "$e" ] && [ "$(grep -c "wczytano mapę" "$TMP/http.log")" = "$loads" ] || e="${e:-↑ przełączyła szablon zamiast prowadzić krasnala}"
-	xd key shift; sleep 1
+	# puszczenie w trakcie ruchu: postać staje (idle, bez ścieżki), skrypt znów działa
+	local id
+	id=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["id"]')
+	xd key Right Right Right Right shift; sleep 1
 	[ -z "$e" ] && grep -q "\[ui\] sterowanie: puszczone" "$TMP/http.log" || e="${e:-Shift nie puścił postaci}"
+	[ -z "$e" ] && [ "$(hget /api/units | jget "[(u['controlled'], u['path']) for u in d['units'] if u['id'] == $id][0]")" = "(False, [])" ] ||
+		e="${e:-po puszczeniu: $(hget /api/units | jget "[(u['state'], u['controlled'], u['path']) for u in d['units'] if u['id'] == $id]")}"
+	[ -z "$e" ] && hget "/objinfo:$id" | grep -q "Sterowany z zewnątrz: 0" || e="${e:-po puszczeniu skrypt dalej wstrzymany}"
 	ui_stop
 	[ -z "$e" ] && ok "x $x0 → $x1, z $z0 → $z1 → $z2" || fail "$e"
 }
