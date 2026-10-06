@@ -180,6 +180,9 @@ t_nav_path() {
 	echo "$o" | grep -q "0 punktów" || { fail "jaskinia bez wspinania powinna nie mieć drogi na ścianę: $o"; return; }
 	o=$(wv --template kris_caves_1_b --nav-path 2.5 6 6 3.5 1 --screenshot "$TMP/a.png" | grep "^droga")
 	echo "$o" | grep -q "(6.500, 6.500)p (6.500, 5.500)ś" || { fail "jaskinia ze wspinaniem: $o"; return; }
+	# most nad wodą (galeria nad basenem, kris_unq_060): bez wspinania po linii podłogi y = 6,5
+	o=$(wv --template kris_unq_060 --nav-path 1.5 6.5 15.5 6.5 --screenshot "$TMP/a.png" | grep "^droga")
+	echo "$o" | grep -q "15 punktów" && [ "$(echo "$o" | grep -o ", 6.500)p" | wc -l)" = 15 ] || { fail "most w kris_unq_060: $o"; return; }
 	ok
 }
 

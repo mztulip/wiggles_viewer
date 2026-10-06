@@ -393,6 +393,16 @@ Cel: punkt TODO „oświetlone części modeli w trybie 8 cieplejsze i jaśniejs
 
 Wniosek: ❓ większa część różnicy to inne próbkowanie tekstury na częściach kolumn (przyczyny nie znaleziono; kolejny krok: porównać pojedynczy obiekt kolumny w grze i u nas, np. `lava_krst_uv_h` postawiony skryptem z kamerą z bliska, i sprawdzić parowanie wierzchołków z UV w linkach z wieloma pulami). 🔶 Mniejsza część to oświetlenie modeli lampami (ok. 1,4×), do kalibracji po wyjaśnieniu tekstury.
 
+### 8.14 Zakres `zoom` kamery w przerywniku (2026-10-07)
+
+`OW_HIDDEN=1 live2.sh start lava_unq_vampy_tuer`, potem `tcl "set_sequence S; set_view 24 18 Z 0 0"`, po 2–8 s `get_view` (bieżący stan; `get_view 1` zwraca wartość zadaną) i `shot`.
+
+- `set_sequence 0` (rozgrywka): Z = 0,5 → `get_view` 1,0; Z = 6,0 → 2,5 (jak §9.10).
+- `set_sequence 1` (przerywnik, `init_sequencer` w `sequencer.tcl`): `get_view` zwraca 0,5 i 6,0 bez przycięcia. Kadr przy 6,0: szablon 16 bloków ok. 2,8 raza węższy niż przy 2,5 (R = 86 wobec 30 ze wzoru R = zoom · 16 − 10).
+- Przy małym `zoom` w przerywniku: 0,8 i 0,7 to kadry tuż przy celu (R = 2,8 i 1,2); 0,625 (R = 0) czarny obraz; 0,6 i 0,5 (R < 0) zależą od poprzedniego kadru: kamera zostaje tam, gdzie była (po 2,5 widok daleki, po 0,75 bliski). Płynnego przejazdu nie było (bez parametrów ruchu `set_view` działa od razu).
+
+Wniosek: ✅ przycięcie do 1,0–2,5 obowiązuje tylko poza przerywnikiem; ✅ w przerywniku wzór bez zmian dla R > 0; 🔶 R ≤ 0 nieużyteczne (zdegenerowane).
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅
