@@ -21,7 +21,9 @@ Symulacja świata (skrypty obiektów, krasnale, wukery, kopanie) jest w [`lib/wo
 
 Prawo `set_view` z rozdziału 6: cel (x, y) w blokach, `zoom`, kąty. Gracz przesuwa cel (WASD, strzałki, środkowy przycisk myszy) i zmienia zoom (kółko, 1,0–2,5 jak w grze, [6.1](06_kamera.md)). Jak w oryginale kamera jedzie też, gdy kursor dotknie krawędzi okna: pas szerokości `max(4, min(szer, wys)/60)` px, prędkość jak klawiszy (🔶 obie wartości na oko, do porównania z grą).
 
-Wskazywanie pola: promień z kamery przez piksel kursora przecinamy z płaszczyzną głębokości krasnali (z świata 11 bloków). Pole = `floor(x), floor(y)` punktu przecięcia.
+Wskazywanie pola: promień z kamery przez piksel kursora najpierw trafia w teren (marsz po mapie wysokości, `MapScene::pickTerrain`); potem przecinamy go z płaszczyzną głębokości krasnali w tym miejscu (wolne pole: tylna ściana + 1,5; skała: przednia płaszczyzna; bez trafienia z skryptu 8). Pole = `floor(x), floor(y)` punktu przecięcia.
+
+**Głębokość postaci** ✅: idąca postać trzyma się co najmniej 1,5 przed tylną ścianą pola (wartość siatki 8×8 bloku w kolumnie stóp, skala skryptu), a dalej od ściany zostaje na swojej głębokości (🔶). Postać dodana albo wczytana za ścianą (z < ściana + 0,5) od razu dostaje ściana + 1,5. Wcześniej stała z = 8 chowała krasnale za ścianą płytkich korytarzy (ściana 11 w `GNG_004`; BAZA_WIEDZY §8.12).
 
 ## 14.3 Ruch (🔶 uproszczenie)
 

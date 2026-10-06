@@ -555,7 +555,8 @@ struct Game : WorldSim
 		simUpdate(dt);
 	}
 
-	// Pole pod kursorem: promień kamery przecięty z płaszczyzną głębokości krasnali.
+	// Pole pod kursorem: promień kamery przecięty z płaszczyzną głębokości krasnali w trafionym miejscu terenu
+	// (wolne pole: głębokość chodu przed tylną ścianą; skała: przednia płaszczyzna), bez trafienia z = kGnomeZ.
 	bool pickTile(int mx, int my, int w, int h, int& tx, int& ty, float& fx, float& fy)
 	{
 		glm::mat4 vp, world;
@@ -564,7 +565,10 @@ struct Game : WorldSim
 		float nx = 2.f * float(mx) / float(w) - 1.f, ny = 1.f - 2.f * float(my) / float(h);
 		glm::vec4 a = inv * glm::vec4(nx, ny, -1.f, 1.f), b = inv * glm::vec4(nx, ny, 1.f, 1.f);
 		glm::vec3 p0 = glm::vec3(a) / a.w, p1 = glm::vec3(b) / b.w;
-		float zPlane = (kGnomeZ * 0.5f + 7.f) * kBlock;
+		float zs = kGnomeZ;
+		int htx, hty;
+		if (maps.pickTerrain(p0, p1 - p0, htx, hty)) zs = nav.open(htx, hty) ? walkZ(float(htx) + 0.5f, hty) : 15.f;
+		float zPlane = (zs * 0.5f + 7.f) * kBlock;
 		if (std::abs(p1.z - p0.z) < 1e-4f) return false;
 		float t = (zPlane - p0.z) / (p1.z - p0.z);
 		glm::vec3 hit = p0 + (p1 - p0) * t;

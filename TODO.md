@@ -107,6 +107,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Tryby 6, 7: dziś półprzezroczyste z mapowaniem otoczenia w fazie przezroczystej 🔶; dokładny wzór mieszania i różnica 6/7 (zrzuty w Xvfb przez `live.sh`)
 - [x] Detale terenu lawy: alfa tekstur `detail/lava*` to maska żyłek (wcześniej czerwone placki zamiast żyłek, `lava_unq_vampy_tuer`) 🔶
 - [x] Szablony lawy (`lava_unq_vampy_tuer`) w porównaniu z grą (BAZA_WIEDZY §8.11): jasny grunt to lampa podglądu (`--lab-lamps` jak w laboratorium daje ciemną skałę), żyłki lawy świecą (mieszanie alfa bez oświetlenia 🔶), pełne pokrycie detalu `<świat>_1111.tga` bez litery ✅, drzwi `Tuer_kaserne` i kraty z `set standanim` ✅, tryb 8 z progiem alfy 0,5 🔶
+- [x] Krasnale i wukery w płytkich korytarzach: głębokość co najmniej 1,5 przed tylną ścianą (eksperyment w grze, BAZA_WIEDZY §8.12), dodawane postacie na właściwej głębokości, wuker z modelem `wuker`, wskazywanie pól w `openwiggles` przez trafienie w teren
 - [ ] Oświetlone części modeli w trybie 8 (dolne części kolumn lawy) wciąż cieplejsze i jaśniejsze niż w grze: kalibracja oświetlenia modeli lampami
 - [x] Specyfikacje formatów do samodzielnej implementacji: [`docs/formaty/`](docs/formaty) (3db, tekstury, SPHERE.DAT)
 - [x] `SPHERE.DAT`: tablica normalnych, używana przez `.3db` ✅

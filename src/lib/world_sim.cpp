@@ -117,6 +117,18 @@ void WorldSim::snapToFloor(SimUnit& u)
 	u.tx = x, u.ty = y;
 }
 
+float WorldSim::walkZ(float x, int ty) const
+{
+	const Pmp* g = simGrid();
+	int bx = int(std::floor(x));
+	if (!g || bx < 0 || ty < 0 || bx >= int(g->width) || ty >= int(g->height)) return kGnomeZ;
+	const BlockRecord* r = scene_.blockDb().record(g->blocks[size_t(ty) * g->width + size_t(bx)]);
+	if (!r) return kGnomeZ;
+	int col = std::clamp(int((x - float(bx)) * 8.f), 0, 7), wall = 15;
+	for (int row = 0; row < 8; ++row) wall = std::min(wall, int(r->depth[size_t(row * 8 + col)]));
+	return std::min(float(wall) + kWallGap, 14.5f);
+}
+
 SimUnit* WorldSim::unitOf(int obj)
 {
 	for (auto& u : units)
@@ -132,12 +144,17 @@ int WorldSim::addUnit(int obj)
 	u.obj = obj;
 	u.gnome = gnome;
 	if (!gnome)
-	{ // wuker: animacje bez przyrostka _loop przy wspinaniu, model z klasy
-		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter";
+	{ // wuker: animacje bez przyrostka _loop przy wspinaniu; model nadaje obj_init (set_anim this wuker.…),
+		// a klasa ($wukerclass w WUKER.TCL) nie ma class_defaultanim
+		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter", u.standAnim = "stand_atmen_a";
+		if (scene_.objectModelObject(obj).empty()) scene_.setObjectModel(obj, "", "wuker");
 	}
 	const float* p = scene_.objectPos(obj);
 	u.x = p[0], u.y = p[1], u.z = p[2];
 	snapToFloor(u);
+	// za tylną ścianą albo przed przednią płaszczyzną (dodana postać, stała kGnomeZ): na głębokość chodu
+	float wz = walkZ(u.x, u.ty);
+	if (u.z < wz - kWallGap + 0.5f || u.z > 14.5f) u.z = wz;
 	units.push_back(u);
 	return int(units.size()) - 1;
 }
@@ -237,9 +254,10 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			float gx = float(wx) + 0.5f, gy = floorY(wx, wy);
 			bool last = u.step + 1 == u.path.size();
 			if (last && u.goalX >= 0) gx = std::clamp(u.goalX, float(wx) + 0.1f, float(wx) + 0.9f);
-			if (u.goalZ >= 0)
-			{ // w głąb równolegle z chodem
-				float dz = u.goalZ - u.z, mz = 2.f * kWalkSpeed * dt;
+			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
+				float wz = walkZ(u.x, u.ty);
+				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.z, wz);
+				float dz = gz - u.z, mz = 2.f * kWalkSpeed * dt;
 				u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
 			}
 			bool vertical = wx == u.tx && wy != u.ty;

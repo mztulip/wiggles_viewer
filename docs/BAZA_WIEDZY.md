@@ -373,6 +373,12 @@ W `lava_unq_vampy_tuer` wigview pokazywał czerwone placki i jasny grunt, gra ci
 - Detale: tekstury `detail/lava*` jako jedyne mają alfę (maska żyłek). Bez maski modulate ×2 barwił cały blok, z maską żyłki były ciemne; w grze świecą. 🔶 Rysujemy je mieszaniem alfa bez oświetlenia: wzór i jasność żyłek zgadzają się ze zrzutem.
 - Wariant pełnego pokrycia: własny `ow_full.l2m` (cały szablon `0x5560`) nałożony w działającej grze `map_setlayer2 16 16 data/templates/ow_full.l2m` (gra w Xvfb, `OW_HIDDEN=1 live2.sh`). Gra rysuje we wszystkich blokach jednolite żyłki, bez plam z `lava_1111_c` … `_f`: ✅ używa pliku bez litery (`lava_1111.tga`). Plik usunięty z laboratorium.
 - Drzwi `Tuer_kaserne` nie mają `class_defaultanim`; model nadaje `obj_init` przez `set standanim tuer_kaserne.standard` i `set_anim this $standanim` (`calls/DOORS.TCL`). Teraz `ClassDb` bierze `set standanim` jako zastępczą animację, a `set_anim obiekt.anim` w symulacji podpina model.
+
+### 8.12 Głębokość krasnali w korytarzu (2026-10-06)
+
+Objaw: w wigview i `openwiggles` krasnale w `lava_unq_vampy_tuer` (i innych płytkich korytarzach) znikały za tylną ścianą i kopały „w głębi”. Przyczyna: stała głębokość postaci z = 8 (skala skryptu, świat 11 bloków), a korytarz `GNG_004` ma tylną ścianę na 11 (siatka 8×8 BlockDB; 15 = przednia płaszczyzna).
+
+Eksperyment (gra w Xvfb, `OW_HIDDEN=1 live2.sh`, szablon w (16, 16)): `new Zwerg "" "20.5 18.9 8"` i `new Zwerg "" "26.5 18.9 13"`, potem `get_pos` co kilka sekund. Pierwszy krasnal po pierwszych krokach: `22.47 18.5 12.5` (z = ściana 11 + 1,5; stopy y = 18,5, czyli podłoga w połowie pola jak u nas `floorY`). Drugi stał na 13. W zapisie kampanii krasnale w jednym polu mają z od 5,2 do 13,8. Wniosek: ✅ postać nie podchodzi bliżej tylnej ściany niż 1,5; 🔶 dalej od ściany zostaje na swojej głębokości. Wuker (`def_class $wukerclass` w `WUKER.TCL`) nie ma `class_defaultanim`; model `wuker` nadaje `set_anim this wuker.stand_atmen_a` w `obj_init`.
 ---
 
 ## 9. Mapy i teren: przebieg badań

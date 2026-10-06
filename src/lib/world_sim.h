@@ -23,6 +23,10 @@ namespace ow
 {
 
 constexpr float kGnomeZ = 8.0f;    // głębokość krasnala w skali skryptu (świat 11 bloków), jak w scenariuszach
+// ✅ Idąca postać trzyma się co najmniej 1,5 przed tylną ścianą pola (skala skryptu: wartość siatki 8×8 BlockDB).
+// W korytarzu GNG_004 (ściana 11) krasnal postawiony na z = 8 po pierwszych krokach ma w grze z = 12,5;
+// 🔶 dalej od ściany zostaje na swojej głębokości (krasnale z zapisu mają w jednym polu z 5,2 … 13,8). BAZA_WIEDZY §8.12.
+constexpr float kWallGap = 1.5f;
 constexpr float kWalkSpeed = 1.6f; // pola na sekundę (🔶)
 constexpr float kClimbSpeed = 0.9f;
 constexpr float kDigTime = 2.0f; // sekundy kopania jednego pola (🔶)
@@ -92,6 +96,8 @@ public:
 	float floorY(int x, int ty) const;
 	int tileOfFeet(float y) const { return int(std::floor(y - 0.6f)); }
 	void snapToFloor(SimUnit& u);
+	// Najmniejsza głębokość chodu w polu (x, ty): tylna ściana w kolumnie x + kWallGap (skala skryptu).
+	float walkZ(float x, int ty) const;
 	SimUnit* unitOf(int obj);
 	int addUnit(int obj); // krasnal albo wuker (wg klasy obiektu)
 	int gnomeCount() const;
