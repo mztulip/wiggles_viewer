@@ -518,7 +518,11 @@ bool MapView::ui(bool savesTab)
 			ImGui::Checkbox(names[i], &showDetail_[i]);
 		}
 		ImGui::Checkbox(tr("Pokaż obiekty bez modelu (czerwone na siatce)"), &showUnresolved_);
-		ImGui::Checkbox(tr("Znaczniki edytora (światła, obiekty Info)"), &showEditorOnly_);
+		// znaczniki edytora, w grze niewidoczne
+		ImGui::Checkbox(tr("Źródła świateł i efektów"), &showMarker_[1]);
+		ImGui::Checkbox(tr("Obiekty Info"), &showMarker_[2]);
+		ImGui::SameLine();
+		ImGui::Checkbox(tr("Bryły kolizji"), &showMarker_[3]);
 	}
 	if (ImGui::CollapsingHeader(tr("Lista obiektów")))
 	{

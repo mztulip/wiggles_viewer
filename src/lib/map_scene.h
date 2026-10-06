@@ -77,6 +77,8 @@ public:
 	std::vector<std::string> objectAnimations(int i) const; // animacje obiektu .3db, którym rysowany jest obiekt
 	// Nazwa obiektu .3db, którym rysowany jest obiekt mapy; pusta bez modelu.
 	std::string objectModelObject(int i) const;
+	// Grupa znacznika edytora obiektu: 0 zwykły, 1 źródło światła albo efektu, 2 obiekt Info, 3 bryła kolizji.
+	int objectMarker(int i) const { return objects_[size_t(i)].marker; }
 	const TemplateObject& objectSource(int i) const { return objects_[size_t(i)].src; }
 	int currentMeshOf(int i) const { return currentMesh(objects_[size_t(i)]); }
 	static glm::mat4 objectMatrixOf(const TemplateObject& o) { return objectMatrix(o); }
@@ -203,7 +205,10 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 		int animMode = -1;  // nadpisanie trybu animacji (interfejs gry): 1 raz, 2 pętla
 		float animStart = 0.f;
 		bool visible = true; // set_visibility ze skryptu
-		bool info = false;   // klasa pomocnicza „info” (ClassDb::isInfo): tylko ze znacznikami edytora
+		// Znacznik edytora (rysowany tylko z włączoną swoją grupą): 0 zwykły obiekt, 1 źródło światła albo efektu
+		// (model tylko w edytorze: if {[get_mapedit]} {class_defaultanim …}), 2 obiekt „info” (ClassDb::isInfo),
+		// 3 bryła kolizji Info_Coll_*.
+		int marker = 0;
 	};
 	std::string world_ = "urw"; // motyw świata (zestaw detali .l2m)
 	std::map<std::string, ClassModel> gameModels_;
@@ -215,6 +220,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	// punktu), punkt i orientacja interpolowane jak wierzchołki rodzica (Diggles-Unity HAT_LINK_SYSTEM §5).
 	bool linkedMatrix(int child, glm::mat4& out, int depth = 0) const;
 	bool objectShown(const PlacedObject& o) const; // jak przy rysowaniu: detale, obiekty edytora, mgła
+	int markerKind(const std::string& className, const ClassModel* cls) const; // PlacedObject::marker
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
 	bool pushClassLights(const std::string& className, float x, float y, float zScript); // do allLights_
 
@@ -239,7 +245,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	std::string blocksError_;
 	TerrainRenderer terrain_;
 	std::optional<Heightfield> heights_;
-	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showEditorOnly_ = false, gameLighting_ = true;
+	bool showTerrain_ = true, showObjects_ = true, showZone_ = true, showMarker_[4] = {true, false, false, false}, gameLighting_ = true;
 	bool showPanorama_ = true, hasOpenAir_ = false; // panorama tylko, gdy scenariusz ma niebo (set_light_begin)
 	bool showCarpet_ = true;
 	bool previewLamp_ = true; // lampa podglądu dla szablonów bez własnych świateł

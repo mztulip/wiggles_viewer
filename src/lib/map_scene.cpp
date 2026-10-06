@@ -301,7 +301,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 			PlacedObject p;
 			p.src = o;
 			p.cls = classes_.find(o.className);
-			p.info = classes_.isInfo(o.className);
+			p.marker = markerKind(o.className, p.cls);
 			if (p.cls) resolve(*p.cls, p.slot, p.animation);
 			objects_.push_back(p);
 		}
@@ -607,11 +607,17 @@ bool MapScene::animMotion(int i, const std::string& anim, Vec3f& move, Vec3f& ro
 	return false;
 }
 
+int MapScene::markerKind(const std::string& className, const ClassModel* cls) const
+{
+	if (classes_.isInfo(className)) return Vfs::lower(className).rfind("info_coll", 0) == 0 ? 3 : 2;
+	return cls && cls->editorOnly ? 1 : 0;
+}
+
 bool MapScene::objectShown(const PlacedObject& o) const
 {
 	if (!o.slot || o.animation < 0 || !o.visible) return false;
 	if (!showDetail_[detailIndex(o.src.detail)]) return false;
-	if ((o.info || (o.cls && o.cls->editorOnly)) && !showEditorOnly_) return false;
+	if (!showMarker_[o.marker]) return false;
 	if (fogMode_ != FogMode::Off && !objectVisibleInFog(o)) return false;
 	return true;
 }
@@ -836,7 +842,7 @@ int MapScene::addObject(const std::string& className, float x, float y, float zS
 	p.src.className = className;
 	p.src.pos[0] = x, p.src.pos[1] = y, p.src.pos[2] = zScript;
 	p.cls = classes_.find(className);
-	p.info = classes_.isInfo(className);
+	p.marker = markerKind(className, p.cls);
 	if (p.cls) resolve(*p.cls, p.slot, p.animation);
 	objects_.push_back(p);
 	return int(objects_.size()) - 1;

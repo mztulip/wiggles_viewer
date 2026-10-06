@@ -147,7 +147,7 @@ t_sim_gender() {
 	[ "$f" -ge 1 ] && [ "$m" -ge 1 ] && ok "frau $f, mann $m" || fail "frau $f, mann $m"
 }
 
-test_ info_hidden "klasy pomocnicze info (Info_Coll_* z modelem kolli_box po obj_init) niewidoczne w symulacji (kris_unq_start_skirm)"
+test_ info_hidden "klasy pomocnicze info (Info_Coll_* z modelem kolli_box po obj_init) niewidoczne w symulacji; grupy znaczników edytora (światła i efekty, Info, bryły kolizji) (kris_unq_start_skirm)"
 t_info_hidden() {
 	wv --template kris_unq_start_skirm --simulate --warmup 1 --center 22 9.5 --dist 9 --screenshot "$TMP/info.png" >/dev/null
 	local n
@@ -156,7 +156,15 @@ from PIL import Image
 d = Image.open('$TMP/info.png').convert('RGB').tobytes()
 print(sum(1 for i in range(0, len(d), 3) if d[i] > 200 and d[i + 1] > 160 and d[i + 2] > 150))")
 	# bryły kolizji kolli_box są jasne, różowo-białe (przed poprawką ok. 15 tys. takich pikseli w tym kadrze), scena ciemna
-	[ "$n" -lt 500 ] 2>/dev/null && ok "jasnych pikseli $n" || fail "widać bryły kolizji Info_Coll: $n jasnych pikseli"
+	[ "$n" -lt 500 ] 2>/dev/null || { fail "widać bryły kolizji Info_Coll: $n jasnych pikseli"; return; }
+	# grupy znaczników (osobne pola w wigview): 1 źródła świateł i efektów, 2 obiekty Info, 3 bryły kolizji
+	wv --template kris_unq_start_skirm --print-objects --screenshot "$TMP/info.png" >"$TMP/info.txt"
+	local c
+	for c in "Info_Coll_a 3" "Info_Coll_d 3" "Info_Fog_Kris_a 2" "Kris_LightSrc_a 1" "Zwerg 0" "Dummy_Kris_um_j 0"; do
+		grep " ${c% *} " "$TMP/info.txt" | grep -qv "znacznik=${c#* }$" && { fail "${c% *}: grupa znacznika inna niż ${c#* }: $(grep " ${c% *} " "$TMP/info.txt" | head -1)"; return; }
+		grep -q " ${c% *} .*znacznik=${c#* }$" "$TMP/info.txt" || { fail "brak ${c% *} w wypisie"; return; }
+	done
+	ok "jasnych pikseli $n, grupy znaczników zgodne"
 }
 
 test_ nav_path "ruch jak w grze (P0–P1): linia podłogi w korytarzu, droga Calc1 po podłodze, bez wspinania brak drogi na ścianę, ze wspinaniem po ścianie"
