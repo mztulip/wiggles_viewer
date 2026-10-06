@@ -21,6 +21,7 @@
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
+// --nav-path X0 Y0 X1 Y1 [W]: z --print-nav droga Calc1 między punktami (bloki), W = 1 ze wspinaniem.
 // --print-nav: z --screenshot wypisuje podpola ruchu (NavWorld: '_' podłoga, '|' ściana, '.' zablokowane) i koszty pól.
 // --print-objects: z --screenshot wypisuje obiekty sceny (indeks, klasa, obiekt .3db, animacja, widoczność, pozycja)
 //   i postacie symulacji, do testów (tools/tests/run.sh).
@@ -117,6 +118,7 @@ struct Args
 	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
 	bool printObjects = false;               // --print-objects: lista obiektów sceny (testy)
 	bool printNav = false;                   // --print-nav: podpola ruchu (NavWorld) jako tekst
+	std::vector<float> navPath;              // --nav-path X0 Y0 X1 Y1 [W]: droga Calc1 (bloki; W = 1: wspinanie)
 	int httpPort = 0;                        // --http PORT: serwer deweloperski (0 = wyłączony)
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
@@ -159,6 +161,12 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--paths") a.paths = true;
 		else if (k == "--print-objects") a.printObjects = true;
 		else if (k == "--print-nav") a.printNav = true;
+		else if (k == "--nav-path")
+		{
+			for (int j = 0; j < 4; ++j) a.navPath.push_back(float(std::atof(next())));
+			a.navPath.push_back(i + 1 < argc && argv[i + 1][0] != '-' ? float(std::atof(next())) : 0.f);
+			a.printNav = true;
+		}
 		else if (k == "--http") a.httpPort = std::atoi(next());
 		else if (k == "--click")
 		{
@@ -2249,6 +2257,18 @@ int main(int argc, char** argv)
 			double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
 			std::printf("nav %d×%d pól, podpól do chodzenia %zu, %.0f ms\n", nw.width(), nw.height(), nw.walkableCount(), ms);
 			if (nw.width() <= 48 && nw.height() <= 40) std::printf("%s", nw.ascii(0, 0, nw.width() - 1, nw.height() - 1).c_str());
+			if (args.navPath.size() == 5)
+			{
+				auto& np = args.navPath;
+				auto t1 = std::chrono::steady_clock::now();
+				auto path = nw.findPath(int(np[0] * 8), int(np[1] * 8), int(np[2] * 8), int(np[3] * 8), np[4] != 0);
+				double pms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t1).count();
+				std::printf("droga (%g, %g) → (%g, %g)%s: %zu punktów, %.2f ms:", np[0], np[1], np[2], np[3], np[4] != 0 ? " ze wspinaniem" : "",
+				    path.size(), pms);
+				for (auto& [x, y] : path) std::printf(" (%.3f, %.3f)%s", x / 8.f, y / 8.f, nw.floor(x, y) ? "p" : nw.walkable(x, y) ? "ś"
+					                                                                                                                : "?");
+				std::printf("\n");
+			}
 			for (int ty = 0; ty < nw.height() && nw.width() <= 48; ++ty)
 			{
 				std::printf("koszt %2d:", ty);

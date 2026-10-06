@@ -53,6 +53,13 @@ public:
 	bool tileFloor(int tx, int ty) const { return (exitPair(tx, ty) & kExitFloor) != 0; }
 	int digByte(int tx, int ty) const; // wysokość ze środka bloku (bajt 0x24 rekordu): koszt różnic wysokości
 
+	// Wyszukiwanie drogi Calc1 (FUN_0059d640, za Diggles-Unity Calc1Pathfinder): punkty w podpolach. Początek
+	// i cel dociągane do najbliższego podpola do chodzenia (początek: pierścienie do 32 wzdłuż osi, najpierw +y;
+	// cel: wachlarz do 12, głównie w dół), potem zsuwane w dół po podłodze. Szukanie po polach (FIFO, sąsiedzi
+	// +y, −y, +x, −x), postać bez wspinania wchodzi tylko na pola z podłogą (bit 0x40). Wynik: początek, punkt
+	// wyjścia każdego kolejnego pola, cel; pusty = brak drogi.
+	std::vector<std::pair<int, int>> findPath(int sx, int sy, int gx, int gy, bool canClimb) const;
+
 	size_t walkableCount() const;
 	// Podgląd tekstowy podpól pól [tx0, tx1] × [ty0, ty1]: '.' zablokowane, '|' ściana, '_' podłoga.
 	std::string ascii(int tx0, int ty0, int tx1, int ty1) const;
@@ -68,6 +75,9 @@ private:
 	std::vector<uint8_t> sub_;     // [pole · 64 + wiersz · 8 + kolumna]
 	std::vector<int8_t> cost_;     // na pole
 	std::vector<uint8_t> exit_;    // na pole
+	bool pathWalkable(int sx, int sy) const { return baseCost(sx >> 3, sy >> 3) != -1 && walkable(sx, sy); }
+	mutable std::vector<int> dist_, pred_, stamp_; // bufory findPath
+	mutable int gen_ = 0;
 };
 
 } // namespace ow

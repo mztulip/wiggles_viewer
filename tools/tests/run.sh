@@ -147,6 +147,19 @@ t_sim_gender() {
 	[ "$f" -ge 1 ] && [ "$m" -ge 1 ] && ok "frau $f, mann $m" || fail "frau $f, mann $m"
 }
 
+test_ nav_path "ruch jak w grze (P0–P1): linia podłogi w korytarzu, droga Calc1 po podłodze, bez wspinania brak drogi na ścianę, ze wspinaniem po ścianie"
+t_nav_path() {
+	local o
+	o=$(wv --template lava_unq_vampy_tuer --nav-path 1.5 2 14.5 2 --screenshot "$TMP/a.png" | grep "^droga")
+	echo "$o" | grep -q "14 punktów" && echo "$o" | grep -q "(14.500, 2.500)p" || { fail "korytarz: $o"; return; }
+	[ "$(echo "$o" | grep -o ", 2.500)p" | wc -l)" = 14 ] || { fail "korytarz: punkty poza linią podłogi y = 2,5: $o"; return; }
+	o=$(wv --template kris_caves_1_b --nav-path 2.5 6 6 3.5 --screenshot "$TMP/a.png" | grep "^droga")
+	echo "$o" | grep -q "0 punktów" || { fail "jaskinia bez wspinania powinna nie mieć drogi na ścianę: $o"; return; }
+	o=$(wv --template kris_caves_1_b --nav-path 2.5 6 6 3.5 1 --screenshot "$TMP/a.png" | grep "^droga")
+	echo "$o" | grep -q "(6.500, 6.500)p (6.500, 5.500)ś" || { fail "jaskinia ze wspinaniem: $o"; return; }
+	ok
+}
+
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
 	[ -f "$GAME/Data/3db/LAVAWELT.3DB" ] || { skip "brak LAVAWELT.3DB"; return; }

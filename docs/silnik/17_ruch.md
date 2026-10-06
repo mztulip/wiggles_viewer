@@ -5,7 +5,7 @@ Rozdział opisuje, jak gra wyznacza, gdzie postać może stać i chodzić, jak s
 | Etap | Treść | Stan |
 |---|---|---|
 | P0 | dane ruchu: podpola 8×8 (podłoga, ściana), graf pól | ✅ |
-| P1 | wyszukiwanie drogi Calc1 | |
+| P1 | wyszukiwanie drogi Calc1 | ✅ |
 | P2 | chód po podłodze (głębokość, prędkość z animacji, obroty, start i zatrzymanie) | |
 | P3 | kopanie: dojście do krawędzi | |
 | P4 | wspinanie po ścianach | |
@@ -53,3 +53,23 @@ punkt wyjścia = najlepsze podpole (x = bity 0..2, y = bity 3..5) + bit 0x40 „
 „Dig” pola (do kosztu różnic wysokości w wyszukiwaniu drogi) to wysokość środkowego podpola bloku (bajt 0x24 rekordu).
 
 W kodzie: `NavWorld::build/revalidate`, `deriveSub`, `deriveTile`; podgląd: `wigview --template T --print-nav --screenshot x.png` (`_` podłoga, `|` ściana, `.` zablokowane, koszty pól).
+
+## 17.4 Wyszukiwanie drogi (Calc1) ✅
+
+Punkty początku i celu w podpolach (x · 8, y · 8; głębokość pomijana: szukanie jest dwuwymiarowe w płaszczyźnie widoku):
+
+```
+do_chodzenia(s) = koszt pola s ≠ −1 i podpole s ma bit 0x01
+początek nie do chodzenia: pierścienie r = 1..32, próby wzdłuż osi w kolejności +y, +x, −x, −y; bez trafienia zostaje
+cel nie do chodzenia: r = 1..12, osiem prób (0, r) (0, −r/4) (±r/2, 0) (±r/3, r/2) (±r/3, −r/5); bez trafienia: brak drogi
+oba punkty: dopóki podpole niżej jest podłogą, y += 1 (dolny rząd półki)
+szukanie po polach: kolejka FIFO (Bellman-Ford), sąsiedzi +y, −y, +x, −x, start: dist = koszt + 1
+    sąsiad: koszt ≠ −1; postać bez wspinania tylko na pola z bitem 0x40 (podłoga)
+    krok: podłoga ↔ ściana: koszt + 276 − 16 · min(dig, dig′)
+          ściana → ściana:   koszt + 1 + 16 · |dig − dig′|
+          podłoga → podłoga: koszt + 1
+    po pierwszym dojściu do celu limit = min(limit, round(dodane · 1,5)) (jeszcze trochę szukania)
+wynik: początek, punkt wyjścia każdego kolejnego pola na drodze, cel
+```
+
+Przykłady (`wigview --template … --nav-path X0 Y0 X1 Y1 [1]`): w korytarzu lawy droga biegnie po y = 2,5 przez środki pól; w jaskini `kris_caves_1_b` z (2,5; 6) do (6; 3,5) na tylnej ścianie bez wspinania nie ma drogi, a ze wspinaniem prowadzi po podłodze do x = 6,5 i dalej w górę po ścianie. 🔶 Gra odrzuca punkty bliżej niż 40 podpól od brzegu świata; u nas szablon jest całym światem, więc tego warunku nie ma. Warianty z bramką terytorium gracza (koszt przejścia 266) i drabiny/windy (wpływy obiektów) przyjdą z P2–P4.

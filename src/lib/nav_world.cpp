@@ -4,7 +4,9 @@
 #include "lib/map_template.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
+#include <deque>
 
 namespace ow
 {
@@ -180,6 +182,115 @@ int NavWorld::digByte(int tx, int ty) const
 	if (!grid_ || tx < 0 || ty < 0 || tx >= w_ || ty >= h_) return 0;
 	const BlockRecord* r = db_->record(grid_->blocks[size_t(ty) * w_ + size_t(tx)]);
 	return r ? int(r->depth[0x24]) : 0;
+}
+
+std::vector<std::pair<int, int>> NavWorld::findPath(int sx, int sy, int gx, int gy, bool canClimb) const
+{
+	std::vector<std::pair<int, int>> out;
+	if (!grid_) return out;
+	if (!pathWalkable(sx, sy)) // początek: osie, kolejno +y, +x, −x, −y; bez trafienia zostaje
+		for (int r = 1; r <= 32; ++r)
+		{
+			if (pathWalkable(sx, sy + r))
+			{
+				sy += r;
+				break;
+			}
+			if (pathWalkable(sx + r, sy))
+			{
+				sx += r;
+				break;
+			}
+			if (pathWalkable(sx - r, sy))
+			{
+				sx -= r;
+				break;
+			}
+			if (pathWalkable(sx, sy - r))
+			{
+				sy -= r;
+				break;
+			}
+		}
+	if (!pathWalkable(gx, gy)) // cel: wachlarz ośmiu prób, głównie w dół
+	{
+		bool found = false;
+		for (int r = 1; r <= 12 && !found; ++r)
+		{
+			const int probes[8][2] = {{0, r}, {0, -(r >> 2)}, {r >> 1, 0}, {-(r >> 1), 0}, {r / 3, r >> 1}, {-(r / 3), r >> 1}, {r / 3, -(r / 5)}, {-(r / 3), -(r / 5)}};
+			for (const auto& p : probes)
+				if (pathWalkable(gx + p[0], gy + p[1]))
+				{
+					gx += p[0], gy += p[1], found = true;
+					break;
+				}
+		}
+		if (!found) return out;
+	}
+	while (floor(sx, sy + 1)) ++sy; // zsunięcie na dolny rząd półki
+	while (floor(gx, gy + 1)) ++gy;
+	int st = (sy >> 3) * w_ + (sx >> 3), gt = (gy >> 3) * w_ + (gx >> 3);
+	if (cost_[size_t(st)] == -1 || cost_[size_t(gt)] == -1) return out;
+	if (st == gt && sx == gx && sy == gy) return {{sx, sy}};
+
+	size_t n = size_t(w_) * h_;
+	if (dist_.size() != n) dist_.assign(n, 0), pred_.assign(n, -1), stamp_.assign(n, 0), gen_ = 0;
+	++gen_;
+	std::deque<int> q;
+	dist_[size_t(st)] = cost_[size_t(st)] + 1, pred_[size_t(st)] = -1, stamp_[size_t(st)] = gen_;
+	q.push_back(st);
+	constexpr int kCliff = 0x114, kStep = 0x10; // przejście podłoga ↔ ściana; stopień wysokości (wariant v1)
+	int enqueued = 1, head = 0, maxNodes = 200000;
+	bool goalSeen = false;
+	while (!q.empty() && head < maxNodes)
+	{
+		int cur = q.front();
+		q.pop_front();
+		++head;
+		int cx = cur % w_, cy = cur / w_, dcur = dist_[size_t(cur)];
+		bool curFloor = (exit_[size_t(cur)] & kExitFloor) != 0;
+		int digCur = digByte(cx, cy);
+		const int nb[4][2] = {{cx, cy + 1}, {cx, cy - 1}, {cx + 1, cy}, {cx - 1, cy}};
+		for (const auto& p : nb)
+		{
+			int tx = p[0], ty = p[1];
+			if (tx < 0 || ty < 0 || tx >= w_ || ty >= h_) continue;
+			int t = ty * w_ + tx, base = cost_[size_t(t)];
+			if (base == -1) continue;
+			bool tFloor = (exit_[size_t(t)] & kExitFloor) != 0;
+			if (!canClimb && !tFloor) continue;
+			int c = curFloor != tFloor ? base + kCliff - kStep * std::min(digCur, digByte(tx, ty))
+			    : !curFloor            ? base + 1 + kStep * std::abs(digCur - digByte(tx, ty))
+			                           : base + 1;
+			int nd = dcur + c;
+			if (stamp_[size_t(t)] == gen_ && nd >= dist_[size_t(t)]) continue;
+			dist_[size_t(t)] = nd, pred_[size_t(t)] = cur, stamp_[size_t(t)] = gen_;
+			q.push_back(t);
+			++enqueued;
+			if (t == gt && !goalSeen)
+			{ // po pierwszym dojściu do celu: jeszcze najwyżej połowa tego, co dotąd
+				goalSeen = true;
+				maxNodes = std::min(maxNodes, int(std::lround(enqueued * 1.5)));
+			}
+		}
+	}
+	if (stamp_[size_t(gt)] != gen_) return out;
+	std::vector<int> tiles;
+	for (int t = gt; t != -1; t = pred_[size_t(t)])
+	{
+		tiles.push_back(t);
+		if (tiles.size() > n) return out;
+	}
+	std::reverse(tiles.begin(), tiles.end());
+	out.push_back({sx, sy});
+	for (size_t i = 1; i < tiles.size(); ++i)
+	{
+		int t = tiles[i], e = exit_[size_t(t)];
+		out.push_back({(t % w_) * 8 + (e & 7), (t / w_) * 8 + ((e >> 3) & 7)});
+	}
+	if (out.size() > 1) out.back() = {gx, gy};
+	else out.push_back({gx, gy});
+	return out;
 }
 
 size_t NavWorld::walkableCount() const
