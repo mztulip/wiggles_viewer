@@ -406,6 +406,7 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			float gx = (sx0 + sx1) * 0.5f, gy = floorY(wx, wy);
 			bool last = u.step + 1 == u.path.size();
 			if (last && u.goalX >= 0) gx = std::clamp(u.goalX, std::min(sx0 + 0.1f, gx), std::max(sx1 - 0.1f, gx));
+			const float x0 = u.x, z0 = u.z;
 			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
 				// ściana pod bieżącym x (pole x może już być następnym polem ścieżki) i w polu docelowym kroku
 				float wz = std::max(walkZ(u.x, u.ty), walkZ(gx, wy));
@@ -416,7 +417,6 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			bool vertical = wx == u.tx && wy != u.ty;
 			float speed = vertical ? kClimbSpeed : kWalkSpeed;
 			float ddx = gx - u.x, ddy = gy - u.y, len = std::hypot(ddx, ddy), mv = speed * dt;
-			if (std::abs(ddx) > 1e-3f) u.facing = ddx > 0 ? -kSimPi * 0.5f : kSimPi * 0.5f;
 			if (len <= mv)
 			{
 				u.x = gx, u.y = gy, u.tx = wx, u.ty = wy;
@@ -425,7 +425,11 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			else
 				u.x += ddx / len * mv, u.y += ddy / len * mv;
 			const std::string& anim = !vertical ? u.walkAnim : (ddy < 0 ? u.climbUpAnim : u.climbDownAnim);
-			if (vertical) u.facing = kSimPi; // twarzą do ściany
+			// przodem w stronę faktycznego ruchu w tym kroku (w bok i w głąb; z skryptu = 2 · z świata),
+			// także po skosie; przy wspinaniu twarzą do ściany
+			float mx = u.x - x0, mz = (u.z - z0) * 0.5f;
+			if (vertical) u.facing = kSimPi;
+			else if (std::hypot(mx, mz) > 1e-5f) u.facing = std::atan2(-mx, mz);
 			scene_.playAnim(u.obj, anim, true);
 		}
 	}

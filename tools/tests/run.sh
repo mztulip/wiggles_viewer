@@ -279,8 +279,12 @@ t_ui_goto() {
 	sleep 4; t2=$(cu tx)
 	[ -z "$e" ] && [ "$t2" -le 3 ] 2>/dev/null || e="${e:-PPM w ścianę: krasnal na polu $t2, oczekiwane ≤ 3}"
 	# głębokość klikniętego miejsca: podłoga blisko przodu i blisko tylnej ściany (pole 7)
-	local zf zb
-	click_at 1000 535 3; sleep 4; zf=$(cu z)
+	local zf zb rot
+	click_at 1000 535 3; sleep 0.6
+	# w trakcie chodu w prawo i do przodu: przodem po skosie (≈ −45°), nie bokiem (−90°)
+	rot=$(hget /api/objects | jget "[o['roty'] for o in d['objects'] if o['class'] == 'Zwerg'][0]")
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if -1.3 < $rot < -0.3 else 1)" || e="${e:-obrót w chodzie po skosie $rot, oczekiwane ok. −0,785}"
+	sleep 3.4; zf=$(cu z)
 	click_at 1000 470 3; sleep 4; zb=$(cu z)
 	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if $zf >= 10 and $zb <= 5 else 1)" ||
 		e="${e:-PPM w podłogę z przodu / z tyłu: z $zf / $zb, oczekiwane ≥ 10 / ≤ 5}"
