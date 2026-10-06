@@ -19,6 +19,8 @@
 // --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
+// --print-objects: z --screenshot wypisuje obiekty sceny (indeks, klasa, obiekt .3db, animacja, widoczność, pozycja)
+//   i postacie symulacji, do testów (tools/tests/run.sh).
 // --click X Y: z --screenshot zaznacza obiekt albo pole w punkcie obrazu (piksele) przed zrzutem, jak kliknięcie.
 // --paths: otwiera okno „Ścieżki” (katalog gry i zapisów) przy starcie.
 // --saves-dir KATALOG: zapisy .sav z tego katalogu w zakładce Zapisy (domyślnie Data/Gamesave gry albo wybór z okna).
@@ -107,6 +109,7 @@ struct Args
 	float warmup = 0;                        // --warmup S: przewinięcie symulacji przed zrzutem
 	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
 	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
+	bool printObjects = false;               // --print-objects: lista obiektów sceny (testy)
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
 	int particle = -1; // --particle TYP: zakładka Cząsteczki z wybranym typem
@@ -146,6 +149,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		if (k == "--game") a.game = next();
 		else if (k == "--saves-dir") a.savesDir = next();
 		else if (k == "--paths") a.paths = true;
+		else if (k == "--print-objects") a.printObjects = true;
 		else if (k == "--click")
 		{
 			a.clickX = std::atoi(next());
@@ -313,10 +317,12 @@ struct Viewer
 		if (!sim || unit < 0) return;
 		sim->setControlled(unit, true);
 		controlUnit = unit;
+		if (std::getenv("OW_TRACE_SIM")) std::fprintf(stderr, "[ui] sterowanie: postać %d\n", unit);
 	}
 	void releaseControl()
 	{
 		if (sim && controlUnit >= 0 && controlUnit < int(sim->units.size())) sim->setControlled(controlUnit, false);
+		if (controlUnit >= 0 && std::getenv("OW_TRACE_SIM")) std::fprintf(stderr, "[ui] sterowanie: puszczone\n");
 		controlUnit = -1;
 	}
 	// Upływ czasu na mapach (animacje obiektów, cząsteczki, symulacja); niezależny od odtwarzacza zakładki Modele.
@@ -2192,6 +2198,20 @@ int main(int argc, char** argv)
 			renderFrame(w, h);
 			SDL_Delay(30);
 		}
+		if (args.printObjects && v.maps.hasTemplate())
+		{
+			for (int i = 0; i < v.maps.objectCount(); ++i)
+			{
+				const auto& s = v.maps.objectSource(i);
+				std::string obj = v.maps.objectModelObject(i), anim = v.maps.objectAnimation(i);
+				std::printf("obiekt %d %s model=%s anim=%s pos=%.2f,%.2f,%.2f\n", i, s.className.c_str(), obj.empty() ? "-" : obj.c_str(),
+				    anim.empty() ? "-" : anim.c_str(), s.pos[0], s.pos[1], s.pos[2]);
+			}
+			if (v.simActive && v.sim)
+				for (const auto& u : v.sim->units)
+					std::printf("postać %s obj=%d x=%.2f y=%.2f pole=%d,%d z=%.2f minz=%.2f\n", u.gnome ? "krasnal" : "wuker", u.obj, u.x, u.y,
+					    u.tx, u.ty, u.z, v.sim->walkZ(u.x, u.ty));
+		}
 		if (args.clickX >= 0)
 		{
 			glm::vec3 ro, rd;
@@ -2398,6 +2418,7 @@ int main(int argc, char** argv)
 		{ // wczytanie wybrane w UI w poprzedniej klatce
 			lastProgress = 0;
 			v.maps.runPending();
+			if (std::getenv("OW_TRACE_SIM")) std::fprintf(stderr, "[ui] wczytano mapę\n");
 			v.maps.clearSelection(); // indeksy obiektów i pola dotyczyły poprzedniej mapy
 			if (!v.keepCamera) v.frameMap();
 			v.keepCamera = false;
