@@ -193,11 +193,17 @@ int WorldSim::addUnit(int obj)
 	SimUnit u;
 	u.obj = obj;
 	u.gnome = gnome;
-	if (!gnome)
+	if (!gnome && isWalkerClass(Vfs::lower(scene_.objectClass(obj))))
 	{ // wuker: animacje bez przyrostka _loop przy wspinaniu; model nadaje obj_init (set_anim this wuker.…),
 		// a klasa ($wukerclass w WUKER.TCL) nie ma class_defaultanim
 		u.climbUpAnim = "kletter_hoch", u.climbDownAnim = "kletter_runter", u.standAnim = "stand_atmen_a";
 		if (scene_.objectModelObject(obj).empty()) scene_.setObjectModel(obj, "", "wuker");
+	}
+	else if (!gnome)
+	{ // inne stworzenie (adoptUnit): chód i stanie z animacji jego modelu, wspinanie tą samą animacją chodu
+		auto anims = scene_.objectAnimations(obj);
+		u.walkAnim = creatureAnim(anims, true), u.standAnim = creatureAnim(anims, false);
+		u.climbUpAnim = u.climbDownAnim = u.walkAnim, u.climbStandAnim = u.standAnim;
 	}
 	const float* p = scene_.objectPos(obj);
 	u.x = p[0], u.y = p[1], u.z = p[2];
@@ -207,6 +213,69 @@ int WorldSim::addUnit(int obj)
 	if (u.z < wz - kWallGap + 0.5f || u.z > 14.5f) u.z = wz;
 	units.push_back(u);
 	return int(units.size()) - 1;
+}
+
+// Animacja chodu (walk) albo stania stworzenia: pierwsza istniejąca z listy, potem dowolna z „geh”/„lauf”
+// (chód) albo „stand” (stanie) w nazwie. Pusta: model nie ma takiej animacji.
+std::string WorldSim::creatureAnim(const std::vector<std::string>& anims, bool walk)
+{
+	auto has = [&](const std::string& n) { return std::find(anims.begin(), anims.end(), n) != anims.end(); };
+	static const std::vector<std::string> kWalk = {"gehen_loop", "laufen_loop", "lauf_a_loop", "stehen_gehen"},
+	                                      kStand = {"standard", "stand_anim", "standanim", "stand"};
+	for (const auto& n : walk ? kWalk : kStand)
+		if (has(n)) return n;
+	for (const auto& a : anims)
+	{
+		std::string l = Vfs::lower(a);
+		if (walk ? (l.find("geh") != std::string::npos || l.find("lauf") != std::string::npos) && l.find("schwert") == std::string::npos
+		         : l.find("stand") != std::string::npos)
+			return a;
+	}
+	return walk ? std::string() : (anims.empty() ? std::string() : anims.front());
+}
+
+int WorldSim::adoptUnit(int obj)
+{
+	if (obj < 0 || obj >= scene_.objectCount()) return -1;
+	for (size_t k = 0; k < units.size(); ++k)
+		if (units[k].obj == obj) return int(k);
+	if (creatureAnim(scene_.objectAnimations(obj), true).empty()) return -1;
+	idOf(obj);
+	float x = scene_.objectPos(obj)[0];
+	int k = addUnit(obj);
+	SimUnit& u = units[size_t(k)];
+	float x0, x1; // bez przeskoku na środek pola: x zostaje, jeśli leży w wolnej części pola
+	if (openSpan(u.tx, u.ty, x0, x1) && x >= x0 && x <= x1) u.x = x;
+	return k;
+}
+
+bool WorldSim::controlNudge(int unit, int dx, int dz)
+{
+	if (unit < 0 || unit >= int(units.size())) return false;
+	SimUnit& u = units[size_t(unit)];
+	if (dz != 0)
+	{ // w głąb (dz < 0, mniejsze z) albo do przodu, między tylną ścianą + kWallGap a przednią płaszczyzną
+		float base = u.zGoal >= 0 ? u.zGoal : u.z;
+		u.zGoal = std::clamp(base + float(dz) * kNudgeZ, walkZ(u.x, u.ty), 14.f);
+	}
+	if (dx == 0) return true;
+	float base = u.state == SimUnit::Walk && u.goalX >= 0 ? u.goalX : u.x, nx = base + float(dx) * kNudgeX;
+	int tx = int(std::floor(nx)), cx = int(std::floor(base));
+	int sy = u.state == SimUnit::Walk && !u.path.empty() ? u.path.back().second : u.ty;
+	float x0, x1;
+	if (tx == cx && openSpan(tx, sy, x0, x1))
+	{ // w tym samym polu: krótki chód do nx (w wolnej części pola)
+		u.path = {{tx, sy}}, u.step = 0, u.state = SimUnit::Walk, u.onArrive = nullptr, u.digX = u.digY = -1;
+		u.goalX = std::clamp(nx, x0 + 0.05f, x1 - 0.05f);
+		return true;
+	}
+	for (int d : {0, -1, 1}) // sąsiednie pole: na tej samej wysokości albo stopień w górę / w dół
+		if ((nav.standable(tx, sy + d) || nav.climbable(tx, sy + d)) && controlGoTo(unit, tx, sy + d))
+		{
+			units[size_t(unit)].goalX = nx;
+			return true;
+		}
+	return false;
 }
 
 int WorldSim::spawnUnit(float x, float y, bool gnome)
@@ -316,7 +385,9 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 			{ // w głąb równolegle z chodem: cel skryptu albo bieżąca głębokość, ale nie bliżej ściany niż kWallGap
 				// ściana pod bieżącym x (pole x może już być następnym polem ścieżki) i w polu docelowym kroku
 				float wz = std::max(walkZ(u.x, u.ty), walkZ(gx, wy));
-				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.z, wz);
+				float gz = std::max(u.goalZ >= 0 ? u.goalZ : u.controlled && u.zGoal >= 0 ? u.zGoal
+				                                                                          : u.z,
+				    wz);
 				float dz = gz - u.z, mz = 2.f * kWalkSpeed * dt;
 				u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
 			}
@@ -361,7 +432,14 @@ void WorldSim::updateUnit(SimUnit& u, float dt)
 		{
 			u.path = {{u.tx, u.ty + 1}}, u.step = 0, u.state = SimUnit::Walk; // spada
 		}
-		else if (!scripts) // ze skryptami animację w miejscu ustawia skrypt (set_anim)
+		else if (u.controlled && u.zGoal >= 0 && std::abs(u.zGoal - u.z) > 0.01f)
+		{ // prowadzona ręcznie w głąb albo do przodu: chód w miejscu, przodem w stronę ruchu
+			float dz = u.zGoal - u.z, mz = 2.f * kWalkSpeed * dt;
+			u.z += std::abs(dz) <= mz ? dz : (dz > 0 ? mz : -mz);
+			u.facing = dz < 0 ? kSimPi : 0.f;
+			scene_.playAnim(u.obj, u.walkAnim, true);
+		}
+		else if (!scripts || u.controlled) // ze skryptami animację w miejscu ustawia skrypt (set_anim); prowadzonej: my
 			scene_.playAnim(u.obj, nav.standable(u.tx, u.ty) ? u.standAnim : u.climbStandAnim, true);
 	}
 	// Nigdy za tylną ścianą (też po set_pos i glide ze skryptu): co najmniej 0,5 przed nią w kolumnie stóp.

@@ -27,6 +27,7 @@ constexpr float kGnomeZ = 8.0f;    // głębokość krasnala w skali skryptu (ś
 // W korytarzu GNG_004 (ściana 11) krasnal postawiony na z = 8 po pierwszych krokach ma w grze z = 12,5;
 // 🔶 dalej od ściany zostaje na swojej głębokości (krasnale z zapisu mają w jednym polu z 5,2 … 13,8). BAZA_WIEDZY §8.12.
 constexpr float kWallGap = 1.5f;
+constexpr float kNudgeX = 0.25f, kNudgeZ = 0.5f; // krok ręcznego prowadzenia: pola w bok, skala skryptu w głąb
 constexpr float kWalkSpeed = 1.6f; // pola na sekundę (🔶)
 constexpr float kClimbSpeed = 0.9f;
 constexpr float kDigTime = 2.0f; // sekundy kopania jednego pola (🔶)
@@ -57,6 +58,7 @@ struct SimUnit
 	std::string walkAnim = "gehen_loop", climbUpAnim = "kletter_hoch_loop", climbDownAnim = "kletter_runter_loop";
 	std::string standAnim = "standard", climbStandAnim = "kletterstand";
 	bool controlled = false; // prowadzony ręcznie w przeglądarce (skrypt postaci wstrzymany)
+	float zGoal = -1;        // prowadzony ręcznie: docelowa głębokość (↑/↓ w przeglądarce), −1 = bez celu
 };
 
 // Klasy chodzące po siatce nawigacji: krasnal (Zwerg) i wukery. Nazwa klasy małymi literami.
@@ -108,6 +110,13 @@ public:
 	void setControlled(int unit, bool on);
 	bool controlStep(int unit, int dx, int dy);
 	bool controlGoTo(int unit, int tx, int ty);
+	// Mały krok prowadzonej postaci: dx (−1/+1) o kNudgeX w bok, dz (−1 w głąb, +1 do przodu) o kNudgeZ;
+	// kolejne naciśnięcia (trzymany klawisz) liczone od celu bieżącego kroku.
+	bool controlNudge(int unit, int dx, int dz);
+	// Stworzenie z mapy (chomik, pająk, troll…) jako postać symulacji, jeśli jego model ma animację chodu:
+	// indeks w units albo −1. Krasnale i wukery już są postaciami (initUnits).
+	int adoptUnit(int obj);
+	static std::string creatureAnim(const std::vector<std::string>& anims, bool walk);
 	// Najmniejsza głębokość chodu w polu (x, ty): tylna ściana w kolumnie x + kWallGap (skala skryptu).
 	float walkZ(float x, int ty) const;
 	SimUnit* unitOf(int obj);

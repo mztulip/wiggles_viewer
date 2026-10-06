@@ -584,8 +584,9 @@ struct Viewer
 			}
 			else if (ImGui::SmallButton(tr("Steruj (Enter)")))
 				takeControl(unit);
-			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać jest prowadzona\n"
-			                         "strzałkami o pole, PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."));
+			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać albo stworzenie z animacją chodu\n"
+			                         "jest prowadzone: ←/→ mały krok, ↑/↓ w głąb / do przodu, PPM bez przeciągania: idź do pola.\n"
+			                         "Skrypt postaci jest wtedy wstrzymany."));
 		}
 		int id = i < int(sim->idxToId.size()) ? sim->idxToId[size_t(i)] : 0;
 		const script::ScriptObject* so = id && sim->scripts ? sim->scripts->object(id) : nullptr;
@@ -2123,7 +2124,7 @@ int main(int argc, char** argv)
 				dl->AddText(pos, IM_COL32(220, 220, 220, 255), ver);
 				if (v.controlUnit >= 0 && v.mapTab())
 				{ // tryb sterowania: napis na górze sceny
-					std::string msg = strf(tr("Sterowanie: %s  (strzałki: krok, PPM: idź do pola, Shift lub Esc: puść)"),
+					std::string msg = strf(tr("Sterowanie: %s  (←/→: krok, ↑/↓: w głąb / do przodu, PPM: idź do pola, Shift lub Esc: puść)"),
 					    v.maps.objectClass(v.sim->units[size_t(v.controlUnit)].obj).c_str());
 					ImVec2 ms = ImGui::CalcTextSize(msg.c_str()), mp(v.uiRight + (ds.x - v.uiRight - ms.x) * 0.5f, 12.f);
 					dl->AddRectFilled(ImVec2(mp.x - 8, mp.y - 4), ImVec2(mp.x + ms.x + 8, mp.y + ms.y + 4), IM_COL32(20, 40, 70, 210), 4.f);
@@ -2337,10 +2338,11 @@ int main(int argc, char** argv)
 			{ // sterowanie postacią przechwytuje strzałki; Shift albo Esc oddaje klawiaturę przeglądarce
 				SDL_Keycode k = e.key.keysym.sym;
 				bool used = true;
-				if (k == SDLK_LEFT) v.sim->controlStep(v.controlUnit, -1, 0);
-				else if (k == SDLK_RIGHT) v.sim->controlStep(v.controlUnit, 1, 0);
-				else if (k == SDLK_UP) v.sim->controlStep(v.controlUnit, 0, -1);
-				else if (k == SDLK_DOWN) v.sim->controlStep(v.controlUnit, 0, 1);
+				// ←/→: mały krok w bok, ↑: w głąb (od kamery), ↓: do przodu; trzymany klawisz powtarza krok
+				if (k == SDLK_LEFT) v.sim->controlNudge(v.controlUnit, -1, 0);
+				else if (k == SDLK_RIGHT) v.sim->controlNudge(v.controlUnit, 1, 0);
+				else if (k == SDLK_UP) v.sim->controlNudge(v.controlUnit, 0, -1);
+				else if (k == SDLK_DOWN) v.sim->controlNudge(v.controlUnit, 0, 1);
 				else if (k == SDLK_LSHIFT || k == SDLK_RSHIFT || k == SDLK_ESCAPE) v.releaseControl();
 				else used = false;
 				if (used) continue;
@@ -2416,7 +2418,10 @@ int main(int argc, char** argv)
 						if (v.maps.selectedObject < 0) v.maps.pickTerrain(ro, rd, v.maps.selectedTileX, v.maps.selectedTileY);
 					}
 					// z symulacją kliknięta postać od razu jest prowadzona strzałkami; kliknięcie w inne miejsce ją puszcza
-					if (int unit = v.unitOfObject(v.maps.selectedObject); unit >= 0) v.takeControl(unit);
+					// stworzenie z animacją chodu (chomik, pająk, troll…) staje się postacią symulacji
+					int unit = v.unitOfObject(v.maps.selectedObject);
+					if (unit < 0 && v.simActive && v.sim && v.maps.selectedObject >= 0) unit = v.sim->adoptUnit(v.maps.selectedObject);
+					if (unit >= 0) v.takeControl(unit);
 					else v.releaseControl();
 				}
 			}

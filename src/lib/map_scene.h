@@ -74,6 +74,7 @@ public:
 	int hoverObject = -1, selectedObject = -1; // podświetlane przy rysowaniu
 	const Model3db* objectModel(int i) const;
 	std::string objectAnimation(int i) const;
+	std::vector<std::string> objectAnimations(int i) const; // animacje obiektu .3db, którym rysowany jest obiekt
 	// Nazwa obiektu .3db, którym rysowany jest obiekt mapy; pusta bez modelu.
 	std::string objectModelObject(int i) const;
 	const TemplateObject& objectSource(int i) const { return objects_[size_t(i)].src; }

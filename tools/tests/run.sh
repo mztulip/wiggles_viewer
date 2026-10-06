@@ -209,7 +209,11 @@ ui_start() { # argumenty wigview → uruchomiony, okno gotowe
 }
 ui_stop() { kill "$UIPID" 2>/dev/null; wait "$UIPID" 2>/dev/null; kill "$XPID" 2>/dev/null; wait "$XPID" 2>/dev/null; UIPID="" XPID=""; }
 xd() { DISPLAY="$DISP" xdotool "$@"; }
-click_at() { xd mousemove "$1" "$2"; sleep 0.5; xd click "${3:-1}"; sleep 0.5; }
+click_at() { # x y [przycisk]: współrzędne w oknie programu (okno większe niż ekran Xvfb bywa przesunięte)
+	local win
+	win=$(xd search --name "${UIWIN:-wigview}" | head -1)
+	xd mousemove --window "$win" "$1" "$2"; sleep 0.5; xd click "${3:-1}"; sleep 0.5
+}
 last_x() { grep "\[sim [0-9].*krasnal" "$TMP/ui.log" | awk -v n="$1" '{c++; if (c % 2 == n % 2) v=$5} END {print v}'; }
 simtime() { grep -o '\[sim [0-9.]*' "$TMP/ui.log" | tail -1 | cut -c6-; }
 ui_ok() {
@@ -217,26 +221,61 @@ ui_ok() {
 	command -v Xvfb >/dev/null && command -v xdotool >/dev/null || { skip "brak Xvfb albo xdotool"; return 1; }
 }
 
-test_ ui_control "interakcja: klik w krasnala przejmuje go, → przesuwa o pola, ↑ nie przełącza szablonu, Shift puszcza"
+test_ ui_control "interakcja: klik w krasnala przejmuje go, → o ¼ pola, ↑/↓ w głąb i do przodu, po zatrzymaniu animacja stania, ↑ nie przełącza szablonu, Shift puszcza"
 t_ui_control() {
-	ui_ok || return
-	ui_start --template kris_caves_1_b --simulate --populate 2 0
+	http_ok || return
+	http_start wigview --template kris_caves_1_b --populate 2 0 || { ui_stop; fail "serwer nie odpowiada"; return; }
 	click_at 80 190                # lista szablonów ma fokus (jak u użytkownika)
 	sleep 3
 	click_at 895 490               # krasnal na polu 5 (kadr startowy wigview 1280×800)
-	grep -q "\[ui\] sterowanie: postać" "$TMP/ui.log" || { ui_stop; fail "klik w krasnala nie przejął sterowania"; return; }
-	local loads x0 x1
-	loads=$(grep -c "wczytano mapę" "$TMP/ui.log")
-	sleep 1; x0=$(grep "\[sim [0-9].*krasnal" "$TMP/ui.log" | tail -2 | awk '{print $5}' | sort -n | head -1)
+	grep -q "\[ui\] sterowanie: postać" "$TMP/http.log" || { ui_stop; fail "klik w krasnala nie przejął sterowania"; return; }
+	local e="" x0 x1 z0 z1 z2 anim obj
+	x0=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["x"]')
+	obj=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["obj"]')
 	for i in 1 2 3; do xd key Right; sleep 0.4; done
-	sleep 3
-	xd key Up; sleep 1
-	[ "$(grep -c "wczytano mapę" "$TMP/ui.log")" = "$loads" ] || { ui_stop; fail "↑ przełączyła szablon zamiast prowadzić krasnala"; return; }
-	x1=$(grep "\[sim [0-9].*krasnal" "$TMP/ui.log" | tail -2 | awk '{print $5}' | sort -n | tail -1)
+	sleep 2
+	x1=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["x"]')
+	python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 0.75) < 0.06 else 1)" || e="3×→: x $x0 → $x1, oczekiwane +0,75"
+	anim=$(hget /api/objects | jget "d['objects'][$obj]['anim']")
+	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po zatrzymaniu animacja $anim zamiast standard}"
+	z0=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
+	xd key Down; sleep 1.5
+	z1=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
+	local loads
+	loads=$(grep -c "wczytano mapę" "$TMP/http.log")
+	xd key Up; xd key Up; sleep 1.5
+	z2=$(hget /api/units | jget '[u for u in d["units"] if u["controlled"]][0]["z"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($z1 - $z0 - 0.5) < 0.01 and abs($z1 - $z2 - 1.0) < 0.01 else 1)" ||
+		e="${e:-↓ / 2×↑: z $z0 → $z1 → $z2, oczekiwane +0,5 i −1,0}"
+	[ -z "$e" ] && [ "$(grep -c "wczytano mapę" "$TMP/http.log")" = "$loads" ] || e="${e:-↑ przełączyła szablon zamiast prowadzić krasnala}"
 	xd key shift; sleep 1
-	grep -q "\[ui\] sterowanie: puszczone" "$TMP/ui.log" || { ui_stop; fail "Shift nie puścił postaci"; return; }
+	[ -z "$e" ] && grep -q "\[ui\] sterowanie: puszczone" "$TMP/http.log" || e="${e:-Shift nie puścił postaci}"
 	ui_stop
-	python3 -c "import sys; sys.exit(0 if float('$x1') - float('$x0') >= 2.5 else 1)" && ok "x $x0 → $x1" || fail "krasnal nie przeszedł 3 pól: x $x0 → $x1"
+	[ -z "$e" ] && ok "x $x0 → $x1, z $z0 → $z1 → $z2" || fail "$e"
+}
+
+test_ ui_creature "interakcja: klik w chomika przejmuje go jako postać (bez przeskoku), → przesuwa, animacja chodu i stania z jego modelu"
+t_ui_creature() {
+	http_ok || return
+	http_start wigview --template kris_hol_012_a || { ui_stop; fail "serwer nie odpowiada"; return; }
+	hpost /api/pause >/dev/null
+	local e="" x0 x1 anim
+	click_at 757 540               # chomik przy grzybie (kadr startowy 1280×800)
+	[ "$(hget /api/units | jget 'len(d["units"])')" = 1 ] || { ui_stop; fail "klik w chomika nie zrobił z niego postaci"; return; }
+	[ "$(hget /api/units | jget 'd["units"][0]["controlled"]')" = True ] || e="chomik nie jest prowadzony"
+	x0=$(hget /api/units | jget 'd["units"][0]["x"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x0 - 6.668) < 0.01 else 1)" || e="${e:-przeskok przy przejęciu: x $x0, było 6,668}"
+	hpost /api/resume >/dev/null
+	xd key Right Right Right Right; sleep 0.25
+	anim=$(hget /api/objects | jget 'd["objects"][26]["anim"]')
+	[ -z "$e" ] && [ "$anim" = laufen_loop ] || e="${e:-animacja w ruchu $anim zamiast laufen_loop}"
+	sleep 2
+	x1=$(hget /api/units | jget 'd["units"][0]["x"]')
+	anim=$(hget /api/objects | jget 'd["objects"][26]["anim"]')
+	[ -z "$e" ] && python3 -c "import sys; sys.exit(0 if abs($x1 - $x0 - 1.0) < 0.06 else 1)" || e="${e:-4×→: x $x0 → $x1, oczekiwane +1}"
+	[ -z "$e" ] && [ "$anim" = standard ] || e="${e:-po zatrzymaniu animacja $anim zamiast standard}"
+	ui_stop
+	[ -z "$e" ] && ok "x $x0 → $x1" || fail "$e"
 }
 
 test_ ui_keys "interakcja: ←/→ bez sterowania nie zatrzymują symulacji, Esc nie zamyka, Q zamyka"
@@ -264,7 +303,7 @@ http_start() { # program argumenty… → serwer odpowiada
 	Xvfb "$DISP" -screen 0 1280x800x24 +extension GLX >/dev/null 2>&1 & XPID=$!
 	sleep 2
 	local prog="$1"; shift
-	DISPLAY="$DISP" "$B/$prog" --game "$GAME" --renderer opengl --http "$HPORT" "$@" >"$TMP/http.log" 2>&1 & UIPID=$!
+	DISPLAY="$DISP" OW_TRACE_SIM=1 "$B/$prog" --game "$GAME" --renderer opengl --size 1280x800 --http "$HPORT" "$@" >"$TMP/http.log" 2>&1 & UIPID=$!
 	for i in $(seq 1 90); do
 		curl -s -m 2 "http://127.0.0.1:$HPORT/api/state" 2>/dev/null | grep -q '"simulation":true' && return 0
 		sleep 1

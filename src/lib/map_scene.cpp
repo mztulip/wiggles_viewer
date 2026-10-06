@@ -602,6 +602,17 @@ const Model3db* MapScene::objectModel(int i) const
 	return o.slot ? o.slot->model.get() : nullptr;
 }
 
+std::vector<std::string> MapScene::objectAnimations(int i) const
+{
+	std::vector<std::string> out;
+	const auto& o = objects_[size_t(i)];
+	if (!o.slot || !o.cls) return out;
+	for (const auto& ob : o.slot->model->objects)
+		if (Vfs::lower(ob.name) == Vfs::lower(o.cls->object))
+			for (uint32_t a : ob.animations) out.push_back(o.slot->model->animations[a].name);
+	return out;
+}
+
 std::string MapScene::objectAnimation(int i) const
 {
 	const auto& o = objects_[size_t(i)];
