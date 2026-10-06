@@ -109,9 +109,32 @@ public:
 		setsDirty_ = true;
 	}
 	Handle createBuffer(BufferKind kind, const void* data, size_t size) override
-	{
-		VkBuf b = makeBuffer(kind, std::max<size_t>(size, 16));
-		if (data && size) std::memcpy(b.mapped, data, size);
+	{ // niezmienny: w pamięci karty (DEVICE_LOCAL), dane raz przez bufor pośredni (karty dyskretne czytają
+		// go szybciej niż pamięć widoczną dla procesora); bez takiej pamięci: bufor widoczny dla procesora
+		size = std::max<size_t>(size, 16);
+		VkBuf b = makeBuffer(kind, size, true);
+		if (b.mapped)
+		{
+			if (data) std::memcpy(b.mapped, data, size);
+		}
+		else
+		{
+			VkBuf staging = makeBuffer(BufferKind::Vertex, size);
+			if (data) std::memcpy(staging.mapped, data, size);
+			else
+				std::memset(staging.mapped, 0, size);
+			oneShot([&](VkCommandBuffer c) {
+				VkBufferCopy copy{0, 0, size};
+				vkCmdCopyBuffer(c, staging.buffer, b.buffer, 1, &copy);
+				VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+				mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				mb.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT;
+				vkCmdPipelineBarrier(c, VK_PIPELINE_STAGE_TRANSFER_BIT,
+				    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,
+				    &mb, 0, nullptr, 0, nullptr);
+			});
+			freeBuffer(staging);
+		}
 		Handle h = next_++;
 		buffers_[h] = b;
 		return h;
@@ -269,7 +292,9 @@ private:
 			if ((bits & (1u << i)) && (memProps_.memoryTypes[i].propertyFlags & flags) == flags) return i;
 		return UINT32_MAX;
 	}
-	VkBuf makeBuffer(BufferKind kind, size_t size)
+	// deviceLocal: pamięć karty bez mapowania (mapped = nullptr); gdy karta jej nie ma, zwykły bufor widoczny
+	// dla procesora (mapped ustawione).
+	VkBuf makeBuffer(BufferKind kind, size_t size, bool deviceLocal = false)
 	{
 		VkBuf b;
 		b.kind = kind;
@@ -284,10 +309,13 @@ private:
 		vkGetBufferMemoryRequirements(device_, b.buffer, &req);
 		VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
 		ai.allocationSize = req.size;
-		ai.memoryTypeIndex = memoryType(req.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		ai.memoryTypeIndex = deviceLocal ? memoryType(req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) : UINT32_MAX;
+		bool local = ai.memoryTypeIndex != UINT32_MAX;
+		if (!local)
+			ai.memoryTypeIndex = memoryType(req.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		vkAllocateMemory(device_, &ai, nullptr, &b.memory);
 		vkBindBufferMemory(device_, b.buffer, b.memory, 0);
-		vkMapMemory(device_, b.memory, 0, VK_WHOLE_SIZE, 0, &b.mapped);
+		if (!local) vkMapMemory(device_, b.memory, 0, VK_WHOLE_SIZE, 0, &b.mapped);
 		return b;
 	}
 	void freeBuffer(const VkBuf& b)

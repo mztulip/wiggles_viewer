@@ -81,8 +81,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Backend OpenGL 4.5 (render menu identyczny co do piksela z wersją sprzed przebudowy)
 - [x] Backend Vulkan 1.2 (swapchain, dwie klatki w locie, deskryptory z pamięcią podręczną, usuwanie zasobów z opóźnieniem, tryb pozaekranowy do zrzutów); obraz zgodny z OpenGL, warstwa walidacji bez błędów
 - [x] Shadery z jednego źródła GLSL 450 (`glslc` → SPIR-V, tekst dla OpenGL); `build.sh vulkan|opengl|both`; `--renderer`, domyślnie Vulkan z przełączeniem na OpenGL
-- [ ] Sprawdzić Vulkana w oknie na prawdziwym ekranie (zmiana rozmiaru okna, minimalizacja, siatka)
-- [ ] Ewentualnie: bufory w pamięci karty (staging) dla kart dyskretnych; dynamic rendering
+- [x] Vulkan w oknie: zmiana rozmiaru (kafel i3), schowanie i pokazanie okna (przełączenie ekranu w i3), siatka; na ekranie użytkownika działa, test `vk_window` (Xvfb, programowe WSI Mesy, warstwa walidacji bez błędów). Minimalizacji do 0×0 (Windows) nie da się sprawdzić w Xvfb: `beginFrame` pomija klatkę przy rozmiarze 0
+- [x] Bufory niezmienne (`createBuffer`: wierzchołki, indeksy, stałe uniformy) w pamięci karty (`DEVICE_LOCAL`), ładowane raz przez bufor pośredni; bufory pierścieniowe klatki zostają widoczne dla procesora
 
 ## Faza 1: szkielet projektu i build
 - [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), [`src/apps/game`](src/apps/game), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów

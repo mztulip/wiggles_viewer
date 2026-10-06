@@ -396,16 +396,17 @@ t_ui_keys() {
 # ---------------------------------------------------------------------------------------------------
 # Serwer deweloperski (--http, docs/SERWER_HTTP.md): program w Xvfb, zapytania curl.
 HPORT=""
-http_start() { # program argumenty… → serwer odpowiada
+http_start() { # program argumenty… → serwer odpowiada (HRENDER renderer, HREADY wzorzec gotowości /api/state, HENV zmienne)
 	DISP=":$((90 + RANDOM % 9))"
 	while [ -e "/tmp/.X${DISP#:}-lock" ]; do DISP=":$((90 + RANDOM % 9))"; done
 	HPORT=$((18000 + RANDOM % 2000))
 	Xvfb "$DISP" -screen 0 1280x800x24 +extension GLX >/dev/null 2>&1 & XPID=$!
 	sleep 2
-	local prog="$1"; shift
-	DISPLAY="$DISP" OW_TRACE_SIM=1 "$B/$prog" --game "$GAME" --renderer opengl --size 1280x800 --http "$HPORT" "$@" >"$TMP/http.log" 2>&1 & UIPID=$!
+	local prog="$1" ready="${HREADY:-}"; shift
+	[ -n "$ready" ] || ready='"simulation":true'
+	env DISPLAY="$DISP" OW_TRACE_SIM=1 ${HENV:-} "$B/$prog" --game "$GAME" --renderer "${HRENDER:-opengl}" --size 1280x800 --http "$HPORT" "$@" >"$TMP/http.log" 2>&1 & UIPID=$!
 	for i in $(seq 1 90); do
-		curl -s -m 2 "http://127.0.0.1:$HPORT/api/state" 2>/dev/null | grep -q '"simulation":true' && return 0
+		curl -s -m 2 "http://127.0.0.1:$HPORT/api/state" 2>/dev/null | grep -q "$ready" && return 0
 		sleep 1
 	done
 	return 1
@@ -450,6 +451,49 @@ t_climb() {
 	[ -z "$e" ] && [ "$st" = "idle 6.5" ] || e="${e:-po zejściu: stan i y $st, oczekiwane idle 6.5}"
 	ui_stop
 	[ -z "$e" ] && ok || fail "$e"
+}
+
+test_ vk_window "Vulkan w oknie (warstwa walidacji): zmiana rozmiaru okna, schowanie i pokazanie (przełączenie ekranu w i3), siatka modelu, bez błędów walidacji"
+t_vk_window() {
+	http_ok || return
+	[ -f /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json ] || { skip "brak warstwy walidacji Vulkana"; return; }
+	# Xvfb nie ma DRI3: obraz do okna przez programowe WSI Mesy (na prawdziwym ekranie DRI3)
+	HRENDER=vulkan HREADY='"program"' HENV="MESA_VK_WSI_DEBUG=sw OW_VK_VALIDATION=1" http_start wigview --model MANN.3DB ||
+		{ ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	grep -q "Renderer: Vulkan" "$TMP/http.log" || { ui_stop; skip "Vulkan nie ruszył w Xvfb: $(grep -i vulkan "$TMP/http.log" | tail -1)"; return; }
+	local e="" win
+	shot() { hget /api/screenshot >"$TMP/$1.png"; python3 -c "from PIL import Image; print('%dx%d' % Image.open('$TMP/$1.png').size)"; }
+	win=$(xd search --name wigview | head -1)
+	[ "$(shot a)" = 1280x800 ] || e="zrzut: rozmiar $(shot a), oczekiwane 1280x800"
+	# zmiana rozmiaru (kafel i3 na pół ekranu): nowy swapchain
+	xd windowsize "$win" 640 800; sleep 2
+	[ -z "$e" ] && [ "$(shot b)" = 640x800 ] || e="${e:-po zmianie rozmiaru: $(shot b), oczekiwane 640x800}"
+	xd windowsize "$win" 1280 800; sleep 2
+	[ -z "$e" ] && [ "$(shot c)" = 1280x800 ] || e="${e:-po powrocie rozmiaru: $(shot c)}"
+	# schowanie i pokazanie okna (i3 odmapowuje okna na innym ekranie): pętla żyje, obraz wraca
+	xd windowunmap "$win"; sleep 2
+	[ -z "$e" ] && hget /api/state | grep -q '"program":"wigview"' || e="${e:-schowane okno: serwer nie odpowiada}"
+	xd windowmap "$win"; sleep 2
+	[ -z "$e" ] && [ "$(shot d)" = 1280x800 ] || e="${e:-po pokazaniu okna: $(shot d)}"
+	# siatka: model zatrzymany (Pause), potem Wireframe; ta sama klatka z czarnymi krawędziami trójkątów
+	click_at 227 563; sleep 1; shot full >/dev/null
+	click_at 214 738; sleep 1; shot wire >/dev/null
+	local r
+	r=$(python3 - "$TMP/full.png" "$TMP/wire.png" <<'PY'
+import sys
+from PIL import Image
+a = Image.open(sys.argv[1]).convert('RGB').crop((600, 40, 1280, 780)).getdata()
+b = Image.open(sys.argv[2]).convert('RGB').crop((600, 40, 1280, 780)).getdata()
+darker = sum(1 for p, q in zip(a, b) if sum(p) - sum(q) > 90)
+print(darker, "ok" if darker > 3000 else "zle")
+PY
+)
+	[ -z "$e" ] && [ "${r##* }" = ok ] || e="${e:-siatka: pociemniałych pikseli krawędzi $r (oczekiwane > 3000)}"
+	ui_stop
+	local v
+	v=$(grep -ciE "validation error|VUID-" "$TMP/http.log")
+	[ -z "$e" ] && [ "$v" = 0 ] || e="${e:-warstwa walidacji: $v błędów, np. $(grep -iE 'validation error|VUID-' "$TMP/http.log" | head -1 | cut -c1-200)}"
+	[ -z "$e" ] && ok "krawędzie siatki ${r% *} px" || fail "$e"
 }
 
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"
