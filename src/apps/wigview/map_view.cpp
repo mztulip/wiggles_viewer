@@ -407,7 +407,8 @@ bool MapView::ui(bool savesTab)
 		ImGui::Checkbox(tr("Symulacja (skrypty)"), simulate);
 		ImGui::SetItemTooltip(tr("Wykonuje skrypty obiektów jak w grze: postacie z mapy (zapis, scenariusz, szablon) chodzą\n"
 		                         "i pracują, pierścienie i inne obiekty dostają efekty i animacje ze skryptów.\n"
-		                         "Pierwsze włączenie wczytuje klasy skryptów (kilka sekund). Wyłączenie wczytuje mapę od nowa."));
+		                         "Pierwsze włączenie wczytuje klasy skryptów (kilka sekund). Wyłączenie wczytuje mapę od nowa.\n"
+		                         "Włączona przy starcie (--no-simulate wyłącza). N: krasnal pod kursorem, Shift+N: wuker."));
 		if (*simulate)
 		{
 			ImGui::SameLine();

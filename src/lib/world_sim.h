@@ -113,7 +113,9 @@ public:
 	SimUnit* unitOf(int obj);
 	int addUnit(int obj); // krasnal albo wuker (wg klasy obiektu)
 	int gnomeCount() const;
-	void spawnUnit(float x, float y);
+	// Nowa postać (krasnal albo wuker) w najbliższym miejscu do stania przy (x, y) w blokach (y: stopy), ze
+	// skryptem klasy, gdy silnik skryptów działa. Zwraca indeks w units.
+	int spawnUnit(float x, float y, bool gnome = true);
 	// Zaludnienie mapy bez krasnali (przeglądarka): krasnale i wukery na wolnych, suchych polach z podłożem
 	// najbliżej punktu (cx, cy), co najmniej 2 pola od siebie. Przed startScripts (obiekty dostaną wtedy skrypty).
 	void populate(float cx, float cy, int gnomes, int wukers);

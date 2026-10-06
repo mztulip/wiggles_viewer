@@ -310,6 +310,23 @@ t_http_wigview() {
 	[ -z "$e" ] && ok "port $HPORT" || fail "$e"
 }
 
+test_ ui_spawn "wigview: symulacja startuje sama (bez --simulate), N dodaje krasnala, Shift+N wukera pod kursorem"
+t_ui_spawn() {
+	http_ok || return
+	http_start wigview --template kris_caves_1_b || { ui_stop; fail "symulacja nie wystartowała sama ($(tail -2 "$TMP/http.log"))"; return; }
+	local n0 n1 n2 w
+	n0=$(hget /api/units | jget 'len(d["units"])')
+	xd mousemove 900 480; sleep 0.5
+	xd key n; sleep 1
+	n1=$(hget /api/units | jget 'sum(1 for u in d["units"] if u["gnome"])')
+	xd key shift+n; sleep 1
+	n2=$(hget /api/units | jget 'len(d["units"])')
+	w=$(hget /api/units | jget 'sum(1 for u in d["units"] if not u["gnome"])')
+	ui_stop
+	[ "$n1" = $((n0 + 1)) ] || { fail "N: krasnali $n1, oczekiwane $((n0 + 1))"; return; }
+	[ "$n2" = $((n0 + 2)) ] && [ "$w" = 1 ] && ok "postacie $n0 → $n2" || fail "Shift+N: postaci $n2, wukerów $w"
+}
+
 test_ http_game "serwer HTTP w openwiggles: eval, postacie z zapisu, krok sterowanej postaci"
 t_http_game() {
 	http_ok || return

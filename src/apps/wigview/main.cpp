@@ -16,7 +16,8 @@
 // --save PLIK.sav: zapis gry z Data/Gamesave (to samo co --scenario PLIK.sav) albo ścieżka do pliku .sav.
 // Katalog gry: --game, potem zmienna WIGGLES_DIR, potem OW_GAME, potem wybór z okna „Ścieżki” (wigview.ini),
 // na końcu ~/.wine/drive_c/Program Files (x86)/Innonics/Wiggles.
-// --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map).
+// --simulate: symulacja na mapie (skrypty obiektów, krasnale, wukery; jak przełącznik w panelu map). W oknie
+//   domyślnie włączona, w zrzutach wsadowych tylko z --simulate; --no-simulate wyłącza. Klawisz N: krasnal pod kursorem, Shift+N: wuker.
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
@@ -108,6 +109,7 @@ struct Args
 	std::string savesDir;                    // --saves-dir
 	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
 	bool simulate = false;                   // --simulate: symulacja (skrypty) na mapie
+	bool noSimulate = false;                 // --no-simulate: bez symulacji (w oknie domyślnie włączona)
 	float warmup = 0;                        // --warmup S: przewinięcie symulacji przed zrzutem
 	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
 	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
@@ -160,6 +162,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 			a.clickY = std::atoi(next());
 		}
 		else if (k == "--simulate") a.simulate = true;
+		else if (k == "--no-simulate") a.noSimulate = true;
 		else if (k == "--warmup") a.warmup = float(std::atof(next()));
 		else if (k == "--populate")
 		{
@@ -308,6 +311,21 @@ struct Viewer
 	// Ręczne prowadzenie postaci (dodatek przeglądarki do testów, nie z gry): Enter przy zaznaczonej postaci
 	// albo przycisk w panelu; strzałki krok o pole, PPM idź do pola, Shift albo Esc puszcza.
 	int controlUnit = -1; // indeks w sim->units, −1 = brak
+	// Klawisz N / Shift+N: nowa postać w polu pod kursorem (gdy symulacja jeszcze nie działa: po jej starcie).
+	struct PendingSpawn
+	{
+		int tx, ty;
+		bool gnome;
+	};
+	std::optional<PendingSpawn> pendingSpawn;
+	void spawnAt(int tx, int ty, bool gnome)
+	{
+		if (!simActive || !sim) return;
+		int u = sim->spawnUnit(float(tx) + 0.5f, float(ty) + 0.9f, gnome);
+		maps.simInfo = strf(tr("krasnale: %d, postacie: %zu"), sim->gnomeCount(), sim->units.size());
+		if (std::getenv("OW_TRACE_SIM"))
+			std::fprintf(stderr, "[ui] dodano postać %d (%s) przy polu %d, %d\n", u, gnome ? "krasnal" : "wuker", tx, ty);
+	}
 	int unitOfObject(int obj) const
 	{
 		if (!simActive || !sim) return -1;
@@ -1947,7 +1965,8 @@ int main(int argc, char** argv)
 	v.maps.playing = &v.mapPlaying;
 	v.maps.objectExtra = [&v](int i) { v.uiSimObject(i); };
 	v.maps.openModel = [&v](const std::string& obj, const std::string& anim) { v.openAnim(obj, anim, 0); };
-	v.simulate = args.simulate;
+	// Symulacja: w oknie zawsze włączona przy starcie (--no-simulate wyłącza), w zrzutach tylko z --simulate.
+	v.simulate = args.simulate || (!args.batch() && !args.noSimulate);
 	if (args.popGnomes >= 0) v.maps.populate = true, v.maps.populateGnomes = args.popGnomes, v.maps.populateWukers = args.popWukers;
 	startupProgress(0.6f, N_("Cząsteczki i ramka ekranu"));
 	v.particles.init(dev, &v.vfs, v.textures.get());
@@ -2338,6 +2357,24 @@ int main(int argc, char** argv)
 					continue;
 				}
 			}
+			if (e.type == SDL_KEYDOWN && !io.WantTextInput && e.key.keysym.sym == SDLK_n && v.mapTab() && v.maps.hasTemplate() &&
+			    !(e.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)))
+			{ // N: krasnal, Shift+N: wuker w polu pod kursorem (bez trafienia w teren: środek kadru)
+				int mx, my, w, h, tx = -1, ty = -1;
+				SDL_GetMouseState(&mx, &my);
+				drawableSize(w, h);
+				float sc = io.DisplayFramebufferScale.x;
+				glm::vec3 ro, rd;
+				if (!v.sceneRay(float(mx) * sc, float(my) * sc, w, h, int(v.uiRight * sc), ro, rd) || !v.maps.pickTerrain(ro, rd, tx, ty))
+				{
+					glm::vec3 c = v.center + v.pan * glm::vec3(1, -1, 1);
+					tx = int(c.x / MapView::kBlock), ty = int(c.y / MapView::kBlock);
+				}
+				bool gnome = !(e.key.keysym.mod & KMOD_SHIFT);
+				if (v.simActive && v.sim) v.spawnAt(tx, ty, gnome);
+				else v.simulate = true, v.pendingSpawn = Viewer::PendingSpawn{tx, ty, gnome};
+				continue;
+			}
 			if (!io.WantCaptureMouse && v.mapTab() && v.controlUnit >= 0)
 			{ // sterowanie: PPM bez przeciągania = idź do pola (przeciąganie dalej przesuwa kamerę)
 				if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_RIGHT)
@@ -2475,6 +2512,11 @@ int main(int argc, char** argv)
 			lastProgress = 0;
 			v.startSim(drawProgress);
 			last = SDL_GetPerformanceCounter();
+		}
+		if (v.pendingSpawn && v.simActive)
+		{ // N przed startem symulacji
+			v.spawnAt(v.pendingSpawn->tx, v.pendingSpawn->ty, v.pendingSpawn->gnome);
+			v.pendingSpawn.reset();
 		}
 		Uint64 now = SDL_GetPerformanceCounter();
 		float dt = float(now - last) / float(SDL_GetPerformanceFrequency());

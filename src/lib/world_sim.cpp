@@ -209,10 +209,17 @@ int WorldSim::addUnit(int obj)
 	return int(units.size()) - 1;
 }
 
-void WorldSim::spawnUnit(float x, float y)
+int WorldSim::spawnUnit(float x, float y, bool gnome)
 {
-	int o = scene_.addObject("Zwerg", x, y, kGnomeZ);
-	selected = addUnit(o);
+	const char* cls = gnome ? "Zwerg" : "Wuker";
+	float c[3] = {x, y, kGnomeZ}, p[3] = {x, y, kGnomeZ};
+	if (!findPlace(c, 3.f, p)) p[0] = x, p[1] = y;
+	int o = scene_.addObject(cls, p[0], p[1], kGnomeZ);
+	int u = addUnit(o);
+	int id = idOf(o);
+	if (scripts && (!gnome || scriptGnomes)) scripts->attach(id, cls, "");
+	if (gnome) selected = u;
+	return u;
 }
 
 void WorldSim::dig(int x, int y)
