@@ -387,8 +387,8 @@ msgid "Steruj (Enter)"
 msgstr "Control (Enter)"
 
 #: src/apps/wigview/main.cpp:559
-msgid "Dodatek przeglądarki do testów (nie ma go w grze): strzałki prowadzą postać o pole,\nPPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."
-msgstr "Viewer extra for testing (not in the game): arrow keys move the character one tile,\nright click without dragging: walk to the tile. The character script is paused meanwhile."
+msgid "Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać jest prowadzona\nstrzałkami o pole, PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."
+msgstr "Viewer extra for testing (not in the game): a clicked character is moved\nwith the arrow keys one tile at a time, right click without dragging: walk to the tile. The character script is paused meanwhile."
 
 #: src/apps/wigview/main.cpp:566
 #, c-format
@@ -2237,3 +2237,6 @@ msgstr "To dig: "
 #: src/lib/script/engine.cpp:1932
 msgid "nie wczytano żadnej klasy"
 msgstr "no classes loaded"
+
+#~ msgid "Dodatek przeglądarki do testów (nie ma go w grze): strzałki prowadzą postać o pole,\nPPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."
+#~ msgstr "Viewer extra for testing (not in the game): arrow keys move the character one tile,\nright click without dragging: walk to the tile. The character script is paused meanwhile."

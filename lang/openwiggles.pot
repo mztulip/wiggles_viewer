@@ -385,7 +385,7 @@ msgid "Steruj (Enter)"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:559
-msgid "Dodatek przeglądarki do testów (nie ma go w grze): strzałki prowadzą postać o pole,\nPPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."
+msgid "Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać jest prowadzona\nstrzałkami o pole, PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."
 msgstr ""
 
 #: src/apps/wigview/main.cpp:566

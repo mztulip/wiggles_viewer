@@ -556,8 +556,8 @@ struct Viewer
 			}
 			else if (ImGui::SmallButton(tr("Steruj (Enter)")))
 				takeControl(unit);
-			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): strzałki prowadzą postać o pole,\n"
-			                         "PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."));
+			ImGui::SetItemTooltip(tr("Dodatek przeglądarki do testów (nie ma go w grze): kliknięta postać jest prowadzona\n"
+			                         "strzałkami o pole, PPM bez przeciągania: idź do pola. Skrypt postaci jest wtedy wstrzymany."));
 		}
 		int id = i < int(sim->idxToId.size()) ? sim->idxToId[size_t(i)] : 0;
 		const script::ScriptObject* so = id && sim->scripts ? sim->scripts->object(id) : nullptr;
@@ -2308,8 +2308,14 @@ int main(int argc, char** argv)
 					if (v.sceneRay(float(e.button.x) * sc, float(e.button.y) * sc, w, h, int(v.uiRight * sc), ro, rd))
 					{
 						v.maps.selectedObject = v.maps.pickObject(ro, rd);
+						// przypięty obiekt (czapka, narzędzie) zaznacza swoją postać
+						for (int k = 0; k < 3 && v.maps.selectedObject >= 0 && v.maps.linkParent(v.maps.selectedObject) >= 0; ++k)
+							v.maps.selectedObject = v.maps.linkParent(v.maps.selectedObject);
 						if (v.maps.selectedObject < 0) v.maps.pickTerrain(ro, rd, v.maps.selectedTileX, v.maps.selectedTileY);
 					}
+					// z symulacją kliknięta postać od razu jest prowadzona strzałkami; kliknięcie w inne miejsce ją puszcza
+					if (int unit = v.unitOfObject(v.maps.selectedObject); unit >= 0) v.takeControl(unit);
+					else v.releaseControl();
 				}
 			}
 			if (!io.WantCaptureMouse)
