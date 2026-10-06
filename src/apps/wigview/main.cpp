@@ -21,6 +21,7 @@
 // --populate K [W]: z --simulate na mapie bez krasnali stawia K krasnali i W wukerów (domyślnie 1; dodatek przeglądarki).
 // --warmup S: z --simulate i --screenshot przewija symulację o S sekund przed zrzutem.
 // --http PORT: serwer deweloperski na 127.0.0.1:PORT (Tcl jak WebTraq, API JSON; docs/SERWER_HTTP.md); też OW_HTTP.
+// --print-nav: z --screenshot wypisuje podpola ruchu (NavWorld: '_' podłoga, '|' ściana, '.' zablokowane) i koszty pól.
 // --print-objects: z --screenshot wypisuje obiekty sceny (indeks, klasa, obiekt .3db, animacja, widoczność, pozycja)
 //   i postacie symulacji, do testów (tools/tests/run.sh).
 // --click X Y: z --screenshot zaznacza obiekt albo pole w punkcie obrazu (piksele) przed zrzutem, jak kliknięcie.
@@ -54,6 +55,7 @@
 
 #include "lib/dev_api.h"
 #include "lib/i18n.h"
+#include "lib/nav_world.h"
 #include "lib/render/border_mask.h"
 #include "lib/world_sim.h"
 #include "lib/render/model_renderer.h"
@@ -114,6 +116,7 @@ struct Args
 	int popGnomes = -1, popWukers = 1;       // --populate K [W]: postacie na mapie bez krasnali
 	int clickX = -1, clickY = -1;            // --click X Y: kliknięcie w scenie przed zrzutem (piksele obrazu)
 	bool printObjects = false;               // --print-objects: lista obiektów sceny (testy)
+	bool printNav = false;                   // --print-nav: podpola ruchu (NavWorld) jako tekst
 	int httpPort = 0;                        // --http PORT: serwer deweloperski (0 = wyłączony)
 	std::string gameSource;                  // skąd wzięto katalog gry (do okna „Ścieżki”)
 	std::vector<std::string> overlays;
@@ -155,6 +158,7 @@ bool parseArgs(int argc, char** argv, Args& a)
 		else if (k == "--saves-dir") a.savesDir = next();
 		else if (k == "--paths") a.paths = true;
 		else if (k == "--print-objects") a.printObjects = true;
+		else if (k == "--print-nav") a.printNav = true;
 		else if (k == "--http") a.httpPort = std::atoi(next());
 		else if (k == "--click")
 		{
@@ -2236,6 +2240,22 @@ int main(int argc, char** argv)
 			drawableSize(w, h);
 			renderFrame(w, h);
 			SDL_Delay(30);
+		}
+		if (args.printNav && v.maps.hasTemplate() && v.maps.grid())
+		{
+			NavWorld nw;
+			auto t0 = std::chrono::steady_clock::now();
+			nw.build(*v.maps.grid(), v.maps.blockDb());
+			double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+			std::printf("nav %d×%d pól, podpól do chodzenia %zu, %.0f ms\n", nw.width(), nw.height(), nw.walkableCount(), ms);
+			if (nw.width() <= 48 && nw.height() <= 40) std::printf("%s", nw.ascii(0, 0, nw.width() - 1, nw.height() - 1).c_str());
+			for (int ty = 0; ty < nw.height() && nw.width() <= 48; ++ty)
+			{
+				std::printf("koszt %2d:", ty);
+				for (int tx = 0; tx < nw.width(); ++tx)
+					std::printf(" %3d%s", nw.baseCost(tx, ty), nw.tileFloor(tx, ty) ? "p" : " ");
+				std::printf("\n");
+			}
 		}
 		if (args.printObjects && v.maps.hasTemplate())
 		{

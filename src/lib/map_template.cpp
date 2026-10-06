@@ -9,6 +9,19 @@
 namespace ow
 {
 
+std::vector<uint8_t> authoredNavPlane(const Pmp& p)
+{
+	std::vector<uint8_t> plane;
+	plane.reserve(size_t(p.width) * p.height * 64);
+	for (uint16_t u : p.mask)
+	{
+		size_t n = u >> 2;
+		plane.insert(plane.end(), n ? n : 0x4000, uint8_t(u & 3));
+	}
+	if (plane.size() != size_t(p.width) * p.height * 64) plane.clear();
+	return plane;
+}
+
 Pmp parsePmp(const std::vector<uint8_t>& data)
 {
 	BinReader r(data);

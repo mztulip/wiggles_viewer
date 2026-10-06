@@ -16,7 +16,7 @@ struct Pmp
 	uint32_t width = 0, height = 0;
 	std::vector<uint8_t> types;     // w*h, 🔶 rodzaj pola (02 korytarz, 04 jaskinia, …)
 	std::vector<uint32_t> blocks;   // w*h, ID bloku w BlockDB (0..118687)
-	std::vector<uint16_t> mask;     // 🔶 maska kodowana przebiegami (format nieznany)
+	std::vector<uint16_t> mask;     // ✅ płaszczyzna ruchu kodowana przebiegami (authoredNavPlane)
 	std::vector<uint8_t> layer2;    // w*h, 🔶 wartości 0..8
 	uint8_t type(int x, int y) const { return types[size_t(y) * width + size_t(x)]; }
 	uint32_t block(int x, int y) const { return blocks[size_t(y) * width + size_t(x)]; }
@@ -53,6 +53,11 @@ struct TemplateScript
 	std::string l2mFile; // np. "urw_gng_021_a.l2m"
 	std::vector<TemplateObject> objects;
 };
+
+// Płaszczyzna ruchu zapisana w .pmp (edytor gry): wartość podpola 0 zablokowane, 1 ściana, 3 podłoga, wiersz po
+// wierszu drobnej siatki szablonu (szerokość w · 8, wysokość h · 8). Przebieg u16: wartość = bity 0..1, długość =
+// bity 2..15 (0 oznacza 0x4000). Za Diggles-Unity PmpParser (FUN_005992b0:538-544). Pusta: zła długość.
+std::vector<uint8_t> authoredNavPlane(const Pmp& p);
 
 // Rzucają ParseError przy uszkodzonych danych.
 Pmp parsePmp(const std::vector<uint8_t>& data);

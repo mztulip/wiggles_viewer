@@ -7,6 +7,8 @@
 
 #include "lib/class_db.h"
 #include "lib/map_template.h"
+#include "lib/blockdb.h"
+#include "lib/nav_world.h"
 #include "lib/messages.h"
 #include "lib/model3db.h"
 #include "lib/save_game.h"
@@ -297,6 +299,36 @@ int testSounds(const Vfs& vfs)
 	return failed;
 }
 
+// Dane ruchu (NavWorld): płaszczyzna wyliczona z wysokości bloków (EFFPASSWALK) wobec zapisanej w .pmp
+// przez edytor gry, wewnątrz szablonów (margines jak w grze: 3 pola z boków i u dołu, 2 u góry).
+static int testNav(const Vfs& vfs)
+{
+	BlockDb db;
+	db.load(vfs, 2);
+	long total = 0, same = 0;
+	int files = 0;
+	for (const auto& f : vfs.list("Data/Templates"))
+	{
+		auto low = Vfs::lower(f);
+		if (low.size() < 5 || low.substr(low.size() - 4) != ".pmp") continue;
+		auto data = vfs.read("Data/Templates/" + f);
+		if (!data) continue;
+		Pmp p = parsePmp(*data);
+		auto plane = authoredNavPlane(p);
+		if (plane.empty()) continue;
+		NavWorld nw;
+		nw.build(p, db);
+		int W = int(p.width) * 8;
+		for (int sy = 16; sy < int(p.height) * 8 - 24; ++sy)
+			for (int sx = 24; sx < W - 24; ++sx) ++total, same += plane[size_t(sy) * size_t(W) + size_t(sx)] == (nw.sub(sx, sy) & 3);
+		++files;
+	}
+	double pct = total ? 100.0 * double(same) / double(total) : 0.0;
+	bool ok = total > 0 && pct >= 99.9;
+	std::printf("dane ruchu: %d szablonów, podpola zgodne z .pmp: %.3f%% (%ld z %ld) %s\n", files, pct, same, total, ok ? "OK" : "BŁĄD (< 99,9%)");
+	return ok ? 0 : 1;
+}
+
 int main(int argc, char** argv)
 {
 	if (argc < 2)
@@ -316,6 +348,8 @@ int main(int argc, char** argv)
 	failed += testTextures(vfs);
 	std::printf("\n");
 	failed += testTemplates(vfs);
+	std::printf("\n");
+	failed += testNav(vfs);
 	std::printf("\n");
 	failed += testSaves(vfs);
 	std::printf("\n");

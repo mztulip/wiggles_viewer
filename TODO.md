@@ -15,7 +15,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 4. [ ] **G8 Przedmioty i ekwipunek**: grzyby, kamienie, kryształy po kopaniu, podnoszenie, odkładanie (wolne miejsce), użycie. Źródło: [ITEM_PLACEMENT_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ITEM_PLACEMENT_RE.md)
 5. [ ] **Rozkazy gracza jak w grze**: kliknięcie → `EVENTGEN.TCL` (`evtgen_attrib`) → zdarzenie `evt_task_*` dla krasnala ([rozdział 16.9](docs/silnik/16_rozgrywka.md)), zamiast rozkazów w C++. Przy okazji punkt `/tclshell` w grze (zgodny z WebTraq) dla bota
 6. [ ] **Kopanie przez skrypty gry** (`dig_mark`, `dig_starttask`, `dig_next`, `dig_apply`, `get_digedge`, `CObj_DigTask`), oznaczenia kopania, kilku kopaczy. Źródło: [DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md), [re_parts/dig-natives](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/dig-natives.md), [re_parts/tcl-dig-complete](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/tcl-dig-complete.md)
-7. [ ] **Ruch jak w grze**: siatka 8×8 i maska `.pmp`, wspinanie, spadanie. Źródło: [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [re_parts/walk-executor](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/walk-executor.md)
+7. [ ] **Ruch jak w grze** ([rozdział 17](docs/silnik/17_ruch.md), etapy P0–P4 za Diggles-Unity): ✅ P0 dane ruchu (podpola, graf pól, zgodność z `.pmp` 99,96%); P1 Calc1, P2 chód po podłodze, P3 kopanie, P4 wspinanie. Źródło: [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [re_parts/walk-executor](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/re_parts/walk-executor.md)
 8. [ ] **G13 Generator świata** (nowa gra w kampanii i potyczce: `StoryMgr load_level`, `load_sandbox`, `lg_*`). Źródło: [WORLDGEN_ORIGINAL_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORLDGEN_ORIGINAL_RE.md), [LEVEL_GENERATOR](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LEVEL_GENERATOR.md)
 9. [ ] **Szanse na wyprzedzenie Diggles-Unity** (u nich też nie działa): drabiny, windy, drzwi ([LADDER_ELEVATOR_DOOR_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/LADDER_ELEVATOR_DOOR_RE.md)); walka, potwory, dyplomacja ([COMBAT_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COMBAT_SYSTEM_RE.md)); energia ([ENERGY_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENERGY_SYSTEM_RE.md)); przejścia między światami; pełny zapis `.sav`
 
@@ -195,7 +195,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] OBERWELT, różnice z grą: panorama trochę niżej, brak ciemnego pasa lasu w tle, skała `Felsen` ciemna (w grze jasnoszara)
 - [ ] Ciemnienie w kątach tuneli (BASELIGHT pod ziemią, splot różnic wypełnienia); teraz warstwa 2 szablonu
 - [x] Tekstury: rozlanie koloru w przezroczyste teksele (bez szarych obwódek przy mipmapach)
-- [ ] Bit 0x80 typu pola; młodszy bajt `.l2m`
+- [ ] Młodszy bajt `.l2m` (bit 0x80 typu pola: wymuszona ściana dla ruchu, [17.2](docs/silnik/17_ruch.md))
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
 - [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to nieodkryty teren dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
 - [x] Nieodkryty teren: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
@@ -214,7 +214,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
 - [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
-- [ ] 🔬 Maska w `.PMP` (prawdopodobnie ścieżki ruchu)
+- [x] 🔬 Maska w `.PMP`: płaszczyzna ruchu (przebiegi u16, [17.2](docs/silnik/17_ruch.md))
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D
 - [x] Menu gry jako scenariusz (`systeminit.tcl`: unq_menue + dwa korytarze + set_view)
 - [x] Składanie świata z szablonów (prawo przezroczystości z exe) i scenariusze stałe z `Gamesave/*.tcl` w wigview (`--scenario`)

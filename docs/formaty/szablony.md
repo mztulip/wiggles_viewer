@@ -21,10 +21,10 @@ Indeks pola (x, y) to `y · w + x` we wszystkich tablicach.
 |---|---|---|
 | typ & 0x0F | 0 i 2 = grunt C (piasek), 3 = B (ziemia), 4 = A (skała), 5 = otwór do tła ✅ | [4.2](../silnik/04_teren.md), [4.5](../silnik/04_teren.md) |
 | typ & 0x7F == 0 | pole puste: przy nakładaniu może być przezroczyste ✅ | [3.3](../silnik/03_swiat_z_szablonow.md) |
-| typ & 0x80 | ❓ bez widocznego efektu | |
+| typ & 0x80 | wymuszona ściana dla ruchu: podpola nie do chodzenia, cztery takie pola 2×2 blokują pole (za Diggles-Unity, `tile+0x18` bit 7); w obrazie bez efektu | [17.2](../silnik/17_ruch.md) |
 | blok | kształt wnętrza bloku ✅ | [blockdb.md](blockdb.md) |
 | warstwa2 | światło bazowe 0…8 (4 = zwykła skała) ✅ | [7.2](../silnik/07_oswietlenie.md) |
-| maska | 🔶 płaszczyzna ruchu postaci: przebiegi wartości 0/1/3 po wierszach drobnej siatki (32·w + 1 próbek na wiersz, 8 wierszy na blok). W szybie `gng_007` to pasek szerokości 9 pośrodku szybu. Do obrazu niepotrzebna | |
+| maska | ✅ płaszczyzna ruchu postaci (podpola 0 zablokowane, 1 ściana, 3 podłoga), wiersz po wierszu drobnej siatki szablonu (w · 8 × h · 8). Przebieg u16: wartość = bity 0..1, długość = bity 2..15 (0 = 0x4000); suma długości = w · h · 64. Gra ją zapisuje, ale po wczytaniu świata wylicza od nowa z wysokości bloków; nasza reguła zgadza się z nią w 99,96% podpól 231 szablonów | [17.2](../silnik/17_ruch.md) |
 
 Nazwy `.pmp` opisują tylko kształt (`gng_021.pmp`), a jeden kształt służy wielu szablonom różnych światów.
 
