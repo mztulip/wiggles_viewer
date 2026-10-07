@@ -60,8 +60,27 @@ void WorldSim::startScripts()
 	attachScripts();
 }
 
+// Zaznaczenie: gra zmienia selected (indeks postaci), skrypty selection_ (uchwyty). Wygrywa strona, która
+// zmieniła się od ostatniej synchronizacji.
+void WorldSim::syncSelection()
+{
+	if (!scripts) return;
+	int mine = selected >= 0 && selected < int(units.size()) ? idOf(units[size_t(selected)].obj) : 0;
+	auto& s = scripts->selection_;
+	int theirs = s.empty() ? 0 : s.front();
+	if (mine != selSync_) scripts->selectOnly(mine), selSync_ = mine;
+	else if (theirs != selSync_)
+	{
+		selected = -1;
+		for (size_t k = 0; k < units.size(); ++k)
+			if (theirs && idOf(units[k].obj) == theirs) selected = int(k);
+		selSync_ = selected >= 0 ? theirs : 0;
+	}
+}
+
 void WorldSim::simUpdate(float dt)
 {
+	syncSelection();
 	if (scripts)
 	{ // tura logiki 10 razy na sekundę (rozdział 11.7)
 		scriptAcc_ += dt;

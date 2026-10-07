@@ -33,7 +33,7 @@ natset = set(natives)
 sd = os.path.join(REPO, 'src', 'lib', 'script')
 for f in sorted(os.listdir(sd)):
     if f.startswith('cmd_') and f.endswith('.cpp'):
-        for lit in re.findall(r'"([^"\\]+)"', open(os.path.join(sd, f), encoding='utf-8').read()):
+        for lit in re.findall(r'"([^"\\\n]*)"', open(os.path.join(sd, f), encoding='utf-8').read()):
             for n in (lit, 'get_' + lit, 'set_' + lit):
                 if n in natset and n not in ours:
                     ours[n] = 'module'

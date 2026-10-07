@@ -394,6 +394,18 @@ struct Viewer
 		if (!sim)
 		{
 			sim = std::make_unique<WorldSim>(maps);
+			// get_view / set_view ze skryptów: kamera gry przeglądarki (współrzędne świata = mapa + początek).
+			sim->viewGet = [this](float v[5]) {
+				if (!gameCam) return false;
+				v[0] = gameCamView.x + float(maps.origin()[0]), v[1] = gameCamView.y + float(maps.origin()[1]);
+				v[2] = gameCamView.zoom, v[3] = gameCamView.dx, v[4] = gameCamView.dy;
+				return true;
+			};
+			sim->viewSet = [this](const float v[5], bool) {
+				gameCam = true;
+				gameCamView = {v[0] - float(maps.origin()[0]), v[1] - float(maps.origin()[1]), v[2], v[3], v[4]};
+				center = glm::vec3(gameCamView.x, gameCamView.y, 14.f) * MapView::kBlock;
+			};
 			if (progress) progress(0.2f, N_("Skrypty: klasy obiektów (pierwszy raz kilka sekund)"));
 			std::string err;
 			if (!sim->bootScripts(vfs, i18n::language(), err)) std::fprintf(stderr, "skrypty: %s\n", err.c_str());

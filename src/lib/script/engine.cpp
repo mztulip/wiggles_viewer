@@ -1714,7 +1714,7 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
-	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands()})
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands()})
 		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 
@@ -2142,6 +2142,7 @@ void Engine::resetWorld()
 	placeLocks_.clear();
 	sparetimeOffers_.clear();
 	ownerAttribs_.clear();
+	selection_.clear();
 	ownerRace_ = {};
 	diplomacy_ = initDiplomacy();
 	time_ = 0;

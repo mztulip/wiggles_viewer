@@ -129,6 +129,19 @@ t_script_inventory() {
 	[ -z "$e" ] && ok || fail "$e"
 }
 
+test_ script_select "Tcl: zaznaczenie (selection caninclude/include/check, is_selected, get/set_selectedobject; prawa gry: obiekt gracza 0, do niepustego zaznaczenia tylko krasnale; cmd_ui.cpp)"
+t_script_select() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set_owner 1 0 ; set p [new Pilz "" "1 1 1" "0 0 0"] ; set_owner $p 0 ; set w [new Pilz "" "1 1 1" "0 0 0"] ; list [selection caninclude 1] [selection caninclude $w] [selection include 1] [selection check 1] [is_selected 1] [selection caninclude $p] [selection include $p] [is_selected $p] [get_selectedobject]' \
+		--eval 'set_selectedobject $p ; set a [get_selectedobject] ; selection clear ; list [expr {$a == $p}] [get_selectedobject] [is_selected 1]' \
+		>"$TMP/sel" 2>&1
+	local e="" w
+	for w in '-> 1 0 {} 1 1 0 {} 0 1$' '-> 1 0 0$'; do
+		grep -q -- "$w" "$TMP/sel" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e"
+}
+
 test_ script_gnome "skrypt krasnala: 120 s bez błędów, przejście do pracy (work_idle, prodfill_dispatch…)"
 t_script_gnome() {
 	"$B/owscript" --game "$GAME" Zwerg 120 -o "$TMP/ow.log" >"$TMP/ow" 2>&1
@@ -729,6 +742,9 @@ t_http_wigview() {
 	[ -z "$e" ] && hget /objlist | grep -q "^100003 " || e="${e:-/objlist bez postaci}"
 	[ -z "$e" ] && hget "/objinfo:100003" | grep -q "^Klasa: Zwerg" || e="${e:-/objinfo}"
 	[ -z "$e" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$HPORT/api/nie_ma")" = 404 ] || e="${e:-nieznany adres nie daje 404}"
+	# set_view ze skryptu ustawia kamerę gry przeglądarki, get_view ją odczytuje
+	[ -z "$e" ] && [ "$(hpost /api/eval 'set_view 20 18 1.5 0.1 0 ; get_view' | jget 'd["result"]')" = "20 18 1.5 0.1 0" ] ||
+		e="${e:-set_view/get_view: $(hpost /api/eval 'get_view' | jget 'd["result"]')}"
 	# lampa utworzona w trakcie gry świeci, a jej światło idzie za obiektem (class_light {0 -0,5 0}, z świata = z·0,5 + 7)
 	hpost /api/eval 'sel /obj; set L [new Misc_LightSrc_a "" "5 4 14" "0 0 0"]; set_pos $L "8 4 14"' >/dev/null
 	local lp

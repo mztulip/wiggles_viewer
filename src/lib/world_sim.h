@@ -207,6 +207,14 @@ public:
 	void changeParticleSource(int id, int slot, const ParticleSource& s) override;
 	void setParticleSource(int id, int slot, bool on) override;
 	void setVisible(int id, bool v) override;
+	bool getView(float v[5]) override { return viewGet && viewGet(v); }
+	void setView(const float v[5], bool move) override
+	{
+		if (viewSet) viewSet(v, move);
+	}
+	// Kamera programu (gra, wigview) dla get_view / set_view ze skryptów.
+	std::function<bool(float[5])> viewGet;
+	std::function<void(const float[5], bool)> viewSet;
 
 protected:
 	void attachScripts();
@@ -215,6 +223,8 @@ protected:
 	double scriptAcc_ = 0;
 	float simTime_ = 0; // czas symulacji (ślad OW_TRACE_SIM=2)
 	float fogTimer_ = 0;
+	int selSync_ = 0; // zaznaczenie zsynchronizowane między grą (selected) a skryptami (selection_)
+	void syncSelection();
 };
 
 } // namespace ow

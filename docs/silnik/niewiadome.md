@@ -9,7 +9,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Wybór wariantu tekstury gruntu 01–15 i detalu `_a`…`_f` | ❓ | |
 | Przejścia gruntów: który grunt jest „A” w masce, trzy grunty w bloku | 🔶 | prawo ogólne ustalone (4.2) |
 | Detale `.l2m` zestawu 2 (`<świat>2_*`) | ❓ | zestaw 1 potwierdzony, zestaw 2 zachowuje się inaczej (tabela w 4.4); w menu mech na filarze leży w grze tylko na części powierzchni, u nas na całej |
-| Bit 0x80 typu pola, młodszy bajt `.l2m` | ❓ | bez widocznej różnicy na zrzutach |
+| Bit 0x80 typu pola | 🔶 | wymuszona ściana dla ruchu (za Diggles-Unity, [17.2](17_ruch.md)); w obrazie bez widocznej różnicy |
 | Ciemnienie w kątach tuneli (światło bazowe pod ziemią) | 🔶 | gra liczy je z wypełnienia drobnych pól ([Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) `TUNNEL_TORCH_LIGHTING_RE.md` §6); szablony mają przybliżone wartości |
 | Nieodkryty teren: sprawdzenie zrzutami | 🔶 | prawo opisane w [rozdziale 10](10_nieodkryty_teren.md) za Diggles-Unity; brakuje porównania z grą |
 | **Cienie** pod obiektami | 🔶 | `.3db` ma mapy cieni 32 × 32 (rozmyty rzut bryły pod 45°, [3db.md §3.6](../formaty/3db.md)). W jaskini z lampą przy `MaxShadowLightDist` = 8 na podłodze są długie ciemne smugi od stworzeń, skierowane od lampy; przy 0 ich nie ma. Na powierzchni (samo słońce) cieni nie widać przy żadnej wartości ([BAZA_WIEDZY §9.8](../BAZA_WIEDZY.md)). ❓ Jak obraz jest rozciągany w stronę lampy, próg odległości, czy cieni jest kilka od kilku lamp |

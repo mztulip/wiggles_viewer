@@ -8,28 +8,28 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| object | 183 | 84 | 23 | 32 | 17 | 27 |
-| misc | 217 | 39 | 21 | 42 | 53 | 62 |
+| misc | 217 | 58 | 9 | 38 | 50 | 62 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
 | map | 49 | 2 | 6 | 4 | 21 | 16 |
-| inne | 36 | 6 | 1 | 3 | 7 | 19 |
-| obj | 82 | 5 | 15 | 18 | 28 | 16 |
+| inne | 36 | 8 | 0 | 3 | 7 | 18 |
+| obj | 82 | 10 | 13 | 18 | 28 | 13 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
 | trigger | 1 | 0 | 1 | 0 | 0 | 0 |
+| object | 183 | 131 | 6 | 15 | 8 | 23 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
 | graphics | 6 | 2 | 0 | 1 | 0 | 3 |
 | ai | 1 | 0 | 0 | 1 | 0 | 0 |
 | prod | 3 | 0 | 1 | 0 | 2 | 0 |
-| states | 7 | 6 | 1 | 0 | 0 | 0 |
 | class | 10 | 9 | 0 | 0 | 1 | 0 |
 | info | 4 | 0 | 0 | 0 | 2 | 2 |
 | network | 1 | 1 | 0 | 0 | 0 | 0 |
 | 3db | 1 | 0 | 0 | 0 | 0 | 1 |
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
-| **razem** | 639 | 167 | 73 | 110 | 136 | 153 |
+| states | 7 | 7 | 0 | 0 | 0 | 0 |
+| **razem** | 639 | 241 | 40 | 89 | 124 | 145 |
 
 ## 3db
 
@@ -135,7 +135,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `is_storymgr` | ❌ | P1 | 6 | 6 | 4 |  |
 | `map_template` | ❌ | P2 | 1574 | 0 | 1573 |  |
 | `fight_map_obj2db` | ❌ | P2 | 18 | 0 | 1 |  |
 | `screenvibe` | ❌ | P2 | 15 | 0 | 8 |  |
@@ -153,7 +152,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `find_next_visible` | ❌ | martwa | 0 | 0 | 0 |  |
 | `get_digid` | ❌ | martwa | 0 | 0 | 0 |  |
 | `get_framevel` | ❌ | martwa | 0 | 0 | 0 |  |
-| `get_objvariation` | ❌ | martwa | 0 | 0 | 0 |  |
 | `hmap` | ❌ | martwa | 0 | 0 | 0 |  |
 | `msgbox` | ❌ | martwa | 0 | 0 | 0 |  |
 | `reset_perf_data` | ❌ | martwa | 0 | 0 | 0 |  |
@@ -166,11 +164,13 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `web_shell` | ❌ | martwa | 0 | 0 | 0 |  |
 | `xtest` | ❌ | martwa | 0 | 0 | 0 |  |
 | `lmsg` | ✅ |  | 214 | 214 | 24 |  |
+| `is_storymgr` | ✅ |  | 6 | 6 | 4 |  |
 | `placelock_check` | ✅ |  | 4 | 4 | 2 |  |
 | `set_particlesource` | ✅ |  | 576 | 0 | 87 |  |
 | `placelock_set` | ✅ |  | 8 | 0 | 5 |  |
 | `placelock_rem` | ✅ |  | 7 | 0 | 5 |  |
 | `autolight` | ✅ |  | 0 | 0 | 0 |  |
+| `get_objvariation` | ✅ |  | 0 | 0 | 0 |  |
 
 ## map
 
@@ -230,25 +230,13 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `smalltalk` | ❌ | P1 | 1801 | 5 | 17 | smalltalk add <key> <text>adds smalltalk (theme) text |
 | `get_mapedit` | ⚪ | P1 | 111 | 111 | 11 | get_mapedit1 if mapeditor-mode, 0 if ingame |
-| `lrem` | ❌ | P1 | 75 | 9 | 26 | lrem <listvarname> <elementindex>removes one list element |
 | `newsticker` | ❌ | P1 | 63 | 19 | 12 | newsticker new <owner-id> [-text <text>] [-category <category>] [-color <color>] [-priority <priority>] [-time |
 | `sm_get_event` | ⚪ | P1 | 30 | 30 | 11 | sm_get_event <name>Check if Story Event is fulfilled |
-| `get_view` | ❌ | P1 | 25 | 25 | 11 | get_view (<newview>)set view pos, zoom and optionally rotation, if is true get_view returns target camera posi |
-| `gamestats` | ❌ | P1 | 20 | 20 | 3 | gamestats numgnomes <owner>get number of gnomes for player |
-| `selection` | ❌ | P1 | 18 | 6 | 6 | selection check <objref> |
-| `get_diplomacy` | ❌ | P1 | 17 | 17 | 8 | get_diplomacy <owner> <owner>sets owner diplomacy state |
-| `talkissue` | ❌ | P1 | 16 | 12 | 2 | talkissue <obj> add <key> <val>adds talkissue value |
-| `vector_abs` | ❌ | P1 | 16 | 16 | 8 | vector_abs <vector>get length of vector |
 | `minimalrun` | ⚪ | P1 | 13 | 13 | 8 | minimalrunreturns if this is a minimal run |
-| `get_selectedobject` | ❌ | P1 | 9 | 9 | 8 | get_selectedobjectget selection |
 | `seq_audiostream` | ❌ | P1 | 9 | 3 | 3 | seq_audiostream open <filename> |
 | `startcache` | ⚪ | P1 | 7 | 3 | 1 | startcache enabled |
-| `get_local_player` | ❌ | P1 | 4 | 4 | 4 | get_local_playerget local player id |
 | `get_weapon_pose` | ❌ | P1 | 4 | 4 | 2 | get_weapon_pose <id>returns pose of weapon |
-| `vector_random` | ❌ | P1 | 4 | 4 | 3 | vector_random <x> <y> <z>create random vector with given bounds |
-| `calc_text_time` | ❌ | P1 | 3 | 3 | 1 | calc_text_time <text>returns length of text in seconds |
 | `get_place_info` | ❌ | P1 | 3 | 3 | 1 | get_place_inforeturns placing info {placing placeok placebox} |
 | `sm_get_zone` | ❌ | P1 | 3 | 3 | 3 | sm_get_zone <y>returns zone at y |
 | `loading_objdetail` | ❌ | P2 | 10110 | 0 | 3117 | loading_objdetailreturns object detail level |
@@ -257,9 +245,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `//` | ⚪ | P2 | 416 | 0 | 46 | //comment with working braces |
 | `start_fade` | ❌ | P2 | 132 | 0 | 43 | start_fade <seconds> <in/out>start fade. in/out=true -> fadein false -> fadeout |
 | `sm_add_event` | ❌ | P2 | 85 | 0 | 13 | sm_add_event <name> [<triggerclass>] [<triggermsg>]Add Story Event |
-| `set_view` | ❌ | P2 | 61 | 0 | 45 | set_view <x> <y> <zoom> [<dx> <dy> [<move>] [<freeze>] [<speed>] [<set>]]set view pos, zoom and optionally rot |
 | `show_loading` | ⚪ | P2 | 60 | 0 | 32 | show_loading <newstate> (<progress>)show or hide load screen |
-| `set_diplomacy` | ❌ | P2 | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
 | `create_particlesource` | ❌ | P2 | 39 | 0 | 14 | create_particlesource <type> <pos> <dir> <num> <time>creates temporary particle source |
 | `sm_def_temp_group` | ❌ | P2 | 38 | 0 | 16 | sm_def_temp_group <name> <templist>Defines Unique Template Group (copy'n paste from LevelEditor output) |
 | `sleep` | ❌ | P2 | 32 | 0 | 24 | sleep <milliseconds>pause execution |
@@ -291,8 +277,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_speechout` | ❌ | P2 | 7 | 0 | 1 | set_speechout <duration> <coltextlist> (<ForceShow>)speech while sequence playing |
 | `viewlock` | ❌ | P2 | 7 | 0 | 2 | viewlock [<newstate>]viewlock []@lock view, disable camera control |
 | `set_ingame_loading` | ❌ | P2 | 6 | 0 | 1 | set_ingame_loading <true/false>activate/deactivate ingame levelloading |
-| `set_selectedobject` | ❌ | P2 | 6 | 0 | 5 | set_selectedobject [<objref>]change selection |
-| `set_view_begin` | ❌ | P2 | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
 | `scroller` | ❌ | P3 | 4 | 0 | 3 | scroller runningcheck if scroller is running |
 | `set_water` | ❌ | P3 | 4 | 0 | 1 | set_water <bool>enable/disable water |
 | `sm_map_set` | ❌ | P3 | 4 | 0 | 1 | sm_map_set <x> <y> [<w> <h>]set map area as setted |
@@ -312,7 +296,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `option` | ❌ | P3 | 2 | 2 | 1 | option get <option-name>get option value |
 | `perfoptions` | ⚪ | P3 | 2 | 1 | 1 | perfoptions <setting>get current setting |
 | `remove_parked_obj` | ❌ | P3 | 2 | 0 | 1 | remove_parked_obj <obj>removes object action from "parking lot" |
-| `set_objvariation` | ❌ | P3 | 2 | 0 | 2 | set_objvariation <object> <variation>set variation for object |
 | `set_split_load` | ❌ | P3 | 2 | 0 | 1 | set_split_load <true/false>de/activates split_load mode |
 | `sm_log` | ❌ | P3 | 2 | 0 | 1 | sm_logLog |
 | `vector_roty` | ❌ | P3 | 2 | 2 | 2 | vector_roty <vector> <yrot>rotates vector |
@@ -327,7 +310,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_ingame_loading` | ❌ | P3 | 1 | 1 | 1 | get_ingame_loadingreturns true if all objects from buffer are loaded |
 | `get_mpstartpos` | ❌ | P3 | 1 | 1 | 1 | get_mpstartpos <mapsizex> <mapsizey> <teamlist>calculates the best startpositions for multiplayers |
 | `get_player_color` | ❌ | P3 | 1 | 1 | 1 | get_player_colorreturns color assigned to this player |
-| `global_inv_rem` | ❌ | P3 | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
 | `ground_pos` | ❌ | P3 | 1 | 1 | 1 | ground_pos <vector>get valid ground vector from given vector |
 | `init_techtree` | ❌ | P3 | 1 | 0 | 1 | init_techtree <filename>initialize techtree |
 | `load_done` | ❌ | P3 | 1 | 0 | 1 | load_doneloading done |
@@ -340,7 +322,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_brightness` | ❌ | P3 | 1 | 0 | 1 | set_brightness <brighness>set brightness (0..2) |
 | `set_ground_begin` | ❌ | P3 | 1 | 0 | 1 | set_ground_begin <num>sets the Y-beginning of the ground |
 | `set_run_info` | ⚪ | P3 | 1 | 0 | 1 | set_run_info info-textset current load info |
-| `set_viewpos` | ❌ | P3 | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
 | `sm_dig_message` | ❌ | P3 | 1 | 0 | 1 | sm_dig_message <true/false>Activates callback dig messages |
 | `sm_get_level_info` | ❌ | P3 | 1 | 1 | 1 | sm_get_level_info <x> <y>get info for level generation |
 | `sm_get_resolution` | ❌ | P3 | 1 | 1 | 1 | sm_get_resolutionreturns map resolution |
@@ -408,6 +389,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `vector_sety` | ❌ | martwa | 0 | 0 | 0 | vector_sety <vector> <new_y>copy vector, use different y value |
 | `vtune` | ❌ | martwa | 0 | 0 | 0 | vtune (start\|stop)start/stop vtune sampling |
 | `waterdbg` | ❌ | martwa | 0 | 0 | 0 | waterdbg <bool>enable/disable water-debug-view |
+| `smalltalk` | ✅ |  | 1801 | 5 | 17 | smalltalk add <key> <text>adds smalltalk (theme) text |
 | `gettime` | ✅ |  | 429 | 429 | 90 | gettimeget current timestamp in seconds |
 | `vector_add` | ✅ |  | 332 | 332 | 59 | vector_add <vector> <vector>get sum of vertices |
 | `random` | ✅ |  | 259 | 259 | 62 | randomget random number 0..1 |
@@ -415,6 +397,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `fincr` | ✅ |  | 184 | 5 | 30 | fincr <var-name>< num>do [incr] with floats |
 | `lnand` | ✅ |  | 112 | 112 | 37 | lnand <list1> <list2>!list1 & list2 |
 | `hmax` | ✅ |  | 87 | 87 | 26 | hmax <num> [<num>...]returns highest value |
+| `lrem` | ✅ |  | 75 | 9 | 26 | lrem <listvarname> <elementindex>removes one list element |
 | `vector_dist3d` | ✅ |  | 65 | 65 | 18 | vector_dist3d <vector> <vector>get distance of vertices (3d) |
 | `hmin` | ✅ |  | 58 | 58 | 17 | hmin <num> [<num>...]returns highest value |
 | `vector_dist` | ✅ |  | 52 | 52 | 17 | vector_dist <vector> <vector>get distance of vertices (2d) |
@@ -425,26 +408,43 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `isunderwater` | ✅ |  | 33 | 32 | 16 | isunderwater <pos>find out, if vertex is under water |
 | `land` | ✅ |  | 30 | 30 | 10 | land <list1> <list2>list1 & list2 |
 | `vector_mul` | ✅ |  | 29 | 29 | 14 | vector_mul <vector> <factor>multiplicates vector with factor |
+| `get_view` | ✅ |  | 25 | 25 | 11 | get_view (<newview>)set view pos, zoom and optionally rotation, if is true get_view returns target camera posi |
 | `lor` | ✅ |  | 23 | 23 | 12 | lor <list1> <list2> [...]list1 \| list2 \|... |
 | `lcount` | ✅ |  | 22 | 22 | 10 | lcount <list> <element>returns the number of in list |
+| `gamestats` | ✅ |  | 20 | 20 | 3 | gamestats numgnomes <owner>get number of gnomes for player |
+| `selection` | ✅ |  | 18 | 6 | 6 | selection check <objref> |
 | `get_anglexz` | ✅ |  | 17 | 17 | 7 | get_anglexz <vector> <vector>get xz-angle |
+| `get_diplomacy` | ✅ |  | 17 | 17 | 8 | get_diplomacy <owner> <owner>sets owner diplomacy state |
 | `locale` | ✅ |  | 17 | 17 | 6 | locale [<locale>]set/get locale |
+| `talkissue` | ✅ |  | 16 | 12 | 2 | talkissue <obj> add <key> <val>adds talkissue value |
+| `vector_abs` | ✅ |  | 16 | 16 | 8 | vector_abs <vector>get length of vector |
 | `vector_angle` | ✅ |  | 15 | 15 | 9 | vector_angle <vector> <vector>get XZ angle of difference vector |
 | `vector_unpacky` | ✅ |  | 10 | 10 | 9 | vector_unpacky <vector>unpack vector y component |
+| `get_selectedobject` | ✅ |  | 9 | 9 | 8 | get_selectedobjectget selection |
 | `get_vectorxz` | ✅ |  | 7 | 7 | 4 | get_vectorxz <angle> <length>get xz-vector |
 | `vector_normalize` | ✅ |  | 7 | 7 | 3 | vector_normalize <vector>normalize vector |
 | `vector_unpackx` | ✅ |  | 7 | 7 | 7 | vector_unpackx <vector>unpack vector x component |
 | `vector_unpackz` | ✅ |  | 7 | 7 | 7 | vector_unpackz <vector>unpack vector z component |
 | `gethours` | ✅ |  | 6 | 6 | 5 | gethoursget current timestamp in total logic hours |
 | `vector_pack` | ✅ |  | 6 | 6 | 4 | vector_pack <x> <y> <z>pack vector to list |
+| `get_local_player` | ✅ |  | 4 | 4 | 4 | get_local_playerget local player id |
+| `vector_random` | ✅ |  | 4 | 4 | 3 | vector_random <x> <y> <z>create random vector with given bounds |
+| `calc_text_time` | ✅ |  | 3 | 3 | 1 | calc_text_time <text>returns length of text in seconds |
 | `call` | ✅ |  | 1886 | 0 | 406 | call <script name>call external script |
 | `lrep` | ✅ |  | 125 | 0 | 20 | lrep <listvarname> <elementindex> <newelement>replaces one list element |
+| `set_view` | ✅ |  | 61 | 0 | 45 | set_view <x> <y> <zoom> [<dx> <dy> [<move>] [<freeze>] [<speed>] [<set>]]set view pos, zoom and optionally rot |
 | `gametime` | ✅ |  | 58 | 0 | 28 | gametime <command> [<value>]handle game time |
+| `set_diplomacy` | ✅ |  | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
+| `set_selectedobject` | ✅ |  | 6 | 0 | 5 | set_selectedobject [<objref>]change selection |
+| `set_view_begin` | ✅ |  | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
 | `hceil` | ✅ |  | 2 | 2 | 2 | hceil <num>calc ceil value |
 | `hfloor` | ✅ |  | 2 | 2 | 2 | hfloor <num>calc floor value |
+| `set_objvariation` | ✅ |  | 2 | 0 | 2 | set_objvariation <object> <variation>set variation for object |
 | `vector_fixdig` | ✅ |  | 2 | 2 | 1 | vector_fixdig <vector> <vector>get next reachable position in destination of the 2nd Parameter |
 | `vector_inbox` | ✅ |  | 2 | 2 | 2 | vector_inbox <vector> <boxneg> <boxpos>checks if vector is in box |
 | `get_digedge` | ✅ |  | 1 | 1 | 1 | get_digedge <topos> <obj>gets a point at the edge of a zone marked for dig |
+| `global_inv_rem` | ✅ |  | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
+| `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
 | `callnc` | ✅ |  | 0 | 0 | 0 | callnc <script name>call external script skipping Tcl cache |
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |
 
@@ -461,7 +461,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `prod_guest` | ❌ | P1 | 240 | 104 | 27 | prod_guest addlink <objref> <linkid>add link to guest places, returns new index |
 | `get_prod_slot_cnt` | ❌ | P1 | 45 | 45 | 19 | get_prod_slot_cnt <object> <itemclass>get task count for production slot |
 | `get_prod_pack` | ❌ | P1 | 16 | 16 | 7 | get_prod_pack <object>get object pack task state |
-| `inv_check` | ❌ | P1 | 16 | 16 | 8 | inv_check <objref> <object>check, if object can packed to inventory |
 | `get_energystore` | ❌ | P1 | 9 | 9 | 5 | get_energystore <objref>get the energy store of an energysource |
 | `get_energysourceload` | ❌ | P1 | 8 | 8 | 4 | get_energysourceload <objref>get the activity of the energysource (%) |
 | `get_max_fow` | ⚪ | P1 | 7 | 7 | 5 | get_max_fow <objref> [<owner>]returns max fow for that owner (for all owners if none specified) |
@@ -469,7 +468,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_materialneed` | ❌ | P1 | 7 | 7 | 4 | get_prod_materialneed <objref>set the need of materials |
 | `check_ghost_coll` | ❌ | P1 | 6 | 6 | 3 | check_ghost_coll <param> <objref> <prodref>check collision with ghost object |
 | `get_prod_slot_buildable` | ❌ | P1 | 6 | 6 | 3 | get_prod_slot_buildable <object> <class>check if slot is buildable |
-| `auto_choose_gender` | ❌ | P1 | 4 | 4 | 3 | auto_choose_gender <objref>choose gender for this object automatically, returns new gender |
 | `fight_setactions_strikeback` | ❌ | P1 | 4 | 3 | 3 | fight_setactions_strikeback <attacker> (<radius>) (<forcehit>) (<scanpos>)set actions for current fight |
 | `get_prod_unpack` | ❌ | P1 | 4 | 4 | 3 | get_prod_unpack <object>get object unpack task state |
 | `prod_gnome_get_preferred_workplace` | ❌ | P1 | 4 | 4 | 3 | prod_gnome_get_preferred_workplace <objref>get preferred work place |
@@ -527,9 +525,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_toolneed` | ❌ | martwa | 0 | 0 | 0 | get_prod_toolneed <objref>set the need of tools |
 | `get_prod_total_task_cnt` | ❌ | martwa | 0 | 0 | 0 | get_prod_total_task_cnt <object>get total number of open tasks |
 | `gnome_stopped_work` | ❌ | martwa | 0 | 0 | 0 | gnome_stopped_work <objref>notify gnome work break |
-| `inv_cnt_raw` | ❌ | martwa | 0 | 0 | 0 | inv_cnt_raw <objref>get number of packed objects |
-| `inv_find_raw` | ❌ | martwa | 0 | 0 | 0 | inv_find_raw <objref> <object>get index of packed óbject |
-| `inv_get_raw` | ❌ | martwa | 0 | 0 | 0 | inv_get_raw <objref> <object>get packed object |
 | `prod_gnome_get_last_workplace` | ❌ | martwa | 0 | 0 | 0 | prod_gnome_get_last_workplace <objref>get last work place |
 | `prod_gnomeidle` | ❌ | martwa | 0 | 0 | 0 | prod_gnomeidle <objref> [true\|false]announce worker is idle |
 | `set_prod_buildup` | ❌ | martwa | 0 | 0 | 0 | set_prod_buildup <object> <newstate>set object unpack task state |
@@ -537,96 +532,54 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `snap` | ❌ | martwa | 0 | 0 | 0 | snap <objref2> <objref1>snaps obj1 to obj2, assumes same rotation vector |
 | `get_remaining_sparetime` | ✅ |  | 18 | 18 | 12 | get_remaining_sparetime <objref>get hours of sparetime left |
 | `get_walkresult` | ✅ |  | 17 | 17 | 13 | get_walkresult <objref>gets the result of the last walk-action on the object (0=WS_ERROR, 1=WS_WALKABORTED, 2= |
+| `inv_check` | ✅ |  | 16 | 16 | 8 | inv_check <objref> <object>check, if object can packed to inventory |
+| `auto_choose_gender` | ✅ |  | 4 | 4 | 3 | auto_choose_gender <objref>choose gender for this object automatically, returns new gender |
 | `auto_choose_workingtime` | ✅ |  | 3 | 0 | 3 | auto_choose_workingtime <objref>choose working time for this object automatically |
 | `set_rendermaterial` | ✅ |  | 3 | 0 | 2 | set_rendermaterial <objref> <materialname>set object rendering material |
 | `get_rendermaterial` | ✅ |  | 0 | 0 | 0 | get_rendermaterial <objref>get object rendering material |
+| `inv_cnt_raw` | ✅ |  | 0 | 0 | 0 | inv_cnt_raw <objref>get number of packed objects |
+| `inv_find_raw` | ✅ |  | 0 | 0 | 0 | inv_find_raw <objref> <object>get index of packed óbject |
+| `inv_get_raw` | ✅ |  | 0 | 0 | 0 | inv_get_raw <objref> <object>get packed object |
 
 ## object
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `inv_find` | ❌ | P1 | 48 | 48 | 17 | inv_find <objref> <classname>find index of inventory item of given class, -1 if not found |
-| `inv_list` | ❌ | P1 | 48 | 48 | 24 | inv_list <objref>get (ref)list of inventory objects |
-| `is_selected` | ❌ | P1 | 41 | 41 | 7 | is_selected <objref>check if objref = selected |
-| `get_boxed` | ❌ | P1 | 37 | 37 | 20 | get_boxed <objref>get object boxed state |
-| `partner_info` | ❌ | P1 | 32 | 24 | 6 | partner_info setpartner <objref> <partner>sets partner showed in tooltip |
-| `get_objgender` | ❌ | P1 | 28 | 28 | 11 | get_objgender <objref>get object gender. male, female, neutral |
-| `is_contained` | ❌ | P1 | 27 | 27 | 15 | is_contained <obj-ref>checks if object is part of some other objects inventory |
-| `get_objtype` | ❌ | P1 | 26 | 26 | 16 | get_objtype <objref>get object type (none,dummy,gnome,monster,material,tool,production,energy,box,blueprint,st |
-| `inv_find_obj` | ❌ | P1 | 26 | 26 | 11 | inv_find_obj <objref> <searchobjref>find index of inventory item, -1 if not found |
-| `inv_get` | ❌ | P1 | 21 | 21 | 10 | inv_get <objref> <index>get reference to indexed inventory object |
-| `get_buildupstate` | ❌ | P1 | 14 | 14 | 8 | get_buildupstate <objref>get object boxed state |
 | `get_weapon_id` | ❌ | P1 | 10 | 10 | 6 | get_weapon_id <object> <atdef>returns weaponid if obj is a registered weapon |
 | `get_attack_pos` | ❌ | P1 | 9 | 9 | 6 | get_attack_pos <objref-Atk> <objref-Def> (<dist>)get position for fight |
 | `get_prodautoschedule` | ⚪ | P1 | 9 | 9 | 7 | get_prodautoschedule <objref>get production auto schedule |
-| `tasklist_list` | ❌ | P1 | 8 | 8 | 6 | tasklist_list <objref>get task list |
 | `get_linked_to` | ⚪ | P1 | 6 | 6 | 2 | get_linked_to <objref>gets the object that this object is linked to (-1 if none) |
-| `get_rot` | ❌ | P1 | 6 | 6 | 5 | get_rot <objref>get current object's rotation as packed vector |
-| `get_diedinfight` | ❌ | P1 | 5 | 5 | 5 | get_diedinfight <objref>get diedinfight |
 | `get_linkrot` | ❌ | P1 | 5 | 5 | 2 | get_linkrot <objref> <link-id>get rotation of link in current frame |
 | `get_classaniminfo` | ❌ | P1 | 4 | 4 | 4 | get_classaniminfo (<classname>) <anim>get anim info |
-| `get_user_groups` | ❌ | P1 | 4 | 4 | 1 | get_user_groups <objref>get list of user group assignments |
-| `get_ownerrace` | ❌ | P1 | 3 | 3 | 1 | get_ownerrace <owner>returns race of an owner |
-| `inv_getsize` | ❌ | P1 | 3 | 3 | 3 | inv_getsize <objref>get size of inventory |
 | `sel` | ⚪ | P2 | 67965 | 0 | 2550 | sel <objref>select object |
-| `set_boxed` | ❌ | P2 | 63437 | 0 | 2489 | set_boxed <objref> <newstate>set object boxed / unpacked |
 | `set_textureanimation` | ❌ | P2 | 165 | 0 | 22 | set_textureanimation <objref> <submesh> <framelist> [<frame=0> <animtype=2>]set texture animation |
 | `set_objworkicons` | ❌ | P2 | 37 | 0 | 1 | set_objworkicons <objref> [<iconname>...]set object info icon |
-| `inv_add` | ❌ | P2 | 33 | 0 | 20 | inv_add <objref> <objreftoadd>add object to inventory, make it invisible, returns index |
-| `inv_rem` | ❌ | P2 | 33 | 0 | 19 | inv_rem <objref> <index-or-ref> (<position>)remove object from inventory, |
 | `change_light` | ❌ | P2 | 31 | 0 | 10 | change_light <object> <vector> <size> <color> [<glowsize>]sets the light parameters |
 | `set_fogofwar` | ❌ | P2 | 31 | 0 | 13 | set_fogofwar <object> <sizex> <sizey>sets size of Fog of War |
-| `set_rotx` | ❌ | P2 | 31 | 0 | 8 | set_rotx <objref> <x>set current object's x rotation |
-| `set_vel` | ❌ | P2 | 30 | 0 | 9 | set_vel <objref> <x> <y> <z>set current object's velocity |
 | `destruct` | ❌ | P2 | 29 | 0 | 16 | destruct <object>delete and destruct object |
-| `set_sequenceactive` | ❌ | P2 | 26 | 0 | 12 | set_sequenceactive <objref> <newstate>set object selectability |
 | `set_light` | ❌ | P2 | 17 | 0 | 13 | set_light <object> <on/off>switches the light of the object on/off |
-| `set_posbottom` | ❌ | P2 | 16 | 0 | 7 | set_posbottom <objref> <x> <y> <z>set current object's bottom's position |
-| `set_rot` | ❌ | P2 | 16 | 0 | 8 | set_rot <objref> <x> <y> <z>set current object's rotation |
 | `set_pf_influence` | ❌ | P2 | 12 | 0 | 4 | set_pf_influence <objref> <left> <top> <right> <bottom> <costs> <flags>sets the pathfinding influence rectangl |
-| `set_posz` | ❌ | P2 | 12 | 0 | 7 | set_posz <objref> <z>set current object's z position |
-| `set_rotz` | ❌ | P2 | 11 | 0 | 9 | set_rotz <objref> <z>set current object's z rotation |
 | `sm_send_message` | ❌ | P2 | 10 | 0 | 4 | sm_send_message <object> <message>Send Message for Story Event |
 | `dig_resetid` | ❌ | P2 | 9 | 0 | 4 | dig_resetid <object>reset dig id of an object |
-| `set_buildupstate` | ❌ | P2 | 9 | 0 | 6 | set_buildupstate <objref> <newstate>set object boxed / unpacked |
-| `set_posy` | ❌ | P2 | 9 | 0 | 5 | set_posy <objref> <y>set current object's y position |
-| `set_activegameplay` | ❌ | P2 | 8 | 0 | 5 | set_activegameplay <objref> <newstate>enable/disable object gameplay (event & state handling) |
-| `set_alternateanimdb` | ❌ | P2 | 8 | 0 | 3 | set_alternateanimdb <objref> <bool>set object alternate anim |
 | `set_camerafollow` | ❌ | P2 | 7 | 0 | 2 | set_camerafollow <objref> (<zoom>)(camera follows object, -1 disables follow-mode, zoom 1.0 - 2.5 |
-| `set_posx` | ❌ | P2 | 7 | 0 | 3 | set_posx <objref> <x>set current object's x position |
 | `set_prodautoschedule` | ❌ | P2 | 7 | 0 | 5 | set_prodautoschedule <objref> <newstate>set production auto schedule |
 | `fight_weapon_kombi` | ❌ | P2 | 5 | 0 | 1 | fight_weapon_kombi <classlist> <raisevallist>defines special Weapon Kombinations |
 | `hide_obj_ghost` | ❌ | P2 | 5 | 0 | 4 | hide_obj_ghost <objref>hide object ghost if present |
-| `set_objgender` | ❌ | P2 | 5 | 0 | 3 | set_objgender <objref> <male\|female\|neutral>set object gender |
 | `set_objicon` | ❌ | P2 | 5 | 0 | 2 | set_objicon <objref> <idx> <type> <value> <duration>set object info icon |
-| `set_ownerrace` | ❌ | P2 | 5 | 0 | 1 | set_ownerrace <owner> <race>sets race of an owner |
 | `set_prodalloclock` | ❌ | P3 | 3 | 0 | 3 | set_prodalloclock <objref> <newstate>set production alloc state |
-| `set_user_groups` | ❌ | P3 | 3 | 0 | 2 | set_user_groups <objref> <list>set list of user group assignments |
-| `get_alternateanimdb` | ❌ | P3 | 2 | 2 | 1 | get_alternateanimdb <objref>get object alternate anim state |
 | `get_angle_num4` | ❌ | P3 | 2 | 2 | 1 | get_angle_num4 <pos1> <pos2>returns 0 for pos2 is over pos1, 1 for right... |
-| `get_posbottom` | ❌ | P3 | 2 | 2 | 2 | get_posbottom <objref>get current object's bottom's position as packed vector |
 | `get_velcomp` | ❌ | P3 | 2 | 2 | 2 | get_velcomp <objref>get current object's velocity as packed vector |
-| `inv_cnt` | ❌ | P3 | 2 | 2 | 2 | inv_cnt <objref>get length of inventory list |
 | `get_light` | ❌ | P3 | 1 | 1 | 1 | get_light <object>returns the state of light |
 | `get_objownertype` | ❌ | P3 | 1 | 1 | 1 | get_objownertype <object>returns the owner type of an object (0=none 1=human 2=ai) |
-| `get_objrace` | ❌ | P3 | 1 | 1 | 1 | get_objrace <object>returns race of an object |
-| `get_rotz` | ❌ | P3 | 1 | 1 | 1 | get_rotz <objref>get current object's z rotation |
-| `get_sequenceactive` | ❌ | P3 | 1 | 1 | 1 | get_sequenceactive <objref> <newstate>set object selectability |
 | `get_weapon_range` | ❌ | P3 | 1 | 1 | 1 | get_weapon_range <weaponid>returns range of weapon |
-| `is_wearing_pannier` | ❌ | P3 | 1 | 1 | 1 | is_wearing_pannier <objref>check if obj is wearing a pannier |
-| `set_objinfo` | ❌ | P3 | 1 | 0 | 1 | set_objinfo <objref> <text>set object info text |
 | `sm_register` | ❌ | P3 | 1 | 0 | 1 | sm_register <object> <callback>Register Story Manager with callback |
 | `tasklist_find` | ⚪ | P3 | 1 | 1 | 1 | tasklist_find <objref> <entry>find index of entry or -1 |
 | `cwd` | ❌ | martwa | 0 | 0 | 0 | cwd <objref>get current object's path |
-| `get_activegameplay` | ❌ | martwa | 0 | 0 | 0 | get_activegameplay <objref>get activegameplay flag (object event and state handling) |
 | `get_escape_pos` | ❌ | martwa | 0 | 0 | 0 | get_escape_pos <objref> <scandist> <walkdist>get position for escaping, returns: -1 if nothing found, 0 if no  |
-| `get_objinfo` | ❌ | martwa | 0 | 0 | 0 | get_objinfo <objref>get object info text |
 | `get_pathlength` | ❌ | martwa | 0 | 0 | 0 | get_pathlength <objref>returns the Length of the Current Path (in Blocks) |
 | `get_pathrandflags` | ❌ | martwa | 0 | 0 | 0 | get_pathrandflags <objref> <objref>gives a flag combination, that lets path_rand generate a path away from obj |
 | `get_prodalloclock` | ❌ | martwa | 0 | 0 | 0 | get_prodalloclock <objref>get production alloc state |
 | `get_rel_pos` | ❌ | martwa | 0 | 0 | 0 | get_rel_pos <objref> <objref>get current object's position as packed vector |
-| `get_rotx` | ❌ | martwa | 0 | 0 | 0 | get_rotx <objref>get current object's x rotation |
-| `get_vel` | ❌ | martwa | 0 | 0 | 0 | get_vel <objref>get current object's velocity as packed vector |
 | `obj_find` | ❌ | martwa | 0 | 0 | 0 | obj_find <objref> <class-name> (<max-dist>)find next object of given class, |
 | `obj_find_list` | ❌ | martwa | 0 | 0 | 0 | obj_find_list <objref> <class-name> (<max-dist>)get list of object references for given class |
 | `obj_find_nearest` | ❌ | martwa | 0 | 0 | 0 | obj_find_nearest <objref> <class-name-list> (<max-dist>)find next object of given class, |
@@ -656,19 +609,37 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_posx` | ✅ |  | 86 | 86 | 29 | get_posx <objref>get current object's x position |
 | `get_gnomeposition` | ✅ |  | 58 | 58 | 21 | get_gnomeposition <objref>stets a walking object to still anim, returns 0 if standing, 1 if hanging |
 | `get_linkpos` | ✅ |  | 55 | 55 | 23 | get_linkpos <objref> <link-id>get position of link in current frame |
+| `inv_find` | ✅ |  | 48 | 48 | 17 | inv_find <objref> <classname>find index of inventory item of given class, -1 if not found |
+| `inv_list` | ✅ |  | 48 | 48 | 24 | inv_list <objref>get (ref)list of inventory objects |
 | `get_roty` | ✅ |  | 47 | 47 | 19 | get_roty <objref>get current object's y rotation |
+| `is_selected` | ✅ |  | 41 | 41 | 7 | is_selected <objref>check if objref = selected |
+| `get_boxed` | ✅ |  | 37 | 37 | 20 | get_boxed <objref>get object boxed state |
 | `tasklist_cnt` | ✅ |  | 37 | 37 | 23 | tasklist_cnt <objref>get number of entries in task list |
 | `tasklist_get` | ✅ |  | 34 | 34 | 22 | tasklist_get <objref> <index>get entry from task list |
+| `partner_info` | ✅ |  | 32 | 24 | 6 | partner_info setpartner <objref> <partner>sets partner showed in tooltip |
+| `get_objgender` | ✅ |  | 28 | 28 | 11 | get_objgender <objref>get object gender. male, female, neutral |
 | `get_posz` | ✅ |  | 27 | 27 | 10 | get_posz <objref>get current object's z position |
+| `is_contained` | ✅ |  | 27 | 27 | 15 | is_contained <obj-ref>checks if object is part of some other objects inventory |
+| `get_objtype` | ✅ |  | 26 | 26 | 16 | get_objtype <objref>get object type (none,dummy,gnome,monster,material,tool,production,energy,box,blueprint,st |
+| `inv_find_obj` | ✅ |  | 26 | 26 | 11 | inv_find_obj <objref> <searchobjref>find index of inventory item, -1 if not found |
 | `ref_get` | ✅ |  | 26 | 26 | 17 | ref_get <objref> <varname>get variable in any object |
+| `inv_get` | ✅ |  | 21 | 21 | 10 | inv_get <objref> <index>get reference to indexed inventory object |
 | `get_worktime` | ✅ |  | 20 | 20 | 7 | get_worktime <object>get worktime start and duration as list |
 | `qnew` | ✅ |  | 17 | 16 | 6 | qnew <class-name> [<creation-param>]create new object, returns reference |
+| `get_buildupstate` | ✅ |  | 14 | 14 | 8 | get_buildupstate <objref>get object boxed state |
 | `dist_between` | ✅ |  | 12 | 12 | 9 | dist_between <objref> <objref>get the distance between 2 objects |
 | `get_lock` | ✅ |  | 12 | 12 | 9 | get_lock <objref>get object lock |
+| `tasklist_list` | ✅ |  | 8 | 8 | 6 | tasklist_list <objref>get task list |
+| `get_rot` | ✅ |  | 6 | 6 | 5 | get_rot <objref>get current object's rotation as packed vector |
 | `get_cloaked` | ✅ |  | 5 | 5 | 3 | get_cloaked <objref>find out if object (gnome) is cloaked |
+| `get_diedinfight` | ✅ |  | 5 | 5 | 5 | get_diedinfight <objref>get diedinfight |
+| `get_user_groups` | ✅ |  | 4 | 4 | 1 | get_user_groups <objref>get list of user group assignments |
 | `get_weapon_class` | ✅ |  | 4 | 4 | 2 | get_weapon_class <object>gets the Weapon ID |
+| `get_ownerrace` | ✅ |  | 3 | 3 | 1 | get_ownerrace <owner>returns race of an owner |
+| `inv_getsize` | ✅ |  | 3 | 3 | 3 | inv_getsize <objref>get size of inventory |
 | `set_physic` | ✅ |  | 63564 | 0 | 2536 | set_physic <objref> <newstate>set object physic |
 | `set_owner` | ✅ |  | 63498 | 0 | 2527 | set_owner <object> <num> [<collisionhandler>] [<successhandler>]sets the owner of an object |
+| `set_boxed` | ✅ |  | 63437 | 0 | 2489 | set_boxed <objref> <newstate>set object boxed / unpacked |
 | `set_autolight` | ✅ |  | 63411 | 0 | 2495 | set_autolight <objref> <newstate>set object autolight |
 | `tasklist_add` | ✅ |  | 1589 | 0 | 38 | tasklist_add <objref> <taskname>add new entry to task list (at end) |
 | `action` | ✅ |  | 340 | 0 | 62 | action <objref> <name> <param> (<fini-code>) (<break-code>)start action with specific param(string), |
@@ -683,33 +654,59 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `tasklist_clear` | ✅ |  | 110 | 0 | 27 | tasklist_clear <objref>clear task list |
 | `tasklist_addfront` | ✅ |  | 105 | 0 | 8 | tasklist_addfront <objref> <taskname>add new entry to task list (at start) |
 | `set_viewinfog` | ✅ |  | 78 | 0 | 22 | set_viewinfog <objref> <newstate>set object visibility in fog of war |
+| `inv_add` | ✅ |  | 33 | 0 | 20 | inv_add <objref> <objreftoadd>add object to inventory, make it invisible, returns index |
+| `inv_rem` | ✅ |  | 33 | 0 | 19 | inv_rem <objref> <index-or-ref> (<position>)remove object from inventory, |
+| `set_rotx` | ✅ |  | 31 | 0 | 8 | set_rotx <objref> <x>set current object's x rotation |
 | `tasklist_rem` | ✅ |  | 31 | 0 | 21 | tasklist_rem <objref> <index>remove entry from task list, returns removed text |
+| `set_vel` | ✅ |  | 30 | 0 | 9 | set_vel <objref> <x> <y> <z>set current object's velocity |
 | `ref_set` | ✅ |  | 27 | 0 | 8 | ref_set <objref> <varname> <value>set variable in any object |
+| `set_sequenceactive` | ✅ |  | 26 | 0 | 12 | set_sequenceactive <objref> <newstate>set object selectability |
 | `set_objname` | ✅ |  | 24 | 0 | 12 | set_objname <objref> <name>set object name |
 | `set_lock` | ✅ |  | 22 | 0 | 7 | set_lock <objref> <newstate>set object lock |
 | `set_worktime` | ✅ |  | 18 | 0 | 6 | set_worktime <object> <start> <duration>set worktime start and duration |
+| `set_posbottom` | ✅ |  | 16 | 0 | 7 | set_posbottom <objref> <x> <y> <z>set current object's bottom's position |
+| `set_rot` | ✅ |  | 16 | 0 | 8 | set_rot <objref> <x> <y> <z>set current object's rotation |
 | `set_storable` | ✅ |  | 15 | 0 | 8 | set_storable <objref> <newstate>set object lock |
 | `set_attackinprogress` | ✅ |  | 12 | 0 | 4 | set_attackinprogress <objref> <bPrg>set attackinprogress |
+| `set_posz` | ✅ |  | 12 | 0 | 7 | set_posz <objref> <z>set current object's z position |
+| `set_rotz` | ✅ |  | 11 | 0 | 9 | set_rotz <objref> <z>set current object's z rotation |
 | `set_weapon_class` | ✅ |  | 10 | 0 | 6 | set_weapon_class <object> <num>sets the Weapon ID |
+| `set_buildupstate` | ✅ |  | 9 | 0 | 6 | set_buildupstate <objref> <newstate>set object boxed / unpacked |
 | `set_forceipol` | ✅ |  | 9 | 0 | 5 | set_forceipol <objref> <newstate>enable/disable object forceipol |
+| `set_posy` | ✅ |  | 9 | 0 | 5 | set_posy <objref> <y>set current object's y position |
+| `set_activegameplay` | ✅ |  | 8 | 0 | 5 | set_activegameplay <objref> <newstate>enable/disable object gameplay (event & state handling) |
+| `set_alternateanimdb` | ✅ |  | 8 | 0 | 3 | set_alternateanimdb <objref> <bool>set object alternate anim |
 | `set_undeletable` | ✅ |  | 8 | 0 | 5 | set_undeletable <objref> <newstate>set if object is undeletable |
+| `set_posx` | ✅ |  | 7 | 0 | 3 | set_posx <objref> <x>set current object's x position |
 | `set_shield_class` | ✅ |  | 7 | 0 | 5 | set_shield_class <object> <num>sets the Shield ID |
+| `set_objgender` | ✅ |  | 5 | 0 | 3 | set_objgender <objref> <male\|female\|neutral>set object gender |
+| `set_ownerrace` | ✅ |  | 5 | 0 | 1 | set_ownerrace <owner> <race>sets race of an owner |
 | `set_instore` | ✅ |  | 3 | 0 | 2 | set_instore <objref> <newstate>set if object is in a stores inventory |
 | `set_placesnapmode` | ✅ |  | 3 | 0 | 2 | set_placesnapmode <objref> <newstate>set object snap to wall while placing |
 | `set_snaptowall` | ✅ |  | 3 | 0 | 1 | set_snaptowall <objref> <newstate>set object snap to wall |
+| `set_user_groups` | ✅ |  | 3 | 0 | 2 | set_user_groups <objref> <list>set list of user group assignments |
+| `get_alternateanimdb` | ✅ |  | 2 | 2 | 1 | get_alternateanimdb <objref>get object alternate anim state |
 | `get_instore` | ✅ |  | 2 | 2 | 1 | get_instore <objref>find out if object is in a store |
 | `get_invulnerable` | ✅ |  | 2 | 2 | 2 | get_invulnerable <objref>find out if object (creature) is invulnerable |
+| `get_posbottom` | ✅ |  | 2 | 2 | 2 | get_posbottom <objref>get current object's bottom's position as packed vector |
+| `inv_cnt` | ✅ |  | 2 | 2 | 2 | inv_cnt <objref>get length of inventory list |
 | `set_cloaked` | ✅ |  | 2 | 0 | 1 | set_cloaked <objref> <newstate>set if object (gnome) is cloaked |
 | `set_invulnerable` | ✅ |  | 2 | 0 | 1 | set_invulnerable <objref> <newstate>set if object (creature) is invulnerable |
 | `get_attackinprogress` | ✅ |  | 1 | 1 | 1 | get_attackinprogress <objref>get attackinprogress |
 | `get_autolight` | ✅ |  | 1 | 1 | 1 | get_autolight <objref>get object autolight |
 | `get_climbability` | ✅ |  | 1 | 1 | 1 | get_climbability <objref>get the ability to climb |
+| `get_objrace` | ✅ |  | 1 | 1 | 1 | get_objrace <object>returns race of an object |
 | `get_physic` | ✅ |  | 1 | 1 | 1 | get_physic <objref>get object physic |
+| `get_rotz` | ✅ |  | 1 | 1 | 1 | get_rotz <objref>get current object's z rotation |
 | `get_selectable` | ✅ |  | 1 | 1 | 1 | get_selectable <objref>get object selectability |
+| `get_sequenceactive` | ✅ |  | 1 | 1 | 1 | get_sequenceactive <objref> <newstate>set object selectability |
 | `get_viewinfog` | ✅ |  | 1 | 1 | 1 | get_viewinfog <objref>get object visibility in fog of war |
 | `get_visibility` | ✅ |  | 1 | 1 | 1 | get_visibility <objref>get visibility |
+| `is_wearing_pannier` | ✅ |  | 1 | 1 | 1 | is_wearing_pannier <objref>check if obj is wearing a pannier |
 | `set_climbability` | ✅ |  | 1 | 0 | 1 | set_climbability <objref> <newstate>sets the ability to climb (for pathfinding) |
 | `set_logactions` | ✅ |  | 1 | 0 | 1 | set_logactions <objref> <newstate>set object action logging |
+| `set_objinfo` | ✅ |  | 1 | 0 | 1 | set_objinfo <objref> <text>set object info text |
+| `get_activegameplay` | ✅ |  | 0 | 0 | 0 | get_activegameplay <objref>get activegameplay flag (object event and state handling) |
 | `get_collision` | ✅ |  | 0 | 0 | 0 | get_collision <objref>get collision flag |
 | `get_forceipol` | ✅ |  | 0 | 0 | 0 | get_forceipol <objref>get forceipol flag |
 | `get_hoverable` | ✅ |  | 0 | 0 | 0 | get_hoverable <objref>get object hoverability |
@@ -717,12 +714,15 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_obj_logicfogskip` | ✅ |  | 0 | 0 | 0 | get_obj_logicfogskip <objref>get object logic fog skip count |
 | `get_obj_logicskip` | ✅ |  | 0 | 0 | 0 | get_obj_logicskip <objref>get object logic skip count |
 | `get_objectcollision` | ✅ |  | 0 | 0 | 0 | get_objectcollision <objref>get objectcollision flag |
+| `get_objinfo` | ✅ |  | 0 | 0 | 0 | get_objinfo <objref>get object info text |
 | `get_placesnapmode` | ✅ |  | 0 | 0 | 0 | get_placesnapmode <objref>get object snap to wall while placing |
 | `get_processactions` | ✅ |  | 0 | 0 | 0 | get_processactions <objref>get collision flag |
+| `get_rotx` | ✅ |  | 0 | 0 | 0 | get_rotx <objref>get current object's x rotation |
 | `get_shield_class` | ✅ |  | 0 | 0 | 0 | get_shield_class <object>gets the Shield ID |
 | `get_snaptowall` | ✅ |  | 0 | 0 | 0 | get_snaptowall <objref>get object snap to wall |
 | `get_storable` | ✅ |  | 0 | 0 | 0 | get_storable <objref>get object lock |
 | `get_undeletable` | ✅ |  | 0 | 0 | 0 | get_undeletable <objref>find out if object is undeletable |
+| `get_vel` | ✅ |  | 0 | 0 | 0 | get_vel <objref>get current object's velocity as packed vector |
 | `ref_checkvar` | ✅ |  | 0 | 0 | 0 | ref_checkvar <objref> <varname>check for variable in any object |
 | `set_obj_logicfogskip` | ✅ |  | 0 | 0 | 0 | set_obj_logicfogskip <objref> <skipcount>set object logic fog skip count |
 | `set_obj_logicskip` | ✅ |  | 0 | 0 | 0 | set_obj_logicskip <objref> <skipcount>set object logic skip count |
@@ -755,8 +755,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `state_getenablecnt` | ❌ | P1 | 4 | 4 | 4 | state_getenablecnt <objref>get current state enable count |
 | `state_get` | ✅ |  | 52 | 52 | 23 | state_get <objref>get current state |
+| `state_getenablecnt` | ✅ |  | 4 | 4 | 4 | state_getenablecnt <objref>get current state enable count |
 | `state_disable` | ✅ |  | 284 | 0 | 43 | state_disable <objref>decrease state enable count |
 | `state_enable` | ✅ |  | 236 | 0 | 40 | state_enable <objref>increase state enable count |
 | `state_triggerfresh` | ✅ |  | 156 | 0 | 43 | state_triggerfresh <objref> (<new_state>)trigger new state, reset, enable, if no param, leave state machine |

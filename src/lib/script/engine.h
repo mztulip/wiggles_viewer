@@ -115,6 +115,9 @@ struct Host
 	virtual void changeParticleSource(int /*id*/, int /*slot*/, const ParticleSource&) {}
 	virtual void setParticleSource(int /*id*/, int /*slot*/, bool /*włączone*/) {}
 	virtual void setVisible(int /*id*/, bool) {} // set_visibility: obiekt rysowany albo ukryty (przedmioty w rękach, półki)
+	// Kamera gry (get_view / set_view): x y zoom dx dy. getView false = brak kamery (wartości bez zmian).
+	virtual bool getView(float /*v*/[5]) { return false; }
+	virtual void setView(const float /*v*/[5], bool /*move: płynny przejazd*/) {}
 };
 
 struct ScriptObject
@@ -256,6 +259,15 @@ public:
 	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry
 	bool storyMgr = false; // is_storymgr: kampania (gra ustawia przy wczytaniu świata)
+	// Zaznaczenie gracza (cmd_ui.cpp): lista uchwytów, pierwszy = get_selectedobject. Prawa jak w grze:
+	// canSelect (obiekt gracza 0, wybieralny; do niepustego zaznaczenia tylko krasnale i dzieci),
+	// clickSelect (kliknięcie, additive = Shift), selectOnly (programowo, bez praw).
+	std::vector<int> selection_;
+	bool canSelect(int id);
+	bool selectInclude(int id);
+	void selectOnly(int id);
+	void clickSelect(int id, bool additive);
+	int viewBegin = 0; // set_view_begin
 	std::map<std::string, std::vector<std::string>> smalltalk_; // smalltalk add/get: teksty pogawędek wg tematu
 	std::array<int, 8> ownerRace_{};                            // set_ownerrace / get_ownerrace
 	std::array<std::array<int, 8>, 8> diplomacy_ = initDiplomacy(); // kody own 0, ally 1, friend 2, neutral 3, enemy 4

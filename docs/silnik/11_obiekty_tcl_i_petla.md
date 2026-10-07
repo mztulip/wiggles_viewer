@@ -113,6 +113,16 @@ Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`D
 - Pojemność (`inv_getsize`, `inv_check`): krasnal ma 6 miejsc, a kosz albo taczka w jego ekwipunku dodaje swoje (Holzkiepe 4, Grosse_Holzkiepe 8, Schubkarren 6, Hamsterkarren 6; sam pojemnik też zajmuje miejsce). Inne obiekty mają 99. `inv_check` sprawdza tylko wolne miejsce, rodzaj przedmiotu pomija (🔶 gra ma tabelę rozmiarów według rodzaju). Przykład: krasnal bez kosza przyjmie 6 grzybów, siódme `inv_add` zwróci −1.
 - `inv_find właściciel klasa` daje indeks pierwszego przedmiotu klasy (−1 brak), `inv_find_obj` indeks konkretnego przedmiotu, `inv_get` uchwyt pod indeksem (0 poza zakresem), `inv_list` całą listę, `inv_cnt` jej długość, `is_contained` 1 dla schowanego, `global_inv_rem lista` wyjmuje z dowolnego ekwipunku, a `is_wearing_pannier` = 1, gdy krasnal niesie pojemnik i ma więcej niż 6 przedmiotów. Usunięty obiekt (`del`) znika z ekwipunku właściciela.
 
+### 11.3b Zaznaczenie gracza 🔶
+
+Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Runtime/Tcl/Engine/SelectionSet.cs`), nasz kod: [`cmd_ui.cpp`](../../src/lib/script/cmd_ui.cpp).
+
+- Zaznaczenie to lista uchwytów. `get_selectedobject` zwraca pierwszy (0 = nic), `is_selected obj` sprawdza obecność na liście.
+- Dołączyć można (`selection caninclude`) tylko obiekt gracza 0, który nie ma jawnego `set_selectable 0`. Gdy lista nie jest pusta, dołączają już tylko krasnale i dzieci. Budynek nie dołączy więc do zaznaczonych krasnali, ale krasnale dołączą do zaznaczonego budynku (ten zostaje pierwszy).
+- `selection include` dołącza z tymi prawami (bez powtórzeń), `exclude` usuwa, `clear` czyści. `set_selectedobject obj` zaznacza tylko ten obiekt bez sprawdzania praw (programowo, np. w przerywnikach), bez argumentu czyści.
+- Kliknięcie gracza: w puste miejsce czyści zaznaczenie; z Shift dołącza, a bez Shift (albo gdy obiekt nie może dołączyć) najpierw czyści, potem dołącza (`Engine::clickSelect`).
+- U nas gra trzyma też zaznaczoną postać (`WorldSim::selected`); oba stany synchronizujemy co krok symulacji, wygrywa strona, która zmieniła się ostatnia.
+
 ## 11.4 Zdarzenia i timery
 
 Zdarzenie to komunikat z typem i parametrami, kierowany do obiektu. Klasa obsługuje je blokiem `handle_event`.

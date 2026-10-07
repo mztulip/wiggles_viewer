@@ -200,7 +200,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] OBERWELT, różnice z grą: panorama trochę niżej, brak ciemnego pasa lasu w tle, skała `Felsen` ciemna (w grze jasnoszara)
 - [ ] Ciemnienie w kątach tuneli (BASELIGHT pod ziemią, splot różnic wypełnienia); teraz warstwa 2 szablonu
 - [x] Tekstury: rozlanie koloru w przezroczyste teksele (bez szarych obwódek przy mipmapach)
-- [ ] Młodszy bajt `.l2m` (bit 0x80 typu pola: wymuszona ściana dla ruchu, [17.2](docs/silnik/17_ruch.md))
+- [x] Bit 0x80 typu pola: wymuszona ściana dla ruchu (podpola nie do chodzenia, cztery pola 2×2 blokują pole), obsłużony w [`nav_world`](src/lib/nav_world.cpp), [17.2](docs/silnik/17_ruch.md); w obrazie bez efektu
 - [x] Oświetlenie jak w grze (jasność bazowa z warstwy 2, stałe słońce, lampy `class_light`, nasycenie); teren i modele
 - [x] 🔬 Mgła „wysokościowa” (170, 170, 155) to nieodkryty teren dla pól odkrytych, ale niewidocznych (współczynnik 0 dla widocznych). W przeglądarce nie występuje; należy do silnika (FOG_OF_WAR_RE)
 - [x] Nieodkryty teren: rozdział 10 przewodnika (dane, odkrywanie promieniami, wygasanie, render, komendy) za Diggles-Unity
@@ -238,7 +238,9 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
   - [x] Partia A: właściwości obiektów i graczy ([cmd_object](src/lib/script/cmd_object.cpp): 34 flagi set_X/get_X, płeć, typ, osie pozycji i obrotu, prędkość, rasa, dyplomacja), test `script_props`
   - [x] Partia B: [cmd_misc](src/lib/script/cmd_misc.cpp) (vector_abs, vector_random, lrem, calc_text_time, tasklist_list, state_getenablecnt, get_local_player, is_storymgr, gamestats, talkissue, smalltalk, partner_info), test `script_misc`
   - [x] Partia C: ekwipunek ([cmd_inventory](src/lib/script/cmd_inventory.cpp): inv_*, is_contained, global_inv_rem, is_wearing_pannier; przedmioty schowane poza `obj_query`, filtry `-flagpos`/`-flagneg`), test `script_inventory`, [rozdział 11.3a](docs/silnik/11_obiekty_tcl_i_petla.md)
-  - [ ] Dalej: zaznaczenie (is_selected, get_selectedobject, selection), kamera (get_view, set_view jako komenda), produkcja (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
+  - [x] Partia D: zaznaczenie i kamera ([cmd_ui](src/lib/script/cmd_ui.cpp): selection, is_selected, get/set_selectedobject z prawami gry, synchronizacja z zaznaczeniem gry; get_view, set_view, set_viewpos, set_view_begin przez `Host::getView`/`setView`, 🔶 bez płynnego przejazdu), testy `script_select`, `http_wigview`, [rozdział 11.3b](docs/silnik/11_obiekty_tcl_i_petla.md)
+  - [ ] Kamera ze skryptów: płynny przejazd (`move`, `speed`, `camera_set`), `set_camerafollow`, `viewlock`, `get_cameramoving` (przerywniki)
+  - [ ] Dalej: produkcja (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
 - [x] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib` (G7a)
 - [x] Zaślepki komend natywnych z dziennikiem (`openwiggles_tcl.log`); klasy wczytują się bez błędów
 - [x] Kolejka zadań postaci (`tasklist_*`, G7b)

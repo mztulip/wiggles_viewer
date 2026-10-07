@@ -90,6 +90,8 @@ Wszystkie wielkości w tej samej skali (bloki albo jednostki modelu, × 200).
 | `set_view_begin N` | „Y-beginning of the view”: ograniczenie przewijania w górę. Na kadr ustawiony przez `set_view` nie wpływa (sprawdzone) |
 | `camera_set`, `set_camerafollow` | przejazdy i śledzenie obiektu (przerywniki) ❓ |
 
+**U nas** ([`cmd_ui.cpp`](../../src/lib/script/cmd_ui.cpp)): `set_view` i `set_viewpos` ze skryptów (z pominięciem z) ustawiają kamerę programu przez `Host::setView`, a `get_view` czyta ją przez `Host::getView` jako „x y zoom dx dy” w układzie świata. 🔶 Kamera od razu staje w celu: płynnego przejazdu (`move`, `speed`, `camera_set`) jeszcze nie ma. `set_view_begin` tylko zapamiętujemy.
+
 ---
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [COORDINATE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/COORDINATE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
 
