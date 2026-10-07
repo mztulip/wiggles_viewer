@@ -224,7 +224,7 @@ PY
 test_ particle_types "cząsteczki typów 8, 12, 42 jak w grze (barwa przyrostu, zasięg, suma jasności wobec zrzutów z laboratorium ../lab/zrzuty/czasteczki/typy)"
 t_particle_types() {
 	local Z
-	Z="$(cd "$REPO/.." && pwd)/lab/zrzuty/czasteczki/typy"
+	Z="$(dirname "$GAME")/zrzuty/czasteczki/typy"
 	[ -f "$Z/gra_5.png" ] || { skip "brak zrzutów gry $Z"; return; }
 	local t
 	for t in 5 8 12 42; do
