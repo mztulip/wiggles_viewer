@@ -82,6 +82,53 @@ t_script_visibility() {
 	echo "$r" | grep -q -- '-> 1 0$' && ok || fail "$(echo "$r" | grep eval)"
 }
 
+test_ script_props "Tcl: właściwości obiektów i graczy (flagi set_X/get_X, płeć, typ, osie pozycji i obrotu, rasa, dyplomacja; cmd_object.cpp)"
+t_script_props() {
+	local r
+	r=$("$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set a [get_boxed 1] ; set_boxed 1 true ; set_lock 1 7 ; list $a [get_boxed 1] [get_lock 1] [get_selectable 1]' \
+		--eval 'set g [get_objgender 1] ; set_objgender 1 female ; list $g [get_objgender 1] [get_objtype 1]' \
+		--eval 'set_posx 1 3.5 ; set_posz 1 9 ; set_rotx 1 0.5 ; list [get_posx 1] [get_posz 1] [get_rot 1]' \
+		--eval 'set_diplomacy 0 1 enemy ; set_ownerrace 2 3 ; list [get_diplomacy 0 1] [get_diplomacy 1 0] [get_diplomacy 0 0] [get_diplomacy -1 2] [get_ownerrace 2] [get_ownerrace 9]' 2>&1)
+	echo "$r" >"$TMP/props"
+	local e=""
+	grep -q -- '-> 0 1 7 0$' "$TMP/props" || e="flagi: $(grep 'get_boxed 1\]' "$TMP/props")"
+	grep -q -- '-> neutral female gnome$' "$TMP/props" || e="${e:+$e; }płeć/typ: $(grep 'get_objgender 1\] \[' "$TMP/props")"
+	grep -q -- '-> 3.5 9 {0.5 0 0}$' "$TMP/props" || e="${e:+$e; }osie: $(grep 'get_rot 1' "$TMP/props")"
+	grep -q -- '-> enemy neutral own enemy 3 -1$' "$TMP/props" || e="${e:+$e; }dyplomacja: $(grep 'get_diplomacy 0 1\]' "$TMP/props")"
+	[ -z "$e" ] && ok || fail "$e"
+}
+
+test_ script_misc "Tcl: vector_abs, lrem, calc_text_time, tasklist_list, talkissue, smalltalk, partner_info, gamestats (cmd_misc.cpp)"
+t_script_misc() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set l {a b c d} ; lrem l 1 ; list $l [vector_abs {3 4 0}] [calc_text_time abcdefghij] [calc_text_time ab]' \
+		--eval 'tasklist_add 1 x ; tasklist_add 1 {y z} ; tasklist_list 1' \
+		--eval 'talkissue 1 add Bier 10 ; talkissue 1 add 1story 5 ; talkissue 1 reduce 0.5 ; list [talkissue 1 get Bier] [talkissue 1 get 1story] [talkissue 1 sum]' \
+		--eval 'smalltalk add wetter "Ladny dzien" ; smalltalk add wetter Deszcz ; smalltalk get wetter' \
+		--eval 'set_owner 1 0 ; set_objgender 1 female ; partner_info setpartner 1 5 ; partner_info setpregnancy 1 1 ; partner_info addchild 1 7 ; list [partner_info getpartner 1] [partner_info getchildren 1] [gamestats numgnomes 0] [gamestats numfemale 0] [gamestats numpregnant 0]' \
+		>"$TMP/misc" 2>&1
+	local e="" w
+	for w in '-> {a c d} 5 0.6 0.5$' '-> x {y z}$' '-> 5.0 5.0 10.0$' '-> {Ladny dzien} Deszcz$' '-> 5 7 1 1 1$'; do
+		grep -q -- "$w" "$TMP/misc" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e ($(grep -c '^BŁĄD' "$TMP/misc") błędów eval)"
+}
+
+test_ script_inventory "Tcl: ekwipunek (inv_add chowa przedmiot poza obj_query, inv_rem stawia go w punkcie, pojemność krasnala 6; cmd_inventory.cpp)"
+t_script_inventory() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set p [new Pilz "" "5 5 10" "0 0 0"] ; set q [new Pilz "" "6 5 10" "0 0 0"] ; set i [inv_add 1 $p] ; list $i [inv_cnt 1] [is_contained $p] [get_visibility $p] [inv_find 1 pilz] [inv_find_obj 1 $p] [expr {[inv_get 1 0] == $p}] [inv_getsize 1] [expr {[obj_query 1 -class Pilz -range 100] == $q}] [expr {[obj_query 1 -class Pilz -flagpos contained] == $p}] [get_pos $p]' \
+		--eval 'inv_rem 1 $p {7 7 10} ; list [is_contained $p] [get_visibility $p] [get_pos $p] [inv_cnt 1] [inv_find 1 Pilz]' \
+		--eval 'for {set k 0} {$k < 8} {incr k} { lappend r [inv_add 1 [new Pilz "" "1 1 1" "0 0 0"]] } ; list $r [inv_check 1 0]' \
+		>"$TMP/inv" 2>&1
+	local e="" w
+	for w in '-> 0 1 1 0 0 0 1 6 1 1 {0 0 0}$' '-> 0 1 {7 7 10} 0 -1$' '-> {0 1 2 3 4 5 -1 -1} 0$'; do
+		grep -q -- "$w" "$TMP/inv" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e"
+}
+
 test_ script_gnome "skrypt krasnala: 120 s bez błędów, przejście do pracy (work_idle, prodfill_dispatch…)"
 t_script_gnome() {
 	"$B/owscript" --game "$GAME" Zwerg 120 -o "$TMP/ow.log" >"$TMP/ow" 2>&1
@@ -297,6 +344,15 @@ print('; '.join(bad) or 'ok')
 PY2
 )
 	[ "$r" = ok ] && ok || fail "$r"
+}
+
+test_ tcl_status "docs/tcl_komendy_stan.md aktualny względem kodu (tools/tcl_commands_status.py)"
+t_tcl_status() {
+	local api="$REPO/../ref/Diggles-Unity-main/Docs/ENGINE_TCL_API.txt"
+	[ -f "$api" ] || { skip "brak $api"; return; }
+	python3 "$REPO/tools/tcl_commands_status.py" "$GAME" "$api" >"$TMP/stan.md" || { fail "narzędzie zwróciło błąd"; return; }
+	cmp -s "$TMP/stan.md" "$REPO/docs/tcl_komendy_stan.md" && ok "$(grep -c '| ✅ |' "$TMP/stan.md") komend obsłużonych" ||
+		fail "tabela nieaktualna: tools/tcl_commands_status.py > docs/tcl_komendy_stan.md"
 }
 
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"

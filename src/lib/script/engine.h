@@ -142,6 +142,11 @@ struct ScriptObject
 	// Sterowany z zewnątrz (przeglądarka: gracz prowadzi postać strzałkami): bez akcji i ciała stanu;
 	// zdarzenia (timery potrzeb) działają dalej.
 	bool external = false;
+	std::string gender = "neutral";            // set_objgender / auto_choose_gender
+	std::map<std::string, std::string> props; // flagi i wartości set_X/get_X bez skutków w scenie (cmd_object.cpp)
+	std::map<std::string, double> talkIssues; // talkissue: temat rozmowy → waga 0..50
+	std::vector<int> inventory; // inv_add / inv_rem: odwołania przedmiotów w kolejności (cmd_inventory.cpp)
+	int containedIn = -1;       // właściciel ekwipunku, w którym obiekt leży (−1 = w świecie)
 };
 
 // ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).
@@ -250,6 +255,17 @@ public:
 	std::string locale_ = "en";
 	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry
+	bool storyMgr = false; // is_storymgr: kampania (gra ustawia przy wczytaniu świata)
+	std::map<std::string, std::vector<std::string>> smalltalk_; // smalltalk add/get: teksty pogawędek wg tematu
+	std::array<int, 8> ownerRace_{};                            // set_ownerrace / get_ownerrace
+	std::array<std::array<int, 8>, 8> diplomacy_ = initDiplomacy(); // kody own 0, ally 1, friend 2, neutral 3, enemy 4
+	static std::array<std::array<int, 8>, 8> initDiplomacy()
+	{
+		std::array<std::array<int, 8>, 8> t{};
+		for (size_t i = 0; i < 8; ++i)
+			for (size_t j = 0; j < 8; ++j) t[i][j] = i == j ? 0 : 3;
+		return t;
+	}
 };
 
 } // namespace script

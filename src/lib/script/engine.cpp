@@ -1,4 +1,5 @@
 #include "lib/script/engine.h"
+#include "lib/script/commands.h"
 #include "lib/i18n.h"
 #include "lib/particles.h"
 
@@ -23,14 +24,7 @@
 namespace ow::script
 {
 
-namespace
-{
-
-Engine* gEngine = nullptr;
-
-using Args = std::vector<std::string>;
-using Fn = int (*)(Engine&, Tcl_Interp*, Args&);
-
+// Pomocniki wspólne dla modułów komend (lib/script/commands.h).
 void setResult(Tcl_Interp* in, const std::string& s)
 {
 	Tcl_SetObjResult(in, Tcl_NewStringObj(s.data(), int(s.size())));
@@ -88,6 +82,17 @@ std::map<std::string, std::string> options(const Args& a, size_t from)
 		if (!a[i].empty() && a[i][0] == '-') o[a[i].substr(1)] = a[i + 1];
 	return o;
 }
+
+bool truthy(const std::string& s)
+{
+	return s == "1" || s == "true" || s == "yes" || s == "on" || (s != "0" && !s.empty() && std::atof(s.c_str()) != 0);
+}
+
+namespace
+{
+
+Engine* gEngine = nullptr;
+using Fn = CmdFn;
 
 const char* kCaptureProcs = R"TCL(
 set __r ""
@@ -1081,8 +1086,7 @@ int cmdListOp(Engine&, Tcl_Interp* in, Args& a)
 int cmdConst(Engine&, Tcl_Interp* in, Args& a)
 { // proste odpowiedzi do czasu prawdziwych systemów (🔶)
 	static const std::map<std::string, std::string> kValues = {
-	    {"get_prodautoschedule", "0"}, {"is_contained", "0"}, {"is_wearing_pannier", "0"}, {"get_max_fow", "255"},
-	    {"inv_find", "-1"}, {"inv_find_obj", "-1"}, {"inv_cnt", "0"}, {"inv_list", ""}, {"get_bestexp", ""},
+	    {"get_prodautoschedule", "0"}, {"get_max_fow", "255"}, {"get_bestexp", ""},
 	    {"get_linked_to", "-1"}, {"sm_get_event", "0"}, {"tasklist_find", "-1"}};
 	auto it = kValues.find(a[0]);
 	setResult(in, it != kValues.end() ? it->second : "");
@@ -1278,6 +1282,23 @@ int cmdPlacelock(Engine& e, Tcl_Interp* in, Args& a)
 	return TCL_OK;
 }
 // obj_query obj -class {…} -type t -range r -limit n -owner o -pos {…} -boundingbox {…}: lista ID albo 0.
+// Flaga obiektu dla obj_query -flagpos/-flagneg (słowa jak w grze, za Diggles-Unity EntityFlag); słowo bez
+// odpowiednika u nas nie filtruje.
+std::optional<bool> objFlag(const ScriptObject& o, const std::string& f)
+{
+	auto prop = [&](const char* k) {
+		auto it = o.props.find(k);
+		return it != o.props.end() && truthy(it->second);
+	};
+	if (f == "visible") return o.visible;
+	if (f == "contained") return o.containedIn >= 0;
+	if (f == "male" || f == "female") return o.gender == f;
+	if (f == "locked") return prop("lock");
+	for (const char* k : {"storable", "selectable", "hoverable", "boxed", "cloaked", "instore"})
+		if (f == k) return prop(k);
+	return std::nullopt;
+}
+
 int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a)
 {
 	Args args;
@@ -1304,10 +1325,22 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a)
 		auto b = listItems(in, o["boundingbox"]);
 		for (int k = 0; k < 6; ++k) bb[k] = std::strtof(b[size_t(k)].c_str(), nullptr);
 	}
+	// Przedmioty w ekwipunku są poza światem: tylko gdy zapytanie prosi o -flagpos contained albo instore
+	// (półki magazynu mają prawdziwe pozycje).
+	std::vector<std::string> flagPos = o.count("flagpos") ? listItems(in, o["flagpos"]) : std::vector<std::string>{},
+	                         flagNeg = o.count("flagneg") ? listItems(in, o["flagneg"]) : std::vector<std::string>{};
+	bool wantContained = std::count(flagPos.begin(), flagPos.end(), "contained") || std::count(flagPos.begin(), flagPos.end(), "instore");
 	std::vector<std::pair<float, int>> hits;
 	for (auto& [id, ob] : e.objects_)
 	{
 		if (!ob->alive || !ob->cls || id == self) continue; // bez pytającego obiektu (act_when_idle szuka innych krasnali)
+		if (ob->containedIn >= 0 && !wantContained) continue;
+		bool flagsOk = true;
+		for (const auto& f : flagPos)
+			if (auto v = objFlag(*ob, f); v && !*v) flagsOk = false;
+		for (const auto& f : flagNeg)
+			if (auto v = objFlag(*ob, f); v && *v) flagsOk = false;
+		if (!flagsOk) continue;
 		if (!classes.empty() && !classes.count(Vfs::lower(ob->cls->name))) continue;
 		if (!type.empty() && ob->cls->type != type) continue;
 		if (owner == "own" && ob->owner != selfOwner) continue;
@@ -1460,11 +1493,7 @@ int cmdOwnerAttrib(Engine& e, Tcl_Interp* in, Args& a)
 	return TCL_OK;
 }
 
-struct Entry
-{
-	const char* name;
-	Fn fn;
-};
+using Entry = CmdEntry;
 const Entry kCommands[] = {
     {"//", cmdNop},
     {"log", cmdLog},
@@ -1585,13 +1614,7 @@ const Entry kCommands[] = {
     {"hf2i", cmdHround},
     {"hi2f", cmdHround},
     {"get_prodautoschedule", cmdConst},
-    {"is_contained", cmdConst},
-    {"is_wearing_pannier", cmdConst},
     {"get_max_fow", cmdConst},
-    {"inv_find", cmdConst},
-    {"inv_find_obj", cmdConst},
-    {"inv_cnt", cmdConst},
-    {"inv_list", cmdConst},
     {"get_bestexp", cmdConst},
     {"get_linked_to", cmdConst},
     {"sm_get_event", cmdConst},
@@ -1691,6 +1714,8 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands()})
+		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 
 std::string Engine::resolvePath(const std::string& p) const
@@ -2117,6 +2142,8 @@ void Engine::resetWorld()
 	placeLocks_.clear();
 	sparetimeOffers_.clear();
 	ownerAttribs_.clear();
+	ownerRace_ = {};
+	diplomacy_ = initDiplomacy();
 	time_ = 0;
 }
 
@@ -2141,6 +2168,9 @@ void Engine::detach(int id)
 	ScriptObject& o = *it->second;
 	if (o.interp && o.cls && !o.cls->exitBody.empty()) runIn(o, o.cls->exitBody, "obj_exit");
 	o.alive = false;
+	if (ScriptObject* h = object(o.containedIn)) // usunięty przedmiot znika z ekwipunku właściciela
+		h->inventory.erase(std::remove(h->inventory.begin(), h->inventory.end(), id), h->inventory.end());
+	o.containedIn = -1;
 	timers_.erase(std::remove_if(timers_.begin(), timers_.end(), [&](const Timer& t) { return t.object == id; }), timers_.end());
 	// Interpreter usuwamy dopiero przy niszczeniu silnika: obiekt może usunąć sam siebie w trakcie kodu.
 }

@@ -233,7 +233,12 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Preprocesor: komentarze `//`, `//# IF/IFNOT/IFNDEF/ELSE/ENDIF/STOPIFNOT`, `FULL` zdefiniowany (zachowanie sprawdzone w grze, rozdział 2.2)
 - [x] `call` i `callnc` z normalizacją ścieżek
 - [x] Dokładna lista natywnych komend (z gry, nie ze skanera)
-- [ ] Podział 639 komend na moduły i priorytety: zacząć od rankingu Diggles-Unity ([ENGINE_COMMAND_GAP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ENGINE_COMMAND_GAP.md)) i naszego dziennika zaślepek
+- [x] Podział 639 komend na moduły i priorytety: [docs/tcl_komendy_stan.md](docs/tcl_komendy_stan.md) generowany przez [`tools/tcl_commands_status.py`](tools/tcl_commands_status.py) (moduły z oficjalnej pomocy, wywołania w skryptach, czy wynik jest używany jako wartość: P1/P2/P3/martwe)
+- [ ] Komendy P1 (wynik używany jako wartość) po modułach, potem P2; po każdej partii przegenerować tabelę stanu
+  - [x] Partia A: właściwości obiektów i graczy ([cmd_object](src/lib/script/cmd_object.cpp): 34 flagi set_X/get_X, płeć, typ, osie pozycji i obrotu, prędkość, rasa, dyplomacja), test `script_props`
+  - [x] Partia B: [cmd_misc](src/lib/script/cmd_misc.cpp) (vector_abs, vector_random, lrem, calc_text_time, tasklist_list, state_getenablecnt, get_local_player, is_storymgr, gamestats, talkissue, smalltalk, partner_info), test `script_misc`
+  - [x] Partia C: ekwipunek ([cmd_inventory](src/lib/script/cmd_inventory.cpp): inv_*, is_contained, global_inv_rem, is_wearing_pannier; przedmioty schowane poza `obj_query`, filtry `-flagpos`/`-flagneg`), test `script_inventory`, [rozdział 11.3a](docs/silnik/11_obiekty_tcl_i_petla.md)
+  - [ ] Dalej: zaznaczenie (is_selected, get_selectedobject, selection), kamera (get_view, set_view jako komenda), produkcja (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
 - [x] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib` (G7a)
 - [x] Zaślepki komend natywnych z dziennikiem (`openwiggles_tcl.log`); klasy wczytują się bez błędów
 - [x] Kolejka zadań postaci (`tasklist_*`, G7b)

@@ -4,17 +4,45 @@
 //   --eval: po przewinięciu wykonuje SKRYPT w głównym interpreterze i wypisuje wynik (obiekt testowy ma ID 1).
 //   Bez --game: WIGGLES_DIR, potem OW_GAME, potem instalacja w ~/.wine.
 // Wczytuje skrypty startowe i klasy, tworzy jeden obiekt KLASY (domyślnie Zwerg), przewija logikę
-// o SEKUNDY (domyślnie 30) i zapisuje dziennik: zaślepki komend natywnych i błędy skryptów.
+// o SEKUNDY (domyślnie 30; świat w pamięci: same pozycje i obroty) i zapisuje dziennik: zaślepki komend natywnych i błędy skryptów.
 #include "lib/script/engine.h"
 #include "lib/vfs.h"
 
+#include <array>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <map>
 #include <string>
 #include <vector>
 
 using namespace ow;
+
+// Świat w pamięci: pozycje i obrót obiektów (bez terenu i ruchu), żeby komendy obiektów dało się sprawdzić bez okna.
+struct MemHost : script::Host
+{
+	std::map<int, std::array<float, 4>> obj; // x, y, z, obrót Y
+	int next = 2;
+	int createObject(const std::string&, const std::string&, const float p[3], const float r[3]) override
+	{
+		obj[next] = {p[0], p[1], p[2], r[1]};
+		return next++;
+	}
+	void deleteObject(int id) override { obj.erase(id); }
+	bool getPos(int id, float p[3]) override
+	{
+		auto& o = obj[id];
+		p[0] = o[0], p[1] = o[1], p[2] = o[2];
+		return true;
+	}
+	void setPos(int id, const float p[3]) override
+	{
+		auto& o = obj[id];
+		o[0] = p[0], o[1] = p[1], o[2] = p[2];
+	}
+	void setRotY(int id, float r) override { obj[id][3] = r; }
+	float getRotY(int id) override { return obj[id][3]; }
+};
 
 int main(int argc, char** argv)
 {
@@ -47,6 +75,8 @@ int main(int argc, char** argv)
 	auto ms = [&](auto t) { return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count(); };
 	std::printf("start %s%s: klasy %zu, błędy %zu, %.0f ms\n", ok ? "OK" : "BŁĄD ", err.c_str(), e.classCount(), e.errors().size(), ms(t0));
 	auto t1 = std::chrono::steady_clock::now();
+	MemHost host;
+	e.setHost(&host);
 	auto* o = e.attach(1, cls, "test");
 	std::printf("obiekt %s: %s, %.0f ms, stan '%s'\n", cls.c_str(), o && o->interp ? "ze skryptami" : "bez skryptów", ms(t1),
 	    o ? o->state.c_str() : "");

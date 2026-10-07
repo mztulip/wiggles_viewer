@@ -104,6 +104,15 @@ set o [new <Klasa> ["<nazwa>" ["x y z" ["rx ry rz"]]]]   ;# zwraca liczbowy uchw
 - Większość komend obiektowych przyjmuje uchwyt albo słowo `this`: `set_pos this {x y z}`, `get_pos $o`, `set_anim this …`.
 - `call_method $o metoda arg…` przekazuje argumenty do interpretera obiektu `$o` i wykonuje tam treść metody. `call_method_static Klasa metoda …` działa bez instancji, `check_method Klasa metoda` sprawdza, czy metoda istnieje.
 
+### 11.3a Ekwipunek i zawieranie 🔶
+
+Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`DigglesTclEngine.cs`, komendy `inv_*`), nasz kod: [`cmd_inventory.cpp`](../../src/lib/script/cmd_inventory.cpp).
+
+- Ekwipunek to uporządkowana lista uchwytów. `inv_add właściciel przedmiot` dopisuje przedmiot na końcu i zwraca jego indeks, a gdy przedmiot już tam jest, jego obecny indeks. Zwraca −1, gdy przedmiot leży w cudzym ekwipunku albo brakuje miejsca. Dodanie **chowa** przedmiot (niewidoczny), przenosi go do punktu `{0 0 0}` i wyjmuje ze świata: `obj_query` go nie widzi, chyba że zapytanie ma `-flagpos contained` albo `instore`. Skrypty o tym wiedzą: zapamiętują pozycję przed `inv_add` i ustawiają ją potem same (półki magazynu). Drugi krasnal wysłany po ten sam przedmiot zastaje go w `{0 0 0}`, odpada na sprawdzeniu odległości i zgłasza porażkę; to chroni przed podwojeniem przedmiotu.
+- `inv_rem właściciel indeks|przedmiot [pozycja]` wyjmuje przedmiot, pokazuje go i stawia w podanym punkcie, a bez punktu w miejscu właściciela. Zwraca uchwyt.
+- Pojemność (`inv_getsize`, `inv_check`): krasnal ma 6 miejsc, a kosz albo taczka w jego ekwipunku dodaje swoje (Holzkiepe 4, Grosse_Holzkiepe 8, Schubkarren 6, Hamsterkarren 6; sam pojemnik też zajmuje miejsce). Inne obiekty mają 99. `inv_check` sprawdza tylko wolne miejsce, rodzaj przedmiotu pomija (🔶 gra ma tabelę rozmiarów według rodzaju). Przykład: krasnal bez kosza przyjmie 6 grzybów, siódme `inv_add` zwróci −1.
+- `inv_find właściciel klasa` daje indeks pierwszego przedmiotu klasy (−1 brak), `inv_find_obj` indeks konkretnego przedmiotu, `inv_get` uchwyt pod indeksem (0 poza zakresem), `inv_list` całą listę, `inv_cnt` jej długość, `is_contained` 1 dla schowanego, `global_inv_rem lista` wyjmuje z dowolnego ekwipunku, a `is_wearing_pannier` = 1, gdy krasnal niesie pojemnik i ma więcej niż 6 przedmiotów. Usunięty obiekt (`del`) znika z ekwipunku właściciela.
+
 ## 11.4 Zdarzenia i timery
 
 Zdarzenie to komunikat z typem i parametrami, kierowany do obiektu. Klasa obsługuje je blokiem `handle_event`.
