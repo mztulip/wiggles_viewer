@@ -256,6 +256,49 @@ PY
 	[ "$r" = ok ] && ok || fail "$r"
 }
 
+test_ shadows "cienie od lamp jak w grze: krasnal przy lampie 4 bloki w prawo ma cień w lewo z końcem jak w laboratorium (BAZA_WIEDZY §9.11), lampa dalej niż 8 bloków nie daje cienia"
+t_shadows() {
+	local W=("$B/wigview" --game "$GAME" --save save_kampania.sav --fow 0 --view 249.5 42 1.0 -0.2 0.2 --size 1024x768)
+	local G=(--place Zwerg 249.5 42.5 13)
+	"${W[@]}" "${G[@]}" --screenshot "$TMP/shA.png" >/dev/null 2>&1
+	"${W[@]}" --screenshot "$TMP/shB.png" >/dev/null 2>&1
+	local lx
+	for lx in 253.5 258.5; do
+		"${W[@]}" --place Misc_LightSrc_a $lx 41.5 13 "${G[@]}" --screenshot "$TMP/shC$lx.png" >/dev/null 2>&1
+		"${W[@]}" --place Misc_LightSrc_a $lx 41.5 13 --screenshot "$TMP/shD$lx.png" >/dev/null 2>&1
+	done
+	local r
+	r=$(python3 - "$TMP" <<'PY2'
+import sys, numpy as np
+from PIL import Image
+from scipy import ndimage
+T = sys.argv[1]
+L = lambda n: np.asarray(Image.open('%s/%s.png' % (T, n)).convert('RGB'), dtype=np.float32).sum(2)
+A, B = L('shA'), L('shB')
+body = ndimage.binary_dilation(np.abs(A - B) > 18, iterations=3)
+def shadow(lx):
+    C, D = L('shC' + lx), L('shD' + lx)
+    s = (C - D) - (A - B)
+    m = ndimage.binary_opening((s < -18) & ~body); m[:380] = False
+    return m, s, D
+bad = []
+m, s, D = shadow('253.5')
+xs = np.nonzero(m)[1]
+if len(xs) < 500: bad.append('brak cienia przy lampie w 4 blokach (%d px)' % len(xs))
+else:
+    tip, mul = np.percentile(xs, 2), ((D[m] + s[m]) / np.maximum(D[m], 1)).mean()
+    # gra: koniec w x = 267 px (kadr 1024×768, krasnal w 497), mnożnik podłogi 0,81
+    if abs(tip - 267) > 45: bad.append('koniec cienia w x %d, w grze 267' % tip)
+    if xs.mean() > 497: bad.append('cień nie po stronie od lampy')
+    if not .65 < mul < .9: bad.append('mnożnik podłogi %.2f, w grze 0,81' % mul)
+m2 = shadow('258.5')[0]
+if m2.sum() > 100: bad.append('cień od lampy poza zasięgiem 8 (%d px)' % m2.sum())
+print('; '.join(bad) or 'ok')
+PY2
+)
+	[ "$r" = ok ] && ok || fail "$r"
+}
+
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
 	[ -f "$GAME/Data/3db/LAVAWELT.3DB" ] || { skip "brak LAVAWELT.3DB"; return; }

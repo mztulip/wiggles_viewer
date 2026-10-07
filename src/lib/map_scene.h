@@ -13,6 +13,7 @@
 #include "lib/fluid_sim.h"
 #include "lib/render/fluid_renderer.h"
 #include "lib/render/particle_renderer.h"
+#include "lib/render/shadow_renderer.h"
 #include "lib/render/terrain_renderer.h"
 #include "lib/heightfield.h"
 #include "lib/terrain_mesh.h"
@@ -266,6 +267,8 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	};
 	void configureEmitter(MapEmitter& m, const ParticleType& t, const ParticleSource& s, int obj);
 	ParticleRenderer particles_;
+	ShadowRenderer shadows_;
+	bool shadowsReady_ = false;
 	bool particlesReady_ = false, showParticles_ = true;
 	std::vector<MapEmitter> emitters_;
 	std::vector<ParticleSprite> sprites_;

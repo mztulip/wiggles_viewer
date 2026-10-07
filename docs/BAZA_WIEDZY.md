@@ -533,6 +533,33 @@ Wniosek: poza płomieniami 2 i 27 oraz typami 24 i 25 nasze typy są za małe al
 
 ---
 
+### 9.11 Cienie: krasnal i lampa w wielu położeniach (2026-10-07)
+Cel: prawo rzutu cienia od lampy ([rozdział 18](silnik/18_cienie.md)). Metoda: `OW_HIDDEN=1 live2.sh start`, potem `gameload Data/Gamesave/save_kampania.sav` w działającej grze, `FogRemover`, usunięcie stworzeń w promieniu 14 bloków, kamera `set_view 249.5 42 1.0 -0.2 0.2`. Przed każdym położeniem lampy świeży `gameload` (lampy `Misc_LightSrc_*` to klasy `dummy` z `class_disablescripting`: po chwili tracą obiekt Tcl, więc nie da się ich przesunąć ani usunąć; `change_light` na `FogRemover` nic nie daje). Cztery zrzuty z bufora klatki: A krasnal (`new Zwerg`, `state_disable`, `set_anim mann.standard 0 2`) bez nowej lampy, B bez krasnala, C krasnal z nową lampą, D sama lampa; cień nowej lampy = (C − D) − (A − B). Kalibracja kamieniami (`new Stein` co 1 blok): na głębokości z = 13 jeden blok to 183 px. Procedury Tcl w `../lab/Wiggles/Data/ow_cien.tcl` (WebTraq psuje skrypty ze znakiem `<`, więc dłuższe procedury przez `source`). Zrzuty: `../lab/zrzuty/cienie/`.
+
+Pułapki:
+- szablon z `map create` (`live2.sh show`) w ogóle nie dostaje cieni (krasnal i grzyb przy lampie bez śladu na podłodze); w zapisie kampanii cienie są;
+- grzyb `Pilz` nie ma obrazu cienia;
+- w miejscu (239,5; 42,5) krasnal ma już cienie od dwóch lamp z zapisu (`Misc_LightSrc_e` w (234,6; 39,7), `Misc_LightSrc_c` w (241,6; 40,3)) i nowa, bliższa lampa nie dodaje trzeciego; dlatego pomiary w (249,5; 42,5), gdzie w zasięgu 8 nie ma lamp;
+- nowy krasnal ma pulsującą poświatę, która zasłania cień przy stopach (maskujemy obrys z A − B).
+
+Wyniki (lampa w (x; y; z), krasnal w (249,5; 42,5; 13); długość = od środka krasnala do końca smugi):
+
+| lampa | d (x/y) | długość (bl) | uwagi |
+|---|---|---|---|
+| 250,5; 41,5; 13 | 1,41 | 0,70 | |
+| 251,5; 41,5; 13 | 2,24 | 0,77 | z = 11 i 15: 0,75 i 0,77 |
+| 252,5; 41,5; 13 | 3,16 | 1,02 | |
+| 253,5; 41,5; 13 | 4,12 | 1,34 | |
+| 255,5; 41,5; 13 | 6,08 | 2,00 | z = 7 (3D 8,5): 1,91, nadal jest |
+| 256,5; 41,5; 13 | 7,07 | 2,28 | |
+| 258,5; 41,5; 13 | 9,06 | brak | poza zasięgiem 8 |
+| 247,5; 41,5; 13 | 2,24 | 1,07 | w prawo |
+| 251,5; 42 / 40,5 / 39,5; 13 | 2,06 / 2,83 / 3,61 | 0,75 / 0,99 / 1,10 | wyżej = dłużej |
+| 249,5; 40,5; 13 | 2,0 | smuga w obie strony | lampa nad krasnalem |
+| 249,5; 41,5; 10 | 1,0 | słaby ślad przy stopach | lampa za krasnalem |
+
+Koniec smugi leży około 0,5 bloku bliżej widza niż stopy, a jej początek za krasnalem: wiersze obrazu cienia (głębokość z) przesuwają się w x, z zostaje. Dopasowanie końców do naszego renderu: σ = max(0,7; 0,285·d), zgodność 0,1 bloku (lampa z lewej 0,17). Przyciemnienie: barwa podłogi w cieniu / bez krasnala = 0,68–0,74 w rdzeniu, średnio 0,79–0,83; przy trzech lampach (253,5, 247,5, 251,5) rdzeń 0,77–0,80, więc mnożnik nie zależy od liczby świateł. Zrzut D jest identyczny z B, czyli lampa dostawiona w zapisie nie rozjaśnia podłogi pod krasnalem.
+
 ## 10. Diggles-Unity: indeks dokumentacji
 
 Pełna mapa ich dokumentacji (wszystkie dokumenty z odnośnikami), stan u nas, najważniejsze pliki ich kodu i plan „dogonić i wyprzedzić”: **[DIGGLES_UNITY.md](DIGGLES_UNITY.md)**. Każdy rozdział przewodnika i specyfikacja formatu kończą się linią z odnośnikami do ich odpowiedników.

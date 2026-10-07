@@ -143,7 +143,10 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Orientacja osi: Y w dół, układ lewoskrętny; w OpenGL odbicie osi Y (poprawione: obrót odwracał napisy) ✅
 - [x] Skala modeli względem świata gry: 1 blok = 200 jednostek modelu, bez skalowania ✅ ([3db.md](docs/formaty/3db.md), [rozdział 5](docs/silnik/05_obiekty.md))
 - [x] Podgląd cieni 32×32 i `cmap` z `.3db`: sekcja „Cień i cmap” w zakładce Modele (widok z góry x/z z bbox, `shadowQuad`, kratkami maski), `--shadow-cmap`; ustalona płaszczyzna i sposób rzutu ([3db.md §3.6–3.7](docs/formaty/3db.md), [BAZA_WIEDZY §9.7](docs/BAZA_WIEDZY.md))
-- [ ] 🔬 Cień w grze: 🔶 rysuje go tylko od lamp w zasięgu `MaxShadowLightDist` (smugi od lampy w jaskini, przy 0 znikają; na powierzchni brak, [BAZA_WIEDZY §9.8](docs/BAZA_WIEDZY.md)). Dalej: płaska pusta podłoga, jeden nieruchomy obiekt, lampa w kilku pozycjach, żeby zmierzyć rozciągnięcie obrazu; potem renderer
+- [x] 🔬 Cień w grze zmierzony (krasnal i lampa w 15 położeniach): lampy do 8 bloków w płaszczyźnie x/y, najwyżej 2 cienie, obraz pochylony od lampy σ = max(0,7; 0,285·d), podłoga · (1 − 0,4·v) ([BAZA_WIEDZY §9.11](docs/BAZA_WIEDZY.md), [rozdział 18](docs/silnik/18_cienie.md))
+- [x] Renderer cieni ([`shadow_renderer`](src/lib/render/shadow_renderer.h)) w scenie mapy (gra i wigview), `wigview --place KLASA X Y Z`, test `shadows`; koniec smugi zgodny z grą co do 0,1–0,17 bloku
+- [ ] Cienie: smuga węższa niż w grze (w grze do 2× więcej pikseli, płytszych), obrócone obiekty niezmierzone, wybór 2 lamp z wielu (najbliższe czy pierwsze?) ([rozdział 18.5](docs/silnik/18_cienie.md))
+- [ ] Światła obiektów tworzonych w trakcie gry (`new` z `class_light`, przenoszone z obiektem): teraz lampy zbieramy tylko przy wczytaniu, więc nowe nie świecą ani nie dają cieni
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje
@@ -169,7 +172,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] Mapa kodu [docs/KOD.md](docs/KOD.md) (podsystem → pliki → rozdział → sprawdzanie), odnośniki z rozdziałów do kodu, [`tools/check_docs.py`](tools/check_docs.py) (drzewo od CLAUDE.md, zepsute linki, nieaktualne ścieżki, `--fix`)
 - [x] Mapa Diggles-Unity [docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md): wszystkie ich dokumenty z odnośnikami, stan u nas, ich kod, plan „dogonić i wyprzedzić”; linia z odnośnikami na końcu każdego rozdziału i formatu
 - [ ] Przy każdym nowym ustaleniu: dopisać zasadę do rozdziału przewodnika, a nie tylko do bazy wiedzy
-- [ ] Rozdziały do napisania, gdy będzie wiedza: cienie, generator świata, praca i produkcja (dyspozytor), interfejs gry (`layout`, `.kft`), walka
+- [ ] Rozdziały do napisania, gdy będzie wiedza: generator świata, praca i produkcja (dyspozytor), interfejs gry (`layout`, `.kft`), walka
 - [ ] Przy pracy nad podsystemem: poprawić jego wiersz w [docs/DIGGLES_UNITY.md](docs/DIGGLES_UNITY.md) (stan u nas, następny krok)
 
 ## Faza 4: mapy i teren
@@ -213,8 +216,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] 🔬 Powtórzyć zrzuty, które wyszły czarne (szachownica `ow_mix2`, OBERWELT w x = 200)
 - [x] wigview: lampa podglądu dla szablonów bez własnych świateł (nie z gry, wyłączalna)
 - [x] wigview: wersja (commit) w rogu ekranu i w tytule okna (`build/gen/ow_version.h` z [`build.sh`](build.sh))
-- [ ] 🔬 Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): zrzuty obiektu z lampą w różnych odległościach (potrzebna płyta). Cienie na żywo: tryb ulepszony w fazie 7
-- [ ] 🔬 Cienie pod obiektami: mapy 32×32 z `.3db` (shadowIndex klatki), tylko w promieniu `MaxShadowLightDist` = 8 od lampy. Sposób rzutowania nierozpracowany (także przez Diggles-Unity); do ustalenia obserwacją gry (zrzuty z lampą i obiektem w różnych pozycjach)
+- [x] Cienie jak w oryginale (plamy 32×32 z `.3db`, do 8 pól od lampy): [rozdział 18](docs/silnik/18_cienie.md). Cienie na żywo: tryb ulepszony w fazie 7
 - [x] Szczegółowe siatki 3D bloków z BlockDB (układ za Diggles-Unity, zweryfikowany); przednia płaszczyzna z = 14,5 bloku
 - [x] 🔬 Maska w `.PMP`: płaszczyzna ruchu (przebiegi u16, [17.2](docs/silnik/17_ruch.md))
 - [ ] Obiekty bez modelu (Info_, CS_, CF_…) jako znaczniki 3D

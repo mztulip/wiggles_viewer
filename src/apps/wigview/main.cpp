@@ -40,6 +40,8 @@
 // --file ŚCIEŻKA: zakładka Pliki z plikiem albo katalogiem (ścieżka gry, np. Data/Scripts/init/out.tcl).
 // --emit TYP X Y Z [MAX NAKLATKĘ]: dodatkowe źródło cząsteczek na mapie w punkcie gry (x, y bloki, z jak w skrypcie:
 //                 świat = z·0,5 + 7), domyślnie 64 cząsteczki i 2 na klatkę; do porównań ze zrzutami gry (§12.6).
+// --place KLASA X Y Z: nieruchomy obiekt klasy w punkcie gry (jak --emit) z jej światłami (class_light), krasnal
+//   (Zwerg) z modelem mann i animacją standard; do porównań cieni ze zrzutami gry (BAZA_WIEDZY §9.11).
 // --lab-lamps: lampy jak tools/lab/live2.sh (Misc_LightSrc_a co 5 bloków od rogu szablonu, z = 14) zamiast
 //   lampy podglądu, do porównań jasności ze zrzutami z laboratorium.
 // --border-mask: ramka ekranu gry (Data/GUI/bordermask.tga) na scenie map, jak w grze z BorderMask=1.
@@ -111,6 +113,7 @@ struct Args
 	bool borderMask = false; // --border-mask
 	bool labLamps = false;   // --lab-lamps
 	std::vector<std::array<float, 6>> emits; // --emit TYP X Y Z MAX NAKLATKĘ
+	std::vector<std::pair<std::string, std::array<float, 3>>> places; // --place KLASA X Y Z
 	std::string savesDir;                    // --saves-dir
 	bool paths = false;                      // --paths: okno „Ścieżki” otwarte od startu
 	bool simulate = false;                   // --simulate: symulacja (skrypty) na mapie
@@ -201,6 +204,13 @@ bool parseArgs(int argc, char** argv, Args& a)
 			for (int j = 0; j < 4; ++j) e[size_t(j)] = float(std::atof(next()));
 			for (int j = 4; j < 6 && i + 1 < argc && argv[i + 1][0] != '-'; ++j) e[size_t(j)] = float(std::atof(next()));
 			a.emits.push_back(e);
+		}
+		else if (k == "--place")
+		{
+			std::string cls = next();
+			std::array<float, 3> p{};
+			for (auto& c : p) c = float(std::atof(next()));
+			a.places.push_back({cls, p});
 		}
 		else if (k == "--overlay") a.overlays.push_back(next());
 		else if (k == "--lab-lamps") a.labLamps = true;
@@ -2146,6 +2156,13 @@ int main(int argc, char** argv)
 			s.perFrame = int(e[5]);
 			if (!v.maps.addEmitter(s, e[1] - float(v.maps.origin()[0]), e[2] - float(v.maps.origin()[1]), e[3] * 0.5f + 7.f))
 				std::fprintf(stderr, "--emit: nieznany typ %d\n", s.type);
+		}
+		for (const auto& [cls, p] : args.places)
+		{
+			float x = p[0] - float(v.maps.origin()[0]), y = p[1] - float(v.maps.origin()[1]);
+			int i = v.maps.addObject(cls, x, y, p[2]);
+			if (Vfs::lower(cls) == "zwerg" && v.maps.setObjectModel(i, "mann.3db", "mann")) v.maps.playAnim(i, "standard", true);
+			v.maps.addClassLights(cls, x, y, p[2]);
 		}
 	}
 

@@ -38,6 +38,7 @@ void MapScene::init(rhi::Device& dev, const Vfs* vfs, TextureCache* textures, co
 	if (!terrain_.init(dev, err)) blocksError_ = tr("shader terenu: ") + err;
 	panoramaReady_ = panorama_.init(dev, err, *textures);
 	particlesReady_ = particles_.init(dev, err, *textures);
+	shadowsReady_ = shadows_.init(dev, err, *textures);
 	fluidsReady_ = fluids_.init(dev, err, *textures);
 	try
 	{
@@ -985,6 +986,14 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
 		glm::mat4 gm;
 		if (!linkedMatrix(int(&o - objects_.data()), gm)) gm = objectMatrix(o.src); // przypięte: za punktem rodzica
 		draws.push_back({&o, fa, fb, ft, gm, baseLight(o.src.pos[0], o.src.pos[1])});
+	}
+	// Cienie od lamp gry na podłodze (docs/silnik/18_cienie.md), przed modelami: obiekt zasłania swój cień.
+	if (shadowsReady_ && !allLights_.empty())
+	{
+		std::vector<ShadowRenderer::Caster> casters;
+		for (const auto& d : draws)
+			if (d.o->slot && d.o->slot->model) casters.push_back({d.o->slot->model.get(), d.a, d.gm, d.o->src.pos[0], d.o->src.pos[1]});
+		shadows_.draw(casters, allLights_, viewProj * world);
 	}
 	auto drawAll = [&](ModelDrawOptions::Phase phase) {
 		opt.phase = phase;
