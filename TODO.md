@@ -89,11 +89,12 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [ ] Kolumny lawy w trybie 8 cieplejsze i jaśniejsze niż w grze ([BAZA_WIEDZY §8.13](docs/BAZA_WIEDZY.md)): ❓ głównie inne próbkowanie tekstury `lava_seulen_128` na podstawach i „spódnicach” (różnica już w trybie 11, bez oświetlenia; UV, warianty pliku, odbicie i powtórzenie wykluczone), 🔶 do tego modele ok. 1,4× jaśniejsze pod lampami (przeniesione z fazy 2)
 
 ## Faza 1: szkielet projektu i build
-- [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), [`src/apps/game`](src/apps/game), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów
+- [x] Struktura katalogów: [`src/lib`](src/lib) (libwiggles, renderery w [`src/lib/render/`](src/lib/render)), [`src/apps/wigview`](src/apps/wigview), gra `openwiggles` (od 2026-10-07 osobne repozytorium z tym jako submodułem), [`src/tools`](src/tools), `third_party/`; [`build.sh`](build.sh) pilnuje, żeby biblioteka nie zależała od programów
 - [x] [`build.sh`](build.sh) (bez CMake): kompilacja przyrostowa (zależności z `.d`), równoległa, debug/release, cele `lib`, `imgui`, `wigview`, `test3db`, `clean`
 - [x] Zależności: SDL2 i glm z systemu, Dear ImGui 1.92.9 w `third_party/`, własny loader GL zamiast glad, Tcl 8.6 z systemu, dr_mp3 w `third_party/`
 - [x] Ścieżka do gry: `--game`, zmienna `OW_GAME`, domyślnie instalacja w `~/.wine`
 - [x] `git init` (repo `openwiggles_git`; `ref/` i zipy zostają poza repo)
+- [x] Podział (2026-10-07): to repozytorium to publiczne **wiggles_viewer** (biblioteka, wigview, narzędzia, dokumentacja, testy); gra `openwiggles` to osobne repozytorium (`../openwiggles_git`) z tym jako submodułem `wiggles_viewer/`, budowane przez `build.sh` stąd (`OW_APP_ROOT`, `OW_APP_NAME`, `OW_APP_LANG`, `OW_BUILD_ROOT`, `OW_VERSION_DIR`), z testami dołączanymi przez `OW_EXTRA_TESTS`
 - [x] `.gitignore` (`build/`, pliki wynikowe)
 
 ## Faza 2: libwiggles, czyli formaty plików ✅

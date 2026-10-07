@@ -5,7 +5,7 @@ Gdzie w [`src/`](../src) jest implementacja każdego podsystemu, który rozdzia�
 ## Warstwy i zależności
 
 ```
-src/apps/wigview   src/apps/game   src/tools        programy
+src/apps/wigview   (gra: osobne repo)   src/tools        programy
         \               |              /
          +--------- src/lib (libwiggles) ---------+  biblioteka
          |  formaty, vfs, skrypty, dźwięk, scena   |
@@ -62,7 +62,7 @@ src/shaders (GLSL, osadzane przez build.sh)    third_party (imgui, dr_mp3)
 | | [sound_view](../src/apps/wigview/sound_view.h) ([.cpp](../src/apps/wigview/sound_view.cpp)) | zakładka Dźwięki |
 | | [dir_picker](../src/apps/wigview/dir_picker.h) ([.cpp](../src/apps/wigview/dir_picker.cpp)) | okno wyboru katalogu w ImGui; okno „Ścieżki…” (`Viewer::uiPaths`: katalog gry z restartem przez `execv`, katalog zapisów `MapView::setSavesDir`) |
 | | [files_view](../src/apps/wigview/files_view.h) ([.cpp](../src/apps/wigview/files_view.cpp)) | zakładka Pliki: drzewo `Data/`, statystyka typów, podgląd tekstu i hex, przejście do zakładki typu (`Viewer::openFile`) |
-| `openwiggles` (gra) | [main.cpp](../src/apps/game/main.cpp) | `Game` (pętla, kamera, krasnale, kopanie), `ScriptHost` (most skrypty ↔ `MapScene`), zapis `.ows` ([rozdział 14](silnik/14_gra.md)) |
+| `openwiggles` (gra) | osobne repozytorium (src/game/main.cpp) | `Game` (pętla, kamera, krasnale, kopanie), zapis `.ows` ([rozdział 14](silnik/14_gra.md)); budowane `build.sh` stąd przez `OW_APP_ROOT` |
 | `test3db` | [test3db.cpp](../src/tools/test3db.cpp) | parsery na wszystkich danych gry: modele, tekstury, szablony, zapisy, dźwięki |
 | `export_gltf` | [export_gltf.cpp](../src/tools/export_gltf.cpp) | eksport modelu do `.glb` z wiersza poleceń |
 | `owscript` | [owscript.cpp](../src/tools/owscript.cpp) | silnik skryptów bez okna: tworzy obiekt klasy (domyślnie `Zwerg`), przewija logikę i zapisuje dziennik zaślepek komend i błędów ([rozdział 11 §11.9](silnik/11_obiekty_tcl_i_petla.md)) |

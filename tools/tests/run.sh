@@ -15,6 +15,8 @@
 #     mogą trafić do repozytorium; brak wzorca = test zapisuje go i przechodzi);
 #   - interakcja: wigview w niewidocznym Xvfb sterowany xdotool (klik, klawisze).
 # Gra: WIGGLES_DIR albo laboratorium ../lab/Wiggles (tam są też szablony i zapisy testowe).
+# Z innego repozytorium: OW_BUILD_ROOT (katalog budowania), OW_BUILD_CMD (polecenie budowania),
+# OW_EXTRA_TESTS (pliki z dodatkowymi testami), OW_TESTREF (obrazy wzorcowe).
 # Opis i zasady dopisywania testów: tools/tests/README.md.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
@@ -22,7 +24,7 @@ REPO="$PWD"
 GAME="${WIGGLES_DIR:-$(cd ../lab/Wiggles 2>/dev/null && pwd)}"
 [ -d "$GAME/Data" ] || { echo "brak katalogu gry (WIGGLES_DIR albo ../lab/Wiggles)"; exit 2; }
 REFS="${OW_TESTREF:-$(cd .. && pwd)/lab/testref}"
-B="$REPO/build/release"
+B="${OW_BUILD_ROOT:-$REPO/build}/release"
 TMP="$(mktemp -d /tmp/owtest.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -218,24 +220,6 @@ PY
 	ok
 }
 
-test_ dig_standoff "ruch jak w grze (P3): kopanie 3×2 pól w zapisie, pole startu get_digedge i miejsce vector_fixdig przy kopanym polu"
-t_dig_standoff() {
-	[ -f "$GAME/Data/Gamesave/save_kampania.sav" ] || { skip "brak save_kampania.sav"; return; }
-	OW_TEST_DIG=400 OW_TRACE_SIM=2 "$B/openwiggles" --game "$GAME" --save save_kampania.sav --size 640x480 --screenshot "$TMP/a.png" >"$TMP/d1" 2>&1
-	local n
-	n=$(grep -c "kopanie pola" "$TMP/d1")
-	[ "$n" = 6 ] || { fail "wykopane pola: $n, oczekiwane 6 ($(grep 'kopanie pola' "$TMP/d1" | head -2))"; return; }
-	python3 - "$TMP/d1" <<'PY' || { fail "miejsce do kopania daleko od pola: $(grep 'kopanie pola' "$TMP/d1" | head -3)"; return; }
-import re, sys
-for l in open(sys.argv[1]):
-    m = re.search(r"kopanie pola \((\d+), (\d+)\): start \((\d+), (\d+)\), miejsce \(([\d.]+), ([\d.]+)\)", l)
-    if not m: continue
-    mx, my, ex, ey = map(int, m.groups()[:4])
-    wx, wy = map(float, m.groups()[4:])
-    if abs(wx - (mx + 0.5)) > 1.6 or abs(wy - (my + 0.5)) > 2.6: sys.exit(1)
-PY
-	ok
-}
 
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
@@ -632,23 +616,10 @@ t_ui_spawn() {
 	[ "$n2" = $((n0 + 2)) ] && [ "$w" = 1 ] && ok "postacie $n0 → $n2" || fail "Shift+N: postaci $n2, wukerów $w"
 }
 
-test_ http_game "serwer HTTP w openwiggles: eval, postacie z zapisu, krok sterowanej postaci"
-t_http_game() {
-	http_ok || return
-	[ -f "$GAME/Data/Gamesave/save_kampania.sav" ] || { skip "brak save_kampania.sav"; return; }
-	http_start openwiggles --save save_kampania.sav || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
-	local e="" n x0 x1
-	[ "$(hpost /api/eval 'llength [obj_query 0 -class Zwerg -limit 100]' | jget 'd["result"]')" = 5 ] || e="eval obj_query: liczba krasnali"
-	n=$(hget /api/units | jget 'len(d["units"])')
-	[ -z "$e" ] && [ "$n" = 5 ] || e="${e:-/api/units: $n postaci, oczekiwane 5}"
-	hpost /api/pause >/dev/null
-	x0=$(hget /api/units | jget 'd["units"][0]["tx"]')
-	hpost "/api/control?unit=0" >/dev/null; hpost "/api/control/step?dx=-1" >/dev/null; hpost "/api/step?seconds=4" >/dev/null
-	x1=$(hget /api/units | jget 'd["units"][0]["tx"]')
-	[ -z "$e" ] && [ "$x1" = "$((x0 - 1))" ] || e="${e:-krok w lewo: pole $x0 → $x1}"
-	ui_stop
-	[ -z "$e" ] && ok || fail "$e"
-}
+
+# Testy programu z innego repozytorium (np. gry openwiggles z tym repo jako submodułem): plik z test_ i t_…,
+# dołączany tutaj (ma dostęp do wszystkich pomocników: wv, http_start, hget, …).
+for f in ${OW_EXTRA_TESTS:-}; do . "$f"; done
 
 # ---------------------------------------------------------------------------------------------------
 if [ "$LIST" = 1 ]; then
@@ -656,7 +627,7 @@ if [ "$LIST" = 1 ]; then
 	exit 0
 fi
 echo "budowanie (release)…"
-./build.sh release >"$TMP/build" 2>&1 || { tail -20 "$TMP/build"; echo "BŁĄD budowania"; exit 1; }
+${OW_BUILD_CMD:-./build.sh} release >"$TMP/build" 2>&1 || { tail -20 "$TMP/build"; echo "BŁĄD budowania"; exit 1; }
 echo "gra: $GAME, wzorce: $REFS"
 for t in "${TESTS[@]}"; do
 	CUR="${t%%|*}"

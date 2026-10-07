@@ -115,7 +115,7 @@ struct BuiltinLanguage
 
 } // namespace
 
-std::string addPo(const std::string& text, std::string& err, std::vector<std::string>* warnings)
+std::string addPo(const std::string& text, std::string& err, std::vector<std::string>* warnings, bool merge)
 {
 	auto cat = std::make_unique<Catalog>();
 	std::string header;
@@ -202,11 +202,19 @@ std::string addPo(const std::string& text, std::string& err, std::vector<std::st
 	cat->info.translated = int(cat->strings.size());
 	State& st = state();
 	std::string code = cat->info.code;
-	for (const auto& l : st.list)
-		if (l.code == code)
+	for (size_t i = 0; i < st.list.size(); ++i)
+		if (st.list[i].code == code)
 		{
-			err = "język " + code + " jest już wczytany";
-			return {};
+			if (!merge)
+			{
+				err = "język " + code + " jest już wczytany";
+				return {};
+			}
+			Catalog& c = *st.catalogs[i];
+			for (auto& kv : cat->strings) c.strings.insert(std::move(kv));
+			c.info.translated = int(c.strings.size());
+			st.list[i].translated = c.info.translated;
+			return code;
 		}
 	st.catalogs.push_back(std::move(cat));
 	st.list.push_back(st.catalogs.back()->info);
@@ -218,7 +226,7 @@ void loadBuiltin(std::vector<std::string>* warnings)
 	for (const BuiltinLanguage* b = kBuiltinLanguages; b->file; ++b)
 	{
 		std::string err;
-		if (addPo(b->text, err, warnings).empty() && warnings) warnings->push_back(std::string(b->file) + ": " + err);
+		if (addPo(b->text, err, warnings, true).empty() && warnings) warnings->push_back(std::string(b->file) + ": " + err);
 	}
 }
 

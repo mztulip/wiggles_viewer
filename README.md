@@ -1,15 +1,14 @@
-# OpenWiggles
+# Wiggles Viewer
 
-Otwartoźródłowy silnik do gry **Wiggles** (ang. *Diggles – The Myth of Fenris*, SEK-Ost / Innonics, 2001).
+Otwartoźródłowa **przeglądarka assetów i biblioteka** do gry **Wiggles** (ang. *Diggles – The Myth of Fenris*, SEK-Ost / Innonics, 2001), razem z **dokumentacją działania gry** (formaty plików, przewodnik po silniku, dziennik badań). Ma być bazą dla każdego, kto chce napisać własny silnik tej gry.
 
-Silnik ma uruchamiać grę na oryginalnych danych (assety trzeba mieć z własnej kopii gry), podobnie jak OpenMW czy OpenRCT2.
-Osobno powstaje **przeglądarka assetów**, w której można oglądać modele, animacje i tekstury. Mogą to być dwie osobne aplikacje, które korzystają ze wspólnej biblioteki.
+Wszystko działa na oryginalnych danych (assety trzeba mieć z własnej kopii gry), podobnie jak OpenMW czy OpenRCT2. Na tej bibliotece powstaje osobno silnik gry **OpenWiggles** (osobne repozytorium, korzysta z tego jako submodułu git).
 
 To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
 
 ## Cele
 
-1. **`openwiggles`**: silnik gry. Wczytuje oryginalne dane z katalogu gry, renderuje świat i postacie, wykonuje skrypty Tcl z `Data/Scripts` i obsługuje rozgrywkę.
+1. **`openwiggles`**: silnik gry, **osobne repozytorium** (korzysta z tego jako submodułu). Wczytuje oryginalne dane z katalogu gry, renderuje świat i postacie, wykonuje skrypty Tcl z `Data/Scripts` i obsługuje rozgrywkę. Cała wspólna logika (formaty, render, scena mapy, silnik Tcl, symulacja, ruch postaci) jest w bibliotece tutaj.
 2. **`wigview`**: przeglądarka assetów i animacji:
    - modele `.3db` z podglądem animacji (odtwarzanie, pauza, wybór klatki),
    - tekstury (`.tga` i inne formaty gry),
@@ -47,7 +46,7 @@ Wymagania (Arch): `gcc`, `sdl2-compat` lub `sdl2`, `glm`, `zlib`, a do renderowa
 ./build.sh clean
 
 build/release/wigview                          # przeglądarka; katalog gry: --game, WIGGLES_DIR, OW_GAME, wybór z okna „Ścieżki…”, ~/.wine/...
-WIGGLES_DIR=/ścieżka/do/Wiggles build/release/wigview    # katalog gry ze zmiennej środowiska (też openwiggles i owscript)
+WIGGLES_DIR=/ścieżka/do/Wiggles build/release/wigview    # katalog gry ze zmiennej środowiska (też owscript)
 build/release/wigview --saves-dir ~/zapisy      # zakładka Zapisy z innego katalogu (w oknie „Ścieżki…” też do wyboru i zapamiętania)
 build/release/wigview --game /ścieżka/do/Wiggles --model MANN --anim gehen_loop
 build/release/wigview --model BABY --screenshot baby.png     # zrzut bez UI
@@ -69,8 +68,6 @@ build/release/wigview --overlay ../ref/DigglesHDmod-master          # tekstury H
 build/release/wigview --scenario systeminit.tcl --fow 1                   # podgląd nieodkrytego terenu (0 brak, 1 szara, 2/3 kadr widoczny, 4 z zapisu)
 build/release/wigview --save save_SaveGame.sav                           # mapa z zapisu gry (teren, obiekty, kamera, mgła); w UI: zakładka Zapisy
 OW_PROGRESS_LOG=1 build/release/wigview                                  # czasy etapów wczytywania map i zapisów na stderr
-build/release/openwiggles                                               # gra: najnowszy zapis, LPM zaznacz, PPM idź/kop
-build/release/openwiggles --locale en                                   # teksty gry (lmsg) po angielsku; --overlay jak w wigview
 build/release/wigview --particle 3                                       # zakładka Cząsteczki: typ 3 (ogień kowala)
 build/release/wigview --lang en                                          # język interfejsu (pl, en; nowe: lang/README.md)
 build/release/wigview --renderer opengl                         # wybór backendu (domyślnie Vulkan)
@@ -87,12 +84,11 @@ build/release/export_gltf "/ścieżka/do/Wiggles" KRISTALL --all-objects -o kris
 
 W zakładce Mapy: przełączniki warstw (teren, obiekty, detale `.l2m`, strefa horyzontu, panorama i dywan łąki), **oświetlenie jak w grze**, **lampa podglądu** (dodatkowa lampa nad kadrem, domyślnie dla szablonów bez własnych świateł; nie pochodzi z gry), tryb nieodkrytego terenu i siatka 2D pól. W prawym dolnym rogu okna i w tytule widać wersję programu (commit), żeby zrzuty ekranu dało się przypisać do wersji.
 
-Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie (na mapach: pauza animacji i symulacji), ←/→ zmiana klatki modelu, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, **Ctrl+F wyszukiwarka** (modele, obiekty w modelach, tekstury, szablony; kilka słów = wszystkie muszą pasować), `Q` wyjście (Esc nie zamyka programu). Serwer deweloperski (Tcl i stan świata przez HTTP, jak WebTraq w oryginale): `--http PORT` w wigview i `openwiggles`, opis w [docs/SERWER_HTTP.md](docs/SERWER_HTTP.md). Symulacja (skrypty) startuje sama w zakładkach Mapy i Zapisy (`--no-simulate` wyłącza); **N** stawia krasnala, **Shift+N** wukera w polu pod kursorem. Z symulacją na mapie: **kliknięcie postaci** (krasnal, wuker, także stworzenie z animacją chodu: chomik, pająk, troll…; albo Enter: pierwszy krasnal) przejmuje ją: dopóki trzymasz ←/→, idzie ze stałą prędkością (po puszczeniu staje, krótkie stuknięcie przesuwa o trochę), ↑/↓ tak samo w głąb / do przodu, PPM bez przeciągania każe iść do pola (także wspinanie), Shift lub Esc ją puszcza (dodatek do testów, nie ma go w grze; skrypt postaci jest wtedy wstrzymany).
+Sterowanie w wigview: LPM obrót, PPM przesunięcie, kółko przybliżenie, spacja odtwarzanie (na mapach: pauza animacji i symulacji), ←/→ zmiana klatki modelu, ↑/↓ poprzedni/następny model (albo tekstura w zakładce Tekstury), PgUp/PgDn poprzednia/następna animacja, `I` interpolacja, **Ctrl+F wyszukiwarka** (modele, obiekty w modelach, tekstury, szablony; kilka słów = wszystkie muszą pasować), `Q` wyjście (Esc nie zamyka programu). Serwer deweloperski (Tcl i stan świata przez HTTP, jak WebTraq w oryginale): `--http PORT` w wigview (i w grze `openwiggles`), opis w [docs/SERWER_HTTP.md](docs/SERWER_HTTP.md). Symulacja (skrypty) startuje sama w zakładkach Mapy i Zapisy (`--no-simulate` wyłącza); **N** stawia krasnala, **Shift+N** wukera w polu pod kursorem. Z symulacją na mapie: **kliknięcie postaci** (krasnal, wuker, także stworzenie z animacją chodu: chomik, pająk, troll…; albo Enter: pierwszy krasnal) przejmuje ją: dopóki trzymasz ←/→, idzie ze stałą prędkością (po puszczeniu staje, krótkie stuknięcie przesuwa o trochę), ↑/↓ tak samo w głąb / do przodu, PPM bez przeciągania każe iść do pola (także wspinanie), Shift lub Esc ją puszcza (dodatek do testów, nie ma go w grze; skrypt postaci jest wtedy wstrzymany).
 
 ### Programy
 | Program | Do czego służy |
 |---|---|
-| `openwiggles` | **Gra** (w budowie): scenariusze, zapisy `.sav` i szablony z terenem, obiektami, światłem, płynami i cząsteczkami; krasnale na rozkaz gracza, kopanie, skrypty Tcl obiektów (rozdział [14](docs/silnik/14_gra.md)) |
 | `wigview` | Przeglądarka: modele `.3db` z animacjami, cieniem i maską `cmap`; tekstury (zoom, kanały); mapy, scenariusze i zapisy z terenem; cząsteczki; dźwięki; drzewo całego `Data/`. `--screenshot` renderuje jedną klatkę do PNG (z `--ui` razem z interfejsem), `--thumbnails` miniatury wszystkich obiektów |
 | `owscript` | **Silnik skryptów bez okna**: tworzy obiekt klasy (domyślnie `Zwerg`), przewija logikę o zadaną liczbę sekund i zapisuje dziennik brakujących komend natywnych (z liczbą wywołań) i błędów Tcl. Pokazuje, co dopisać, żeby skrypty klasy działały ([rozdział 11.9](docs/silnik/11_obiekty_tcl_i_petla.md)) |
 | `export_gltf` | Eksport do glTF 2.0 (`.glb`) z teksturami i animacjami. Ten sam eksport jest w wigview (sekcja „Eksport glTF”). Pliki otworzysz w Blenderze, Godocie, three.js albo na https://gltf-viewer.donmccurdy.com |

@@ -1,6 +1,6 @@
 # 14. Gra: pierwsza grywalna wersja
 
-Program `openwiggles` ([`src/apps/game/main.cpp`](../../src/apps/game/main.cpp)) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
+Program `openwiggles` (osobne repozytorium z tym jako submodułem, src/game/main.cpp; świat, symulacja i ruch są w bibliotece tutaj, [`lib/world_sim`](../../src/lib/world_sim.h)) łączy to, co opisują rozdziały 1–13, w działającą grę: wczytuje świat z zapisu albo scenariusza, pokazuje go kamerą gry, a krasnale chodzą i kopią na rozkaz gracza. Zachowania krasnali z Tcl jeszcze nie działają. Ruch i kopanie to celowo proste przybliżenia (🔶), które później zastąpimy prawami gry.
 
 ## 14.1 Start
 
@@ -47,7 +47,7 @@ W grze kopanie wybiera kształty sąsiednich bloków z tablicy sąsiadów BlockD
 
 ## 14.5 Krasnale ze skryptami gry
 
-Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` ([`src/apps/game/main.cpp`](../../src/apps/game/main.cpp)):
+Domyślnie krasnalami sterują ich skrypty (`Scripts/classes/zwerg`, rozdział 11). Gra udostępnia im świat przez interfejs `Host` ([`lib/world_sim`](../../src/lib/world_sim.h), `WorldSim`):
 
 | Komenda | U nas |
 |---|---|
@@ -96,7 +96,7 @@ Napisy: u32 długość i bajty, liczby little-endian. Wczytanie: źródło jak p
 ---
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [GNOME_BEHAVIOR_COMPLETE_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/GNOME_BEHAVIOR_COMPLETE_RE.md), [re_parts/](https://github.com/Zimennik/Diggles-Unity/tree/main/Docs/re_parts/), [ORIGINAL_PATHFINDING_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/ORIGINAL_PATHFINDING_RE.md), [NAVIGATION_AND_MOVEMENT](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/NAVIGATION_AND_MOVEMENT.md), [DIGGING_MECHANIC](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/DIGGING_MECHANIC.md), [WORK_DISPATCHER_NATIVE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/WORK_DISPATCHER_NATIVE.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).
 
-**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): [`apps/game/main.cpp`](../../src/apps/game/main.cpp), [`lib/nav.h`](../../src/lib/nav.h), [`lib/map_scene.h`](../../src/lib/map_scene.h). Wszystkie moduły: [mapa kodu](../KOD.md).
+**W kodzie OpenWiggles** (pomocniczo, zasada działania jest opisana wyżej): program gry `openwiggles` (osobne repozytorium, src/game/main.cpp), [`lib/nav.h`](../../src/lib/nav.h), [`lib/map_scene.h`](../../src/lib/map_scene.h). Wszystkie moduły: [mapa kodu](../KOD.md).
 
 ## 14.8 Ręczne prowadzenie postaci w przeglądarce (dodatek do testów, nie z gry)
 

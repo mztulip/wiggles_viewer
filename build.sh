@@ -2,10 +2,14 @@
 # System budowania OpenWiggles (bez CMake).
 #
 # Użycie: ./build.sh [debug|release] [vulkan|opengl|both] [cel...]
-#   cele: lib, imgui, wigview, game (openwiggles), owscript, test3db, export_gltf, all (domyślnie), clean
+#   cele: lib, imgui, wigview, app (program z OW_APP_ROOT), owscript, test3db, export_gltf, all (domyślnie), clean
 #   renderer: both (domyślnie: oba backendy, wybór przy starcie --renderer, domyślnie Vulkan),
 #             vulkan albo opengl (tylko jeden backend; wynik w build/<tryb>-<renderer>/)
 #   zmienne: CXX (domyślnie g++), JOBS (domyślnie nproc), VERBOSE=1
+#   program z innego repozytorium (np. gra openwiggles z tym repo jako submodułem):
+#     OW_APP_ROOT=<katalog źródeł .cpp> OW_APP_NAME=<nazwa pliku wynikowego>: cel app (też w all)
+#     OW_APP_LANG=<katalog .po programu>: tłumaczenia dołączane do wbudowanych (scalane z lang/*.po)
+#     OW_BUILD_ROOT=<katalog budowania> (domyślnie build), OW_VERSION_DIR=<repo, z którego wersja>
 #
 # Kompilacja przyrostowa: plik .o jest przebudowywany, gdy jest starszy od źródła
 # albo od któregokolwiek nagłówka z pliku zależności .d (generowanego przez -MMD).
@@ -29,27 +33,31 @@ WITH_VK=0; WITH_GL=0
 
 CXX="${CXX:-g++}"
 JOBS="${JOBS:-$(nproc)}"
-OUT="build/$MODE"
-[ "$RENDERER" != both ] && OUT="build/$MODE-$RENDERER"
+BR="${OW_BUILD_ROOT:-build}" # katalog budowania (wynik, obiekty, pliki generowane)
+OUT="$BR/$MODE"
+[ "$RENDERER" != both ] && OUT="$BR/$MODE-$RENDERER"
+APP_ROOT="${OW_APP_ROOT:-}"
+[ -n "$APP_ROOT" ] && APP_ROOT="$(cd "$APP_ROOT" && pwd)"
 
 # Wersja programu (commit, z "-zmiany" przy niezacommitowanych zmianach) w nagłówku build/gen/ow_version.h.
 # Plik jest nadpisywany tylko przy zmianie treści, więc przyrostowa kompilacja przebudowuje wtedy
 # tylko pliki, które go dołączają.
 gen_version() {
 	local v d
-	v="$(git describe --always --dirty=-zmiany 2>/dev/null || echo nieznana)"
-	d="$(git log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || echo '')"
-	mkdir -p build/gen
+	local g=(git -C "${OW_VERSION_DIR:-.}")
+	v="$("${g[@]}" describe --always --dirty=-zmiany 2>/dev/null || echo nieznana)"
+	d="$("${g[@]}" log -1 --format=%cd --date=format:%Y-%m-%d 2>/dev/null || echo '')"
+	mkdir -p "$BR/gen"
 	local new="#pragma once
 #define OW_VERSION \"$v\"
 #define OW_VERSION_DATE \"$d\""
-	if [ ! -f build/gen/ow_version.h ] || [ "$(cat build/gen/ow_version.h)" != "$new" ]; then
-		printf '%s\n' "$new" > build/gen/ow_version.h
+	if [ ! -f "$BR/gen/ow_version.h" ] || [ "$(cat "$BR/gen/ow_version.h")" != "$new" ]; then
+		printf '%s\n' "$new" > "$BR/gen/ow_version.h"
 	fi
 }
 gen_version
 
-CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -Ibuild/gen -Ithird_party -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
+CXXFLAGS=(-std=c++17 -Wall -Wextra -Isrc -I"$BR/gen" -Ithird_party -Ithird_party/imgui -Ithird_party/imgui/backends $(pkg-config --cflags sdl2))
 case "$MODE" in
 	debug)   CXXFLAGS+=(-O0 -g -DOW_DEBUG) ;;
 	release) CXXFLAGS+=(-O2 -DNDEBUG) ;;
@@ -80,7 +88,7 @@ write_if_changed() { # write_if_changed <plik> (treść na stdin)
 	if [ -f "$1" ] && cmp -s "$tmp" "$1"; then rm -f "$tmp"; else mv "$tmp" "$1"; fi
 }
 gen_shaders() {
-	local dir=build/gen/shaders f name stage body
+	local dir="$BR/gen/shaders" f name stage body
 	mkdir -p "$dir"
 	{
 		echo "// Wygenerowane przez build.sh z src/shaders/. Nie edytować."
@@ -89,7 +97,7 @@ gen_shaders() {
 			body="$(expand_includes "$f" | sed '1s/^#version 450.*/#version 450 core\n#define OW_OPENGL 1/')"
 			printf '{"%s", "%s", R"OWSH(%s\n)OWSH"},\n' "$name" "$stage" "$body"
 		done
-	} | write_if_changed build/gen/ow_shaders_gl.inc
+	} | write_if_changed "$BR/gen/ow_shaders_gl.inc"
 	[ "$WITH_VK" = 1 ] || return 0
 	command -v glslc >/dev/null || { log "brak glslc (pakiet shaderc) - potrzebny dla Vulkana"; exit 1; }
 	local entries=""
@@ -111,22 +119,22 @@ gen_shaders() {
 		echo "static const VkShaderEntry kVkShaders[] = {"
 		printf '%s' "$entries"
 		echo "};"
-	} | write_if_changed build/gen/ow_shaders_vk.inc
+	} | write_if_changed "$BR/gen/ow_shaders_vk.inc"
 }
 
 # Tłumaczenia: lang/*.po osadzane jako tekst w build/gen/ow_lang.inc (src/lib/i18n.cpp).
 gen_lang() {
 	local f
-	mkdir -p build/gen
+	mkdir -p "$BR/gen"
 	{
-		echo "// Wygenerowane przez build.sh z lang/*.po. Nie edytować."
+		echo "// Wygenerowane przez build.sh z lang/*.po (i OW_APP_LANG/*.po). Nie edytować."
 		echo "static const BuiltinLanguage kBuiltinLanguages[] = {"
-		for f in lang/*.po; do
+		for f in lang/*.po ${OW_APP_LANG:+"$OW_APP_LANG"/*.po}; do
 			[ -f "$f" ] || continue
 			printf '{"%s", R"OWPO(%s\n)OWPO"},\n' "$(basename "$f")" "$(cat "$f")"
 		done
 		echo "{nullptr, nullptr}};"
-	} | write_if_changed build/gen/ow_lang.inc
+	} | write_if_changed "$BR/gen/ow_lang.inc"
 }
 
 log() { printf '%s\n' "$*"; }
@@ -154,7 +162,9 @@ compile() {
 	OBJS=()
 	local pending=0 failed=0
 	for s in "${srcs[@]}"; do
-		local o="$OUT/obj/${s%.cpp}.o"
+		local rel="$s"
+		[ -n "$APP_ROOT" ] && [ "${s#"$APP_ROOT"/}" != "$s" ] && rel="app/${s#"$APP_ROOT"/}" # program z innego repo
+		local o="$OUT/obj/${rel%.cpp}.o"
 		OBJS+=("$o")
 		if needs_build "$o" "$s"; then
 			mkdir -p "$(dirname "$o")"
@@ -219,11 +229,12 @@ build_wigview() {
 	link "$OUT/wigview" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
-build_game() {
+build_app() { # program z innego repozytorium (OW_APP_ROOT, OW_APP_NAME)
+	[ -n "$APP_ROOT" ] || { log "cel app wymaga OW_APP_ROOT i OW_APP_NAME"; exit 1; }
 	build_lib; build_imgui
-	log "[openwiggles]"
-	compile -- $(find src/apps/game -name '*.cpp' | sort)
-	link "$OUT/openwiggles" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
+	log "[${OW_APP_NAME:?brak OW_APP_NAME}]"
+	compile -- $(find "$APP_ROOT" -name '*.cpp' | sort)
+	link "$OUT/$OW_APP_NAME" "${OBJS[@]}" "$OUT/libwiggles.a" "$OUT/libimgui.a"
 }
 
 build_owscript() {
@@ -251,15 +262,15 @@ build_test3db() {
 
 for t in "${TARGETS[@]}"; do
 	case "$t" in
-		clean) log "usuwam build/"; rm -rf build ;;
+		clean) log "usuwam $BR/"; rm -rf "$BR" ;;
 		lib) build_lib ;;
 		imgui) build_imgui ;;
 		wigview) build_wigview ;;
-		game) build_game ;;
+		app) build_app ;;
 		owscript) build_owscript ;;
 		test3db) build_test3db ;;
 		export_gltf) build_export_gltf ;;
-		all) build_wigview; build_game; build_test3db; build_export_gltf; build_owscript ;;
+		all) build_wigview; [ -n "$APP_ROOT" ] && build_app; build_test3db; build_export_gltf; build_owscript ;;
 		*) log "nieznany cel: $t"; exit 1 ;;
 	esac
 done

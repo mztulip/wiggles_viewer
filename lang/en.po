@@ -9,169 +9,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/apps/game/main.cpp:262
-msgid "Brak krasnali na mapie."
-msgstr "No gnomes on the map."
-
-#: src/apps/game/main.cpp:282
-msgid "Nie ma drogi."
-msgstr "There is no way there."
-
-#: src/apps/game/main.cpp:292
-msgid "Nie da się dojść do tej skały."
-msgstr "This rock cannot be reached."
-
-#: src/apps/game/main.cpp:329
-msgid "gra nie pochodzi z zapisu .sav"
-msgstr "the game was not loaded from a .sav save"
-
-#: src/apps/game/main.cpp:370
-msgid "Zapisano: "
-msgstr "Saved: "
-
-#: src/apps/game/main.cpp:370
-#: src/apps/game/main.cpp:373
-msgid "Błąd zapisu: "
-msgstr "Save error: "
-
-#: src/apps/game/main.cpp:373
-msgid "Zapisano (format tymczasowy .ows): "
-msgstr "Saved (temporary .ows format): "
-
-#: src/apps/game/main.cpp:708
-msgid "Wybierz grę"
-msgstr "Choose a game"
-
-#: src/apps/game/main.cpp:711
-#, c-format
-msgid "Wczytywanie: %s…"
-msgstr "Loading: %s…"
-
-#: src/apps/game/main.cpp:724
-msgid "Twoje zapisy"
-msgstr "Your saves"
-
-#: src/apps/game/main.cpp:725
-msgid "Zapisy gry (Data/Gamesave)"
-msgstr "Game saves (Data/Gamesave)"
-
-#: src/apps/game/main.cpp:726
-#: src/apps/wigview/map_view.cpp:352
-msgid "Scenariusze"
-msgstr "Scenarios"
-
-#: src/apps/game/main.cpp:728
-msgid "Wróć do gry (Esc)"
-msgstr "Back to game (Esc)"
-
-#: src/apps/game/main.cpp:730
-msgid "Wyjście"
-msgstr "Quit"
-
-#: src/apps/game/main.cpp:739
-#: src/apps/game/main.cpp:1084
-msgid "Wczytano: "
-msgstr "Loaded: "
-
-#: src/apps/game/main.cpp:739
-#: src/apps/game/main.cpp:1084
-msgid "Nie udało się wczytać: "
-msgstr "Could not load: "
-
-#: src/apps/game/main.cpp:754
-#, c-format
-msgid "Krasnale: %d"
-msgstr "Gnomes: %d"
-
-#: src/apps/game/main.cpp:758
-#: src/apps/wigview/main.cpp:630
-msgid "idzie"
-msgstr "walking"
-
-#: src/apps/game/main.cpp:758
-#: src/apps/wigview/main.cpp:630
-msgid "kopie"
-msgstr "digging"
-
-#: src/apps/game/main.cpp:759
-msgid "czeka"
-msgstr "waiting"
-
-#: src/apps/game/main.cpp:760
-#, c-format
-msgid "Zaznaczony: krasnal %d (%s), pole %d, %d"
-msgstr "Selected: gnome %d (%s), tile %d, %d"
-
-#: src/apps/game/main.cpp:762
-#, c-format
-msgid "Pole pod kursorem: %d, %d (%s)"
-msgstr "Tile under cursor: %d, %d (%s)"
-
-#: src/apps/game/main.cpp:762
-msgid "wolne"
-msgstr "free"
-
-#: src/apps/game/main.cpp:762
-msgid "skała"
-msgstr "rock"
-
-#: src/apps/game/main.cpp:764
-msgid "PAUZA (spacja)"
-msgstr "PAUSED (space)"
-
-#: src/apps/game/main.cpp:764
-#, c-format
-msgid "Tempo: ×%.0f (1–3, spacja = pauza)"
-msgstr "Speed: ×%.0f (1–3, space = pause)"
-
-#: src/apps/game/main.cpp:768
-msgid "LPM: zaznacz krasnala   PPM: idź / kop skałę"
-msgstr "LMB: select gnome   RMB: walk / dig rock"
-
-#: src/apps/game/main.cpp:769
-msgid "Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"
-msgstr "Drag RMB: mark rock for digging (the selected gnome digs)"
-
-#: src/apps/game/main.cpp:770
-msgid "WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"
-msgstr "WASD, arrows, middle button: camera   wheel: zoom"
-
-#: src/apps/game/main.cpp:771
-msgid "Kursor przy krawędzi okna: przesuwanie kamery"
-msgstr "Cursor at the window edge: scroll the camera"
-
-#: src/apps/game/main.cpp:772
-msgid "N: nowy krasnal przy kursorze   F1: pomoc   Esc: menu"
-msgstr "N: new gnome at cursor   F1: help   Esc: menu"
-
-#: src/apps/game/main.cpp:773
-msgid "F5: szybki zapis   F9: szybkie wczytanie"
-msgstr "F5: quick save   F9: quick load"
-
-#: src/apps/game/main.cpp:786
-#: src/apps/wigview/main.cpp:633
-msgid "zdrowie"
-msgstr "health"
-
-#: src/apps/game/main.cpp:786
-#: src/apps/wigview/main.cpp:633
-msgid "jedzenie"
-msgstr "food"
-
-#: src/apps/game/main.cpp:787
-#: src/apps/wigview/main.cpp:634
-msgid "sen"
-msgstr "sleep"
-
-#: src/apps/game/main.cpp:787
-#: src/apps/wigview/main.cpp:634
-msgid "nastrój"
-msgstr "mood"
-
-#: src/apps/game/main.cpp:796
-msgid "krasnal"
-msgstr "gnome"
-
 #: src/apps/wigview/dir_picker.cpp:70
 #: src/apps/wigview/dir_picker.cpp:73
 msgid "Przejdź"
@@ -401,6 +238,14 @@ msgstr "Object without a script (ID %d)."
 msgid "Skrypt: ID %d, stan %s (licznik %d), właściciel %d"
 msgstr "Script: ID %d, state %s (counter %d), owner %d"
 
+#: src/apps/wigview/main.cpp:630
+msgid "idzie"
+msgstr "walking"
+
+#: src/apps/wigview/main.cpp:630
+msgid "kopie"
+msgstr "digging"
+
 #: src/apps/wigview/main.cpp:631
 msgid "stoi"
 msgstr "standing"
@@ -409,6 +254,22 @@ msgstr "standing"
 #, c-format
 msgid "Postać: %s, pole %d, %d"
 msgstr "Character: %s, tile %d, %d"
+
+#: src/apps/wigview/main.cpp:633
+msgid "zdrowie"
+msgstr "health"
+
+#: src/apps/wigview/main.cpp:633
+msgid "jedzenie"
+msgstr "food"
+
+#: src/apps/wigview/main.cpp:634
+msgid "sen"
+msgstr "sleep"
+
+#: src/apps/wigview/main.cpp:634
+msgid "nastrój"
+msgstr "mood"
 
 #: src/apps/wigview/main.cpp:644
 #, c-format
@@ -1154,6 +1015,10 @@ msgstr "(no model)"
 #: src/apps/wigview/map_view.cpp:350
 msgid "Szablony"
 msgstr "Templates"
+
+#: src/apps/wigview/map_view.cpp:352
+msgid "Scenariusze"
+msgstr "Scenarios"
 
 #: src/apps/wigview/map_view.cpp:355
 msgid "filtr (np. urw_gng)"

@@ -30,7 +30,9 @@ struct Language
 
 // Wczytuje treść pliku .po; zwraca kod języka albo pusty napis przy błędzie (komunikat w err).
 // Ostrzeżenia (np. odrzucone tłumaczenia o niezgodnych znacznikach printf) trafiają do warnings.
-std::string addPo(const std::string& text, std::string& err, std::vector<std::string>* warnings = nullptr);
+// merge: język już wczytany dostaje napisy z tego pliku (tłumaczenia programu z innego repozytorium,
+// np. gry openwiggles, scalane z lang/*.po biblioteki); bez merge to błąd.
+std::string addPo(const std::string& text, std::string& err, std::vector<std::string>* warnings = nullptr, bool merge = false);
 // Wczytuje języki osadzone w programie (build/gen/ow_lang.inc).
 void loadBuiltin(std::vector<std::string>* warnings = nullptr);
 

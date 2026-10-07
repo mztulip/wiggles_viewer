@@ -23,6 +23,10 @@ Gra: `WIGGLES_DIR` albo kopia w laboratorium `../lab/Wiggles` (tam są też zapi
 | serwer HTTP | program w Xvfb z `--http` (losowy port), zapytania `curl`, JSON przez `jget 'd["units"][0]["x"]'` ([SERWER_HTTP.md](../../docs/SERWER_HTTP.md)); preferowany sposób sprawdzania stanu w nowych testach | `http_wigview`, `http_game`, `climb` |
 | Vulkan w oknie | jak serwer HTTP z `HRENDER=vulkan`; Xvfb nie ma DRI3, więc obraz do okna przez programowe WSI Mesy (`MESA_VK_WSI_DEBUG=sw`), z warstwą walidacji (`OW_VK_VALIDATION=1`, w logu nie może być `Validation Error`); `xdotool windowsize` (zmiana rozmiaru, kafel i3), `windowunmap/windowmap` (przełączenie ekranu w i3) | `vk_window` |
 
+## Testy z innego repozytorium
+
+Gra `openwiggles` (osobne repozytorium z tym jako submodułem) uruchamia ten sam `run.sh` ze swoimi testami: `OW_EXTRA_TESTS` (pliki z `test_` i `t_…`, dołączane po testach stąd, z dostępem do wszystkich pomocników), `OW_BUILD_ROOT` (jej katalog budowania), `OW_BUILD_CMD` (jej `build.sh`), `WIGGLES_DIR` i `OW_TESTREF` (gra i wzorce, bo `../lab` liczy się od katalogu submodułu).
+
 ## Dopisywanie testu
 
 W `run.sh`: `test_ nazwa "opis"` i funkcja `t_nazwa`, która kończy się `ok [komentarz]`, `fail "co nie tak"` albo `skip "dlaczego"`. Pomocnicze: `http_start program …` (zmienne: `HRENDER` renderer, domyślnie opengl; `HREADY` wzorzec gotowości w `/api/state`; `HENV` dodatkowe zmienne środowiska) / `hget` / `hpost` / `jget` (serwer HTTP), `wv …` (wigview bez okna, 640×480), `check_trace plik` (postacie w skale albo za ścianą), `compare_ref nazwa plik`, `ui_start …` / `ui_stop`, `click_at x y`, `xd …` (xdotool).

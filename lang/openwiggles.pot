@@ -7,169 +7,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/apps/game/main.cpp:262
-msgid "Brak krasnali na mapie."
-msgstr ""
-
-#: src/apps/game/main.cpp:282
-msgid "Nie ma drogi."
-msgstr ""
-
-#: src/apps/game/main.cpp:292
-msgid "Nie da się dojść do tej skały."
-msgstr ""
-
-#: src/apps/game/main.cpp:329
-msgid "gra nie pochodzi z zapisu .sav"
-msgstr ""
-
-#: src/apps/game/main.cpp:370
-msgid "Zapisano: "
-msgstr ""
-
-#: src/apps/game/main.cpp:370
-#: src/apps/game/main.cpp:373
-msgid "Błąd zapisu: "
-msgstr ""
-
-#: src/apps/game/main.cpp:373
-msgid "Zapisano (format tymczasowy .ows): "
-msgstr ""
-
-#: src/apps/game/main.cpp:708
-msgid "Wybierz grę"
-msgstr ""
-
-#: src/apps/game/main.cpp:711
-#, c-format
-msgid "Wczytywanie: %s…"
-msgstr ""
-
-#: src/apps/game/main.cpp:724
-msgid "Twoje zapisy"
-msgstr ""
-
-#: src/apps/game/main.cpp:725
-msgid "Zapisy gry (Data/Gamesave)"
-msgstr ""
-
-#: src/apps/game/main.cpp:726
-#: src/apps/wigview/map_view.cpp:352
-msgid "Scenariusze"
-msgstr ""
-
-#: src/apps/game/main.cpp:728
-msgid "Wróć do gry (Esc)"
-msgstr ""
-
-#: src/apps/game/main.cpp:730
-msgid "Wyjście"
-msgstr ""
-
-#: src/apps/game/main.cpp:739
-#: src/apps/game/main.cpp:1084
-msgid "Wczytano: "
-msgstr ""
-
-#: src/apps/game/main.cpp:739
-#: src/apps/game/main.cpp:1084
-msgid "Nie udało się wczytać: "
-msgstr ""
-
-#: src/apps/game/main.cpp:754
-#, c-format
-msgid "Krasnale: %d"
-msgstr ""
-
-#: src/apps/game/main.cpp:758
-#: src/apps/wigview/main.cpp:630
-msgid "idzie"
-msgstr ""
-
-#: src/apps/game/main.cpp:758
-#: src/apps/wigview/main.cpp:630
-msgid "kopie"
-msgstr ""
-
-#: src/apps/game/main.cpp:759
-msgid "czeka"
-msgstr ""
-
-#: src/apps/game/main.cpp:760
-#, c-format
-msgid "Zaznaczony: krasnal %d (%s), pole %d, %d"
-msgstr ""
-
-#: src/apps/game/main.cpp:762
-#, c-format
-msgid "Pole pod kursorem: %d, %d (%s)"
-msgstr ""
-
-#: src/apps/game/main.cpp:762
-msgid "wolne"
-msgstr ""
-
-#: src/apps/game/main.cpp:762
-msgid "skała"
-msgstr ""
-
-#: src/apps/game/main.cpp:764
-msgid "PAUZA (spacja)"
-msgstr ""
-
-#: src/apps/game/main.cpp:764
-#, c-format
-msgid "Tempo: ×%.0f (1–3, spacja = pauza)"
-msgstr ""
-
-#: src/apps/game/main.cpp:768
-msgid "LPM: zaznacz krasnala   PPM: idź / kop skałę"
-msgstr ""
-
-#: src/apps/game/main.cpp:769
-msgid "Przeciągnij PPM: zaznacz skałę do kopania (zaznaczony krasnal kopie)"
-msgstr ""
-
-#: src/apps/game/main.cpp:770
-msgid "WASD, strzałki, środkowy przycisk: kamera   kółko: przybliżenie"
-msgstr ""
-
-#: src/apps/game/main.cpp:771
-msgid "Kursor przy krawędzi okna: przesuwanie kamery"
-msgstr ""
-
-#: src/apps/game/main.cpp:772
-msgid "N: nowy krasnal przy kursorze   F1: pomoc   Esc: menu"
-msgstr ""
-
-#: src/apps/game/main.cpp:773
-msgid "F5: szybki zapis   F9: szybkie wczytanie"
-msgstr ""
-
-#: src/apps/game/main.cpp:786
-#: src/apps/wigview/main.cpp:633
-msgid "zdrowie"
-msgstr ""
-
-#: src/apps/game/main.cpp:786
-#: src/apps/wigview/main.cpp:633
-msgid "jedzenie"
-msgstr ""
-
-#: src/apps/game/main.cpp:787
-#: src/apps/wigview/main.cpp:634
-msgid "sen"
-msgstr ""
-
-#: src/apps/game/main.cpp:787
-#: src/apps/wigview/main.cpp:634
-msgid "nastrój"
-msgstr ""
-
-#: src/apps/game/main.cpp:796
-msgid "krasnal"
-msgstr ""
-
 #: src/apps/wigview/dir_picker.cpp:70
 #: src/apps/wigview/dir_picker.cpp:73
 msgid "Przejdź"
@@ -399,6 +236,14 @@ msgstr ""
 msgid "Skrypt: ID %d, stan %s (licznik %d), właściciel %d"
 msgstr ""
 
+#: src/apps/wigview/main.cpp:630
+msgid "idzie"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:630
+msgid "kopie"
+msgstr ""
+
 #: src/apps/wigview/main.cpp:631
 msgid "stoi"
 msgstr ""
@@ -406,6 +251,22 @@ msgstr ""
 #: src/apps/wigview/main.cpp:632
 #, c-format
 msgid "Postać: %s, pole %d, %d"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:633
+msgid "zdrowie"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:633
+msgid "jedzenie"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:634
+msgid "sen"
+msgstr ""
+
+#: src/apps/wigview/main.cpp:634
+msgid "nastrój"
 msgstr ""
 
 #: src/apps/wigview/main.cpp:644
@@ -1151,6 +1012,10 @@ msgstr ""
 
 #: src/apps/wigview/map_view.cpp:350
 msgid "Szablony"
+msgstr ""
+
+#: src/apps/wigview/map_view.cpp:352
+msgid "Scenariusze"
 msgstr ""
 
 #: src/apps/wigview/map_view.cpp:355

@@ -7,6 +7,8 @@ przyrostek identyfikatora ImGui "##…" jest odcinany, jak w src/lib/i18n.cpp).
     tools/i18n_update.py            # zapisuje lang/openwiggles.pot i scala każdy lang/*.po
     tools/i18n_update.py --new de "Deutsch"   # nowy język: lang/de.po z pustymi tłumaczeniami
     tools/i18n_update.py --check    # tylko raport; kod wyjścia 1, gdy w którymś .po czegoś brakuje
+    tools/i18n_update.py --root KATALOG [...]   # inne repozytorium (np. gra z tym repo jako submodułem):
+                                               # jego src/ i lang/ (plik .pot: lang/<nazwa katalogu bez _git>.pot)
 
 Scalanie zachowuje istniejące tłumaczenia; nowe napisy dostają pusty msgstr (program pokaże wtedy
 tekst polski), a napisy usunięte z kodu trafiają na koniec pliku jako przestarzałe (#~).
@@ -18,8 +20,14 @@ import sys
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+POT_NAME = "openwiggles.pot"
+if "--root" in sys.argv:  # inne repozytorium: jego src/ i lang/
+    i = sys.argv.index("--root")
+    ROOT = os.path.abspath(sys.argv[i + 1])
+    POT_NAME = re.sub(r"_git$", "", os.path.basename(ROOT.rstrip("/"))) + ".pot"
+    del sys.argv[i:i + 2]
 LANG = os.path.join(ROOT, "lang")
-POT = os.path.join(LANG, "openwiggles.pot")
+POT = os.path.join(LANG, POT_NAME)
 
 LIT = r'"(?:[^"\\\n]|\\.)*"'
 CALL = re.compile(r'\b(?:tr|N_)\(\s*((?:%s\s*)+)\)' % LIT)
