@@ -26,6 +26,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] G2 Krasnale (`Zwerg`, model `mann`): animacje chodu, wspinania, stania, kopania
 - [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* ([`src/lib/nav.h`](src/lib/nav.h))
 - [x] G4 Kopanie (PPM na skale, przeciągnięcie PPM = obszar do kopania dla zaznaczonego krasnala): tunel 4523 z gruntem pola, znaleziska 4%, odkrywanie mgły przez krasnale
+- [x] Kopanie jak w grze: materiał pól (skała nie do kopania), znaczniki graczy, wycinanie węzłów grafem przejść BlockDB, komendy `dig_mark`, `dig_next`, `dig_apply`, `get_material` (zgodne z grą co do kroków), [rozdział 19](docs/silnik/19_kopanie.md)
+- [ ] Krasnale gracza kopią skryptem gry (`evt_task_dig` → `z_dignwalk.tcl`) zamiast naszej pętli `digAt`; obiekty blokujące wycinanie i dekoracje usuwane przez wykop; stemple jaskiń
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry

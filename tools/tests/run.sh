@@ -710,6 +710,18 @@ print(int(max(d) > 0.3), int(max(d) > 0.02))")
 	[ -z "$e" ] && ok "cząsteczki [beczki, ognisko] $p" || fail "$e"
 }
 
+test_ http_dig "kopanie ze skryptów jak w grze: get_material (CAVES typ 4 = 0 skała, GSG typ 2 = 2 ziemia), dig_mark + dig_apply: jaskinia 4 kroki na węzeł, tunel 1 (zmierzone w grze, BAZA_WIEDZY §9.12)"
+t_http_dig() {
+	http_ok || return
+	http_start wigview --template urw_gsg_001_a --simulate || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	hpost /api/pause >/dev/null
+	local r m
+	m=$(hpost /api/eval 'set l {} ; for {set x 2} {$x < 14} {incr x} { append l [get_material [list $x 1 10]] } ; set l' | jget 'd["result"]')
+	r=$(hpost /api/eval 'set n {} ; foreach {x y} {10 1 11 1 10 2 11 2} { dig_mark 0 $x $y 0 0 ; set c 0 ; for {set k 0} {$k < 8} {incr k} { incr c [dig_apply [list $x $y 10] 0] } ; lappend n $c } ; set t {} ; foreach {x y} {13 1 14 1} { dig_mark 0 $x $y 1 ; set c 0 ; for {set k 0} {$k < 8} {incr k} { incr c [dig_apply [list $x $y 10] 0] } ; lappend t $c } ; list $n $t [is_dig_marked 9 0 15 3] [dig_next {9 1 10} 0]' | jget 'd["result"]')
+	ui_stop
+	[ "$m" = 222222222222 ] && [ "$r" = "{4 4 4 4} {1 1} 0 {-1 -1 -1}" ] && ok "$r" || fail "materiał $m, kroki $r (gra: {4 4 4 4} {1 1})"
+}
+
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut; światło lampy z new idzie za set_pos"
 t_http_wigview() {
 	http_ok || return

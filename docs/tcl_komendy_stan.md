@@ -8,15 +8,15 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 58 | 9 | 38 | 50 | 62 |
+| misc | 217 | 60 | 9 | 38 | 49 | 61 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
-| map | 49 | 2 | 6 | 4 | 21 | 16 |
+| map | 49 | 6 | 3 | 3 | 21 | 16 |
 | inne | 36 | 8 | 0 | 3 | 7 | 18 |
 | obj | 82 | 10 | 13 | 18 | 28 | 13 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
 | trigger | 1 | 0 | 1 | 0 | 0 | 0 |
-| object | 183 | 131 | 6 | 15 | 8 | 23 |
+| object | 183 | 132 | 6 | 14 | 8 | 23 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | 3db | 1 | 0 | 0 | 0 | 0 | 1 |
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 241 | 40 | 89 | 124 | 145 |
+| **razem** | 639 | 248 | 37 | 87 | 123 | 144 |
 
 ## 3db
 
@@ -177,13 +177,9 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
 | `map` | ❌ | P1 | 42 | 12 | 32 | map create <width> <height> (<xoffset>) (<yoffset>) (<completion-code>)create new map |
-| `dig_next` | ❌ | P1 | 18 | 18 | 5 | dig_next <vector> <object> [<bestidx>] [<OnlyLastDigID>]get next best dig position |
-| `get_material` | ❌ | P1 | 7 | 7 | 4 | get_material <vector>get type of material: 0-stone 1/2-sand/earth 3-scapehole |
-| `dig_apply` | ❌ | P1 | 4 | 1 | 4 | dig_apply <vector> <object>dig a hole |
 | `lg_get_level` | ❌ | P1 | 4 | 4 | 2 | lg_get_levelreturns the last generated level |
 | `get_place_long` | ❌ | P1 | 3 | 3 | 3 | get_place_long <center> <range> [<fixwalkable=f>] [<walkable=f>]find a passable point (no collision-map-check  |
 | `map_setlayer2` | ❌ | P2 | 2971 | 0 | 2971 | map_setlayer2 <x> <y> <file>set 2nd texturelayer |
-| `dig_mark` | ❌ | P2 | 11 | 0 | 6 | dig_mark <player> <x> <y> <cave=0/tunnel=1/undo=2> [<depth>]mark for dig |
 | `generate_color_variation` | ❌ | P2 | 8 | 0 | 8 | generate_color_variation <left> <top> <right> <bottom> <type>generate variations for 1st texture-layer of the  |
 | `reset_map` | ❌ | P2 | 6 | 0 | 5 | reset_map <left> <top> <right> <bottom>reset maparea |
 | `lg_set_leveltype` | ❌ | P3 | 4 | 0 | 2 | lg_set_leveltype base\|resourceset leveltype for levelgeneration |
@@ -225,6 +221,10 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `placelock_log` | ❌ | martwa | 0 | 0 | 0 | placelock_log [<id>]dump placelocks to logger |
 | `get_place` | ✅ |  | 65 | 65 | 25 | get_place <params>find a free place |
 | `get_hmap` | ✅ |  | 27 | 27 | 14 | get_hmap <x> <y>returns the height at a point in the map |
+| `dig_next` | ✅ |  | 18 | 18 | 5 | dig_next <vector> <object> [<bestidx>] [<OnlyLastDigID>]get next best dig position |
+| `get_material` | ✅ |  | 7 | 7 | 4 | get_material <vector>get type of material: 0-stone 1/2-sand/earth 3-scapehole |
+| `dig_apply` | ✅ |  | 4 | 1 | 4 | dig_apply <vector> <object>dig a hole |
+| `dig_mark` | ✅ |  | 11 | 0 | 6 | dig_mark <player> <x> <y> <cave=0/tunnel=1/undo=2> [<depth>]mark for dig |
 
 ## misc
 
@@ -292,7 +292,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_ftype` | ❌ | P3 | 2 | 2 | 1 | get_ftype <pos>return ftype- 0=none, 1=water, 2=sulfur, 3=lava, 4=lavawater |
 | `get_sequencebreaked` | ❌ | P3 | 2 | 2 | 2 | get_sequencebreakedreturns distance between camera-follow-object and viewport-center |
 | `has_cmap` | ❌ | P3 | 2 | 2 | 1 | has_cmap <animname> [<frame>] |
-| `is_dig_marked` | ❌ | P3 | 2 | 2 | 1 | is_dig_marked <xn> <yn> <xp> <yp>checks area for digmark |
 | `option` | ❌ | P3 | 2 | 2 | 1 | option get <option-name>get option value |
 | `perfoptions` | ⚪ | P3 | 2 | 1 | 1 | perfoptions <setting>get current setting |
 | `remove_parked_obj` | ❌ | P3 | 2 | 0 | 1 | remove_parked_obj <obj>removes object action from "parking lot" |
@@ -343,7 +342,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_waterheight` | ❌ | martwa | 0 | 0 | 0 | get_waterheight <pos>get height of water |
 | `horizon_clear` | ❌ | martwa | 0 | 0 | 0 | horizon_clearremove all horizons |
 | `horizon_rem` | ❌ | martwa | 0 | 0 | 0 | horizon_rem <pos>remove horizon |
-| `inc_playerdigmarkid` | ❌ | martwa | 0 | 0 | 0 | inc_playerdigmarkid <player>increment current player-dig-mark-ID |
 | `inputmode` | ❌ | martwa | 0 | 0 | 0 | inputmode [<pc\|console>]get/set current input mode |
 | `load_all_textures` | ❌ | martwa | 0 | 0 | 0 | load_all_texturescircumvent lazy texture loading |
 | `log_mask` | ❌ | martwa | 0 | 0 | 0 | log_mask [+-?]option...change log mask, usage: log_mask +system -actions +objects |
@@ -439,6 +437,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_view_begin` | ✅ |  | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
 | `hceil` | ✅ |  | 2 | 2 | 2 | hceil <num>calc ceil value |
 | `hfloor` | ✅ |  | 2 | 2 | 2 | hfloor <num>calc floor value |
+| `is_dig_marked` | ✅ |  | 2 | 2 | 1 | is_dig_marked <xn> <yn> <xp> <yp>checks area for digmark |
 | `set_objvariation` | ✅ |  | 2 | 0 | 2 | set_objvariation <object> <variation>set variation for object |
 | `vector_fixdig` | ✅ |  | 2 | 2 | 1 | vector_fixdig <vector> <vector>get next reachable position in destination of the 2nd Parameter |
 | `vector_inbox` | ✅ |  | 2 | 2 | 2 | vector_inbox <vector> <boxneg> <boxpos>checks if vector is in box |
@@ -447,6 +446,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
 | `callnc` | ✅ |  | 0 | 0 | 0 | callnc <script name>call external script skipping Tcl cache |
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |
+| `inc_playerdigmarkid` | ✅ |  | 0 | 0 | 0 | inc_playerdigmarkid <player>increment current player-dig-mark-ID |
 
 ## network
 
@@ -560,7 +560,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_light` | ❌ | P2 | 17 | 0 | 13 | set_light <object> <on/off>switches the light of the object on/off |
 | `set_pf_influence` | ❌ | P2 | 12 | 0 | 4 | set_pf_influence <objref> <left> <top> <right> <bottom> <costs> <flags>sets the pathfinding influence rectangl |
 | `sm_send_message` | ❌ | P2 | 10 | 0 | 4 | sm_send_message <object> <message>Send Message for Story Event |
-| `dig_resetid` | ❌ | P2 | 9 | 0 | 4 | dig_resetid <object>reset dig id of an object |
 | `set_camerafollow` | ❌ | P2 | 7 | 0 | 2 | set_camerafollow <objref> (<zoom>)(camera follows object, -1 disables follow-mode, zoom 1.0 - 2.5 |
 | `set_prodautoschedule` | ❌ | P2 | 7 | 0 | 5 | set_prodautoschedule <objref> <newstate>set production auto schedule |
 | `fight_weapon_kombi` | ❌ | P2 | 5 | 0 | 1 | fight_weapon_kombi <classlist> <raisevallist>defines special Weapon Kombinations |
@@ -671,6 +670,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_posz` | ✅ |  | 12 | 0 | 7 | set_posz <objref> <z>set current object's z position |
 | `set_rotz` | ✅ |  | 11 | 0 | 9 | set_rotz <objref> <z>set current object's z rotation |
 | `set_weapon_class` | ✅ |  | 10 | 0 | 6 | set_weapon_class <object> <num>sets the Weapon ID |
+| `dig_resetid` | ✅ |  | 9 | 0 | 4 | dig_resetid <object>reset dig id of an object |
 | `set_buildupstate` | ✅ |  | 9 | 0 | 6 | set_buildupstate <objref> <newstate>set object boxed / unpacked |
 | `set_forceipol` | ✅ |  | 9 | 0 | 5 | set_forceipol <objref> <newstate>enable/disable object forceipol |
 | `set_posy` | ✅ |  | 9 | 0 | 5 | set_posy <objref> <y>set current object's y position |

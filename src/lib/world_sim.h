@@ -7,12 +7,14 @@
 // i simUpdate(dt). Gra dziedziczy po WorldSim i dokłada gracza (zaznaczenie, rozkazy, zapis).
 #pragma once
 
+#include "lib/dig_terrain.h"
 #include "lib/map_scene.h"
 #include "lib/nav.h"
 #include "lib/nav_world.h"
 #include "lib/walk_plan.h"
 #include "lib/script/engine.h"
 
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <set>
@@ -165,7 +167,14 @@ public:
 	void finishWalk(SimUnit& u, bool ok);
 	// Kopanie
 	std::set<std::pair<int, int>> digMarks; // pola zaznaczone do kopania
+	// Kopanie pola (x, y) do końca, jak tunel w grze: znacznik tunelu (cel 11) i kroki wycinania w czterech węzłach
+	// pola (narożniki), zszyte z sąsiadami grafem BlockDB (docs/silnik/19_kopanie.md).
 	void dig(int x, int y);
+	DigTerrain digTerrain; // znaczniki graczy i materiał pól (dig_mark, dig_next, dig_apply)
+	// Jeden krok wycinania węzła (dig_apply) z przebudową ruchu zmienionych pól i terenu (rebuild: od razu;
+	// inaczej terrainDirty i jedna przebudowa później).
+	bool carveNode(int nx, int ny, int owner, int& dugId, bool rebuild = true);
+	bool terrainDirty = false;
 	bool nextDigJob(SimUnit& u);
 	// Kopanie pola (mx, my) jak dig_starttask gry: pole startu get_digedge, miejsce vector_fixdig, chód
 	// z -dig 1 (bez chodu, gdy miejsce bliżej niż 0,5), potem kopanie.
@@ -207,6 +216,12 @@ public:
 	void changeParticleSource(int id, int slot, const ParticleSource& s) override;
 	void setParticleSource(int id, int slot, bool on) override;
 	void setVisible(int id, bool v) override;
+	int material(const float p[3]) override { return digTerrain.material(int(std::lround(p[0])), int(std::lround(p[1]))); }
+	void digMark(int owner, int x, int y, int mode, int cnt) override;
+	bool isDigMarked(int x1, int y1, int x2, int y2) override;
+	bool digNext(const float pos[3], int owner, int gnomeId, int tryN, bool matchId, float out[3]) override;
+	bool digApply(int nx, int ny, int owner, int& id) override { return carveNode(nx, ny, owner, id); }
+	void incDigMarkId(int) override { ++digTerrain.playerDigMarkId; }
 	bool getView(float v[5]) override { return viewGet && viewGet(v); }
 	void setView(const float v[5], bool move) override
 	{

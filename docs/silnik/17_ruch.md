@@ -140,7 +140,7 @@ dig_continue: kolejny punkt, vector_fixdig, chód tylko gdy dalej niż 0,5 (kilo
 
 Przykład: `vector_fixdig {6 5 8} {4.5 6.5 8}` w `kris_caves_1_b` daje punkt na linii podłogi y = 6,5 między postacią a ścianą (test `http_wigview`).
 
-U nas zadanie kopania (`WorldSim::digAt`, gracz) idzie tą samą drogą; animacja z kierunku do środka pola od tułowia (0,8 nad stopami): z boku `buddeln_vorn`, w dół `buddeln_unten`, w górę `buddeln_oben_normal`, a wisząc na ścianie `kletter_hack_links/rechts/oben/unten`. 🔶 Wycinanie terenu jest dalej uproszczone (całe pole naraz, blok 4523, [14.4](14_gra.md)); `dig_next`, `dig_apply`, krawędzie i narożniki bloków przy kopaniu to osobny punkt TODO. Test: `dig_standoff`.
+U nas zadanie kopania (`WorldSim::digAt`, gracz) idzie tą samą drogą; animacja z kierunku do środka pola od tułowia (0,8 nad stopami): z boku `buddeln_vorn`, w dół `buddeln_unten`, w górę `buddeln_oben_normal`, a wisząc na ścianie `kletter_hack_links/rechts/oben/unten`. Wycinanie terenu (węzły siatki, graf przejść BlockDB, `dig_next`, `dig_apply`) opisuje [rozdział 19](19_kopanie.md). Test: `dig_standoff`.
 
 ## 17.8 Wspinanie (CAct_Climb) ✅
 

@@ -42,7 +42,7 @@ void WorldSim::initUnits()
 	digMarks.clear(), glides.clear();
 	for (int i = 0; i < scene_.objectCount(); ++i) idOf(i);
 	selected = -1;
-	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb()), walk.build(*g, scene_.blockDb());
+	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb()), walk.build(*g, scene_.blockDb()), digTerrain.init(*g);
 	for (int i = 0; i < scene_.objectCount(); ++i)
 		if (isWalkerClass(Vfs::lower(scene_.objectClass(i)))) addUnit(i);
 	for (size_t k = 0; k < units.size(); ++k)
@@ -366,20 +366,63 @@ int WorldSim::spawnUnit(float x, float y, bool gnome)
 	return u;
 }
 
+bool WorldSim::carveNode(int nx, int ny, int owner, int& dugId, bool rebuild)
+{
+	Pmp* g = scene_.mutableGrid();
+	if (!g || !digTerrain.ready()) return false;
+	std::vector<std::pair<int, int>> changed;
+	bool ok = digTerrain.carveStep(*g, scene_.blockDb(), nx, ny, owner, dugId, changed);
+	if (changed.empty()) return ok;
+	for (auto [x, y] : changed)
+	{
+		size_t i = size_t(y) * g->width + size_t(x);
+		scene_.setBlock(x, y, g->blocks[i], g->types[i]); // też bez starego detalu .l2m
+		nav.updateTile(*g, scene_.blockDb(), x, y);
+		walk.revalidateTile(x, y);
+	}
+	if (rebuild) scene_.rebuildTerrain(), terrainDirty = false;
+	else terrainDirty = true;
+	return ok;
+}
+
+void WorldSim::digMark(int owner, int x, int y, int mode, int cnt)
+{
+	const Pmp* g = simGrid();
+	if (!g || !digTerrain.ready()) return;
+	if (mode == 2) digTerrain.clearMark(x, y, owner);
+	else if (digTerrain.diggable(x, y) && digTerrain.markRimGate(*g, scene_.blockDb(), x, y, mode == 1 ? 3 : (cnt | 8)))
+		digTerrain.setMark(x, y, owner, cnt, mode == 1); // znacznik tylko na materiale 1/2 i gdy jest jeszcze co kopać
+}
+
+bool WorldSim::isDigMarked(int x1, int y1, int x2, int y2)
+{
+	for (int y = y1; y < y2; ++y)
+		for (int x = x1; x < x2; ++x)
+			if (digTerrain.marked(x, y, 0)) return true;
+	return false;
+}
+
+bool WorldSim::digNext(const float pos[3], int owner, int gnomeId, int tryN, bool matchId, float out[3])
+{
+	const Pmp* g = simGrid();
+	return g && digTerrain.ready() && digTerrain.next(*g, scene_.blockDb(), pos, owner, gnomeId, tryN, matchId, out);
+}
+
 void WorldSim::dig(int x, int y)
 {
-	// 🔶 Wykopane pole: tunel z tylną ścianą (blok 4523: siatka 8×8 o wysokości 7), bez zszywania z sąsiadami.
-	// Rodzaj gruntu bez zmian, ale nie „otwór do tła” (typ 5): wtedy grunt pola niżej albo skała A (4).
-	uint8_t type = simGrid()->types[size_t(y) * simGrid()->width + size_t(x)];
-	if ((type & 0x7F) == 5)
-	{
-		uint8_t below = y + 1 < int(simGrid()->height) ? simGrid()->types[size_t(y + 1) * simGrid()->width + size_t(x)] : 4;
-		type = uint8_t((below & 0x7F) == 5 || (below & 0x7F) == 0 ? 4 : (below & 0x7F));
-	}
-	scene_.setBlock(x, y, 4523, type);
-	nav.updateTile(*simGrid(), scene_.blockDb(), x, y);
-	walk.revalidateTile(x, y);
-	scene_.rebuildTerrain();
+	// Tunel jak w grze (tryb 1 dig_mark, cel 11): węzły pola (narożniki NW, NE, SW, SE) wycinane, dopóki krawędź
+	// sięga celu. Węzły wspólne z wykopanym już sąsiadem odpadają na bramce krawędzi (już wykopane).
+	if (const Pmp* g = simGrid(); g && digTerrain.ready())
+		for (auto [nx, ny] : {std::pair{x, y}, {x + 1, y}, {x, y + 1}, {x + 1, y + 1}})
+		{
+			if (!digTerrain.markRimGate(*g, scene_.blockDb(), nx, ny, 3)) continue;
+			digTerrain.setMark(nx, ny, 0, 0, true);
+			int id;
+			for (int k = 0; k < 4 && carveNode(nx, ny, 0, id, false); ++k)
+			{
+			}
+		}
+	if (terrainDirty) scene_.rebuildTerrain(), terrainDirty = false;
 	digMarks.erase({x, y});
 	// Znalezisko jak w dig_execute (z_dignwalk.tcl): 4% szans; rodzaj losowany (🔶 bez stref kampanii).
 	if (float(std::rand()) / float(RAND_MAX) < 0.04f)
@@ -530,7 +573,8 @@ void WorldSim::markDig(int x0, int y0, int x1, int y1)
 	int n = 0;
 	for (int y = std::min(y0, y1); y <= std::max(y0, y1); ++y)
 		for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x)
-			if (!nav.open(x, y) && simGrid() && x >= 0 && y >= 0 && x < int(simGrid()->width) && y < int(simGrid()->height))
+			if (!nav.open(x, y) && simGrid() && x >= 0 && y >= 0 && x < int(simGrid()->width) && y < int(simGrid()->height) &&
+			    (!digTerrain.ready() || digTerrain.diggable(x, y))) // jak w grze: znacznik tylko na piasku i ziemi
 				n += digMarks.insert({x, y}).second;
 	if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = true;
 	status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());

@@ -33,6 +33,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 | [16. Rozgrywka: mechaniki według instrukcji](silnik/16_rozgrywka.md) | Cel i tryby gry, doba i plan dnia, potrzeby krasnali, sterowanie, kopanie, walka i dyplomacja, produkcja, wynalazki, doświadczenie, rozmnażanie, rozkazy gracza jako zdarzenia `evt_task_*` |
 | [17. Ruch postaci jak w grze](silnik/17_ruch.md) | Podpola 8×8 (podłoga, ściana) z wysokości bloków, graf pól, wyszukiwanie drogi, chód, kopanie, wspinanie (prawa za Diggles-Unity) |
 | [18. Cienie obiektów](silnik/18_cienie.md) | Obrazy cienia 32×32 z `.3db`, lampy w zasięgu `MaxShadowLightDist`, pochylenie od lampy, przyciemnienie podłogi (pomiar w grze) |
+| [19. Kopanie terenu](silnik/19_kopanie.md) | Materiał pól, znaczniki graczy, węzły siatki i krawędź, krok wycinania grafem przejść BlockDB, `dig_next` (prawa za Diggles-Unity, sprawdzone w grze) |
 | [Czego jeszcze nie wiemy](silnik/niewiadome.md) | Luki: cienie, przejścia gruntów, generator świata, rozgrywka |
 
 ## Formaty plików

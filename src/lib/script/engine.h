@@ -116,6 +116,13 @@ struct Host
 	virtual void setParticleSource(int /*id*/, int /*slot*/, bool /*włączone*/) {}
 	virtual void setVisible(int /*id*/, bool) {} // set_visibility: obiekt rysowany albo ukryty (przedmioty w rękach, półki)
 	// Kamera gry (get_view / set_view): x y zoom dx dy. getView false = brak kamery (wartości bez zmian).
+	// Kopanie (cmd_dig.cpp, lib/dig_terrain): materiał pola, znaczniki, kolejny węzeł, krok wycinania.
+	virtual int material(const float /*poz*/[3]) { return 1; }
+	virtual void digMark(int /*gracz*/, int /*x*/, int /*y*/, int /*tryb 0 jaskinia, 1 tunel, 2 zdjęcie*/, int /*głębokość*/) {}
+	virtual bool isDigMarked(int /*x1*/, int /*y1*/, int /*x2*/, int /*y2*/) { return false; }
+	virtual bool digNext(const float /*poz*/[3], int /*gracz*/, int /*id kopiącego*/, int /*próba*/, bool /*tylko id*/, float /*out*/[3]) { return false; }
+	virtual bool digApply(int /*nx*/, int /*ny*/, int /*gracz*/, int& /*id znacznika*/) { return false; }
+	virtual void incDigMarkId(int /*gracz*/) {}
 	virtual bool getView(float /*v*/[5]) { return false; }
 	virtual void setView(const float /*v*/[5], bool /*move: płynny przejazd*/) {}
 };
@@ -150,6 +157,7 @@ struct ScriptObject
 	std::map<std::string, double> talkIssues; // talkissue: temat rozmowy → waga 0..50
 	std::vector<int> inventory; // inv_add / inv_rem: odwołania przedmiotów w kolejności (cmd_inventory.cpp)
 	int containedIn = -1;       // właściciel ekwipunku, w którym obiekt leży (−1 = w świecie)
+	int digSetId = -1;          // id znacznika ostatnio kopanej żyły (dig_apply → dig_next)
 };
 
 // ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).

@@ -1,7 +1,7 @@
 // Wspólne pomocniki komend natywnych gry (tylko dla plików src/lib/script/*.cpp). Komendy podzielone na moduły
 // według kategorii oficjalnej pomocy komend (docs/tcl_komendy_stan.md): engine.cpp (rdzeń: klasy, obiekty,
 // zdarzenia, stany, akcje), cmd_object.cpp (właściwości obiektów i graczy), cmd_misc.cpp (wektory, listy, statystyki, rozmowy, rodzina), cmd_inventory.cpp
-// (ekwipunek, zawieranie), cmd_ui.cpp (zaznaczenie, kamera) …
+// (ekwipunek, zawieranie), cmd_ui.cpp (zaznaczenie, kamera), cmd_dig.cpp (kopanie) …
 #pragma once
 
 #include "lib/script/engine.h"
@@ -36,5 +36,6 @@ const std::vector<CmdEntry>& objectPropCommands(); // cmd_object.cpp
 const std::vector<CmdEntry>& miscCommands();       // cmd_misc.cpp
 const std::vector<CmdEntry>& inventoryCommands();  // cmd_inventory.cpp
 const std::vector<CmdEntry>& uiCommands();         // cmd_ui.cpp
+const std::vector<CmdEntry>& digCommands();        // cmd_dig.cpp
 
 } // namespace ow::script

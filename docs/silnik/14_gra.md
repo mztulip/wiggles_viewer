@@ -35,7 +35,7 @@ Krasnal stoi stopami na linii podłogi (y = wiersz podpola / 8), na głębokośc
 
 ## 14.4 Kopanie (🔶 uproszczenie)
 
-PPM na polu skały: krasnal idzie na miejsce do kopania jak w grze (`get_digedge`, `vector_fixdig`, [17.7](17_ruch.md)), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`, na ścianie `kletter_hack_*`), a potem pole dostaje blok 4523 (tunel: płaska tylna ściana na wysokości 7, czyli z = 10,5). Rodzaj gruntu pola zostaje, więc ściana tunelu pokazuje materiał, w którym kopano (szara skała A, żółta glina C…); tylko „otwór do tła” (typ 5, np. wiersz powierzchni) zamieniamy na grunt pola niżej, bo inaczej ściana dostaje kolor strefy horyzontu. Warstwę detali `.l2m` pola zerujemy. Teren, wysokości i płyny przebudowujemy w całości.
+PPM na polu skały: krasnal idzie na miejsce do kopania jak w grze (`get_digedge`, `vector_fixdig`, [17.7](17_ruch.md)), kopie 2 s (`buddeln_vorn`, `buddeln_unten`, `buddeln_oben_normal`, na ścianie `kletter_hack_*`), a potem cztery węzły pola są wycinane jak tunel w grze (znacznik tunelu, cel 11, graf przejść BlockDB, [rozdział 19](19_kopanie.md)), zszyte z sąsiadami. Zaznaczyć do kopania można tylko piasek i ziemię (materiał 1 i 2), skały (granitu) nie. Warstwę detali `.l2m` zmienionych pól zerujemy; teren przebudowujemy w całości, ruch tylko dla zmienionych pól.
 
 **Obszar do kopania**: przeciągnięcie PPM zaznacza prostokąt pól skały (żółte znaczniki na przedniej płaszczyźnie). Zaznaczony krasnal dostaje zadanie: sam wybiera najbliższe zaznaczone pole, do którego prowadzi droga, i kopie kolejne, aż skończą się osiągalne. W tym czasie skrypt nie może nim chodzić (`walkTo` odmawia). Pojedyncze kliknięcie PPM zdejmuje zadanie.
 

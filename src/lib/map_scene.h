@@ -140,6 +140,7 @@ public:
 	}
 	int addObject(const std::string& className, float x, float y, float zScript);
 	const Pmp* grid() const { return pmp_ ? &*pmp_ : nullptr; }
+	Pmp* mutableGrid() { return pmp_ ? &*pmp_ : nullptr; } // zmiany bloków: potem setBlock/rebuildTerrain
 	const BlockDb& blockDb() const { return blocks_; }
 	void setBlock(int x, int y, uint32_t block, uint8_t type);
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny

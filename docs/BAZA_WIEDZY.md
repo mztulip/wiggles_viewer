@@ -560,6 +560,13 @@ Wyniki (lampa w (x; y; z), krasnal w (249,5; 42,5; 13); długość = od środka 
 
 Koniec smugi leży około 0,5 bloku bliżej widza niż stopy, a jej początek za krasnalem: wiersze obrazu cienia (głębokość z) przesuwają się w x, z zostaje. Dopasowanie końców do naszego renderu: σ = max(0,7; 0,285·d), zgodność 0,1 bloku (lampa z lewej 0,17). Przyciemnienie: barwa podłogi w cieniu / bez krasnala = 0,68–0,74 w rdzeniu, średnio 0,79–0,83; przy trzech lampach (253,5, 247,5, 251,5) rdzeń 0,77–0,80, więc mnożnik nie zależy od liczby świateł. Zrzut D jest identyczny z B, czyli lampa dostawiona w zapisie nie rozjaśnia podłogi pod krasnalem.
 
+### 9.12 Kopanie: materiał pól i kroki wycinania (2026-10-07)
+Cel: sprawdzić prawa kopania Diggles-Unity ([rozdział 19](silnik/19_kopanie.md)) na działającej grze. `OW_HIDDEN=1 live2.sh start`, szablony podmieniane `show` (szablon w (16, 16)).
+- **Materiał**: `get_material {x y 10}` na wszystkich polach. `kris_caves_1_b` (`CAVES_1.PMP`, 96 pól typu 4): same 0. `urw_gsg_001_a` (`GSG_001.PMP`, 64 pola typu 2): same 2. ✅ typ 4 = skała (0), typ 2 = ziemia (2), zgodnie z prawem wczytywania z Diggles-Unity.
+- **Kroki**: krasnal `new Zwerg`, `state_disable`, `set_owner 0`. Na `urw_gsg_001_a`: `dig_mark 0 x y 0 0` (jaskinia do dna) w węzłach (26, 17), (27, 17), (26, 18), (27, 18), potem 8 razy `dig_apply {x y 10} $G` na każdy: liczba udanych kroków {4 4 4 4}. `dig_mark 0 x y 1` (tunel) w (29, 17), (30, 17): {1 1}. Wcześniejsza próba tunelu w (26, 16), (27, 16) tuż po jaskini obok dała {1 0}: drugi węzeł był już obniżony przez sąsiedni krok. Nasz `WorldSim` (`http_dig`) daje te same liczby ✅.
+- `dig_next` po wykopaniu zwraca wartownika ze śmieciem w tekście: `-1.0 -1.0 1.0°w` (błąd formatowania w grze, skrypt czyta tylko y).
+- Zrzuty przed i po: `../lab/zrzuty/kopanie/`.
+
 ## 10. Diggles-Unity: indeks dokumentacji
 
 Pełna mapa ich dokumentacji (wszystkie dokumenty z odnośnikami), stan u nas, najważniejsze pliki ich kodu i plan „dogonić i wyprzedzić”: **[DIGGLES_UNITY.md](DIGGLES_UNITY.md)**. Każdy rozdział przewodnika i specyfikacja formatu kończą się linią z odnośnikami do ich odpowiedników.
