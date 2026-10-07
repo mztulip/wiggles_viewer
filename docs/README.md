@@ -51,6 +51,7 @@ Ta dokumentacja ma wystarczyć, żeby **samodzielnie napisać silnik** zgodny z 
 - ✅ **potwierdzone**: sprawdzone na wszystkich danych gry albo porównaniem ze zrzutem z oryginału.
 - 🔶 **hipoteza**: działa i daje zgodny obraz, ale nie wiemy, czy gra robi to tak samo. Można polegać, warto mieć na oku.
 - ❓ **nieznane**: wiadomo, że coś jest, nie wiadomo jak działa.
+- 🛠 **poprawka**: świadomie działamy inaczej niż oryginał, bo w grze to błąd; obok zawsze opis zachowania oryginału.
 
 ## Skąd ta wiedza
 

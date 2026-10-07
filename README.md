@@ -18,6 +18,8 @@ To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
    - opcjonalnie eksport do glTF/PNG.
 3. **`libwiggles`**: wspólna biblioteka z parserami formatów plików, systemem plików wirtualnym nad `Data/` i podstawowym rendererem. Używają jej obie aplikacje.
 
+**Wierność i poprawki.** Odtwarzamy zachowanie oryginału, ale nie jego błędy za wszelką cenę: oryginalna gra ma ich sporo, a OpenWiggles może je poprawiać. Każde świadome odstępstwo jest oznaczone w dokumentacji (🛠) razem z opisem, jak działa oryginał, żeby różnica była widoczna i odwracalna.
+
 ## Decyzje techniczne
 
 | Obszar | Wybór | Uzasadnienie |
