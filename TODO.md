@@ -146,7 +146,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] 🔬 Cień w grze zmierzony (krasnal i lampa w 15 położeniach): lampy do 8 bloków w płaszczyźnie x/y, najwyżej 2 cienie, obraz pochylony od lampy σ = max(0,7; 0,285·d), podłoga · (1 − 0,4·v) ([BAZA_WIEDZY §9.11](docs/BAZA_WIEDZY.md), [rozdział 18](docs/silnik/18_cienie.md))
 - [x] Renderer cieni ([`shadow_renderer`](src/lib/render/shadow_renderer.h)) w scenie mapy (gra i wigview), `wigview --place KLASA X Y Z`, test `shadows`; koniec smugi zgodny z grą co do 0,1–0,17 bloku
 - [ ] Cienie: smuga węższa niż w grze (w grze do 2× więcej pikseli, płytszych), obrócone obiekty niezmierzone, wybór 2 lamp z wielu (najbliższe czy pierwsze?) ([rozdział 18.5](docs/silnik/18_cienie.md))
-- [ ] Światła obiektów tworzonych w trakcie gry (`new` z `class_light`, przenoszone z obiektem): teraz lampy zbieramy tylko przy wczytaniu, więc nowe nie świecą ani nie dają cieni
+- [x] Światła obiektów tworzonych w trakcie gry (`new` z `class_light`): `MapScene::addObject` dodaje je z właścicielem, co klatkę idą za pozycją obiektu (`/api/objects` → `lights`, test `http_wigview`). 🔶 Światła obiektów z wczytanej mapy dalej stoją w miejscu
 - [x] Zrzut PNG z linii poleceń (`wigview --screenshot`)
 - [x] Eksport do glTF (`.glb`, morph targets, osadzone tekstury) w wigview i narzędziu `export_gltf`; walidator Khronos bez uwag
 - [x] Nawigacja klawiaturą: ↑/↓ modele lub tekstury, PgUp/PgDn animacje

@@ -39,7 +39,7 @@ Błędu WebTraq z ucinaniem skryptu na pierwszym `:` **nie** powtarzamy.
 |---|---|
 | `POST /api/eval` (treść: skrypt) | `{"ok": true, "result": "…"}` albo `{"ok": false, "error": "…"}` |
 | `GET /api/state` | program, mapa, czas gry, pauza, symulacja, prowadzona postać |
-| `GET /api/objects` | obiekty sceny: indeks, ID skryptu, klasa, nazwa, obiekt `.3db`, animacja, pozycja, obrót, żywe cząsteczki jego emiterów (`particles`) |
+| `GET /api/objects` | obiekty sceny: indeks, ID skryptu, klasa, nazwa, obiekt `.3db`, animacja, pozycja, obrót, żywe cząsteczki jego emiterów (`particles`), światła obiektów dodanych w trakcie gry w bieżącej pozycji (`lights`: `[x, y, z świata]` w blokach) |
 | `GET /api/units` | postacie symulacji: pole, x, y, z, najmniejsza głębokość, stan (`idle`, `walk`, `dig`, `fall`), sterowanie, reszta trasy `path` (punkty `[x, y, z]`) |
 | `POST /api/simulate?on=1\|0` | wigview: symulacja (skrypty) |
 | `POST /api/pause`, `/api/resume`, `/api/step?seconds=S` | pauza mapy i przewinięcie świata o S s (domyślnie 0,1 = jedna tura logiki), także w pauzie: deterministyczne testy |

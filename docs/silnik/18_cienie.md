@@ -54,6 +54,5 @@ Shadery [`shadow.vert`](../../src/shaders/shadow.vert) i [`shadow.frag`](../../s
 - nasza smuga jest węższa: w grze ma do 2 razy więcej pikseli, ale płytszych (śr. mnożnik 0,82 wobec naszych 0,76). Gra prawdopodobnie mocniej rozmywa obraz albo rozciąga go także w poprzek;
 - przy lampie z lewej nasz cień jest o 0,17 bloku krótszy niż w grze;
 - obróconych obiektów nie mierzyliśmy: prostokąt obracamy razem z obiektem, a pochylenie liczymy w osiach świata;
-- lampy z obiektów tworzonych w trakcie gry jeszcze nie trafiają do sceny (światła zbieramy przy wczytaniu), więc nie dają ani światła, ani cienia.
 
 **Sprawdzenie:** test `shadows` w [`tools/tests/run.sh`](../../tools/tests/run.sh) (krasnal w (249,5; 42,5; 13) zapisu kampanii, lampa 4 bloki w prawo: koniec smugi i mnożnik jak w grze; lampa 9 bloków obok: brak cienia). Ręcznie: `wigview --save save_kampania.sav --fow 0 --view 249.5 42 1.0 -0.2 0.2 --place Misc_LightSrc_a 253.5 41.5 13 --place Zwerg 249.5 42.5 13`.

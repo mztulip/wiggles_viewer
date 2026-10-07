@@ -2162,7 +2162,6 @@ int main(int argc, char** argv)
 			float x = p[0] - float(v.maps.origin()[0]), y = p[1] - float(v.maps.origin()[1]);
 			int i = v.maps.addObject(cls, x, y, p[2]);
 			if (Vfs::lower(cls) == "zwerg" && v.maps.setObjectModel(i, "mann.3db", "mann")) v.maps.playAnim(i, "standard", true);
-			v.maps.addClassLights(cls, x, y, p[2]);
 		}
 	}
 

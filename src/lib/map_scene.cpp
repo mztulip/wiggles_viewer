@@ -324,6 +324,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 	initFluidSim();
 	buildFluids();
 	allLights_.clear();
+	ownedLights_.clear();
 	if (script_)
 		for (const auto& o : script_->objects) pushClassLights(o.className, o.pos[0], o.pos[1], o.pos[2]);
 	previewLamp_ = !scenarioMode_ && allLights_.empty();
@@ -514,12 +515,13 @@ std::string MapScene::objectModelObject(int i) const
 	return o.slot && o.cls ? o.cls->object : std::string();
 }
 
-bool MapScene::pushClassLights(const std::string& className, float x, float y, float zScript)
+bool MapScene::pushClassLights(const std::string& className, float x, float y, float zScript, int owner)
 {
 	const auto* ls = classes_.lights(className);
 	if (!ls) return false;
 	for (const auto& l : *ls)
 	{
+		if (owner >= 0) ownedLights_.push_back({owner, allLights_.size(), glm::vec3(l.offset[0], l.offset[1], l.offset[2])});
 		GameLight g;
 		g.posRadius = glm::vec4(x + l.offset[0], y + l.offset[1], (zScript + l.offset[2]) * 0.5f + 7.f, l.radius);
 		g.color = glm::vec4(std::floor(l.color[0] * 31.f) * 0.5f, std::floor(l.color[1] * 31.f) * 0.5f,
@@ -527,6 +529,28 @@ bool MapScene::pushClassLights(const std::string& className, float x, float y, f
 		allLights_.push_back(g);
 	}
 	return true;
+}
+
+void MapScene::updateOwnedLights()
+{
+	for (const auto& ol : ownedLights_)
+	{
+		const float* p = objects_[size_t(ol.object)].src.pos;
+		auto& g = allLights_[ol.light].posRadius;
+		g.x = p[0] + ol.offset.x, g.y = p[1] + ol.offset.y, g.z = (p[2] + ol.offset.z) * 0.5f + 7.f;
+	}
+}
+
+std::vector<glm::vec3> MapScene::ownedLightPositions(int i) const
+{
+	std::vector<glm::vec3> r;
+	for (const auto& ol : ownedLights_)
+		if (ol.object == i)
+		{
+			const float* p = objects_[size_t(i)].src.pos;
+			r.push_back(glm::vec3(p[0] + ol.offset.x, p[1] + ol.offset.y, (p[2] + ol.offset.z) * 0.5f + 7.f));
+		}
+	return r;
 }
 
 bool MapScene::addClassLights(const std::string& className, float x, float y, float zScript)
@@ -855,7 +879,9 @@ int MapScene::addObject(const std::string& className, float x, float y, float zS
 	p.marker = markerKind(className, p.cls);
 	if (p.cls) resolve(*p.cls, p.slot, p.animation);
 	objects_.push_back(p);
-	return int(objects_.size()) - 1;
+	int i = int(objects_.size()) - 1;
+	pushClassLights(className, x, y, zScript, i); // światła klasy idą za obiektem (lampy, ogniska ze skryptów)
+	return i;
 }
 
 void MapScene::setBlock(int x, int y, uint32_t block, uint8_t type)
@@ -921,6 +947,7 @@ void MapScene::render(const glm::mat4& viewProj, const glm::mat4& world, const M
     float gameZOffset, const glm::vec3& focus)
 {
 	applyLinks(); // przypięte obiekty (czapki, narzędzia) za punktem rodzica w tej klatce
+	updateOwnedLights();
 	// Lampy: do kmaxGameLights najbliższych środka kadru.
 	std::vector<GameLight> lights;
 	if (gameLighting_)

@@ -641,7 +641,7 @@ print(int(max(d) > 0.3), int(max(d) > 0.02))")
 	[ -z "$e" ] && ok "cząsteczki [beczki, ognisko] $p" || fail "$e"
 }
 
-test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut"
+test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut; światło lampy z new idzie za set_pos"
 t_http_wigview() {
 	http_ok || return
 	http_start wigview --template kris_caves_1_b --simulate --populate 2 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
@@ -673,6 +673,12 @@ t_http_wigview() {
 	[ -z "$e" ] && hget /objlist | grep -q "^100003 " || e="${e:-/objlist bez postaci}"
 	[ -z "$e" ] && hget "/objinfo:100003" | grep -q "^Klasa: Zwerg" || e="${e:-/objinfo}"
 	[ -z "$e" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$HPORT/api/nie_ma")" = 404 ] || e="${e:-nieznany adres nie daje 404}"
+	# lampa utworzona w trakcie gry świeci, a jej światło idzie za obiektem (class_light {0 -0,5 0}, z świata = z·0,5 + 7)
+	hpost /api/eval 'sel /obj; set L [new Misc_LightSrc_a "" "5 4 14" "0 0 0"]; set_pos $L "8 4 14"' >/dev/null
+	local lp
+	lp=$(hget /api/objects | jget '[o["lights"] for o in d["objects"] if o["class"] == "Misc_LightSrc_a"][-1]')
+	[ -z "$e" ] && python3 -c "import sys; l=$lp; sys.exit(0 if len(l) == 1 and abs(l[0][0] - 8) < 1e-3 and abs(l[0][1] - 3.5) < 1e-3 and abs(l[0][2] - 14) < 1e-3 else 1)" ||
+		e="${e:-światło nowej lampy po set_pos: $lp, oczekiwane [[8, 3.5, 14]]}"
 	ui_stop
 	[ -z "$e" ] && ok "port $HPORT" || fail "$e"
 }

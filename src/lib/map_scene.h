@@ -81,6 +81,8 @@ public:
 	// Grupa znacznika edytora obiektu: 0 zwykły, 1 źródło światła albo efektu, 2 obiekt Info, 3 bryła kolizji.
 	int objectMarker(int i) const { return objects_[size_t(i)].marker; }
 	int objectParticles(int i) const; // żywe cząsteczki emiterów obiektu (wszystkie sloty)
+	// Światła obiektu dodanego w trakcie (addObject) w bieżącej pozycji: x, y w blokach, z świata w blokach.
+	std::vector<glm::vec3> ownedLightPositions(int i) const;
 	int objectLights(int i) const // lampy klasy obiektu (class_light)
 	{
 		const auto* l = classes_.lights(objects_[size_t(i)].src.className);
@@ -229,7 +231,9 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	bool objectShown(const PlacedObject& o) const; // jak przy rysowaniu: detale, obiekty edytora, mgła
 	int markerKind(const std::string& className, const ClassModel* cls) const; // PlacedObject::marker
 	void applyLinks(); // modele nadane przez grę (stałe adresy)
-	bool pushClassLights(const std::string& className, float x, float y, float zScript); // do allLights_
+	// Do allLights_; owner ≥ 0: światło obiektu sceny, które co klatkę idzie za jego pozycją (updateOwnedLights).
+	bool pushClassLights(const std::string& className, float x, float y, float zScript, int owner = -1);
+	void updateOwnedLights();
 
 	ModelSlot* model(const std::string& file);
 	// Szuka obiektu najpierw we wskazanym pliku, potem we wszystkich modelach.
@@ -285,6 +289,13 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	void initFluidSim();
 	bool panoramaReady_ = false;
 	std::vector<GameLight> allLights_; // lampy wszystkich obiektów (class_light)
+	struct OwnedLight
+	{
+		int object;      // indeks w objects_
+		size_t light;    // indeks w allLights_
+		glm::vec3 offset; // przesunięcie class_light (x, y w blokach, z skryptu)
+	};
+	std::vector<OwnedLight> ownedLights_; // światła obiektów dodanych w trakcie (addObject)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
 	bool scenarioMode_ = false;
 	std::string scenarioInfo_;

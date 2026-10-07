@@ -211,7 +211,10 @@ void registerDevApi(DevServer& srv, DevHooks hooks)
 			    ",\"class\":" + jsonStr(src.className) + ",\"name\":" + jsonStr(utf8(src.instanceName)) +
 			    ",\"model\":" + jsonStr(s->objectModelObject(i)) + ",\"anim\":" + jsonStr(s->objectAnimation(i)) + ",\"pos\":[" +
 			    num(p[0]) + "," + num(p[1]) + "," + num(p[2]) + "],\"roty\":" + num(s->objectRotY(i)) +
-			    ",\"particles\":" + std::to_string(s->objectParticles(i)) + "}";
+			    ",\"particles\":" + std::to_string(s->objectParticles(i)) + ",\"lights\":[";
+			int k = 0;
+			for (const auto& l : s->ownedLightPositions(i)) j += std::string(k++ ? "," : "") + "[" + num(l.x) + "," + num(l.y) + "," + num(l.z) + "]";
+			j += "]}";
 		}
 		return DevReply::json(j + "]}");
 	});
