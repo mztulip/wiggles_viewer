@@ -6,7 +6,7 @@
     tools/lab/set_link_flags.py LAVAWELT.3DB --list 'lava_krst_ov_i'          # tylko wypisz linki (tryb, materiał)
     tools/lab/set_link_flags.py LAVAWELT.3DB --restore                        # przywróć oryginał z kopii .orig
 
-Plik jest szukany w ../lab/Wiggles/Data/3db (nazwa bez rozróżniania wielkości liter). Przed pierwszą zmianą
+Plik jest szukany w $WIGGLES_DIR/Data/3db albo ../lab/Wiggles/Data/3db (nazwa bez rozróżniania wielkości liter). Przed pierwszą zmianą
 zapisuje kopię <plik>.orig; zmiany zawsze liczone od oryginału (poprzednie podmiany znikają). Filtr obiektu
 to podciąg nazwy (małe litery). Gra wczytuje modele przy starcie: po zmianie `live2.sh stop` i `start`.
 Układ pliku: docs/formaty/3db.md §3 (link = 6 × u16, flags to drugie słowo).
@@ -17,7 +17,8 @@ import struct
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DIR = os.path.join(ROOT, "..", "lab", "Wiggles", "Data", "3db")
+# kopia gry w laboratorium: WIGGLES_DIR (np. gdy repo jest submodułem gry) albo ../lab/Wiggles
+DIR = os.path.join(os.environ.get("WIGGLES_DIR") or os.path.join(ROOT, "..", "lab", "Wiggles"), "Data", "3db")
 
 
 class R:

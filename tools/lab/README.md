@@ -6,7 +6,7 @@ Wszystkie skrypty uruchamiają **kopię** gry z `../lab/Wiggles` (osobny prefiks
 ```
 findmnt /dev/sr0 || udisksctl mount -b /dev/sr0
 ```
-Skrypty uruchamiamy z katalogu repozytorium (`openwiggles_git`).
+Skrypty uruchamiamy z katalogu repozytorium (`wiggles_viewer`; laboratorium jest w `../lab`).
 
 | Skrypt | Okno | Do czego |
 |---|---|---|
