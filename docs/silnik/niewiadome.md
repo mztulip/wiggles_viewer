@@ -28,7 +28,7 @@ Lista luk, które dzielą przewodnik od pełnego silnika. Przy każdej: co wiado
 | Generator świata kampanii i trybu swobodnego (`lg_*`, `StoryMgr load_level`) | ❓ | `Scripts/init/LGINIT.TCL`, Diggles-Unity `WORLDGEN_ORIGINAL_RE.md`, `LEVEL_GENERATOR.md` |
 | Maska ruchu w `.pmp` (przebiegi u16) | 🔶 | płaszczyzna nawigacji; Diggles-Unity `ORIGINAL_PATHFINDING_RE.md` |
 | Model obiektów Tcl: szczegóły | 🔶 | opisany w [rozdziale 11](11_obiekty_tcl_i_petla.md) za Diggles-Unity; do sprawdzenia: semantyka licznika stanów, dlaczego timer klasy z `userstartup.tcl` nie zadziałał |
-| Dźwięk: głośność od odległości (`sound play` z pozycją), materiały i pomieszczenia w `sound anim`, przełączanie motywów `adaptive_sound` | 🔶 | składnia i powiązania: [rozdział 15](15_dzwiek.md); prawa mieszania: Diggles-Unity `SOUND_SYSTEM_RE.md` |
+| Dźwięk: przełączanie motywów `adaptive_sound`, próg ciszy daleko od kamery (głośność od odległości i stereo zmierzone: [15.4a](15_dzwiek.md); materiały i pomieszczenia w danych zawsze `any`) | 🔶 | składnia i powiązania: [rozdział 15](15_dzwiek.md); prawa mieszania: Diggles-Unity `SOUND_SYSTEM_RE.md` |
 | Ramka ekranu: rola prawej dolnej ćwiartki `bordermask.tga` | ❓ | prawo ✅ i szerokość stała w pikselach (🔶 800×600): [rozdział 9.4](09_klatka.md); dawna „winieta” to ramka plus ciemna treść sceny |
 | Rejestr `TCLDEFINES`: składnia symboli preprocesora | ❓ | sama nazwa nie działa: [rozdział 2.2](02_start_i_skrypty.md) |
 | Kopanie, produkcja, walka, AI, interfejs | ❓ (zasady gracza: [rozdział 16](16_rozgrywka.md) 🔶) | skrypty w `Data/Scripts`; Diggles-Unity ma dokumenty do każdego tematu ([mapa Diggles-Unity](../DIGGLES_UNITY.md)) |

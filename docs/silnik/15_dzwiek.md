@@ -2,7 +2,7 @@
 
 Kroki Fenrira, stukanie młotka, okrzyki krasnali, muzyka w tle i dialogi w przerywnikach. Silnik nie wie, który dźwięk zagrać przy której czynności: wszystko opisują skrypty Tcl. Ten rozdział wyjaśnia, jakie pliki ma gra, jak skrypty nadają dźwiękom nazwy i jak przypinają je do klatek animacji, akcji i sekwencji.
 
-**Źródło i status.** ✅ Pliki, formaty i składnię komend sprawdziliśmy na danych gry: `test3db` dekoduje każdy plik, a indeks odwołań buduje statyczny skaner skryptów ([`src/lib/sound_refs.cpp`](../../src/lib/sound_refs.cpp)). Znaczenie dalszych pól `sound anim` (materiał, pomieszczenie, wysokość) i komend `adaptive_sound` pochodzi z [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/CUTSCENE_SYSTEM.md`, „Audio”) i jest 🔶, dopóki nie porównamy go z grą. ❓ Jak gra wycisza dźwięk z odległością i jak miesza głośności, nie badaliśmy.
+**Źródło i status.** ✅ Pliki, formaty i składnię komend sprawdziliśmy na danych gry: `test3db` dekoduje każdy plik, a indeks odwołań buduje statyczny skaner skryptów ([`src/lib/sound_refs.cpp`](../../src/lib/sound_refs.cpp)). Znaczenie dalszych pól `sound anim` (materiał, pomieszczenie, wysokość) i komend `adaptive_sound` pochodzi z [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Docs/CUTSCENE_SYSTEM.md`, „Audio”) i jest 🔶, dopóki nie porównamy go z grą. Wyciszanie z odległością i stereo zmierzyliśmy w grze (§15.4a, [BAZA_WIEDZY §8.16](../BAZA_WIEDZY.md)).
 
 ## 15.1 Pliki
 
@@ -40,7 +40,7 @@ Gdy animacja `<animacja>` obiektu `<obiekt>` dojdzie do klatki `<klatka>`, gra o
 
 - **Klucz `obiekt.animacja`** to dokładnie nazwa obiektu i animacji z pliku `.3db` ([format](../formaty/3db.md)). ✅ Wszystkie 1594 klucze z niezakomentowanych linii pasują do animacji w modelach (np. obiekt `fenrir` z `FENRIR.3DB`). Dwa niepasujące to szablony w ciele procedury (`$animname`).
 - **Klatki liczone od 0.** 🔶 Wskazują na to dane: 493 z 2866 odwołań dotyczy klatki 0, tylko jedno klatki równej długości animacji, a trzy wychodzą poza animację (`troll.sitzen_saufen_b` klatka 23 przy 18 klatkach). Te trzy wyglądają na pomyłki w danych.
-- **Pola dodatkowe** (🔶 Diggles-Unity): materiał podłoża `any/sand/soil/stone/wood/metal/water/lava` (np. inny dźwięk kroku na kamieniu i na drewnie), pomieszczenie `any/tunnel/small/medium/big`, głośność i wysokość.
+- **Pola dodatkowe**: materiał podłoża `any/sand/soil/stone/wood/metal/water/lava` i pomieszczenie `any/tunnel/small/medium/big` (🔶 Diggles-Unity: gra je sprawdza i odrzuca), głośność i wysokość. ✅ W danych gry nie mają znaczenia: wszystkie 2131 wpisów `sound anim` mają materiał i pomieszczenie `any` (np. `sound anim mann.gehen_loop 0 gehen_l any any 0.5 1.0 0 0`), więc dźwięk kroku nie zależy od podłoża.
 - **`sound animnoseq`** ma te same pola, ale dźwięk nie gra w trakcie sekwencji (przerywników), w których dialog ma pierwszeństwo.
 - Pomocnicze procedury `snd_anim` i `snd_animlist` (początek `soundinit.tcl`) tylko wołają `sound anim`. Duże listy `snd_animlist mann {…}` w `z_soundinit.tcl` są w większości zakomentowane.
 
@@ -49,11 +49,30 @@ Wynik w liczbach: 2171 `sound anim` i 735 `sound animnoseq`.
 ## 15.4 Dźwięk z akcji: `sound play`, `sound playglobal`
 
 ```tcl
-sound play <nazwa> <głośność> [<pozycja>]   ;# w świecie: głośniej, gdy kamera jest blisko (❓ krzywa)
+sound play <nazwa> <głośność> [<pozycja>]   ;# w świecie: ciszej z odległością od celu kamery (§15.4a)
 sound playglobal <nazwa> <głośność>         ;# bez pozycji (interfejs, komunikaty)
 ```
 
 Przykłady: kroki Fenrira w sekwencjach (`sound play fe_schritt1 1`), bomba w trybie wieloosobowym (`sound play c4_plant 1 {x y z}`). Nazwa bywa składana ze zmiennej (`c4_beep$b`), więc indeks łączy takie wywołanie ze wszystkimi nazwami o tym samym przedrostku (`c4_beep1`, `c4_beep2`…).
+
+### 15.4a Głośność i stereo od położenia
+
+Słuchacz to **cel kamery** (x, y z `set_view`) i jej `zoom`; `sound play` bez pozycji gra w celu kamery (bez wyciszenia). Prawo z [Diggles-Unity](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/SOUND_SYSTEM_RE.md) §2 (✅ kształt sprawdzony pomiarem w grze):
+
+```
+dx, dy  = pozycja dźwięku − cel kamery (bloki; głębokość z pomijana ✅)
+zf      = (zoom − 1) · 0,3 + 1
+att     = max(0, √(dx² + dy²) · 0,25 · zf − 0,3)
+gain    = 1 / (att + 1) / zf                      dźwięk gra, gdy głośność · gain > 0,1
+amplituda bliższego kanału ≈ głośność · gain^2,5  (🔶 dopasowanie do pomiaru, ±10% do 8 bloków)
+dalszy kanał: −3 dB na blok |dx| (panorama DirectSound 300 · dx setnych dB) ✅
+```
+
+✅ **Stereo jest w grze odwrócone**: dźwięk na prawo od celu kamery (+dx) słychać w **lewym** kanale (zmierzone: 4 bloki w prawo → L 475, P 119; 4 w lewo → L 119, P 476). Pion (dy) wycisza, ale nie przesuwa stereo; (dx, dy) = (4, 4) działa jak odległość 5,66. 🛠 Kandydat na poprawkę (stereo zgodne z obrazem); decyzja przy wdrożeniu dźwięków świata.
+
+Pomiar (zoom 1,0, `sound play magic_a 1`, dx w blokach, RMS lewego kanału / RMS przy dx = 0): 1 → 1,00; 2 → 0,60; 4 → 0,26; 6 → 0,145; 8 → 0,088; 12 → 0,049; 16 → 0,028; 24 → cisza. Zoom 2,5, dx = 0: 0,37 (prawo: gain 0,69, gain^2,5 = 0,40). ❓ Cisza przy 24 blokach (zoom 1,0) i 16 (zoom 2,5) mimo gain > 0,1: może blokada mgły (dźwięk tylko z pola odkrytego, Diggles-Unity §3b; punkty leżą poza szablonem) albo próg liczony po krzywej głośności.
+
+Diggles-Unity podaje też limit **6 dźwięków naraz** (nowy odrzucany przy pełnym) i dźwięki animacji tylko przy głośności > 0,2 (🔶, niesprawdzone u nas).
 
 ## 15.5 Muzyka: `adaptive_sound`
 
@@ -89,7 +108,7 @@ W zakładce **Modele** sekcja „Dźwięki animacji” pokazuje `sound anim` bie
 
 ## 15.8 Odtwarzanie w OpenWiggles
 
-`src/lib/sound.{h,cpp}`: `decodeSound` zamienia WAV i MP3 na próbki int16 (MP3 dekoduje [dr_mp3](https://github.com/mackron/dr_libs)), `toOutputFormat` przelicza je na 44100 Hz stereo (interpolacja liniowa), a `AudioOut` to mikser kilku głosów na SDL2 (głośność, pętla, pauza, przewijanie). Gra użyje tego samego miksera. Brakuje jeszcze praw głośności od odległości i materiałów (❓, [niewiadome](niewiadome.md)).
+`src/lib/sound.{h,cpp}`: `decodeSound` zamienia WAV i MP3 na próbki int16 (MP3 dekoduje [dr_mp3](https://github.com/mackron/dr_libs)), `toOutputFormat` przelicza je na 44100 Hz stereo (interpolacja liniowa), a `AudioOut` to mikser kilku głosów na SDL2 (głośność, pętla, pauza, przewijanie). Gra użyje tego samego miksera. Prawo głośności od odległości jest opisane w §15.4a; w programie jeszcze nie wdrożone (dźwięki świata: TODO, faza 6).
 
 ---
 **Diggles-Unity** (ich opracowanie, 🔶 do sprawdzenia w laboratorium): [SOUND_SYSTEM_RE](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/SOUND_SYSTEM_RE.md), [AUDIO_SETUP](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/AUDIO_SETUP.md), [CUTSCENE_SYSTEM](https://github.com/Zimennik/Diggles-Unity/blob/main/Docs/CUTSCENE_SYSTEM.md). Porównanie i stan: [mapa Diggles-Unity](../DIGGLES_UNITY.md).

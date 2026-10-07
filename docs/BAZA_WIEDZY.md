@@ -410,6 +410,21 @@ Wniosek: ✅ przycięcie do 1,0–2,5 obowiązuje tylko poza przerywnikiem; ✅ 
 
 Wniosek: ✅ oba pola to śmieci z pamięci eksportera, gra ich nie używa (przynajmniej przy odtwarzaniu i ruchu postaci).
 
+### 8.16 Głośność i stereo `sound play` (2026-10-07)
+
+Metoda (dźwięk gry nie trafia do głośników użytkownika): `pactl load-module module-null-sink sink_name=owlab`, gra z `PULSE_SINK=owlab` (`OW_HIDDEN=1 live2.sh start lava_unq_vampy_tuer`), `parecord -d owlab.monitor` (s16le, 22050 Hz, stereo) przez 4 s wokół `sound play magic_a 1 {x y z}`, RMS lewego i prawego kanału; po pomiarze `live2.sh stop` i `pactl unload-module`. Przed pomiarem `adaptive_sound stop` (muzyka tła była tak głośna jak badany dźwięk); `sound animsound 0` wycisza też `sound play`, więc go nie używać. Laboratorium wymaga zamontowanej płyty (`udisksctl mount -b /dev/sr0`), inaczej gra nie startuje i wyniki są puste.
+
+Kamera `set_view 24 18 Z 0 0`, dźwięk w (24 + dx, 18, 10), RMS L / P:
+
+| dx | 0 | 1 | 2 | 4 | 6 | 8 | 12 | 16 | 24 |
+|---|---|---|---|---|---|---|---|---|---|
+| zoom 1,0 | 1812/1812 | 1807/1278 | 1094/547 | 472/118 | 262/33 | 160/10 | 88/1 | 51/0 | 0/0 |
+| zoom 2,5 | 673/673 | 583/412 | 297/149 | 125/31 | 64/8 | 45/3 | 26/0 | 0/0 | 0/0 |
+
+Dodatkowo (zoom 1,0): dx = −4 → 119/476, −8 → 10/162; dy = ±4 → 479/479 i 476/476; z = 2 i 15 → jak z = 10; (dx, dy) = (4, 4) → 282/71.
+
+Wnioski: ✅ dalszy kanał −3 dB na blok |dx| (P/L = 2^(−dx/2)); ✅ stereo odwrócone względem obrazu (+dx głośniej w lewym kanale); ✅ odległość w płaszczyźnie (dx, dy), z bez znaczenia; 🔶 amplituda bliższego kanału ≈ gain^2,5 z prawem Diggles-Unity (zgodność ±10% do 8 bloków, dalej pomiar trochę głośniej); ❓ cisza przy dx = 24 (zoom 1,0) i 16 (zoom 2,5) mimo gain > 0,1 (mgła poza szablonem albo inny próg). Opis: rozdział 15.4a.
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅
