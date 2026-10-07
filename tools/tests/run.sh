@@ -221,6 +221,41 @@ PY
 }
 
 
+test_ particle_types "cząsteczki typów 8, 12, 42 jak w grze (barwa przyrostu, zasięg, suma jasności wobec zrzutów z laboratorium ../lab/zrzuty/czasteczki/typy)"
+t_particle_types() {
+	local Z
+	Z="$(cd "$REPO/.." && pwd)/lab/zrzuty/czasteczki/typy"
+	[ -f "$Z/gra_5.png" ] || { skip "brak zrzutów gry $Z"; return; }
+	local t
+	for t in 5 8 12 42; do
+		"$B/wigview" --game "$GAME" --save save_kampania.sav --fow 0 --view 237.375 41.5 1.0 0 0 --emit $t 237.375 41.6 13 \
+			--size 1024x768 --screenshot "$TMP/p$t.png" >/dev/null 2>&1
+	done
+	local r
+	r=$(python3 - "$Z" "$TMP" <<'PY'
+import sys, numpy as np
+from PIL import Image
+Z, T = sys.argv[1], sys.argv[2]
+def ld(p, crop=False):
+    im = Image.open(p).convert('RGB')
+    return np.asarray(im.crop((330, 150, 690, 570)) if crop else im, dtype=np.float32)
+gb, nb = ld(Z + '/gra_5.png'), ld(T + '/p5.png', True)
+bad = []
+for t in (8, 12, 42):
+    st = []
+    for img, bg in ((ld('%s/gra_%d.png' % (Z, t)), gb), (ld('%s/p%d.png' % (T, t), True), nb)):
+        d = img - bg; m = d.sum(2) > 25
+        st.append((d[m].mean(0), d[m].sum(), m.sum()))
+    (cg, sg, ng), (cn, sn, nn) = st
+    ratio = cn / max(cn[0], 1) - cg / max(cg[0], 1)          # barwa: proporcje G/R i B/R
+    if abs(ratio[1]) > .15 or abs(ratio[2]) > .15 or not .6 < sn / sg < 1.6 or not .6 < nn / ng < 1.6:
+        bad.append('%d: barwa %s/%s, suma %.2f, piksele %.2f' % (t, cn.round(), cg.round(), sn / sg, nn / ng))
+print('; '.join(bad) or 'ok')
+PY
+)
+	[ "$r" = ok ] && ok || fail "$r"
+}
+
 test_ lab_tools "narzędzie laboratorium set_link_flags.py --list (bez zmian w plikach)"
 t_lab_tools() {
 	[ -f "$GAME/Data/3db/LAVAWELT.3DB" ] || { skip "brak LAVAWELT.3DB"; return; }

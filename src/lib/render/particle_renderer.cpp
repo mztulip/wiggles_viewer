@@ -31,8 +31,8 @@ bool ParticleRenderer::init(rhi::Device& dev, std::string& err, TextureCache& te
 	dev_ = &dev;
 	rhi::PipelineDesc d;
 	d.shader = "particle";
-	d.strides = {9 * sizeof(float)};
-	d.attribs = {{0, 0, 3, 0}, {1, 0, 2, 3 * sizeof(float)}, {2, 0, 4, 5 * sizeof(float)}};
+	d.strides = {10 * sizeof(float)};
+	d.attribs = {{0, 0, 3, 0}, {1, 0, 2, 3 * sizeof(float)}, {2, 0, 4, 5 * sizeof(float)}, {3, 0, 1, 9 * sizeof(float)}};
 	d.blend = rhi::Blend::Additive;
 	d.depth = rhi::DepthTest::LessEqual;
 	d.depthWrite = false;
@@ -89,7 +89,7 @@ void ParticleRenderer::draw(const std::vector<ParticleSprite>& sprites, const Pa
 		float uv[4][2] = {{u0, v0}, {u1, v0}, {u1, v1}, {u0, v1}};
 		for (int k : {0, 1, 2, 0, 2, 3})
 		{
-			verts_.insert(verts_.end(), {p[k].x, p[k].y, p[k].z, uv[k][0], uv[k][1], s.rgba[0], s.rgba[1], s.rgba[2], s.rgba[3]});
+			verts_.insert(verts_.end(), {p[k].x, p[k].y, p[k].z, uv[k][0], uv[k][1], s.rgba[0], s.rgba[1], s.rgba[2], s.rgba[3], s.spec});
 		}
 	}
 	dev_->bindPipeline(pipe_);

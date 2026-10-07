@@ -97,6 +97,10 @@ struct ParticleType
 	int buoyancyFrames = 0;      // przez tyle klatek cząsteczka unosi się
 	bool wander = false;         // błądzenie emitera przenoszone na cząsteczki
 	int ageCap = 32;             // czas życia w klatkach
+	// Biały dodatek do koloru tekstury (0..1), maskowany jej alfą: jak kolor specular wierzchołka w Direct3D 7
+	// (wierzchołki cząsteczek gry mają diffuse i specular, Diggles-Unity §1). 🔶 Dobrany do zrzutów gry
+	// (typ 8: czerwona tekstura, w grze różowa plama).
+	float spec = 0;
 };
 
 const std::vector<ParticleType>& particleTypes(); // indeks = id (0..42)
@@ -126,6 +130,7 @@ struct ParticleSprite
 	float size;       // bok kwadratu w blokach
 	int cell;         // komórka atlasu v·grid + u
 	float rgba[4];    // kolor × jasność; alfa wygasza
+	float spec = 0;   // biały dodatek (ParticleType::spec), wygaszany razem z kolorem
 };
 
 class ParticleEmitter

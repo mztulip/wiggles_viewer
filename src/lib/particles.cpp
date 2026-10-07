@@ -99,7 +99,7 @@ std::vector<ParticleType> buildTypes()
 	{
 		auto& p = T(8, N_("ciemnoczerwone krople (ziemia)"), B128d, 0x0f, 255, 16);
 		p.motion = M::Ground, set3(p.jitter, .03f, 0, .03f), p.rows = 2, p.size = 4.f, p.sizeCurve = Z::Grow;
-		p.colour = C::Constant, p.argb = 0xFFC03028, p.gravity = -.01f, p.ageCap = 95;
+		p.colour = C::Constant, p.argb = 0xFF2C2C2C, p.spec = .09f, p.gravity = -.01f, p.ageCap = 95;
 	}
 	{
 		auto& p = T(9, N_("mała kula ognia"), B128d, 0x0f, 255, 16);
@@ -117,8 +117,8 @@ std::vector<ParticleType> buildTypes()
 		p.cols = 4, p.colour = C::Grey, p.size = 2.f, p.sizeCurve = Z::Grow, p.drag = .95f, p.buoyancyFrames = 24, p.ageCap = 48;
 	}
 	{
-		auto& p = T(12, N_("mały obłok dymu"), A128d, 0x0f, 255, 16);
-		p.count = N::Jitter, p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4, p.colour = C::Grey, p.size = 10.f, p.sizeCurve = Z::Grow;
+		auto& p = T(12, N_("mały obłok dymu"), A128d, 0x0f, 15, 16);
+		p.count = N::Gated, p.gate = .4f, p.row0 = 14, p.rows = 2, p.col0 = 4, p.cols = 4, p.colour = C::Grey, p.argb = 0xFFB8C8FF, p.size = 20.f, p.sizeCurve = Z::Grow;
 		p.ageCap = 64;
 	}
 	{
@@ -247,9 +247,9 @@ std::vector<ParticleType> buildTypes()
 		p.sizeJitter = .3f, p.sizeCurve = Z::Pulse, p.ageCap = 12;
 	}
 	{
-		auto& p = T(42, N_("rosnąca kula pyłu"), E256, 0x0f, 150, 4);
-		p.shape = S::Sphere, p.radius = .3f, p.count = N::Jitter, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFFA89880;
-		p.size = 20.f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.ageCap = 63;
+		auto& p = T(42, N_("rosnąca kula pyłu"), E256, 0x0f, 85, 4);
+		p.shape = S::Sphere, p.radius = .3f, p.count = N::Jitter, p.row0 = 1, p.rows = 1, p.colour = C::Constant, p.argb = 0xFFFF9640;
+		p.size = 25.f, p.sizeJitter = .3f, p.sizeCurve = Z::Grow, p.ageCap = 63;
 	}
 	return t;
 }
@@ -386,8 +386,12 @@ void ParticleEmitter::colourAt(P& p) const
 		p.rgba[0] = p.rgba[1] = 1.f, p.rgba[2] = .9f;
 		p.rgba[3] = (1.f - a * a) * cap;
 		break;
-	case ParticleColour::Grey: // narasta przez 20% życia, potem wygasa
-		p.rgba[0] = p.rgba[1] = p.rgba[2] = .85f;
+	case ParticleColour::Grey: // narasta przez 20% życia, potem wygasa; odcień z argb (domyślnie biały)
+	{
+		float c[4];
+		argbToRgba(t.argb, c);
+		p.rgba[0] = .85f * c[0], p.rgba[1] = .85f * c[1], p.rgba[2] = .85f * c[2];
+	}
 		p.rgba[3] = (a < .2f ? a / .2f : (1.f - a) / .8f) * cap;
 		break;
 	case ParticleColour::Constant:
@@ -483,6 +487,7 @@ void ParticleEmitter::collect(std::vector<ParticleSprite>& out, float sizeScale)
 		s.size = p.size * sizeScale;
 		s.cell = p.cell;
 		for (int k = 0; k < 4; ++k) s.rgba[k] = p.rgba[k];
+		s.spec = type_ ? type_->spec : 0.f;
 		out.push_back(s);
 	}
 }
