@@ -21,6 +21,7 @@ Indeks pola (x, y) to `y · w + x` we wszystkich tablicach.
 |---|---|---|
 | typ & 0x0F | 0 i 2 = grunt C (piasek), 3 = B (ziemia), 4 = A (skała), 5 = otwór do tła ✅ | [4.2](../silnik/04_teren.md), [4.5](../silnik/04_teren.md) |
 | typ & 0x7F == 0 | pole puste: przy nakładaniu może być przezroczyste ✅ | [3.3](../silnik/03_swiat_z_szablonow.md) |
+| typ & 0x7F | materiał do kopania: 2 → ziemia (2), 3 → piasek (1), 4 → skała nie do kopania (0), 5 → otwarte (3); 0 i 1 dziedziczą po polu niżej / z prawej ✅ (`get_material` w grze) | [19.2](../silnik/19_kopanie.md) |
 | typ & 0x80 | wymuszona ściana dla ruchu: podpola nie do chodzenia, cztery takie pola 2×2 blokują pole (za Diggles-Unity, `tile+0x18` bit 7); w obrazie bez efektu | [17.2](../silnik/17_ruch.md) |
 | blok | kształt wnętrza bloku ✅ | [blockdb.md](blockdb.md) |
 | warstwa2 | światło bazowe 0…8 (4 = zwykła skała) ✅ | [7.2](../silnik/07_oswietlenie.md) |

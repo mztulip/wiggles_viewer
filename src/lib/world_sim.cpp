@@ -439,6 +439,15 @@ void WorldSim::dig(int x, int y)
 
 // Następne zaznaczone pole dla krasnala z zadaniem kopania: najbliższe, do którego da się dojść. 🔶 Stanowisko:
 // punkt wyjścia sąsiedniego pola (z boku, nad, pod); dojście do krawędzi jak w grze to etap P3 (rozdział 17).
+// Czy węzeł pola (x, y) jest jeszcze do wykopania jak tunel: materiał piasek albo ziemia, a krawędź węzła sięga
+// celu tunelu (jak bramka malowania znaczników w grze). Bez danych kopania: pole lite dla ruchu.
+bool WorldSim::digNeeded(int x, int y) const
+{
+	const Pmp* g = simGrid();
+	if (!g || !digTerrain.ready()) return !nav.open(x, y);
+	return digTerrain.diggable(x, y) && digTerrain.markRimGate(*g, scene_.blockDb(), x, y, 3);
+}
+
 bool WorldSim::nextDigJob(SimUnit& u)
 {
 	std::vector<std::pair<int, std::pair<int, int>>> cand;
@@ -447,7 +456,7 @@ bool WorldSim::nextDigJob(SimUnit& u)
 	for (size_t i = 0; i < cand.size() && i < 12; ++i)
 	{
 		auto [mx, my] = cand[i].second;
-		if (nav.open(mx, my))
+		if (!digNeeded(mx, my))
 		{
 			digMarks.erase({mx, my});
 			continue;
@@ -460,12 +469,20 @@ bool WorldSim::nextDigJob(SimUnit& u)
 bool WorldSim::digAt(SimUnit& u, int mx, int my)
 {
 	int ex, ey;
-	if (!digEdgeTile(mx, my, int(std::nearbyint(u.x + 0.5f)), int(std::nearbyint(u.y + 0.5f)), ex, ey)) return false;
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (!digEdgeTile(mx, my, int(std::nearbyint(u.x + 0.5f)), int(std::nearbyint(u.y + 0.5f)), ex, ey))
+	{
+		if (trace) std::fprintf(stderr, "[sim %.1f] kopanie pola (%d, %d): brak krawędzi (get_digedge)\n", simTime_, mx, my);
+		return false;
+	}
 	// miejsce przy polu startu; z = 14 jak w grze (lrep walkpos 2 originalz), w pas podłogi wpasuje trasa
 	float edge[3] = {float(ex), float(ey), 14.f}, g[3] = {u.x, u.y, u.z}, w[3];
-	if (!fixDigPos(edge, g, w)) return false;
+	if (!fixDigPos(edge, g, w))
+	{
+		if (trace) std::fprintf(stderr, "[sim %.1f] kopanie pola (%d, %d): brak miejsca (vector_fixdig)\n", simTime_, mx, my);
+		return false;
+	}
 	w[2] = 14.f;
-	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
 	if (trace)
 		std::fprintf(stderr, "[sim %.1f] kopanie pola (%d, %d): start (%d, %d), miejsce (%.2f, %.2f)\n", simTime_, mx, my, ex, ey, w[0], w[1]);
 	float d = std::sqrt((w[0] - u.x) * (w[0] - u.x) + (w[1] - u.y) * (w[1] - u.y) + (w[2] - u.z) * (w[2] - u.z));
@@ -573,8 +590,7 @@ void WorldSim::markDig(int x0, int y0, int x1, int y1)
 	int n = 0;
 	for (int y = std::min(y0, y1); y <= std::max(y0, y1); ++y)
 		for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x)
-			if (!nav.open(x, y) && simGrid() && x >= 0 && y >= 0 && x < int(simGrid()->width) && y < int(simGrid()->height) &&
-			    (!digTerrain.ready() || digTerrain.diggable(x, y))) // jak w grze: znacznik tylko na piasku i ziemi
+			if (simGrid() && x >= 0 && y >= 0 && x < int(simGrid()->width) && y < int(simGrid()->height) && digNeeded(x, y))
 				n += digMarks.insert({x, y}).second;
 	if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = true;
 	status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());

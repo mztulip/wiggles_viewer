@@ -173,6 +173,17 @@ hceil / hfloor zwracają liczbę z częścią ułamkową ("6.0"): planer czasu w
 
 Przykład: pierwszy krasnal pracuje 0–6 h (0–900 s czasu gry), drugi dostaje okno przesunięte tam, gdzie pracujących jest najmniej. Bez tego (`get_remaining_sparetime` stale 1.0) skrypt krasnala w `owscript` kończył w `sparetime_dispatch` z 14 błędami; z oknem pracy przechodzi do `work_idle` jak w zapisie kampanii, bez błędów.
 
+### 11.4a Wyzwalacze (`trigger`) 🔶
+
+Prawa za [Zimennik/Diggles-Unity](https://github.com/Zimennik/Diggles-Unity) (`Runtime/Tcl/Engine/TriggerService.cs`, odczyt gry `Trigger.cpp`), nasz kod: [`cmd_trigger.cpp`](../../src/lib/script/cmd_trigger.cpp). Skrypty fabuły (`Trigger_*.tcl`, `sequencer.tcl`) i straże używają ich do reakcji na czas i bliskość.
+
+- `trigger create obj rodzaj skrypt` tworzy rekord wyzwalacza obiektu i zwraca jego numer (pierwsze wolne miejsce w tablicy). Obiekt ma najwyżej jeden wyzwalacz: ponowne `create` usuwa poprzedni. `trigger delete obj` usuwa.
+- Rodzaje: `single_timer` (aktywny od czasu `set_timer`), `repeat_timer` (impuls co `set_timer` sekund), `any_object` (co najmniej `set_target_count` pasujących obiektów, z których któryś jest w zasięgu `set_target_range`, domyślnie 5), `unique_object` (obiekt `set_target_ref` w zasięgu), `callback` (warunek `set_callback` daje prawdę; wykonywany w obiekcie `set_target_ref` albo właścicielu).
+- Dopasowanie `any_object`: `set_target_class` (klasa), `set_target_type` (lista typów klas: gnome, monster, material…), `set_target_owner` (słowa właściciela jak w `obj_query`: any, own, other, world, player, enemy, friend, ally, neutral, allplayers albo numer; enemy/friend/ally/neutral z tabeli dyplomacji gracza właściciela wyzwalacza). Obiekty w ekwipunku się nie liczą.
+- Tryb (`set_execution`): `on_activate` (domyślnie, skrypt przy przejściu na aktywny), `on_inactivate`, `when_active` (przy każdym sprawdzeniu, gdy aktywny), `when_inavtive` (literówka gry; gdy nieaktywny), `always`, `never`. `set_active` / `set_inactive` zmieniają stan ręcznie, `get_actuators` daje listę obiektów, które wyzwoliły.
+- **Skan** co turę logiki (10 Hz), ale każdy rekord sprawdzany co swój interwał: domyślnie 3 s, `set_timer` skraca go do 1 s, a `any_object` i `unique_object` przechodzą na 0,5 s, gdy kandydaci są w pobliżu (dla `unique_object`: w zasięgu + 5). Nowy rekord jest sprawdzany od razu (ostatnie sprawdzenie ustawione na „teraz − 4,9 s”). Odległość liczymy w trzech osiach skryptu. Skrypt wyzwalacza wykonuje się w interpreterze obiektu-właściciela; usunięty właściciel (albo cel) to martwy rekord.
+- W przerywniku (`set_sequence 1`) skan stoi.
+
 ## 11.5 Maszyna stanów
 
 Każdy obiekt ma co najwyżej jeden **bieżący stan** i **licznik włączeń**.

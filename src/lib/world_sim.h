@@ -176,6 +176,7 @@ public:
 	bool carveNode(int nx, int ny, int owner, int& dugId, bool rebuild = true);
 	bool terrainDirty = false;
 	bool nextDigJob(SimUnit& u);
+	bool digNeeded(int x, int y) const;
 	// Kopanie pola (mx, my) jak dig_starttask gry: pole startu get_digedge, miejsce vector_fixdig, chód
 	// z -dig 1 (bez chodu, gdy miejsce bliżej niż 0,5), potem kopanie.
 	bool digAt(SimUnit& u, int mx, int my);

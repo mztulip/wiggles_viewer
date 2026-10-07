@@ -81,7 +81,7 @@ Z argumentem `tylko_id` inne id odpadają. Zwraca węzeł na miejscu `próba` (0
 
 ## 19.7 Nasza implementacja
 
-[`lib/dig_terrain`](../../src/lib/dig_terrain.h) ([.cpp](../../src/lib/dig_terrain.cpp)): materiał, znaczniki, `rimAtNode`, `carveStep`, `next`. [`WorldSim::carveNode`](../../src/lib/world_sim.h) podmienia bloki w scenie i przelicza ruch zmienionych pól, komendy Tcl są w [`script/cmd_dig.cpp`](../../src/lib/script/cmd_dig.cpp). Kopanie rozkazem gracza (`WorldSim::dig`, gra) używa tego samego wycinania: zaznacza cztery węzły pola jako tunel i wycina je do celu.
+[`lib/dig_terrain`](../../src/lib/dig_terrain.h) ([.cpp](../../src/lib/dig_terrain.cpp)): materiał, znaczniki, `rimAtNode`, `carveStep`, `next`. [`WorldSim::carveNode`](../../src/lib/world_sim.h) podmienia bloki w scenie i przelicza ruch zmienionych pól, komendy Tcl są w [`script/cmd_dig.cpp`](../../src/lib/script/cmd_dig.cpp). Kopanie rozkazem gracza (`WorldSim::dig`, gra) używa tego samego wycinania: zaznacza cztery węzły pola jako tunel i wycina je do celu. Pole jest „do wykopania” (`WorldSim::digNeeded`, zaznaczanie i wybór zadania), gdy ma materiał 1 albo 2, a krawędź jego węzła sięga celu tunelu (jak bramka malowania znaczników); otwartość pola dla ruchu nie ma tu znaczenia, bo pole nad korytarzem bywa „otwarte” w podpolach, a jego węzeł jest jeszcze lity.
 
 **Różnice (🔶):**
 - gra blokuje wycinanie pod stojącymi obiektami (`FUN_005976b0`) i usuwa dekoracje, do których dotrze wykop; my jeszcze nie;

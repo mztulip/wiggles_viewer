@@ -142,6 +142,35 @@ t_script_select() {
 	[ -z "$e" ] && ok || fail "$e"
 }
 
+test_ script_trigger "Tcl: wyzwalacze (single_timer po 2 s, any_object w zasięgu z aktuatorem, callback, wstrzymanie w przerywniku set_sequence, tryb always; cmd_trigger.cpp)"
+t_script_trigger() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set_owner 1 0 ; set t [new Pilz "" "0 0 0" "0 0 0"] ; trigger create $t single_timer {set_lock 1 1} ; trigger set_timer $t 2 ; set p [new Pilz "" "50 0 0" "0 0 0"] ; trigger create $p any_object {set_lock 1 2} ; trigger set_target_class $p Zwerg ; trigger set_target_range $p 3 ; set c [new Pilz "" "0 0 0" "0 0 0"] ; trigger create $c callback {set_lock 1 3} ; trigger set_callback $c {expr {[get_lock 1] == 2}} ; get_lock 1' \
+		--tick 1 --eval 'list A [get_lock 1]' --tick 2 --eval 'list B [get_lock 1]' \
+		--eval 'set_pos 1 {51 0 0}' --tick 4 --eval 'list C [get_lock 1] [trigger get_actuators $p]' \
+		--eval 'set_sequence 1 ; set_lock 1 0 ; trigger set_inactive $t ; trigger set_execution $t always' --tick 4 --eval 'set_sequence 0 ; list D [get_lock 1]' --tick 4 --eval 'list E [get_lock 1]' \
+		>"$TMP/trig" 2>&1
+	local e="" w
+	for w in '-> A 0$' '-> B 1$' '-> C 3 1$' '-> D 0$' '-> E 1$'; do
+		grep -q -- "$w" "$TMP/trig" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e"
+}
+
+test_ script_prod "Tcl: stan produkcji (flagi z wartościami domyślnymi gry, sloty zamówień, katalog prod_items, prod_guest, boxed/buildupstate; cmd_prod.cpp)"
+t_script_prod() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'set_owner 1 0 ; sel /obj ; set f [new Feuerstelle "" "3 3 10" "0 0 0"] ; set_owner $f 0 ; list [get_prod_enabled $f] [get_prod_schedule $f] [get_prod_pack $f] [get_prod_ownerstrength $f] [get_prodautoschedule $f] [lindex [get_prod_slot_list $f] 0]' \
+		--eval 'set_prod_slot_cnt $f Grillpilz 3 ; set_prod_pack $f 1 ; list [get_prod_slot_cnt $f Grillpilz] [get_prod_pack $f] [get_prod_slot_inventable $f Grillpilz] [get_prod_slot_inventable $f Nic]' \
+		--eval 'prod_guest addlink $f 5 ; set s [prod_guest guestfree $f] ; prod_guest guestset $f $s 1 ; prod_guest addorder $f $s ; list $s [prod_guest getorder $f $s] [prod_guest nextorder $f]' \
+		--eval 'set_boxed $f 1 ; set_buildupstate $f 1 ; list [get_boxed $f] [get_buildupstate $f]' >"$TMP/prod" 2>&1
+	local e="" w
+	for w in '-> 1 1 0 1 1 Grillpilz$' '-> 3 1 1 0$' '-> 0 1 0$' '-> 0 1$'; do
+		grep -q -- "$w" "$TMP/prod" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e"
+}
+
 test_ script_gnome "skrypt krasnala: 120 s bez błędów, przejście do pracy (work_idle, prodfill_dispatch…)"
 t_script_gnome() {
 	"$B/owscript" --game "$GAME" Zwerg 120 -o "$TMP/ow.log" >"$TMP/ow" 2>&1

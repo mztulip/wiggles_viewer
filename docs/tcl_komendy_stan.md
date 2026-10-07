@@ -8,15 +8,14 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 60 | 9 | 38 | 49 | 61 |
+| misc | 217 | 62 | 9 | 38 | 48 | 60 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
 | map | 49 | 6 | 3 | 3 | 21 | 16 |
 | inne | 36 | 8 | 0 | 3 | 7 | 18 |
-| obj | 82 | 10 | 13 | 18 | 28 | 13 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
-| trigger | 1 | 0 | 1 | 0 | 0 | 0 |
-| object | 183 | 132 | 6 | 14 | 8 | 23 |
+| object | 183 | 136 | 5 | 13 | 7 | 22 |
+| obj | 82 | 27 | 9 | 15 | 19 | 12 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
@@ -29,7 +28,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | 3db | 1 | 0 | 0 | 0 | 0 | 1 |
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 248 | 37 | 87 | 123 | 144 |
+| trigger | 1 | 1 | 0 | 0 | 0 | 0 |
+| **razem** | 639 | 272 | 31 | 83 | 112 | 141 |
 
 ## 3db
 
@@ -284,7 +284,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `gui_new_game` | ❌ | P3 | 3 | 0 | 3 | gui_new_game (<permanently>)show "New Game" window |
 | `laser` | ❌ | P3 | 3 | 0 | 2 | laser <vStart> <vDest> <vDir> <fDuration> |
 | `rem_fsource` | ❌ | P3 | 3 | 0 | 1 | rem_fsource <object>remove fsource of this object |
-| `set_sequence` | ❌ | P3 | 3 | 0 | 2 | set_sequence <enabled>enables or disables sequence playing |
 | `sm_create_map` | ❌ | P3 | 3 | 0 | 3 | sm_create_map <w> <h>defines the map |
 | `sm_set_digcount` | ❌ | P3 | 3 | 0 | 3 | sm_set_digcount <maxdigcount>Set digcount |
 | `sm_set_zone` | ❌ | P3 | 3 | 0 | 1 | sm_set_zone <id> <y>Set Story Event as fulfilled |
@@ -352,7 +351,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `perfwin` | ❌ | martwa | 0 | 0 | 0 | perfwin 0/1hide/show performance-window |
 | `playerinfo` | ❌ | martwa | 0 | 0 | 0 | playerinfo <ownerid> |
 | `poke` | ❌ | martwa | 0 | 0 | 0 | poke <address> <value>poke |
-| `prod_valid` | ❌ | martwa | 0 | 0 | 0 | prod_valid <obj> <prod>checks if is a non boxed, non contained, build and valid object with the same owner lik |
 | `quit` | ❌ | martwa | 0 | 0 | 0 | quitquit game |
 | `reconnect` | ❌ | martwa | 0 | 0 | 0 | reconnect (<log>) (<stat>) (<news>)Logger NewsAgent and StatusMonitor |
 | `release_energy` | ❌ | martwa | 0 | 0 | 0 | release_energy <obj>releases energy on an energysource |
@@ -435,6 +433,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_diplomacy` | ✅ |  | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
 | `set_selectedobject` | ✅ |  | 6 | 0 | 5 | set_selectedobject [<objref>]change selection |
 | `set_view_begin` | ✅ |  | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
+| `set_sequence` | ✅ |  | 3 | 0 | 2 | set_sequence <enabled>enables or disables sequence playing |
 | `hceil` | ✅ |  | 2 | 2 | 2 | hceil <num>calc ceil value |
 | `hfloor` | ✅ |  | 2 | 2 | 2 | hfloor <num>calc floor value |
 | `is_dig_marked` | ✅ |  | 2 | 2 | 1 | is_dig_marked <xn> <yn> <xp> <yp>checks area for digmark |
@@ -447,6 +446,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `callnc` | ✅ |  | 0 | 0 | 0 | callnc <script name>call external script skipping Tcl cache |
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |
 | `inc_playerdigmarkid` | ✅ |  | 0 | 0 | 0 | inc_playerdigmarkid <player>increment current player-dig-mark-ID |
+| `prod_valid` | ✅ |  | 0 | 0 | 0 | prod_valid <obj> <prod>checks if is a non boxed, non contained, build and valid object with the same owner lik |
 
 ## network
 
@@ -458,8 +458,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `prod_guest` | ❌ | P1 | 240 | 104 | 27 | prod_guest addlink <objref> <linkid>add link to guest places, returns new index |
-| `get_prod_slot_cnt` | ❌ | P1 | 45 | 45 | 19 | get_prod_slot_cnt <object> <itemclass>get task count for production slot |
 | `get_prod_pack` | ❌ | P1 | 16 | 16 | 7 | get_prod_pack <object>get object pack task state |
 | `get_energystore` | ❌ | P1 | 9 | 9 | 5 | get_energystore <objref>get the energy store of an energysource |
 | `get_energysourceload` | ❌ | P1 | 8 | 8 | 4 | get_energysourceload <objref>get the activity of the energysource (%) |
@@ -467,11 +465,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_enabled` | ❌ | P1 | 7 | 7 | 4 | get_prod_enabled <objref>get true if energy source is on |
 | `get_prod_materialneed` | ❌ | P1 | 7 | 7 | 4 | get_prod_materialneed <objref>set the need of materials |
 | `check_ghost_coll` | ❌ | P1 | 6 | 6 | 3 | check_ghost_coll <param> <objref> <prodref>check collision with ghost object |
-| `get_prod_slot_buildable` | ❌ | P1 | 6 | 6 | 3 | get_prod_slot_buildable <object> <class>check if slot is buildable |
 | `fight_setactions_strikeback` | ❌ | P1 | 4 | 3 | 3 | fight_setactions_strikeback <attacker> (<radius>) (<forcehit>) (<scanpos>)set actions for current fight |
 | `get_prod_unpack` | ❌ | P1 | 4 | 4 | 3 | get_prod_unpack <object>get object unpack task state |
-| `prod_gnome_get_preferred_workplace` | ❌ | P1 | 4 | 4 | 3 | prod_gnome_get_preferred_workplace <objref>get preferred work place |
-| `set_prod_slot_cnt` | ❌ | P2 | 48 | 0 | 11 | set_prod_slot_cnt <object> <itemclass> <newcount>set task count for production slot |
 | `gnome_failed_work` | ❌ | P2 | 42 | 0 | 6 | gnome_failed_work <objref>notify gnome work break |
 | `set_energyconsumption` | ❌ | P2 | 37 | 0 | 37 | set_energyconsumption <objref> <value>set need of energy during production |
 | `set_inventoryslotuse` | ❌ | P2 | 31 | 0 | 30 | set_inventoryslotuse <objref> <value>set of inventory slots |
@@ -486,8 +481,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_energystore` | ❌ | P2 | 9 | 0 | 5 | set_energystore <objref> <value>set the energy store of an energysource |
 | `set_prod_exclusivemode` | ❌ | P2 | 8 | 0 | 5 | set_prod_exclusivemode <objref> <true/false>set exclusive production mode |
 | `gnome_idle` | ⚪ | P2 | 6 | 0 | 3 | gnome_idle <objref> [true\|false]notify gnome is idle |
-| `info_progress_prod` | ❌ | P2 | 6 | 0 | 1 | info_progress_prod <objref> <currentstep> <maxstep>notify production start |
-| `prod_gnome_last_workplace` | ❌ | P2 | 5 | 0 | 1 | prod_gnome_last_workplace <objref> [<work-place>]announce current work place |
 | `set_prod_directevents` | ❌ | P2 | 5 | 0 | 4 | set_prod_directevents <objref> <true/false>set switched production mode |
 | `create_doorlogic` | ❌ | P3 | 4 | 0 | 2 | create_doorlogic <objref>create door logic for a door |
 | `delete_transportlogic` | ❌ | P3 | 4 | 0 | 2 | delete_transportlogic <objref>deletes transport logic |
@@ -496,27 +489,18 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `create_elevatorlogic` | ❌ | P3 | 3 | 0 | 1 | create_elevatorlogic <objref> <cabine> <brope>create elevator logic for an Elevator |
 | `create_ladderlogic` | ❌ | P3 | 3 | 0 | 1 | create_ladderlogic <objref>create ladder logic for a ladder |
 | `gnome_announce_dig` | ❌ | P3 | 3 | 0 | 1 | gnome_announce_dig <objref> <pos>announce dig action |
-| `info_end_prod` | ❌ | P3 | 3 | 0 | 2 | info_end_prod <objref>notify production end |
 | `set_elevatorproperties` | ❌ | P3 | 3 | 0 | 1 | set_elevatorproperties <objref> <maxrange> <accelerationtype> <acceleration/speed> <brakeacceleration> <maxuse |
 | `set_ladderrange` | ❌ | P3 | 3 | 0 | 1 | set_ladderrange <objref> <maxrange>set range of a ladder |
-| `set_prod_ownerstrength` | ❌ | P3 | 3 | 0 | 1 | set_prod_ownerstrength <object> <newstrength>set object owner strength |
 | `set_prod_unpack` | ❌ | P3 | 3 | 0 | 3 | set_prod_unpack <object> <newstate>set object unpack task state |
 | `check_energy` | ❌ | P3 | 2 | 2 | 1 | check_energy <objref>check if there is enough energy for production |
 | `fight_setactions` | ❌ | P3 | 2 | 2 | 1 | fight_setactions <attacker> <defender> <finish-codeAtk> <finish-codeDef> (<panic>)set actions for current figh |
 | `fight_setactions_ballistic` | ❌ | P3 | 2 | 2 | 2 | fight_setactions_ballistic <attacker> <defender> <finish-code>set actions for current fight |
-| `get_prod_ownerstrength` | ❌ | P3 | 2 | 2 | 1 | get_prod_ownerstrength <object>get object owner strength |
 | `get_prod_schedule` | ❌ | P3 | 2 | 2 | 1 | get_prod_schedule <objref>set switch production mode |
-| `get_prod_slot_inventable` | ❌ | P3 | 2 | 2 | 2 | get_prod_slot_inventable <object> <class>check if slot is inventable |
-| `get_prod_slot_invented` | ❌ | P3 | 2 | 2 | 2 | get_prod_slot_invented <object> <class>check if slot is invented |
-| `get_prod_slot_list` | ❌ | P3 | 2 | 2 | 2 | get_prod_slot_list <object>get list of all slots |
 | `get_prod_switchmode` | ❌ | P3 | 2 | 2 | 2 | get_prod_switchmode <objref>set switch production mode |
-| `info_start_prod` | ❌ | P3 | 2 | 0 | 1 | info_start_prod <objref>notify production start |
-| `prod_gnome_preferred_workplace` | ❌ | P3 | 2 | 0 | 2 | prod_gnome_preferred_workplace <objref> [<work-place>]announce preferred work place |
 | `set_prod_pack` | ❌ | P3 | 2 | 0 | 2 | set_prod_pack <object> <newstate>set object pack task state |
 | `fairy_move` | ❌ | P3 | 1 | 0 | 1 | fairy_move <objref> <targetpos> <targrad> <targetxrot> <targetzrot> <dir> |
 | `fight_setactions_training` | ❌ | P3 | 1 | 0 | 1 | fight_setactions_training <attacker> <attack> <finish-code>set actions for training |
 | `get_ballisticresult` | ❌ | P3 | 1 | 1 | 1 | get_ballisticresult <objref>gets the result of the last ballistic-action on the object (0=FALED,1=HIT) |
-| `prod_assignworker` | ❌ | P3 | 1 | 0 | 1 | prod_assignworker <objref> <prodplace>announce worker assignment |
 | `get_energy` | ❌ | martwa | 0 | 0 | 0 | get_energy <objref>get energy for production |
 | `get_prod_buildup` | ❌ | martwa | 0 | 0 | 0 | get_prod_buildup <object>get object unpack task state |
 | `get_prod_directevents` | ❌ | martwa | 0 | 0 | 0 | get_prod_directevents <objref>set switch production mode |
@@ -525,21 +509,37 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_toolneed` | ❌ | martwa | 0 | 0 | 0 | get_prod_toolneed <objref>set the need of tools |
 | `get_prod_total_task_cnt` | ❌ | martwa | 0 | 0 | 0 | get_prod_total_task_cnt <object>get total number of open tasks |
 | `gnome_stopped_work` | ❌ | martwa | 0 | 0 | 0 | gnome_stopped_work <objref>notify gnome work break |
-| `prod_gnome_get_last_workplace` | ❌ | martwa | 0 | 0 | 0 | prod_gnome_get_last_workplace <objref>get last work place |
 | `prod_gnomeidle` | ❌ | martwa | 0 | 0 | 0 | prod_gnomeidle <objref> [true\|false]announce worker is idle |
 | `set_prod_buildup` | ❌ | martwa | 0 | 0 | 0 | set_prod_buildup <object> <newstate>set object unpack task state |
 | `set_prod_toolneed` | ❌ | martwa | 0 | 0 | 0 | set_prod_toolneed <objref> <true/false>set the need of tools |
 | `snap` | ❌ | martwa | 0 | 0 | 0 | snap <objref2> <objref1>snaps obj1 to obj2, assumes same rotation vector |
+| `prod_guest` | ✅ |  | 240 | 104 | 27 | prod_guest addlink <objref> <linkid>add link to guest places, returns new index |
+| `get_prod_slot_cnt` | ✅ |  | 45 | 45 | 19 | get_prod_slot_cnt <object> <itemclass>get task count for production slot |
 | `get_remaining_sparetime` | ✅ |  | 18 | 18 | 12 | get_remaining_sparetime <objref>get hours of sparetime left |
 | `get_walkresult` | ✅ |  | 17 | 17 | 13 | get_walkresult <objref>gets the result of the last walk-action on the object (0=WS_ERROR, 1=WS_WALKABORTED, 2= |
 | `inv_check` | ✅ |  | 16 | 16 | 8 | inv_check <objref> <object>check, if object can packed to inventory |
+| `get_prod_slot_buildable` | ✅ |  | 6 | 6 | 3 | get_prod_slot_buildable <object> <class>check if slot is buildable |
 | `auto_choose_gender` | ✅ |  | 4 | 4 | 3 | auto_choose_gender <objref>choose gender for this object automatically, returns new gender |
+| `prod_gnome_get_preferred_workplace` | ✅ |  | 4 | 4 | 3 | prod_gnome_get_preferred_workplace <objref>get preferred work place |
+| `set_prod_slot_cnt` | ✅ |  | 48 | 0 | 11 | set_prod_slot_cnt <object> <itemclass> <newcount>set task count for production slot |
+| `info_progress_prod` | ✅ |  | 6 | 0 | 1 | info_progress_prod <objref> <currentstep> <maxstep>notify production start |
+| `prod_gnome_last_workplace` | ✅ |  | 5 | 0 | 1 | prod_gnome_last_workplace <objref> [<work-place>]announce current work place |
 | `auto_choose_workingtime` | ✅ |  | 3 | 0 | 3 | auto_choose_workingtime <objref>choose working time for this object automatically |
+| `info_end_prod` | ✅ |  | 3 | 0 | 2 | info_end_prod <objref>notify production end |
+| `set_prod_ownerstrength` | ✅ |  | 3 | 0 | 1 | set_prod_ownerstrength <object> <newstrength>set object owner strength |
 | `set_rendermaterial` | ✅ |  | 3 | 0 | 2 | set_rendermaterial <objref> <materialname>set object rendering material |
+| `get_prod_ownerstrength` | ✅ |  | 2 | 2 | 1 | get_prod_ownerstrength <object>get object owner strength |
+| `get_prod_slot_inventable` | ✅ |  | 2 | 2 | 2 | get_prod_slot_inventable <object> <class>check if slot is inventable |
+| `get_prod_slot_invented` | ✅ |  | 2 | 2 | 2 | get_prod_slot_invented <object> <class>check if slot is invented |
+| `get_prod_slot_list` | ✅ |  | 2 | 2 | 2 | get_prod_slot_list <object>get list of all slots |
+| `info_start_prod` | ✅ |  | 2 | 0 | 1 | info_start_prod <objref>notify production start |
+| `prod_gnome_preferred_workplace` | ✅ |  | 2 | 0 | 2 | prod_gnome_preferred_workplace <objref> [<work-place>]announce preferred work place |
+| `prod_assignworker` | ✅ |  | 1 | 0 | 1 | prod_assignworker <objref> <prodplace>announce worker assignment |
 | `get_rendermaterial` | ✅ |  | 0 | 0 | 0 | get_rendermaterial <objref>get object rendering material |
 | `inv_cnt_raw` | ✅ |  | 0 | 0 | 0 | inv_cnt_raw <objref>get number of packed objects |
 | `inv_find_raw` | ✅ |  | 0 | 0 | 0 | inv_find_raw <objref> <object>get index of packed óbject |
 | `inv_get_raw` | ✅ |  | 0 | 0 | 0 | inv_get_raw <objref> <object>get packed object |
+| `prod_gnome_get_last_workplace` | ✅ |  | 0 | 0 | 0 | prod_gnome_get_last_workplace <objref>get last work place |
 
 ## object
 
@@ -547,7 +547,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 |---|---|---|---|---|---|---|
 | `get_weapon_id` | ❌ | P1 | 10 | 10 | 6 | get_weapon_id <object> <atdef>returns weaponid if obj is a registered weapon |
 | `get_attack_pos` | ❌ | P1 | 9 | 9 | 6 | get_attack_pos <objref-Atk> <objref-Def> (<dist>)get position for fight |
-| `get_prodautoschedule` | ⚪ | P1 | 9 | 9 | 7 | get_prodautoschedule <objref>get production auto schedule |
 | `get_linked_to` | ⚪ | P1 | 6 | 6 | 2 | get_linked_to <objref>gets the object that this object is linked to (-1 if none) |
 | `get_linkrot` | ❌ | P1 | 5 | 5 | 2 | get_linkrot <objref> <link-id>get rotation of link in current frame |
 | `get_classaniminfo` | ❌ | P1 | 4 | 4 | 4 | get_classaniminfo (<classname>) <anim>get anim info |
@@ -561,11 +560,9 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_pf_influence` | ❌ | P2 | 12 | 0 | 4 | set_pf_influence <objref> <left> <top> <right> <bottom> <costs> <flags>sets the pathfinding influence rectangl |
 | `sm_send_message` | ❌ | P2 | 10 | 0 | 4 | sm_send_message <object> <message>Send Message for Story Event |
 | `set_camerafollow` | ❌ | P2 | 7 | 0 | 2 | set_camerafollow <objref> (<zoom>)(camera follows object, -1 disables follow-mode, zoom 1.0 - 2.5 |
-| `set_prodautoschedule` | ❌ | P2 | 7 | 0 | 5 | set_prodautoschedule <objref> <newstate>set production auto schedule |
 | `fight_weapon_kombi` | ❌ | P2 | 5 | 0 | 1 | fight_weapon_kombi <classlist> <raisevallist>defines special Weapon Kombinations |
 | `hide_obj_ghost` | ❌ | P2 | 5 | 0 | 4 | hide_obj_ghost <objref>hide object ghost if present |
 | `set_objicon` | ❌ | P2 | 5 | 0 | 2 | set_objicon <objref> <idx> <type> <value> <duration>set object info icon |
-| `set_prodalloclock` | ❌ | P3 | 3 | 0 | 3 | set_prodalloclock <objref> <newstate>set production alloc state |
 | `get_angle_num4` | ❌ | P3 | 2 | 2 | 1 | get_angle_num4 <pos1> <pos2>returns 0 for pos2 is over pos1, 1 for right... |
 | `get_velcomp` | ❌ | P3 | 2 | 2 | 2 | get_velcomp <objref>get current object's velocity as packed vector |
 | `get_light` | ❌ | P3 | 1 | 1 | 1 | get_light <object>returns the state of light |
@@ -577,7 +574,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_escape_pos` | ❌ | martwa | 0 | 0 | 0 | get_escape_pos <objref> <scandist> <walkdist>get position for escaping, returns: -1 if nothing found, 0 if no  |
 | `get_pathlength` | ❌ | martwa | 0 | 0 | 0 | get_pathlength <objref>returns the Length of the Current Path (in Blocks) |
 | `get_pathrandflags` | ❌ | martwa | 0 | 0 | 0 | get_pathrandflags <objref> <objref>gives a flag combination, that lets path_rand generate a path away from obj |
-| `get_prodalloclock` | ❌ | martwa | 0 | 0 | 0 | get_prodalloclock <objref>get production alloc state |
 | `get_rel_pos` | ❌ | martwa | 0 | 0 | 0 | get_rel_pos <objref> <objref>get current object's position as packed vector |
 | `obj_find` | ❌ | martwa | 0 | 0 | 0 | obj_find <objref> <class-name> (<max-dist>)find next object of given class, |
 | `obj_find_list` | ❌ | martwa | 0 | 0 | 0 | obj_find_list <objref> <class-name> (<max-dist>)get list of object references for given class |
@@ -628,6 +624,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_buildupstate` | ✅ |  | 14 | 14 | 8 | get_buildupstate <objref>get object boxed state |
 | `dist_between` | ✅ |  | 12 | 12 | 9 | dist_between <objref> <objref>get the distance between 2 objects |
 | `get_lock` | ✅ |  | 12 | 12 | 9 | get_lock <objref>get object lock |
+| `get_prodautoschedule` | ✅ |  | 9 | 9 | 7 | get_prodautoschedule <objref>get production auto schedule |
 | `tasklist_list` | ✅ |  | 8 | 8 | 6 | tasklist_list <objref>get task list |
 | `get_rot` | ✅ |  | 6 | 6 | 5 | get_rot <objref>get current object's rotation as packed vector |
 | `get_cloaked` | ✅ |  | 5 | 5 | 3 | get_cloaked <objref>find out if object (gnome) is cloaked |
@@ -678,11 +675,13 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_alternateanimdb` | ✅ |  | 8 | 0 | 3 | set_alternateanimdb <objref> <bool>set object alternate anim |
 | `set_undeletable` | ✅ |  | 8 | 0 | 5 | set_undeletable <objref> <newstate>set if object is undeletable |
 | `set_posx` | ✅ |  | 7 | 0 | 3 | set_posx <objref> <x>set current object's x position |
+| `set_prodautoschedule` | ✅ |  | 7 | 0 | 5 | set_prodautoschedule <objref> <newstate>set production auto schedule |
 | `set_shield_class` | ✅ |  | 7 | 0 | 5 | set_shield_class <object> <num>sets the Shield ID |
 | `set_objgender` | ✅ |  | 5 | 0 | 3 | set_objgender <objref> <male\|female\|neutral>set object gender |
 | `set_ownerrace` | ✅ |  | 5 | 0 | 1 | set_ownerrace <owner> <race>sets race of an owner |
 | `set_instore` | ✅ |  | 3 | 0 | 2 | set_instore <objref> <newstate>set if object is in a stores inventory |
 | `set_placesnapmode` | ✅ |  | 3 | 0 | 2 | set_placesnapmode <objref> <newstate>set object snap to wall while placing |
+| `set_prodalloclock` | ✅ |  | 3 | 0 | 3 | set_prodalloclock <objref> <newstate>set production alloc state |
 | `set_snaptowall` | ✅ |  | 3 | 0 | 1 | set_snaptowall <objref> <newstate>set object snap to wall |
 | `set_user_groups` | ✅ |  | 3 | 0 | 2 | set_user_groups <objref> <list>set list of user group assignments |
 | `get_alternateanimdb` | ✅ |  | 2 | 2 | 1 | get_alternateanimdb <objref>get object alternate anim state |
@@ -717,6 +716,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_objinfo` | ✅ |  | 0 | 0 | 0 | get_objinfo <objref>get object info text |
 | `get_placesnapmode` | ✅ |  | 0 | 0 | 0 | get_placesnapmode <objref>get object snap to wall while placing |
 | `get_processactions` | ✅ |  | 0 | 0 | 0 | get_processactions <objref>get collision flag |
+| `get_prodalloclock` | ✅ |  | 0 | 0 | 0 | get_prodalloclock <objref>get production alloc state |
 | `get_rotx` | ✅ |  | 0 | 0 | 0 | get_rotx <objref>get current object's x rotation |
 | `get_shield_class` | ✅ |  | 0 | 0 | 0 | get_shield_class <object>gets the Shield ID |
 | `get_snaptowall` | ✅ |  | 0 | 0 | 0 | get_snaptowall <objref>get object snap to wall |
@@ -767,7 +767,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `trigger` | ❌ | P1 | 443 | 3 | 10 | trigger create <objref> <type> <code>create new trigger on object |
+| `trigger` | ✅ |  | 443 | 3 | 10 | trigger create <objref> <type> <code>create new trigger on object |
 
 ## ui
 

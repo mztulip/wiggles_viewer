@@ -180,7 +180,7 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 ## Faza 4: mapy i teren
 - [x] Teren to mapa wysokości (głębokość w ekran); gra eksportuje wzorce: `save_map` → OBJ, `save_scene` → VRML
 - [x] `.PMP`: struktura (typ, ID bloku, maska RLE, warstwa2)
-- [ ] 🔬 `.PMP`: dekodowanie maski RLE i znaczenie typów oraz warstwy2 (wzorzec: OBJ z `save_map`)
+- [x] 🔬 `.PMP`: maska RLE (płaszczyzna ruchu), typ pola (grunt, materiał do kopania, bit 0x80), warstwa 2 (światło bazowe) ([szablony.md](docs/formaty/szablony.md))
 - [x] `BlockDB`: nagłówek i tabela ILT (3 odwołania na blok do puli elementów)
 - [x] `BlockDB`: rekordy bloków (głębokość 8×8) ✅
 - [x] `BlockDB`: sekcja szczegółowych siatek 3D
@@ -242,7 +242,10 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
   - [x] Partia C: ekwipunek ([cmd_inventory](src/lib/script/cmd_inventory.cpp): inv_*, is_contained, global_inv_rem, is_wearing_pannier; przedmioty schowane poza `obj_query`, filtry `-flagpos`/`-flagneg`), test `script_inventory`, [rozdział 11.3a](docs/silnik/11_obiekty_tcl_i_petla.md)
   - [x] Partia D: zaznaczenie i kamera ([cmd_ui](src/lib/script/cmd_ui.cpp): selection, is_selected, get/set_selectedobject z prawami gry, synchronizacja z zaznaczeniem gry; get_view, set_view, set_viewpos, set_view_begin przez `Host::getView`/`setView`, 🔶 bez płynnego przejazdu), testy `script_select`, `http_wigview`, [rozdział 11.3b](docs/silnik/11_obiekty_tcl_i_petla.md)
   - [ ] Kamera ze skryptów: płynny przejazd (`move`, `speed`, `camera_set`), `set_camerafollow`, `viewlock`, `get_cameramoving` (przerywniki)
-  - [ ] Dalej: produkcja (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
+  - [x] Partia E: kopanie ([cmd_dig](src/lib/script/cmd_dig.cpp), [rozdział 19](docs/silnik/19_kopanie.md)), test `http_dig`
+  - [x] Partia F: wyzwalacze ([cmd_trigger](src/lib/script/cmd_trigger.cpp): trigger create/delete/set_*/get_actuators, skan co turę, `set_sequence` wstrzymuje), dopasowanie właściciela jak w grze (`Engine::ownerMatches`, też w `obj_query -owner`), `owscript --tick`, test `script_trigger`, [rozdział 11.4a](docs/silnik/11_obiekty_tcl_i_petla.md)
+  - [x] Partia G: stan produkcji ([cmd_prod](src/lib/script/cmd_prod.cpp): get/set_prod_* z wartościami domyślnymi gry, sloty, katalog, info_*_prod, prod_guest, stanowiska), test `script_prod`
+  - [ ] Dalej: planista produkcji (Diggles-Unity WORK_DISPATCHER_NATIVE.md, ProdDispatcher.cs), newsticker, layout, elf, płynna kamera przerywników (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
 - [x] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib` (G7a)
 - [x] Zaślepki komend natywnych z dziennikiem (`openwiggles_tcl.log`); klasy wczytują się bez błędów
 - [x] Kolejka zadań postaci (`tasklist_*`, G7b)

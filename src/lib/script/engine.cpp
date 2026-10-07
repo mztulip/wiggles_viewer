@@ -1086,7 +1086,7 @@ int cmdListOp(Engine&, Tcl_Interp* in, Args& a)
 int cmdConst(Engine&, Tcl_Interp* in, Args& a)
 { // proste odpowiedzi do czasu prawdziwych systemów (🔶)
 	static const std::map<std::string, std::string> kValues = {
-	    {"get_prodautoschedule", "0"}, {"get_max_fow", "255"}, {"get_bestexp", ""},
+	    {"get_max_fow", "255"}, {"get_bestexp", ""},
 	    {"get_linked_to", "-1"}, {"sm_get_event", "0"}, {"tasklist_find", "-1"}};
 	auto it = kValues.find(a[0]);
 	setResult(in, it != kValues.end() ? it->second : "");
@@ -1343,10 +1343,7 @@ int cmdObjQuery(Engine& e, Tcl_Interp* in, Args& a)
 		if (!flagsOk) continue;
 		if (!classes.empty() && !classes.count(Vfs::lower(ob->cls->name))) continue;
 		if (!type.empty() && ob->cls->type != type) continue;
-		if (owner == "own" && ob->owner != selfOwner) continue;
-		if (owner == "world" && ob->owner != -1) continue;
-		if ((owner == "enemy" || owner == "other") && (ob->owner == selfOwner || ob->owner < 0)) continue;
-		if (std::isdigit(static_cast<unsigned char>(owner[0])) && ob->owner != std::atoi(owner.c_str())) continue;
+		if (owner != "any" && !e.ownerMatches(ob->owner, owner, selfOwner, in)) continue; // słowa jak w grze (z dyplomacją)
 		float p[3];
 		if (!e.host_ || !e.host_->getPos(id, p)) continue;
 		float d = std::hypot(p[0] - c[0], p[1] - c[1]);
@@ -1613,7 +1610,6 @@ const Entry kCommands[] = {
     {"hceil", cmdHround},
     {"hf2i", cmdHround},
     {"hi2f", cmdHround},
-    {"get_prodautoschedule", cmdConst},
     {"get_max_fow", cmdConst},
     {"get_bestexp", cmdConst},
     {"get_linked_to", cmdConst},
@@ -1714,7 +1710,7 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
-	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands()})
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands()})
 		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 
@@ -2143,6 +2139,8 @@ void Engine::resetWorld()
 	sparetimeOffers_.clear();
 	ownerAttribs_.clear();
 	selection_.clear();
+	triggers_.clear();
+	sequenceActive = false;
 	ownerRace_ = {};
 	diplomacy_ = initDiplomacy();
 	time_ = 0;
@@ -2212,6 +2210,7 @@ void Engine::setState(ScriptObject& o, const std::string& st, bool fresh)
 void Engine::tick(double dt)
 {
 	if (clockRunning_) time_ += dt * timeFactor_;
+	scanTriggers();
 	// Timery -> zdarzenia.
 	std::vector<Timer> due;
 	for (auto it = timers_.begin(); it != timers_.end();)

@@ -2,6 +2,7 @@
 //
 //   owscript [--game <katalog gry>] [KLASA [SEKUNDY]] [-o dziennik.log] [--eval SKRYPT]...
 //   --eval: po przewinięciu wykonuje SKRYPT w głównym interpreterze i wypisuje wynik (obiekt testowy ma ID 1).
+//   --tick S: między kolejnymi --eval przewija logikę o S sekund (kolejność jak w wierszu poleceń).
 //   Bez --game: WIGGLES_DIR, potem OW_GAME, potem instalacja w ~/.wine.
 // Wczytuje skrypty startowe i klasy, tworzy jeden obiekt KLASY (domyślnie Zwerg), przewija logikę
 // o SEKUNDY (domyślnie 30; świat w pamięci: same pozycje i obroty) i zapisuje dziennik: zaślepki komend natywnych i błędy skryptów.
@@ -56,6 +57,7 @@ int main(int argc, char** argv)
 		if (a == "--game" && i + 1 < argc) game = argv[++i];
 		else if (a == "-o" && i + 1 < argc) log = argv[++i];
 		else if (a == "--eval" && i + 1 < argc) evals.push_back(argv[++i]);
+		else if (a == "--tick" && i + 1 < argc) evals.push_back(std::string("\x01") + argv[++i]); // znacznik przewinięcia
 		else if (pos++ == 0) cls = a;
 		else seconds = std::atof(a.c_str());
 	}
@@ -84,6 +86,12 @@ int main(int argc, char** argv)
 	std::printf("po %.0f s: stan '%s', błędy %zu, zaślepki %zu\n", seconds, o ? o->state.c_str() : "", e.errors().size(), e.stubCalls().size());
 	for (const auto& s : evals)
 	{
+		if (!s.empty() && s[0] == '\x01')
+		{
+			for (double t = 0, n = std::atof(s.c_str() + 1); t < n - 1e-9; t += 0.1) e.tick(0.1);
+			std::printf("tick %s s\n", s.c_str() + 1);
+			continue;
+		}
 		std::string r;
 		bool ok = e.eval(s, &r);
 		std::printf("%s %s -> %s\n", ok ? "eval" : "BŁĄD", s.c_str(), r.c_str());

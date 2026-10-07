@@ -127,6 +127,26 @@ struct Host
 	virtual void setView(const float /*v*/[5], bool /*move: płynny przejazd*/) {}
 };
 
+// Wyzwalacz obiektu (trigger create …, cmd_trigger.cpp). Wartości domyślne jak w grze (FUN_0060da90).
+struct TriggerRec
+{
+	int kind = 0;               // 0 martwy, 1 single_timer, 2 repeat_timer, 3 any_object, 4 unique_object, 5 callback
+	int exec = 2;               // 1 never, 2 on_activate, 3 on_inactivate, 4 when_active, 5 when_inavtive, 6 always
+	int owner = 0;              // obiekt właściciela
+	std::string fire, callback; // skrypt wyzwalacza, warunek (callback)
+	double lastCheck = 0, checkTimer = 3, checkIdle = 3, checkNear = 0.5;
+	bool active = false;
+	float range = 5.f;                // zasięg (any_object, unique_object)
+	double fireTime = 0, interval = 1; // zegar
+	int target = -1;                  // set_target_ref
+	std::string cls;                  // set_target_class (małymi literami)
+	std::vector<std::string> types;   // set_target_type
+	std::string ownerSpec;            // set_target_owner
+	bool hasOwnerSpec = false;
+	int count = 0;                    // set_target_count
+	std::vector<int> actuators;       // obiekty, które wyzwoliły
+};
+
 struct ScriptObject
 {
 	int id = 0;
@@ -158,6 +178,15 @@ struct ScriptObject
 	std::vector<int> inventory; // inv_add / inv_rem: odwołania przedmiotów w kolejności (cmd_inventory.cpp)
 	int containedIn = -1;       // właściciel ekwipunku, w którym obiekt leży (−1 = w świecie)
 	int digSetId = -1;          // id znacznika ostatnio kopanej żyły (dig_apply → dig_next)
+	std::map<std::string, double> prodSlots; // set_prod_slot_cnt: zamówienia budynku (przedmiot → liczba, 10 = bez końca)
+	std::array<int, 16> guestLinks = initLinks(), guests{}; // prod_guest: punkty miejsc (−1 brak) i goście
+	std::array<double, 16> guestOrders{};
+	static std::array<int, 16> initLinks()
+	{
+		std::array<int, 16> l{};
+		l.fill(-1);
+		return l;
+	}
 };
 
 // ✅ Godzina gry trwa 150 s czasu gry (gethours = gettime / 150), doba 12 h (rozdział 11.4).
@@ -267,6 +296,12 @@ public:
 	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry
 	bool storyMgr = false; // is_storymgr: kampania (gra ustawia przy wczytaniu świata)
+	std::vector<TriggerRec> triggers_; // trigger: rekordy (miejsce = numer zwracany przez create)
+	bool sequenceActive = false;       // set_sequence: przerywnik (wstrzymuje wyzwalacze)
+	void scanTriggers();               // co turę logiki (cmd_trigger.cpp)
+	// Czy właściciel owner pasuje do opisu słowami (any, own, other, world, player, enemy, friend, ally, neutral,
+	// allplayers, numer) widzianego przez gracza selfOwner (obj_query -owner, trigger set_target_owner).
+	bool ownerMatches(int owner, const std::string& spec, int selfOwner, Tcl_Interp* in);
 	// Zaznaczenie gracza (cmd_ui.cpp): lista uchwytów, pierwszy = get_selectedobject. Prawa jak w grze:
 	// canSelect (obiekt gracza 0, wybieralny; do niepustego zaznaczenia tylko krasnale i dzieci),
 	// clickSelect (kliknięcie, additive = Shift), selectOnly (programowo, bez praw).
