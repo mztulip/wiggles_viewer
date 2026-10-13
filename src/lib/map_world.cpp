@@ -66,7 +66,12 @@ std::optional<std::vector<uint8_t>> readTemplateData(const Vfs& vfs, const std::
 	if (auto d = vfs.read("Data/Templates/" + name)) return d;
 	if (auto d = vfs.read(name)) return d;
 	size_t slash = name.find_last_of("/\\");
-	if (slash != std::string::npos) return vfs.read("Data/Templates/" + name.substr(slash + 1));
+	std::string base = slash == std::string::npos ? name : name.substr(slash + 1);
+	if (slash != std::string::npos)
+		if (auto d = vfs.read("Data/Templates/" + base)) return d;
+	// Same nazwy plików części szablonów (map_setlayer2 X Y splt_….l2m) leżą w podkatalogach.
+	for (const char* dir : {"pmp/", "pmp/split/", "l2m/", "l2m/split/"})
+		if (auto d = vfs.read(std::string("Data/Templates/") + dir + base)) return d;
 	return std::nullopt;
 }
 
@@ -231,7 +236,45 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 			out.errors.push_back(p.script + ": " + e.what());
 		}
 	}
-	if (loaded.empty()) return out;
+	// Nałożenia z przebiegu skryptu poziomu (level_script.h), w kolejności skryptu.
+	struct Stamp
+	{
+		const ScenarioStamp* src;
+		Pmp pmp;
+		std::optional<L2m> l2m;
+	};
+	std::vector<Stamp> stamps;
+	for (const auto& st : sc.stamps)
+	{
+		try
+		{
+			auto d = readTemplateData(vfs, st.file);
+			if (!d) throw std::runtime_error("brak pliku");
+			Stamp s{&st, {}, {}};
+			int w = 0, h = 0;
+			if (st.layer)
+			{
+				s.l2m = parseL2m(*d);
+				w = int(s.l2m->width), h = int(s.l2m->height);
+			}
+			else
+			{
+				s.pmp = parsePmp(*d);
+				w = int(s.pmp.width), h = int(s.pmp.height);
+				x0 = std::min(x0, st.x);
+				y0 = std::min(y0, st.y);
+				x1 = std::max(x1, st.x + w);
+				y1 = std::max(y1, st.y + h);
+			}
+			stamps.push_back(std::move(s));
+		}
+		catch (const std::exception& e)
+		{
+			out.errors.push_back(st.file + ": " + e.what());
+		}
+	}
+	if (!stamps.empty()) out.placedScripts.push_back(sc.storyLevel.empty() ? "skrypt poziomu" : sc.storyLevel);
+	if (loaded.empty() && stamps.empty()) return out;
 	// Przycięcie do użytego obszaru (świat gry bywa 900×900 bloków).
 	x0 -= margin;
 	y0 -= margin;
@@ -239,6 +282,9 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 	y1 += margin;
 	if (sc.width > 0) x0 = std::max(x0, 0), x1 = std::min(x1, sc.width);
 	if (sc.height > 0) y0 = std::max(y0, 0), y1 = std::min(y1, sc.height);
+	// Świat StoryMgr (kampania): bez przesunięcia początku, żeby współrzędne były te same co w grze (skrypty
+	// fabuły, kamery przerywników i wyzwalacze mają pozycje bezwzględne); przycięcie tylko z prawej i od dołu.
+	if (!sc.storyLevel.empty()) x0 = y0 = 0;
 	out.originX = x0;
 	out.originY = y0;
 	if (sc.view)
@@ -262,6 +308,9 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 			out.objects.push_back(o);
 		}
 	}
+	static const Pmp kNoPmp;
+	for (const auto& st : stamps)
+		blitTemplate(out.grid, out.layer, st.src->layer ? kNoPmp : st.pmp, st.l2m ? &*st.l2m : nullptr, st.src->x - x0, st.src->y - y0);
 	for (auto o : sc.objects)
 	{
 		o.pos[0] -= float(x0);

@@ -8,7 +8,7 @@
 OW_HIDDEN=1 PULSE_SINK=owlab tools/lab/live2.sh start      # oryginał w niewidocznym Xvfb (dźwięk do pustego ujścia)
 tools/bot/wigbot.py orig --new --speed 5 --minutes 80     # nowa kampania, gra ×5, limit 80 min czasu gry
 tools/bot/wigbot.py orig --load Data/Gamesave/bot_chomiki.sav   # od zapisu z kamienia milowego
-tools/bot/wigbot.py ow --port 18778                        # nasza gra albo wigview z --http 18778
+tools/bot/wigbot.py ow --port 18778                        # nasza gra albo wigview z --http 18778 (kampania: --scenario single_Campaign.tcl)
 ```
 
 Dziennik: `../lab/bot/<data_godzina>/` (poza repo):
@@ -37,6 +37,6 @@ Bot rozkazuje tak jak gracz. Wysyła krasnalom zdarzenia `evt_task_*`, maluje zn
 | Tcl | WebTraq `GET /tclshell?script=…` (port 8082) | `POST /api/eval` ([SERWER_HTTP](SERWER_HTTP.md)) |
 | procedury bota | plik `Data/ow_bot.tcl` + `source` | treść pliku w `/api/eval` |
 | czas | rzeczywisty, przyspieszony `gametime factor N` | gra zatrzymana, `POST /api/step?seconds=…` |
-| nowa kampania | `--new`: `obj_clear; sel /obj; set sm [new StoryMgr]; call_method $sm load_level Campaign` (początek `single_CampaignX.tcl`; `gameload` pliku `.tcl` nic nie robi) | jeszcze nie (brak `StoryMgr`, TODO) |
+| nowa kampania | `--new`: `obj_clear; sel /obj; set sm [new StoryMgr]; call_method $sm load_level Campaign` (początek `single_CampaignX.tcl`; `gameload` pliku `.tcl` nic nie robi) | gra uruchomiona z `--scenario single_Campaign.tcl` (stałe ziarno układu jaskiń: `OW_LEVEL_SEED=N`, [rozdział 21](silnik/21_start_kampanii.md)); świat jeszcze nie dorasta, więc pustelnika nie ma (TODO G13) |
 
 Pułapki WebTraq: skrypt ze znakami `<` albo `:` się psuje (bot odmawia wysłania). Długi skrypt w GET (kilka KB) jest obcinany i może wywrócić grę, dlatego zapytania o teren są krótkie i porcjowane. Wynik strony: `Result:<br>Ok.<br>wynik<br><hr>`.

@@ -34,6 +34,22 @@ struct ScenarioPlacement
 	int x = 0, y = 0;   // w blokach
 };
 
+// Nałożenie z przebiegu skryptu poziomu (level_script.h): map_template albo map_setlayer2 wprost.
+struct ScenarioStamp
+{
+	bool layer = false; // false: .pmp (map_template), true: .l2m (map_setlayer2)
+	std::string file;   // jak w skrypcie, np. "data/templates/pmp/split/splt_unq_start_tAA.pmp"
+	int x = 0, y = 0;
+};
+
+// call_method obiektu ze skryptu poziomu, powtarzane po starcie świata (obiekt = indeks w Scenario::objects).
+struct ScenarioCall
+{
+	int object = -1;
+	std::string method;
+	std::vector<std::string> args;
+};
+
 // Kamera gry: set_view x y zoom dx dy (pierwsze wywołanie w skrypcie). Prawo z exe za
 // Zimennik/Diggles-Unity (MIT, Runtime/Engine/DigglesCameraController.cs): cel = (x, y, 14) bloków,
 // R = zoom·16 − 10, oko = cel + R·(cos dx·sin(−dy), sin dx, cos dx·cos dy),
@@ -51,6 +67,10 @@ struct Scenario
 	int width = 0, height = 0; // z map create (0 = nie podano)
 	std::optional<GameView> view;
 	std::vector<ScenarioPlacement> placements;
+	std::vector<ScenarioStamp> stamps;      // z przebiegu skryptu poziomu (po placements)
+	std::vector<ScenarioCall> calls;        // z przebiegu skryptu poziomu
+	std::string storyLevel;                 // StoryMgr load_level POZIOM (np. "Campaign"), pusty = brak
+	std::vector<std::string> levelErrors;   // błędy przebiegu skryptu poziomu
 	bool usesGenerator = false; // StoryMgr load_level/load_sandbox: świat proceduralny (nieobsługiwany)
 	// Obiekty tworzone wprost w skrypcie: set_pos [qnew|new Klasa ...] {x y z} (np. krasnale), współrzędne świata.
 	std::vector<TemplateObject> objects;

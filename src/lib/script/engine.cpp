@@ -1098,7 +1098,7 @@ int cmdConst(Engine&, Tcl_Interp* in, Args& a)
 { // proste odpowiedzi do czasu prawdziwych systemów (🔶)
 	static const std::map<std::string, std::string> kValues = {
 	    {"get_max_fow", "255"}, {"get_bestexp", ""},
-	    {"get_linked_to", "-1"}, {"sm_get_event", "0"}, {"tasklist_find", "-1"}};
+	    {"get_linked_to", "-1"}, {"tasklist_find", "-1"}};
 	auto it = kValues.find(a[0]);
 	setResult(in, it != kValues.end() ? it->second : "");
 	return TCL_OK;
@@ -1468,10 +1468,42 @@ int cmdNet(Engine&, Tcl_Interp* in, Args&)
 	setResult(in, "0");
 	return TCL_OK;
 }
+// set_objname obj nazwa | set_objname obj auto [płeć]: "auto" losuje imię z Scripts/classes/zwerg/names.txt
+// (nagłówek MALE, imiona męskie po jednym w wierszu, nagłówek FEMALE, imiona żeńskie; PZWERG.TCL), płeć
+// domyślnie z obiektu. Za Diggles-Unity DigglesTclEngine.PickAutoObjName.
 int cmdSetObjname(Engine& e, Tcl_Interp* in, Args& a)
-{ // set_objname obj nazwa
-	if (ScriptObject* o = a.size() > 2 ? e.object(e.resolveObj(in, a[1])) : nullptr) o->name = a[2];
+{
+	ScriptObject* o = a.size() > 2 ? e.object(e.resolveObj(in, a[1])) : nullptr;
 	setResult(in, "");
+	if (!o) return TCL_OK;
+	if (a[2] != "auto")
+	{
+		o->name = a[2];
+		return TCL_OK;
+	}
+	static std::vector<std::string> male, female;
+	static bool loaded = false;
+	if (!loaded)
+	{
+		loaded = true;
+		if (auto d = e.vfs_.read("Data/Scripts/classes/zwerg/names.txt"))
+		{
+			std::istringstream ls(toUtf8(std::string(d->begin(), d->end())));
+			std::string line;
+			auto* cur = &male;
+			while (std::getline(ls, line))
+			{
+				while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t')) line.pop_back();
+				if (line.empty()) continue;
+				if (line == "MALE") cur = &male;
+				else if (line == "FEMALE") cur = &female;
+				else cur->push_back(line);
+			}
+		}
+	}
+	std::string g = a.size() > 3 ? a[3] : o->gender;
+	const auto& pool = g == "female" ? female : male;
+	if (!pool.empty()) o->name = pool[size_t(std::rand()) % pool.size()];
 	return TCL_OK;
 }
 // clock seconds | milliseconds | clicks | format t [-format fmt]: własna, bez clock.tcl i msgcat z biblioteki Tcl.
@@ -1638,7 +1670,6 @@ const Entry kCommands[] = {
     {"get_max_fow", cmdConst},
     {"get_bestexp", cmdConst},
     {"get_linked_to", cmdConst},
-    {"sm_get_event", cmdConst},
     {"tasklist_find", cmdConst},
     {"get_posx", cmdPosAxis},
     {"get_posy", cmdPosAxis},
@@ -1735,7 +1766,7 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
-	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands(), &workCommands()})
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands(), &workCommands(), &storyCommands()})
 		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 
@@ -1750,7 +1781,7 @@ std::string Engine::resolvePath(const std::string& p) const
 	return s;
 }
 
-std::string Engine::preprocess(const std::string& text) const
+std::string Engine::preprocess(const std::string& text)
 {
 	std::istringstream in(text);
 	std::string line, out;

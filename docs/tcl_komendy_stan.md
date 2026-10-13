@@ -8,13 +8,13 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 65 | 9 | 38 | 47 | 58 |
+| misc | 217 | 71 | 8 | 36 | 45 | 57 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
 | map | 49 | 6 | 3 | 3 | 21 | 16 |
 | inne | 36 | 8 | 0 | 3 | 7 | 18 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
-| object | 183 | 138 | 4 | 13 | 6 | 22 |
+| object | 183 | 140 | 4 | 12 | 5 | 22 |
 | obj | 82 | 34 | 8 | 12 | 17 | 11 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
 | trigger | 1 | 1 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 284 | 29 | 80 | 108 | 138 |
+| **razem** | 639 | 292 | 28 | 77 | 105 | 137 |
 
 ## 3db
 
@@ -232,7 +232,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 |---|---|---|---|---|---|---|
 | `get_mapedit` | ⚪ | P1 | 111 | 111 | 11 | get_mapedit1 if mapeditor-mode, 0 if ingame |
 | `newsticker` | ❌ | P1 | 63 | 19 | 12 | newsticker new <owner-id> [-text <text>] [-category <category>] [-color <color>] [-priority <priority>] [-time |
-| `sm_get_event` | ⚪ | P1 | 30 | 30 | 11 | sm_get_event <name>Check if Story Event is fulfilled |
 | `minimalrun` | ⚪ | P1 | 13 | 13 | 8 | minimalrunreturns if this is a minimal run |
 | `seq_audiostream` | ❌ | P1 | 9 | 3 | 3 | seq_audiostream open <filename> |
 | `startcache` | ⚪ | P1 | 7 | 3 | 1 | startcache enabled |
@@ -244,7 +243,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `log` | ⚪ | P2 | 1004 | 0 | 130 | log args...print to logger |
 | `//` | ⚪ | P2 | 416 | 0 | 46 | //comment with working braces |
 | `start_fade` | ❌ | P2 | 132 | 0 | 43 | start_fade <seconds> <in/out>start fade. in/out=true -> fadein false -> fadeout |
-| `sm_add_event` | ❌ | P2 | 85 | 0 | 13 | sm_add_event <name> [<triggerclass>] [<triggermsg>]Add Story Event |
 | `show_loading` | ⚪ | P2 | 60 | 0 | 32 | show_loading <newstate> (<progress>)show or hide load screen |
 | `create_particlesource` | ❌ | P2 | 39 | 0 | 14 | create_particlesource <type> <pos> <dir> <num> <time>creates temporary particle source |
 | `sm_def_temp_group` | ❌ | P2 | 38 | 0 | 16 | sm_def_temp_group <name> <templist>Defines Unique Template Group (copy'n paste from LevelEditor output) |
@@ -255,7 +253,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `laserbeam` | ❌ | P2 | 26 | 0 | 2 | laserbeam <vStart> <vDest> <vDir> <fDuration> <color red> <green> <blue> |
 | `def_texture` | ❌ | P2 | 24 | 0 | 1 | def_texture <texturename> <filename0>.. <filename15>set the texture variations |
 | `lightning` | ❌ | P2 | 22 | 0 | 3 | lightning <vStart> <vDest> <vDir> <fDuration> <color red> <green> <blue> |
-| `sm_set_event` | ❌ | P2 | 22 | 0 | 11 | sm_set_event <name> (<bool>)Set Story Event as fulfilled |
 | `time_line_log` | ❌ | P2 | 21 | 0 | 3 | time_line_log <msg>add log entry |
 | `speechicon` | ❌ | P2 | 20 | 0 | 6 | speechicon <objref> add <text> <timeout> (<lipsync=0>) (<visibility=1>)add text |
 | `horizon_set` | ❌ | P2 | 19 | 0 | 1 | horizon_set <pos> <red> <green> <blue> <depth> <size>set horizon |
@@ -321,9 +318,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_run_info` | ⚪ | P3 | 1 | 0 | 1 | set_run_info info-textset current load info |
 | `sm_dig_message` | ❌ | P3 | 1 | 0 | 1 | sm_dig_message <true/false>Activates callback dig messages |
 | `sm_get_level_info` | ❌ | P3 | 1 | 1 | 1 | sm_get_level_info <x> <y>get info for level generation |
-| `sm_get_resolution` | ❌ | P3 | 1 | 1 | 1 | sm_get_resolutionreturns map resolution |
 | `sm_map_get` | ❌ | P3 | 1 | 1 | 1 | sm_map_get <x> <y>get map area status |
-| `sm_scan` | ❌ | P3 | 1 | 1 | 1 | sm_scanreturns position of DigMark |
 | `autoloadlevel` | ❌ | martwa | 0 | 0 | 0 | autoloadlevel levelfilemake the game autoload a level. no name disables |
 | `camctrlmapping` | ❌ | martwa | 0 | 0 | 0 | camctrlmapping [<newval>]get/set camera control mapping |
 | `delete_lightning` | ❌ | martwa | 0 | 0 | 0 | delete_lightningdeletes all ballistic particle sources of type "laserbeam" |
@@ -345,7 +340,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `log_mask` | ❌ | martwa | 0 | 0 | 0 | log_mask [+-?]option...change log mask, usage: log_mask +system -actions +objects |
 | `logmod` | ⚪ | martwa | 0 | 0 | 0 | logmod (<module>)set log module, if no module given, log all |
 | `meminfo` | ❌ | martwa | 0 | 0 | 0 | meminfodump memory info |
-| `obj_eval` | ❌ | martwa | 0 | 0 | 0 | obj_eval <objref> <script>run skript in foreign object's context |
 | `peek` | ❌ | martwa | 0 | 0 | 0 | peek <address>peek |
 | `perfwin` | ❌ | martwa | 0 | 0 | 0 | perfwin 0/1hide/show performance-window |
 | `playerinfo` | ❌ | martwa | 0 | 0 | 0 | playerinfo <ownerid> |
@@ -400,6 +394,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `vector_sub` | ✅ |  | 39 | 39 | 16 | vector_sub <vector> <vector>get difference of vertices |
 | `isunderwater` | ✅ |  | 33 | 32 | 16 | isunderwater <pos>find out, if vertex is under water |
 | `land` | ✅ |  | 30 | 30 | 10 | land <list1> <list2>list1 & list2 |
+| `sm_get_event` | ✅ |  | 30 | 30 | 11 | sm_get_event <name>Check if Story Event is fulfilled |
 | `vector_mul` | ✅ |  | 29 | 29 | 14 | vector_mul <vector> <factor>multiplicates vector with factor |
 | `get_view` | ✅ |  | 25 | 25 | 11 | get_view (<newview>)set view pos, zoom and optionally rotation, if is true get_view returns target camera posi |
 | `lor` | ✅ |  | 23 | 23 | 12 | lor <list1> <list2> [...]list1 \| list2 \|... |
@@ -425,9 +420,11 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `calc_text_time` | ✅ |  | 3 | 3 | 1 | calc_text_time <text>returns length of text in seconds |
 | `call` | ✅ |  | 1886 | 0 | 406 | call <script name>call external script |
 | `lrep` | ✅ |  | 125 | 0 | 20 | lrep <listvarname> <elementindex> <newelement>replaces one list element |
+| `sm_add_event` | ✅ |  | 85 | 0 | 13 | sm_add_event <name> [<triggerclass>] [<triggermsg>]Add Story Event |
 | `set_view` | ✅ |  | 61 | 0 | 45 | set_view <x> <y> <zoom> [<dx> <dy> [<move>] [<freeze>] [<speed>] [<set>]]set view pos, zoom and optionally rot |
 | `gametime` | ✅ |  | 58 | 0 | 28 | gametime <command> [<value>]handle game time |
 | `set_diplomacy` | ✅ |  | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
+| `sm_set_event` | ✅ |  | 22 | 0 | 11 | sm_set_event <name> (<bool>)Set Story Event as fulfilled |
 | `set_selectedobject` | ✅ |  | 6 | 0 | 5 | set_selectedobject [<objref>]change selection |
 | `set_view_begin` | ✅ |  | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
 | `set_sequence` | ✅ |  | 3 | 0 | 2 | set_sequence <enabled>enables or disables sequence playing |
@@ -441,9 +438,12 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_digedge` | ✅ |  | 1 | 1 | 1 | get_digedge <topos> <obj>gets a point at the edge of a zone marked for dig |
 | `global_inv_rem` | ✅ |  | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
 | `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
+| `sm_get_resolution` | ✅ |  | 1 | 1 | 1 | sm_get_resolutionreturns map resolution |
+| `sm_scan` | ✅ |  | 1 | 1 | 1 | sm_scanreturns position of DigMark |
 | `callnc` | ✅ |  | 0 | 0 | 0 | callnc <script name>call external script skipping Tcl cache |
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |
 | `inc_playerdigmarkid` | ✅ |  | 0 | 0 | 0 | inc_playerdigmarkid <player>increment current player-dig-mark-ID |
+| `obj_eval` | ✅ |  | 0 | 0 | 0 | obj_eval <objref> <script>run skript in foreign object's context |
 | `prod_valid` | ✅ |  | 0 | 0 | 0 | prod_valid <obj> <prod>checks if is a non boxed, non contained, build and valid object with the same owner lik |
 | `vector_setx` | ✅ |  | 0 | 0 | 0 | vector_setx <vector> <new_x>copy vector, use different x value |
 | `vector_sety` | ✅ |  | 0 | 0 | 0 | vector_sety <vector> <new_y>copy vector, use different y value |
@@ -557,7 +557,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `destruct` | ❌ | P2 | 29 | 0 | 16 | destruct <object>delete and destruct object |
 | `set_light` | ❌ | P2 | 17 | 0 | 13 | set_light <object> <on/off>switches the light of the object on/off |
 | `set_pf_influence` | ❌ | P2 | 12 | 0 | 4 | set_pf_influence <objref> <left> <top> <right> <bottom> <costs> <flags>sets the pathfinding influence rectangl |
-| `sm_send_message` | ❌ | P2 | 10 | 0 | 4 | sm_send_message <object> <message>Send Message for Story Event |
 | `set_camerafollow` | ❌ | P2 | 7 | 0 | 2 | set_camerafollow <objref> (<zoom>)(camera follows object, -1 disables follow-mode, zoom 1.0 - 2.5 |
 | `fight_weapon_kombi` | ❌ | P2 | 5 | 0 | 1 | fight_weapon_kombi <classlist> <raisevallist>defines special Weapon Kombinations |
 | `hide_obj_ghost` | ❌ | P2 | 5 | 0 | 4 | hide_obj_ghost <objref>hide object ghost if present |
@@ -566,7 +565,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_light` | ❌ | P3 | 1 | 1 | 1 | get_light <object>returns the state of light |
 | `get_objownertype` | ❌ | P3 | 1 | 1 | 1 | get_objownertype <object>returns the owner type of an object (0=none 1=human 2=ai) |
 | `get_weapon_range` | ❌ | P3 | 1 | 1 | 1 | get_weapon_range <weaponid>returns range of weapon |
-| `sm_register` | ❌ | P3 | 1 | 0 | 1 | sm_register <object> <callback>Register Story Manager with callback |
 | `tasklist_find` | ⚪ | P3 | 1 | 1 | 1 | tasklist_find <objref> <entry>find index of entry or -1 |
 | `cwd` | ❌ | martwa | 0 | 0 | 0 | cwd <objref>get current object's path |
 | `get_escape_pos` | ❌ | martwa | 0 | 0 | 0 | get_escape_pos <objref> <scandist> <walkdist>get position for escaping, returns: -1 if nothing found, 0 if no  |
@@ -666,6 +664,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_posz` | ✅ |  | 12 | 0 | 7 | set_posz <objref> <z>set current object's z position |
 | `set_rotz` | ✅ |  | 11 | 0 | 9 | set_rotz <objref> <z>set current object's z rotation |
 | `set_weapon_class` | ✅ |  | 10 | 0 | 6 | set_weapon_class <object> <num>sets the Weapon ID |
+| `sm_send_message` | ✅ |  | 10 | 0 | 4 | sm_send_message <object> <message>Send Message for Story Event |
 | `dig_resetid` | ✅ |  | 9 | 0 | 4 | dig_resetid <object>reset dig id of an object |
 | `set_buildupstate` | ✅ |  | 9 | 0 | 6 | set_buildupstate <objref> <newstate>set object boxed / unpacked |
 | `set_forceipol` | ✅ |  | 9 | 0 | 5 | set_forceipol <objref> <newstate>enable/disable object forceipol |
@@ -705,6 +704,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_climbability` | ✅ |  | 1 | 0 | 1 | set_climbability <objref> <newstate>sets the ability to climb (for pathfinding) |
 | `set_logactions` | ✅ |  | 1 | 0 | 1 | set_logactions <objref> <newstate>set object action logging |
 | `set_objinfo` | ✅ |  | 1 | 0 | 1 | set_objinfo <objref> <text>set object info text |
+| `sm_register` | ✅ |  | 1 | 0 | 1 | sm_register <object> <callback>Register Story Manager with callback |
 | `get_activegameplay` | ✅ |  | 0 | 0 | 0 | get_activegameplay <objref>get activegameplay flag (object event and state handling) |
 | `get_collision` | ✅ |  | 0 | 0 | 0 | get_collision <objref>get collision flag |
 | `get_forceipol` | ✅ |  | 0 | 0 | 0 | get_forceipol <objref>get forceipol flag |

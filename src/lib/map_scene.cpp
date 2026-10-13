@@ -3,6 +3,7 @@
 #include "lib/i18n.h"
 #include "lib/render/gl.h"
 #include "lib/render/texture_cache.h"
+#include "lib/level_script.h"
 #include "lib/map_world.h"
 #include "lib/save_game.h"
 #include "lib/vfs.h"
@@ -117,6 +118,8 @@ bool MapScene::loadTemplate(const std::string& file)
 	file_ = file;
 	baseSave_.reset();
 	scenarioMode_ = false;
+	storyLevel_.clear();
+	levelCalls_.clear();
 	Scenario sc;
 	sc.placements.push_back({file, 0, 0});
 	std::string world = Vfs::lower(file.substr(0, file.find('_')));
@@ -154,6 +157,8 @@ bool MapScene::loadSaveData(const std::string& file, const std::vector<uint8_t>&
 	file_ = file;
 	scenarioMode_ = true;
 	scenarioInfo_.clear();
+	storyLevel_.clear();
+	levelCalls_.clear();
 	saveFog_.clear();
 	error_.clear();
 	Scenario sc;
@@ -199,18 +204,38 @@ bool MapScene::loadScenario(const std::string& file)
 	scenarioMode_ = true;
 	baseSave_.reset();
 	// systeminit.tcl (menu gry) leży w Data/, pozostałe scenariusze w Data/Gamesave/.
-	Scenario sc = parseScenario(*vfs_, Vfs::lower(file) == "systeminit.tcl" ? "Data/systeminit.tcl" : "Data/Gamesave/" + file);
+	std::string path = Vfs::lower(file) == "systeminit.tcl" ? "Data/systeminit.tcl" : "Data/Gamesave/" + file;
+	Scenario sc = parseScenario(*vfs_, path);
 	scenarioInfo_.clear();
+	int margin = 2;
 	if (sc.placements.empty() && sc.usesGenerator)
-		scenarioInfo_ = tr("Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.");
+	{
+		// Kampania i inne światy StoryMgr: skrypt poziomu wykonany naprawdę (level_script.h).
+		// OW_LEVEL_SEED: stałe ziarno losowania układu jaskiń (testy).
+		const char* seed = std::getenv("OW_LEVEL_SEED");
+		sc = runLevelScript(*vfs_, path, seed ? unsigned(std::strtoul(seed, nullptr, 10)) : 0u);
+		for (auto& e : sc.levelErrors) std::fprintf(stderr, "skrypt poziomu: %s\n", e.c_str());
+		if (sc.stamps.empty())
+			scenarioInfo_ = tr("Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.");
+		margin = 12; // 🔶 zapas litej skały wokół startu (świat rośnie dopiero z generatorem, TODO G13)
+	}
+	storyLevel_ = sc.storyLevel;
+	levelCalls_ = sc.calls;
 	// Świat ze szablonu o największej liczbie wystąpień (urw, kris, lava, swf).
 	std::map<std::string, int> worlds;
 	for (auto& p : sc.placements) worlds[Vfs::lower(p.script.substr(0, p.script.find('_')))]++;
+	for (auto& st : sc.stamps)
+		if (st.layer)
+		{
+			std::string f = st.file.substr(st.file.find_last_of("/\\") + 1);
+			if (Vfs::lower(f).rfind("splt_", 0) == 0) f = f.substr(5);
+			worlds[Vfs::lower(f.substr(0, f.find('_')))]++;
+		}
 	std::string world = "urw";
 	int best = 0;
 	for (auto& [k, n] : worlds)
 		if (n > best && (k == "urw" || k == "kris" || k == "lava" || k == "swf")) best = n, world = k;
-	return finishLoad(sc, 2, world);
+	return finishLoad(sc, margin, world);
 }
 
 bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, BuiltWorld* prebuilt)

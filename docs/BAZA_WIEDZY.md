@@ -452,6 +452,14 @@ Narzędzie: [bot](BOT.md) w oryginale (`OW_HIDDEN=1 live2.sh start`, potem `wigb
 - ✅ `gametime factor 5`: wywrotka gry („Program Error”, winedbg bez śladu) po kilku minutach. Powtarzalne: nowa kampania bez przyspieszenia przez 200 s stabilna, ×5 włączone w 200 s → wywrotka przed 450 s. Przy ×4 gra wytrzymała ok. 60 min. Bot używa ×2.
 - 🔶 Długi skrypt w GET do WebTraq (ok. 4 KB) jest obcinany (`extra characters after close-brace`), a chwilę później proces gry znika. Bot wysyła tylko krótkie zapytania.
 
+**Start kampanii u nas** (2026-10-13, [rozdział 21](silnik/21_start_kampanii.md)). Oryginał w ukrytym oknie, ten sam początek kampanii co wyżej, kamera `set_view 246.7 28.8 1.478 -0.29 0.05`: pozycje 5 krasnali zgadzają się co do setnej z naszym przebiegiem wstępnym `Campaign.tcl`, obraz obozu też. Bot w naszej grze (ziarno 7, 5 min gry): 5 chomików w rękach po 300 s, drogę do jaskini wykopał sam, nikt nie zginął. Znalezione przy okazji błędy naszego silnika (poprawione, testy `script_misc`, `script_story`):
+- `lrem` zwracał nową listę zamiast usuniętego elementu (`Campaign.tcl`: `incr std_x [lrem conn 0]`);
+- `obj_eval` był zaślepką (zawsze 0);
+- `set_objname obj auto [płeć]` dawał imię „auto” zamiast losowego z `names.txt`;
+- `sm_get_event` był zaślepką (zawsze 0), nie było rejestru wydarzeń ani `sm_send_message`.
+
+Różnice do sprawdzenia: w oryginale jedzenie krasnali stoi na 0,9 przez pierwsze ok. 180 s, potem spada ok. 0,00036/s; u nas spada od startu ok. 0,0002/s. Dwóch krasnali w jaskini z chomikami straciło po 0,12 życia (prawdopodobnie `Fresspflanze`).
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅

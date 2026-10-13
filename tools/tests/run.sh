@@ -99,17 +99,46 @@ t_script_props() {
 	[ -z "$e" ] && ok || fail "$e"
 }
 
-test_ script_misc "Tcl: vector_abs, lrem, calc_text_time, tasklist_list, talkissue, smalltalk, partner_info, gamestats (cmd_misc.cpp)"
+test_ script_story "Tcl: fabuła StoryMgr (cmd_story.cpp): sm_add_event z wyzwalaczem, sm_send_message ustawia wydarzenie klasy i słowa nadawcy, sm_set_event, sm_get_event"
+t_script_story() {
+	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
+		--eval 'sm_add_event E1 Zwerg kill ; set b [sm_add_event E2 Zwerg] ; sm_add_event E3 Hamster kill ; sm_send_message 1 kill ; list [sm_get_event E1] [sm_get_event E2] [sm_get_event E3] [expr {[sm_add_event E2] == $b}] [sm_get_event nieznane] [sm_set_event E3] [sm_get_event E3]' \
+		--eval 'sm_send_message 1 activate ; list [sm_get_event E2] [sm_get_resolution] [sm_scan]' \
+		>"$TMP/story" 2>&1
+	local e="" w
+	for w in '-> 1 0 0 1 0 {} 1$' '-> 1 4 0$'; do
+		grep -q -- "$w" "$TMP/story" || e="${e:+$e; }brak „$w”"
+	done
+	[ -z "$e" ] && ok || fail "$e: $(grep -- '->' "$TMP/story" | cut -c1-200 | tr '\n' ' ')"
+}
+
+test_ campaign_start "start kampanii (level_script.cpp): single_Campaign.tcl wykonany w przebiegu wstępnym, szablon startowy i jaskinie z first_level (OW_LEVEL_SEED=7), 5 krasnali na miejscach z oryginału (te same współrzędne świata), StoryMgr, FogRemover, wukery usunięte"
+t_campaign_start() {
+	OW_LEVEL_SEED=7 wv --scenario single_Campaign.tcl --print-objects --screenshot "$TMP/camp.png" >"$TMP/camp" || { fail "wigview: $(tail -2 "$TMP/camp")"; return; }
+	local e="" n
+	n=$(grep -cE '^obiekt [0-9]+ Zwerg .*pos=(231\.54,30\.44|232\.83,30\.50|234\.00,30\.44|235\.06,30\.44|236\.10,30\.50),' "$TMP/camp")
+	[ "$n" = 5 ] || e="krasnali na miejscach z oryginału: $n zamiast 5"
+	grep -q '^obiekt 0 StoryMgr' "$TMP/camp" || e="${e:+$e; }brak StoryMgr"
+	grep -q ' FogRemover ' "$TMP/camp" || e="${e:+$e; }brak FogRemover"
+	grep -q ' Wuker ' "$TMP/camp" && e="${e:+$e; }wukery nie usunięte"
+	n=$(grep -c ' Hamster ' "$TMP/camp")
+	[ "$n" -ge 5 ] || e="${e:+$e; }chomików $n"
+	grep -q 'skrypt poziomu:' "$TMP/camp" && e="${e:+$e; }$(grep -m1 'skrypt poziomu:' "$TMP/camp")"
+	[ -z "$e" ] && ok "$(grep -c '^obiekt' "$TMP/camp") obiektów" || fail "$e"
+}
+
+test_ script_misc "Tcl: vector_abs, lrem (zwraca usunięty element), set_objname auto (imię z names.txt), calc_text_time, tasklist_list, talkissue, smalltalk, partner_info, gamestats (cmd_misc.cpp)"
 t_script_misc() {
 	"$B/owscript" --game "$GAME" Zwerg 1 -o /dev/null \
-		--eval 'set l {a b c d} ; lrem l 1 ; list $l [vector_abs {3 4 0}] [calc_text_time abcdefghij] [calc_text_time ab]' \
+		--eval 'set l {a b c d} ; set r [lrem l 1] ; list $r $l [vector_abs {3 4 0}] [calc_text_time abcdefghij] [calc_text_time ab]' \
 		--eval 'tasklist_add 1 x ; tasklist_add 1 {y z} ; tasklist_list 1' \
 		--eval 'talkissue 1 add Bier 10 ; talkissue 1 add 1story 5 ; talkissue 1 reduce 0.5 ; list [talkissue 1 get Bier] [talkissue 1 get 1story] [talkissue 1 sum]' \
 		--eval 'smalltalk add wetter "Ladny dzien" ; smalltalk add wetter Deszcz ; smalltalk get wetter' \
+		--eval 'set_objname 1 auto female ; set a [get_objname 1] ; list [string equal $a auto] [string equal $a {}] [string is upper [string index $a 0]]' \
 		--eval 'set_owner 1 0 ; set_objgender 1 female ; partner_info setpartner 1 5 ; partner_info setpregnancy 1 1 ; partner_info addchild 1 7 ; list [partner_info getpartner 1] [partner_info getchildren 1] [gamestats numgnomes 0] [gamestats numfemale 0] [gamestats numpregnant 0]' \
 		>"$TMP/misc" 2>&1
 	local e="" w
-	for w in '-> {a c d} 5 0.6 0.5$' '-> x {y z}$' '-> 5.0 5.0 10.0$' '-> {Ladny dzien} Deszcz$' '-> 5 7 1 1 1$'; do
+	for w in '-> b {a c d} 5 0.6 0.5$' '-> x {y z}$' '-> 5.0 5.0 10.0$' '-> {Ladny dzien} Deszcz$' '-> 0 0 1$' '-> 5 7 1 1 1$'; do
 		grep -q -- "$w" "$TMP/misc" || e="${e:+$e; }brak „$w”"
 	done
 	[ -z "$e" ] && ok || fail "$e ($(grep -c '^BŁĄD' "$TMP/misc") błędów eval)"
@@ -798,17 +827,31 @@ t_http_planner_prod() {
 	[ -z "$e" ] && ok "wynalazek, dowóz, produkcja, zbiór, pakowanie i rozpakowanie" || fail "$e"
 }
 
-test_ bot_ow "bot kampanii (tools/bot/wigbot.py) w naszej grze: procedury wigbot.tcl, stan świata, teren i rozkazy przez /api/eval; 60 s gry na urw_gng_042_a"
+test_ http_campaign "kampania z symulacją: StoryMgr w stanie idle, CampaignInit.tcl w jego interpreterze (wydarzenia, newslist), is_storymgr, obj_eval, 30 s gry bez utraty krasnali"
+t_http_campaign() {
+	http_ok || return
+	HENV="OW_LEVEL_SEED=7" http_start wigview --scenario single_Campaign.tcl --simulate || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	local r e=""
+	r=$(hpost /api/eval 'set sm [obj_query 0 -class StoryMgr] ; list [is_storymgr] [state_get $sm] [obj_eval $sm {llength $newslist}] [sm_get_event GameOverCheck] [sm_add_event QL_Bring_Hamsters] [sm_get_event QL_Bring_Hamsters]' | jget 'd["result"]')
+	echo "$r" | grep -Eq '^1 idle 4[0-9] 1 [0-9]+ 0$' || e="stan fabuły: $r"
+	hpost "/api/step?seconds=30" >/dev/null
+	r=$(hpost /api/eval 'list [llength [obj_query 0 -class Zwerg -limit 50]] [state_get [obj_query 0 -class StoryMgr]]' | jget 'd["result"]')
+	[ "$r" = "5 idle" ] || e="${e:+$e; }po 30 s: $r"
+	ui_stop
+	[ -z "$e" ] && ok || fail "$e"
+}
+
+test_ bot_ow "bot kampanii (tools/bot/wigbot.py) w naszej grze na starcie kampanii (OW_LEVEL_SEED=7): procedury wigbot.tcl, stan świata, teren i rozkazy przez /api/eval; 60 s gry"
 t_bot_ow() {
 	http_ok || return
-	http_start wigview --template urw_gng_042_a --simulate --populate 2 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	HENV="OW_LEVEL_SEED=7" http_start wigview --scenario single_Campaign.tcl --simulate || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
 	local out="$TMP/bot" rc
 	python3 "$REPO/tools/bot/wigbot.py" ow --port "$HPORT" --minutes 1 --out "$out" >"$TMP/bot.log" 2>&1
 	rc=$?
 	ui_stop
 	local e=""
 	[ "$rc" = 2 ] || e="kod wyjścia $rc, oczekiwany 2 (limit czasu): $(tail -3 "$TMP/bot.log" | tr '\n' ' ')"
-	[ -z "$e" ] && grep -q "start (openwiggles): 2 krasnali" "$out/journal.txt" || e="${e:-brak startu z 2 krasnalami w dzienniku}"
+	[ -z "$e" ] && grep -q "start (openwiggles): 5 krasnali, 7 chomików" "$out/journal.txt" || e="${e:-brak startu z 5 krasnalami i 7 chomikami w dzienniku}"
 	[ -z "$e" ] && [ "$(wc -l <"$out/snapshots.jsonl")" -ge 10 ] || e="${e:-za mało stanów w snapshots.jsonl}"
 	[ -z "$e" ] && grep -q "^ *[0-9]* .*\." "$out/terrain.txt" || e="${e:-teren bez otwartych pól}"
 	[ -z "$e" ] && ok "$(wc -l <"$out/snapshots.jsonl") kroków, teren $(wc -l <"$out/terrain.txt") wierszy" || fail "$e"

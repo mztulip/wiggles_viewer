@@ -45,6 +45,10 @@ public:
 	bool loadTemplate(const std::string& file); // nazwa pliku .tcl w Data/Templates
 	bool loadScenario(const std::string& file); // nazwa pliku .tcl w Data/Gamesave (map create + szablony)
 	bool loadSavePath(const std::string& path);  // zapis gry .sav z dowolnego miejsca na dysku
+	// Scenariusz z przebiegu skryptu poziomu (level_script.h, np. kampania): poziom StoryMgr load_level
+	// i call_method obiektów do powtórzenia po starcie skryptów (indeks obiektu sceny).
+	const std::string& storyLevel() const { return storyLevel_; }
+	const std::vector<ScenarioCall>& levelCalls() const { return levelCalls_; }
 
 	// Postęp wczytywania: ułamek 0..1 i nazwa etapu. Ustawiany przez pętlę główną (rysuje pasek).
 	std::function<void(float, const char*)> progress;
@@ -301,6 +305,8 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	float baseLight(float x, float y) const; // B = 16·warstwa2 (dwuliniowo) + 64
 	bool scenarioMode_ = false;
 	std::string scenarioInfo_;
+	std::string storyLevel_;
+	std::vector<ScenarioCall> levelCalls_;
 	std::optional<GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
 	int skyTiles_ = 0, lightBegin_ = Scenario::kNoSky;

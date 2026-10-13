@@ -35,6 +35,9 @@ class Vfs;
 namespace script
 {
 
+// Tekst skryptu gry (bajty CP1252) -> UTF-8 dla Tcl 8.6.
+std::string toUtf8(const std::string& s);
+
 struct Method
 {
 	std::string args, body;
@@ -249,7 +252,7 @@ public:
 	ScriptClass* classContext(Tcl_Interp* in);
 	void registerCommands(Tcl_Interp* in);
 	Tcl_Interp* newInterp();
-	std::string preprocess(const std::string& text) const;
+	static std::string preprocess(const std::string& text); // //#IF…, komentarze //
 	std::string resolvePath(const std::string& p) const;
 	void error(const std::string& where, Tcl_Interp* in);
 	void stub(const std::string& name) { stubs_[name]++; }
@@ -301,6 +304,16 @@ public:
 	std::map<std::string, int> msgMisses_; // lmsg bez hasła (gra dopisuje je do Data/msgmisses.txt)
 	int nextId_ = 100000; // obiekty tworzone przez skrypty bez gry
 	bool storyMgr = false; // is_storymgr: kampania (gra ustawia przy wczytaniu świata)
+	// Fabuła (cmd_story.cpp): wydarzenia sm_add_event (kolejność rejestracji, wyzwalacz i słowo komunikatu),
+	// wartości sm_set_event, wywołanie zwrotne StoryMgr z sm_register.
+	struct StoryEvent
+	{
+		std::string name, trigger, keyword;
+	};
+	std::vector<StoryEvent> storyEvents_;
+	std::map<std::string, std::string> storyValues_;
+	int storyCallbackObj_ = 0;
+	std::string storyCallbackProc_;
 	std::vector<TriggerRec> triggers_; // trigger: rekordy (miejsce = numer zwracany przez create)
 	bool sequenceActive = false;       // set_sequence: przerywnik (wstrzymuje wyzwalacze)
 	void scanTriggers();               // co turę logiki (cmd_trigger.cpp)

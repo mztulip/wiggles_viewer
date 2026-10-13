@@ -968,6 +968,24 @@ void WorldSim::attachScripts()
 		scripts->runIn(*o, o->cls->initBody, "obj_init");
 		for (auto& [k, v] : scene_.objectTclVars(i)) scripts->setVar(*o, k, v);
 	}
+	// Świat z przebiegu skryptu poziomu (kampania): reszta metody StoryMgr load_level, czyli rejestr fabuły
+	// (CampaignInit.tcl w interpreterze StoryMgr: wydarzenia, lista zadań newslist), potem call_method skryptu
+	// poziomu (np. FogRemover fog_remove). Mapę i obiekty poziomu złożył już przebieg wstępny.
+	if (!scene_.storyLevel().empty())
+		for (int i = 0; i < scene_.objectCount(); ++i)
+			if (auto* o = scripts->object(idOf(i)); o && o->interp && Vfs::lower(scene_.objectClass(i)) == "storymgr")
+			{
+				scripts->storyMgr = true;
+				scripts->runIn(*o, "call scripts/gameplay/CampaignInit.tcl", "load_level");
+				break;
+			}
+	for (const auto& c : scene_.levelCalls())
+	{
+		if (c.object < 0 || c.object >= scene_.objectCount()) continue;
+		std::string code = "call_method " + std::to_string(idOf(c.object)) + " " + c.method;
+		for (const auto& a : c.args) code += " {" + a + "}";
+		scripts->eval(code);
+	}
 	std::printf("skrypty: %d obiektów ze skryptami\n", n);
 }
 

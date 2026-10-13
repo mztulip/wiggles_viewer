@@ -53,7 +53,9 @@ int cmdVectorRandom(Engine&, Tcl_Interp* in, Args& a)
 	return TCL_OK;
 }
 
-// lrem zmienna indeks: usuwa element listy w zmiennej wołającego (na miejscu), zwraca nową listę.
+// lrem zmienna indeks: usuwa element listy w zmiennej wołającego (na miejscu) i zwraca usunięty element
+// (skrypty: `set nextevent [lrem evt_hit_list 0]`, `incr std_x [lrem conn 0]` w Campaign.tcl; za Diggles-Unity
+// TclBuiltins.LRem). Indeks poza listą: pusty wynik, lista bez zmian.
 int cmdLrem(Engine&, Tcl_Interp* in, Args& a)
 {
 	if (a.size() < 3) return TCL_OK;
@@ -62,10 +64,15 @@ int cmdLrem(Engine&, Tcl_Interp* in, Args& a)
 	auto items = listItems(in, v);
 	long i = std::atol(a[2].c_str());
 	if (a[2] == "end") i = long(items.size()) - 1;
-	if (i >= 0 && i < long(items.size())) items.erase(items.begin() + i);
-	std::string r = joinList(items);
-	Tcl_SetVar(in, a[1].c_str(), r.c_str(), 0);
-	setResult(in, r);
+	std::string popped;
+	if (i >= 0 && i < long(items.size()))
+	{
+		popped = items[size_t(i)];
+		items.erase(items.begin() + i);
+		std::string r = joinList(items);
+		Tcl_SetVar(in, a[1].c_str(), r.c_str(), 0);
+	}
+	setResult(in, popped);
 	return TCL_OK;
 }
 
@@ -106,6 +113,20 @@ int cmdIsStoryMgr(Engine& e, Tcl_Interp* in, Args&)
 {
 	setResult(in, e.storyMgr ? "1" : "0");
 	return TCL_OK;
+}
+
+// obj_eval obiekt skrypt: skrypt w interpreterze obiektu (jego zmienne i procedury), wynik albo błąd Tcl.
+int cmdObjEval(Engine& e, Tcl_Interp* in, Args& a)
+{
+	ScriptObject* o = a.size() > 2 ? e.object(e.resolveObj(in, a[1])) : nullptr;
+	if (!o || !o->interp || !o->alive)
+	{
+		setResult(in, "obj_eval: brak obiektu ze skryptami");
+		return TCL_ERROR;
+	}
+	int rc = Tcl_EvalEx(o->interp, a[2].c_str(), -1, TCL_EVAL_GLOBAL);
+	setResult(in, Tcl_GetStringResult(o->interp));
+	return rc == TCL_ERROR ? TCL_ERROR : TCL_OK;
 }
 
 bool isClass(const ScriptObject& o, const char* name)
@@ -260,6 +281,7 @@ std::vector<CmdEntry> build()
 	    {"state_getenablecnt", cmdStateEnableCnt},
 	    {"get_local_player", cmdLocalPlayer},
 	    {"is_storymgr", cmdIsStoryMgr},
+	    {"obj_eval", cmdObjEval},
 	    {"gamestats", cmdGamestats},
 	    {"talkissue", cmdTalkissue},
 	    {"smalltalk", cmdSmalltalk},
