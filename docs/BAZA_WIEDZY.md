@@ -425,6 +425,33 @@ Dodatkowo (zoom 1,0): dx = −4 → 119/476, −8 → 10/162; dy = ±4 → 479/4
 
 Wnioski: ✅ dalszy kanał −3 dB na blok |dx| (P/L = 2^(−dx/2)); ✅ stereo odwrócone względem obrazu (+dx głośniej w lewym kanale); ✅ odległość w płaszczyźnie (dx, dy), z bez znaczenia; 🔶 amplituda bliższego kanału ≈ gain^2,5 z prawem Diggles-Unity (zgodność ±10% do 8 bloków, dalej pomiar trochę głośniej); ❓ cisza przy dx = 24 (zoom 1,0) i 16 (zoom 2,5) mimo gain > 0,1 (mgła poza szablonem albo inny próg). Opis: rozdział 15.4a.
 
+### 8.17 Bot: kampania do pustelnika (2026-10-13)
+
+Narzędzie: [bot](BOT.md) w oryginale (`OW_HIDDEN=1 live2.sh start`, potem `wigbot.py orig --new`). Dzienniki poza repo: `../lab/bot/`.
+
+**Start kampanii przez WebTraq.** `gameload Data/Gamesave/single_Campaign.tcl` zwraca `Ok.`, ale niczego nie wczytuje. Działa początek `single_CampaignX.tcl`: `obj_clear; sel /obj; set sm [new StoryMgr]; call_method $sm load_level Campaign`. Po kilku sekundach jest 5 krasnali gracza w obozie na powierzchni (y 30,5), ognisko gracza, 9 chomików (y 42,5 i 66,5), 9 grzybów i ognisko klanu gracza 1 (y 66). Wyzwalaczy pustelnika na starcie nie ma.
+
+**Układ startowy** (mapa bota, materiał z `get_material`): obóz y 22–30, z obozu szyb 2 pola szeroki przy x 257–258 do y 33. Pod nim 3 rzędy ziemi, potem jaskinia y 37–42 (x 225–290, chomiki). Z niej otwarty szyb x 245–246 do jaskini y 61–66 (klan gracza 1, chomiki). Na drodze nie ma granitu. ✅ Gracz musi przekopać 3 pola, żeby zejść z obozu.
+
+**Wzrost świata.** Szablon pustelnika (`sm_add_temp urw_der_einsiedler 56 60`) pojawia się dopiero wtedy, gdy krasnal jest na skraju odkrytego obszaru. Bot posłał krasnala na dno jaskini y 66 i wykopał szyb w dół. Wkrótce potem StoryMgr dobudował jaskinię y 90–101 z `Trigger_Einsiedler_1` (233,4; 98,5) i `Trigger_Einsiedler_2` (221,5; 98,5) (czas gry ok. 870 s od pierwszego zwiadu). Zgodne z Diggles-Unity LEVEL_GENERATOR.md: `sm_scan` po krasnalach → `generate_next` → `lg_*`.
+
+**Zadanie** (`Trigger_Urwald.tcl`): `Trigger_Einsiedler_1` (krasnal gracza w promieniu 5) odsłania mgłę i uruchamia sekwencję `urw_22` (zadanie `QL_Bring_Hamsters`). `Trigger_Einsiedler_2` co 3 s liczy chomiki w ekwipunku krasnali gracza w promieniu 5 (wyzwalacz w promieniu 3). Częściowa dostawa daje sekwencję `urw_23a`, komplet 6 daje `urw_23b`, a w nagrodę mapa `Karte` w ekwipunku krasnala.
+
+**Rozkazy przez WebTraq.** ✅ `set_event <krasnal> evt_task_pickup -subject1 <chomik>` bez `-target` nie działa: krasnal kończy swoje zadanie i nic się nie dzieje. Z `-target <krasnal>` działa: krasnal schodzi szybem i łapie chomika w ok. 35 s (bez procy, `walk_near_item`, chomik ucieka). Pierwszy argument `set_event` to nadawca, a odbiorcę wskazuje `-target` (skrypty gry: `set_event $g evt_… -target $g …`). 🔶 Nasz silnik bez `-target` bierze za odbiorcę pierwszy argument, więc jest łagodniejszy.
+
+**Przebieg** (×4, bez strat): 6 chomików w rękach po ok. 15 min gry. Jedzenie krasnali spadało najniżej do 0,66, bo krasnale jedzą same. Doszedł szósty i siódmy krasnal (nowi członkowie kolonii, np. Callixtus). Zamówienie `Grillpilz` „bez końca” (10) zasypało obóz dziesiątkami grillowanych grzybów, więc bot zamawia teraz zapas 2 na krasnala.
+
+**Pełne przejście** (nowa kampania, ×2, dziennik `../lab/bot/20261013_195139`, zapisy `bot_chomiki.sav`, `bot_pustelnik.sav`): ✅ zadanie wykonane w 3063 s gry, bez strat.
+- 6 chomików w rękach po 526 s gry.
+- Zwiad szybem przy x 257 aż do y 129. Pustelnik leżał tym razem w jaskini y 158,5 (wyzwalacze przy x 225 i 237), więc położenie szablonu jest losowe także w pionie.
+- Jaskinia y 138 z trzema wukerami. Bot wykopał drogę do pustelnika (58 pól), krasnale pokonały wszystkie trzy wukery (życie spadło najniżej do 0,66).
+- `Einsiedler_entdeckt` = 1 przy 2656 s, `QL_Bring_Hamsters` = 1 przy 2774 s, `Einsiedler_Karte_erhalten` i `QL_Bring_Hamsters_done` = 1 przy 3063 s. Mapa trafiła do krasnala, który przyniósł chomiki.
+- Jedzenie: zwiadowca zszedł do 0,33 (długo z dala od ogniska), reszta ok. 0,6.
+
+**Błędy oryginału (pod Wine).**
+- ✅ `gametime factor 5`: wywrotka gry („Program Error”, winedbg bez śladu) po kilku minutach. Powtarzalne: nowa kampania bez przyspieszenia przez 200 s stabilna, ×5 włączone w 200 s → wywrotka przed 450 s. Przy ×4 gra wytrzymała ok. 60 min. Bot używa ×2.
+- 🔶 Długi skrypt w GET do WebTraq (ok. 4 KB) jest obcinany (`extra characters after close-brace`), a chwilę później proces gry znika. Bot wysyła tylko krótkie zapytania.
+
 ## 9. Mapy i teren: przebieg badań
 
 ### 9.1 Ustalenia z działającej gry ✅

@@ -798,6 +798,22 @@ t_http_planner_prod() {
 	[ -z "$e" ] && ok "wynalazek, dowóz, produkcja, zbiór, pakowanie i rozpakowanie" || fail "$e"
 }
 
+test_ bot_ow "bot kampanii (tools/bot/wigbot.py) w naszej grze: procedury wigbot.tcl, stan świata, teren i rozkazy przez /api/eval; 60 s gry na urw_gng_042_a"
+t_bot_ow() {
+	http_ok || return
+	http_start wigview --template urw_gng_042_a --simulate --populate 2 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	local out="$TMP/bot" rc
+	python3 "$REPO/tools/bot/wigbot.py" ow --port "$HPORT" --minutes 1 --out "$out" >"$TMP/bot.log" 2>&1
+	rc=$?
+	ui_stop
+	local e=""
+	[ "$rc" = 2 ] || e="kod wyjścia $rc, oczekiwany 2 (limit czasu): $(tail -3 "$TMP/bot.log" | tr '\n' ' ')"
+	[ -z "$e" ] && grep -q "start (openwiggles): 2 krasnali" "$out/journal.txt" || e="${e:-brak startu z 2 krasnalami w dzienniku}"
+	[ -z "$e" ] && [ "$(wc -l <"$out/snapshots.jsonl")" -ge 10 ] || e="${e:-za mało stanów w snapshots.jsonl}"
+	[ -z "$e" ] && grep -q "^ *[0-9]* .*\." "$out/terrain.txt" || e="${e:-teren bez otwartych pól}"
+	[ -z "$e" ] && ok "$(wc -l <"$out/snapshots.jsonl") kroków, teren $(wc -l <"$out/terrain.txt") wierszy" || fail "$e"
+}
+
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut; światło lampy z new idzie za set_pos"
 t_http_wigview() {
 	http_ok || return
