@@ -80,8 +80,9 @@ int cmdProp(Engine& e, Tcl_Interp* in, Args& a)
 	{
 		if (o && a.size() > 2) o->props[p->name] = p->boolean ? (truthy(a[2]) ? "1" : "0") : a[2];
 		// Zbudowany i spakowany wykluczają się: ustawienie jednego zdejmuje drugi (FUN_0067e1e0, FUN_0067dc80).
+		// Spakowanie kończy też zlecenie pakowania (prod_pack 0; Diggles-Unity DigglesTclEntity.cs PackRequested).
 		if (o && a.size() > 2 && truthy(a[2]) && std::string(p->name) == "buildupstate") o->props["boxed"] = "0";
-		if (o && a.size() > 2 && truthy(a[2]) && std::string(p->name) == "boxed") o->props["buildupstate"] = "0";
+		if (o && a.size() > 2 && truthy(a[2]) && std::string(p->name) == "boxed") o->props["buildupstate"] = "0", o->props["prod_pack"] = "0";
 		setResult(in, "");
 	}
 	else

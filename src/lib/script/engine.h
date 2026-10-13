@@ -111,6 +111,7 @@ struct Host
 	virtual void glide(int id, const float to[3], float /*sekundy*/, bool /*face*/ = true) { setPos(id, to); }
 	virtual void link(int /*dziecko*/, int /*rodzic, 0 = odepnij*/, int /*punkt*/) {}
 	virtual bool linkOffset(int, int, float[3]) { return false; } // get_linkpos
+	virtual bool linkEuler(int, int, float[3]) { return false; }  // get_linkrot
 	// Źródła cząsteczek obiektu (change_particlesource / set_particlesource; docs/silnik/12_czasteczki.md §12.1).
 	virtual void changeParticleSource(int /*id*/, int /*slot*/, const ParticleSource&) {}
 	virtual void setParticleSource(int /*id*/, int /*slot*/, bool /*włączone*/) {}

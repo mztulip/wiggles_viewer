@@ -132,8 +132,14 @@ int cmdZero(Engine&, Tcl_Interp* in, Args&)
 	setResult(in, "0");
 	return TCL_OK;
 }
-int cmdLog(Engine&, Tcl_Interp* in, Args&)
-{
+int cmdLog(Engine& e, Tcl_Interp* in, Args& a)
+{ // OW_TRACE_LOG=1: komunikaty log skryptów na stderr (gra pisze je do pliku dziennika)
+	static const bool trace = std::getenv("OW_TRACE_LOG") != nullptr;
+	if (trace && a.size() > 1)
+	{
+		ScriptObject* o = e.currentObject(in);
+		std::fprintf(stderr, "[log %.1f %d] %s\n", e.time(), o ? o->id : 0, a.back().c_str());
+	}
 	setResult(in, "");
 	return TCL_OK;
 }
@@ -873,6 +879,11 @@ int cmdVector(Engine&, Tcl_Interp* in, Args& a)
 		setResult(in, fmt(p[c.back() - 'x']));
 		return TCL_OK;
 	}
+	else if (c == "vector_setx" || c == "vector_sety" || c == "vector_setz")
+	{ // kopia wektora z inną jedną współrzędną
+		std::copy(p, p + 3, r);
+		r[c.back() - 'x'] = a.size() > 2 ? std::strtof(a[2].c_str(), nullptr) : 0.f;
+	}
 	else if (c == "vector_inbox")
 	{
 		float n[3], m[3];
@@ -1107,6 +1118,17 @@ int cmdLinkPos(Engine& e, Tcl_Interp* in, Args& a)
 	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
 	if (e.host_ && id && a.size() > 2 && !e.host_->linkOffset(id, std::atoi(a[2].c_str()), p)) p[0] = p[2] = 0, p[1] = -0.5f;
 	setResult(in, vecStr(p));
+	return TCL_OK;
+}
+// get_linkrot obj punkt: kąty Eulera X, Y, Z punktu zaczepienia w bieżącej klatce (radiany, przestrzeń modelu, bez
+// obrotu obiektu; skrypty biorą Y: set_roty this [lindex [get_linkrot …] 1] + π). Brak danych: 0 0 0 (za Diggles-Unity
+// DigglesTclEngine.cs get_linkrot).
+int cmdLinkRot(Engine& e, Tcl_Interp* in, Args& a)
+{
+	float r[3] = {0, 0, 0};
+	int id = a.size() > 1 ? e.resolveObj(in, a[1]) : 0;
+	if (e.host_ && id && a.size() > 2 && !e.host_->linkEuler(id, std::atoi(a[2].c_str()), r)) r[0] = r[1] = r[2] = 0;
+	setResult(in, vecStr(r));
 	return TCL_OK;
 }
 // link_obj dziecko rodzic punkt: przypięcie; link_obj dziecko: odpięcie.
@@ -1590,6 +1612,9 @@ const Entry kCommands[] = {
     {"vector_unpackx", cmdVector},
     {"vector_unpacky", cmdVector},
     {"vector_unpackz", cmdVector},
+    {"vector_setx", cmdVector},
+    {"vector_sety", cmdVector},
+    {"vector_setz", cmdVector},
     {"vector_inbox", cmdVector},
     {"fincr", cmdFincr},
     {"hmin", cmdHminmax},
@@ -1619,6 +1644,7 @@ const Entry kCommands[] = {
     {"get_posy", cmdPosAxis},
     {"get_posz", cmdPosAxis},
     {"get_linkpos", cmdLinkPos},
+    {"get_linkrot", cmdLinkRot},
     {"link_obj", cmdLinkObj},
     {"vector_fix", cmdVectorFix},
     {"lrep", cmdLrep},

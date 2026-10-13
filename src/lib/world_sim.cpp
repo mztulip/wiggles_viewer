@@ -1112,6 +1112,11 @@ bool WorldSim::linkOffset(int id, int link, float out[3])
 	return valid(id) && scene_.linkOffset(idx(id), link, out);
 }
 
+bool WorldSim::linkEuler(int id, int link, float out[3])
+{
+	return valid(id) && scene_.linkEuler(idx(id), link, out);
+}
+
 int WorldSim::gnomePosition(int id)
 {
 	SimUnit* u = unitOf(idx(id));

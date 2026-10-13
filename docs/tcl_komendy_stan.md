@@ -8,14 +8,14 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 62 | 9 | 38 | 48 | 60 |
+| misc | 217 | 65 | 9 | 38 | 47 | 58 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
 | map | 49 | 6 | 3 | 3 | 21 | 16 |
 | inne | 36 | 8 | 0 | 3 | 7 | 18 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
-| object | 183 | 137 | 5 | 13 | 6 | 22 |
-| obj | 82 | 32 | 9 | 12 | 18 | 11 |
+| object | 183 | 138 | 4 | 13 | 6 | 22 |
+| obj | 82 | 34 | 8 | 12 | 17 | 11 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
 | trigger | 1 | 1 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 278 | 31 | 80 | 110 | 140 |
+| **razem** | 639 | 284 | 29 | 80 | 108 | 138 |
 
 ## 3db
 
@@ -297,7 +297,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_split_load` | ❌ | P3 | 2 | 0 | 1 | set_split_load <true/false>de/activates split_load mode |
 | `sm_log` | ❌ | P3 | 2 | 0 | 1 | sm_logLog |
 | `vector_roty` | ❌ | P3 | 2 | 2 | 2 | vector_roty <vector> <yrot>rotates vector |
-| `vector_setz` | ❌ | P3 | 2 | 2 | 2 | vector_setz <vector> <new_z>copy vector, use different z value |
 | `camera_set` | ❌ | P3 | 1 | 0 | 1 | camera_set <startspeed> <waypointlist>defines cameraset (waypointlist: {{s 0 0.4} {t 1.0 3}...}) |
 | `delete_laserbeams` | ❌ | P3 | 1 | 0 | 1 | delete_laserbeamsdeletes all ballistic particle sources of type "laserbeam" |
 | `find_free_place` | ❌ | P3 | 1 | 1 | 1 | find_free_place <pos-vector> <-x> <-z> <+x> <+z> <dxmin> <dzmin> (<objradius>)find unoccupied place near pos-v |
@@ -381,8 +380,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `update_objdetail` | ❌ | martwa | 0 | 0 | 0 | update_objdetailupdates object detail level |
 | `vector_rotx` | ❌ | martwa | 0 | 0 | 0 | vector_rotx <vector> <xrot>rotates vector |
 | `vector_rotz` | ❌ | martwa | 0 | 0 | 0 | vector_rotz <vector> <zrot>rotates vector |
-| `vector_setx` | ❌ | martwa | 0 | 0 | 0 | vector_setx <vector> <new_x>copy vector, use different x value |
-| `vector_sety` | ❌ | martwa | 0 | 0 | 0 | vector_sety <vector> <new_y>copy vector, use different y value |
 | `vtune` | ❌ | martwa | 0 | 0 | 0 | vtune (start\|stop)start/stop vtune sampling |
 | `waterdbg` | ❌ | martwa | 0 | 0 | 0 | waterdbg <bool>enable/disable water-debug-view |
 | `smalltalk` | ✅ |  | 1801 | 5 | 17 | smalltalk add <key> <text>adds smalltalk (theme) text |
@@ -440,6 +437,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_objvariation` | ✅ |  | 2 | 0 | 2 | set_objvariation <object> <variation>set variation for object |
 | `vector_fixdig` | ✅ |  | 2 | 2 | 1 | vector_fixdig <vector> <vector>get next reachable position in destination of the 2nd Parameter |
 | `vector_inbox` | ✅ |  | 2 | 2 | 2 | vector_inbox <vector> <boxneg> <boxpos>checks if vector is in box |
+| `vector_setz` | ✅ |  | 2 | 2 | 2 | vector_setz <vector> <new_z>copy vector, use different z value |
 | `get_digedge` | ✅ |  | 1 | 1 | 1 | get_digedge <topos> <obj>gets a point at the edge of a zone marked for dig |
 | `global_inv_rem` | ✅ |  | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
 | `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
@@ -447,6 +445,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |
 | `inc_playerdigmarkid` | ✅ |  | 0 | 0 | 0 | inc_playerdigmarkid <player>increment current player-dig-mark-ID |
 | `prod_valid` | ✅ |  | 0 | 0 | 0 | prod_valid <obj> <prod>checks if is a non boxed, non contained, build and valid object with the same owner lik |
+| `vector_setx` | ✅ |  | 0 | 0 | 0 | vector_setx <vector> <new_x>copy vector, use different x value |
+| `vector_sety` | ✅ |  | 0 | 0 | 0 | vector_sety <vector> <new_y>copy vector, use different y value |
 
 ## network
 
@@ -458,7 +458,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `get_prod_pack` | ❌ | P1 | 16 | 16 | 7 | get_prod_pack <object>get object pack task state |
 | `get_energystore` | ❌ | P1 | 9 | 9 | 5 | get_energystore <objref>get the energy store of an energysource |
 | `get_energysourceload` | ❌ | P1 | 8 | 8 | 4 | get_energysourceload <objref>get the activity of the energysource (%) |
 | `get_max_fow` | ⚪ | P1 | 7 | 7 | 5 | get_max_fow <objref> [<owner>]returns max fow for that owner (for all owners if none specified) |
@@ -493,7 +492,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `fight_setactions_ballistic` | ❌ | P3 | 2 | 2 | 2 | fight_setactions_ballistic <attacker> <defender> <finish-code>set actions for current fight |
 | `get_prod_schedule` | ❌ | P3 | 2 | 2 | 1 | get_prod_schedule <objref>set switch production mode |
 | `get_prod_switchmode` | ❌ | P3 | 2 | 2 | 2 | get_prod_switchmode <objref>set switch production mode |
-| `set_prod_pack` | ❌ | P3 | 2 | 0 | 2 | set_prod_pack <object> <newstate>set object pack task state |
 | `fairy_move` | ❌ | P3 | 1 | 0 | 1 | fairy_move <objref> <targetpos> <targrad> <targetxrot> <targetzrot> <dir> |
 | `fight_setactions_training` | ❌ | P3 | 1 | 0 | 1 | fight_setactions_training <attacker> <attack> <finish-code>set actions for training |
 | `get_ballisticresult` | ❌ | P3 | 1 | 1 | 1 | get_ballisticresult <objref>gets the result of the last ballistic-action on the object (0=FALED,1=HIT) |
@@ -512,6 +510,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_slot_cnt` | ✅ |  | 45 | 45 | 19 | get_prod_slot_cnt <object> <itemclass>get task count for production slot |
 | `get_remaining_sparetime` | ✅ |  | 18 | 18 | 12 | get_remaining_sparetime <objref>get hours of sparetime left |
 | `get_walkresult` | ✅ |  | 17 | 17 | 13 | get_walkresult <objref>gets the result of the last walk-action on the object (0=WS_ERROR, 1=WS_WALKABORTED, 2= |
+| `get_prod_pack` | ✅ |  | 16 | 16 | 7 | get_prod_pack <object>get object pack task state |
 | `inv_check` | ✅ |  | 16 | 16 | 8 | inv_check <objref> <object>check, if object can packed to inventory |
 | `get_prod_slot_buildable` | ✅ |  | 6 | 6 | 3 | get_prod_slot_buildable <object> <class>check if slot is buildable |
 | `auto_choose_gender` | ✅ |  | 4 | 4 | 3 | auto_choose_gender <objref>choose gender for this object automatically, returns new gender |
@@ -533,6 +532,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_slot_list` | ✅ |  | 2 | 2 | 2 | get_prod_slot_list <object>get list of all slots |
 | `info_start_prod` | ✅ |  | 2 | 0 | 1 | info_start_prod <objref>notify production start |
 | `prod_gnome_preferred_workplace` | ✅ |  | 2 | 0 | 2 | prod_gnome_preferred_workplace <objref> [<work-place>]announce preferred work place |
+| `set_prod_pack` | ✅ |  | 2 | 0 | 2 | set_prod_pack <object> <newstate>set object pack task state |
 | `prod_assignworker` | ✅ |  | 1 | 0 | 1 | prod_assignworker <objref> <prodplace>announce worker assignment |
 | `get_rendermaterial` | ✅ |  | 0 | 0 | 0 | get_rendermaterial <objref>get object rendering material |
 | `gnome_stopped_work` | ✅ |  | 0 | 0 | 0 | gnome_stopped_work <objref>notify gnome work break |
@@ -548,7 +548,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_weapon_id` | ❌ | P1 | 10 | 10 | 6 | get_weapon_id <object> <atdef>returns weaponid if obj is a registered weapon |
 | `get_attack_pos` | ❌ | P1 | 9 | 9 | 6 | get_attack_pos <objref-Atk> <objref-Def> (<dist>)get position for fight |
 | `get_linked_to` | ⚪ | P1 | 6 | 6 | 2 | get_linked_to <objref>gets the object that this object is linked to (-1 if none) |
-| `get_linkrot` | ❌ | P1 | 5 | 5 | 2 | get_linkrot <objref> <link-id>get rotation of link in current frame |
 | `get_classaniminfo` | ❌ | P1 | 4 | 4 | 4 | get_classaniminfo (<classname>) <anim>get anim info |
 | `sel` | ⚪ | P2 | 67965 | 0 | 2550 | sel <objref>select object |
 | `set_textureanimation` | ❌ | P2 | 165 | 0 | 22 | set_textureanimation <objref> <submesh> <framelist> [<frame=0> <animtype=2>]set texture animation |
@@ -628,6 +627,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_rot` | ✅ |  | 6 | 6 | 5 | get_rot <objref>get current object's rotation as packed vector |
 | `get_cloaked` | ✅ |  | 5 | 5 | 3 | get_cloaked <objref>find out if object (gnome) is cloaked |
 | `get_diedinfight` | ✅ |  | 5 | 5 | 5 | get_diedinfight <objref>get diedinfight |
+| `get_linkrot` | ✅ |  | 5 | 5 | 2 | get_linkrot <objref> <link-id>get rotation of link in current frame |
 | `get_user_groups` | ✅ |  | 4 | 4 | 1 | get_user_groups <objref>get list of user group assignments |
 | `get_weapon_class` | ✅ |  | 4 | 4 | 2 | get_weapon_class <object>gets the Weapon ID |
 | `get_ownerrace` | ✅ |  | 3 | 3 | 1 | get_ownerrace <owner>returns race of an owner |

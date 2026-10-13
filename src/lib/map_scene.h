@@ -126,6 +126,7 @@ public:
 	bool animMotion(int i, const std::string& anim, Vec3f& move, Vec3f& rotate, int& frames) const;
 	// Punkt zaczepienia obiektu w bieżącej klatce, obrócony jak obiekt: przesunięcie x, y (bloki), z (skala skryptu).
 	bool linkOffset(int i, int link, float out[3], bool scriptZ = true) const; // scriptZ: z×2 jak get_linkpos
+	bool linkEuler(int i, int link, float out[3]) const; // get_linkrot: kąty z rekordu bieżącej klatki, bez obrotu obiektu
 	bool linkEuler(int i, int link, Vec3f& out) const; // orientacja punktu (get_linkrot), radiany
 	// link_obj: dziecko podąża za punktem zaczepienia rodzica (parent < 0 odpina).
 	void linkObject(int child, int parent, int link);

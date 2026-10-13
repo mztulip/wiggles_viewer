@@ -845,6 +845,16 @@ bool MapScene::linkOffset(int i, int link, float out[3], bool scriptZ) const
 	return true;
 }
 
+bool MapScene::linkEuler(int i, int link, float out[3]) const
+{
+	const auto& o = objects_[size_t(i)];
+	int mesh = currentMesh(o);
+	Vec3f v;
+	if (mesh < 0 || !o.slot->model->linkEuler(uint32_t(mesh), link, v)) return false;
+	out[0] = v.x, out[1] = v.y, out[2] = v.z;
+	return true;
+}
+
 void MapScene::linkObject(int child, int parent, int link)
 {
 	if (parent < 0) links_.erase(child);

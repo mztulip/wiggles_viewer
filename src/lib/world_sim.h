@@ -218,6 +218,7 @@ public:
 	void glide(int id, const float to[3], float seconds, bool face = true) override;
 	void link(int child, int parent, int link) override;
 	bool linkOffset(int id, int link, float out[3]) override;
+	bool linkEuler(int id, int link, float out[3]) override;
 	void changeParticleSource(int id, int slot, const ParticleSource& s) override;
 	void setParticleSource(int id, int slot, bool on) override;
 	void setVisible(int id, bool v) override;

@@ -758,10 +758,44 @@ t_http_planner() {
 	hpost /api/pause >/dev/null
 	local a b
 	a=$(hpost /api/eval 'foreach {x y} {5 3 6 3 7 3 5 4 6 4 7 4} { dig_mark 0 $x $y 1 } ; list [get_hmap 6 4] [is_dig_marked 5 3 8 5]' | jget 'd["result"]')
-	hpost "/api/step?seconds=60" >/dev/null
+	# 90 s: krasnal bez doświadczenia (exp_Stein 0) przed każdym węzłem ma wypadek (digupaccident, z_dignwalk.tcl dig_anim)
+	hpost "/api/step?seconds=90" >/dev/null
 	b=$(hpost /api/eval 'list [get_hmap 6 4] [get_hmap 5 4] [is_dig_marked 5 3 8 5]' | jget 'd["result"]')
 	ui_stop
-	[ "$a" = "15 1" ] && [ "$b" = "11 11 0" ] && ok "przed $a, po 60 s $b" || fail "przed $a (oczekiwane 15 1), po 60 s $b (oczekiwane 11 11 0)"
+	[ "$a" = "15 1" ] && [ "$b" = "11 11 0" ] && ok "przed $a, po 90 s $b" || fail "przed $a (oczekiwane 15 1), po 90 s $b (oczekiwane 11 11 0)"
+}
+
+test_ http_planner_prod "planista etap 2 przy ognisku (urw_gng_042_a): wynalazek, dowóz kapelusza, produkcja, zbiór grzyba, pakowanie do skrzyni i rozpakowanie — skrypty gry same prowadzą krasnala"
+t_http_planner_prod() {
+	http_ok || return
+	HENV="OW_TRACE_PLAN=1" http_start wigview --template urw_gng_042_a --simulate --populate 1 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	hpost /api/pause >/dev/null
+	local f e="" r
+	ev() { hpost /api/eval "$1" | jget 'd["result"]'; }
+	f=$(ev 'set f [new Feuerstelle "" "8 6.5 12" "0 0 0"] ; set_owner $f 0 ; set_buildupstate $f 1 ; set_prod_slot_cnt $f Grillpilz 3 ; set f')
+	hpost "/api/step?seconds=40" >/dev/null
+	[ "$(ev 'get_owner_attrib 0 BpGrillpilz')" = 1 ] || e="wynalazek: BpGrillpilz nie ustawiony"
+	ev 'new Pilzhut "" "1 6.5 12" "0 0 0"' >/dev/null
+	hpost "/api/step?seconds=50" >/dev/null
+	r=$(ev 'llength [obj_query 0 -class Grillpilz -limit 9]')
+	[ -z "$e" ] && [ "${r:-0}" -ge 1 ] || e="${e:-produkcja: brak Grillpilz po dowozie ($r)}"
+	ev 'new Pilz "" "0 6.5 12" "0 0 0"' >/dev/null
+	hpost "/api/step?seconds=20" >/dev/null
+	ev "set_prod_slot_cnt $f Grillpilz 0 ; set_prod_pack $f 1" >/dev/null
+	hpost "/api/step?seconds=60" >/dev/null
+	r=$(ev "list [get_boxed $f] [get_prod_pack $f]")
+	[ -z "$e" ] && [ "$r" = "1 0" ] || e="${e:-pakowanie: boxed, prod_pack = $r (oczekiwane 1 0)}"
+	ev "set_prod_unpack $f 1" >/dev/null
+	hpost "/api/step?seconds=60" >/dev/null
+	r=$(ev "list [get_boxed $f] [get_buildupstate $f] [get_prod_unpack $f]")
+	[ -z "$e" ] && [ "$r" = "0 1 0" ] || e="${e:-rozpakowanie: boxed, buildupstate, prod_unpack = $r (oczekiwane 0 1 0)}"
+	ui_stop
+	local k
+	for k in "workat -subject1 $f -text1 BpGrillpilz" "evt_change_muetze -text1 transport" "evt_autoprod_transferprod -subject1 $f" "workat -subject1 $f -text1 Grillpilz" \
+		"evt_autoprod_harvest" "evt_autoprod_pack -subject1 $f" "evt_autoprod_unpack -subject1 $f"; do
+		[ -z "$e" ] && grep -q -- "$k" "$TMP/http.log" || e="${e:-brak w śladzie planisty: $k}"
+	done
+	[ -z "$e" ] && ok "wynalazek, dowóz, produkcja, zbiór, pakowanie i rozpakowanie" || fail "$e"
 }
 
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut; światło lampy z new idzie za set_pos"
