@@ -77,6 +77,23 @@ int cmdDigApply(Engine& e, Tcl_Interp* in, Args& a)
 	return TCL_OK;
 }
 
+// get_angle_num4 poz cpoz: kierunek od poz do cpoz w płaszczyźnie x/y, skwantowany do 0..3 (1 = +x, 2 = +y, 3 = −x,
+// 0 = −y; obcięcie do zera jak cvttss2si w grze, za Diggles-Unity FUN_00646b10). dig_check patrzy nim, z której
+// strony węzła sprawdzać wolne pola.
+int cmdAngleNum4(Engine&, Tcl_Interp* in, Args& a)
+{
+	float p[3], c[3];
+	int r = 0;
+	if (a.size() > 2 && parseVec(in, a[1], p) && parseVec(in, a[2], c))
+	{
+		float ang = std::atan2(c[1] - p[1], c[0] - p[0]);
+		int eax = int((ang - 2.3561945f + 31.415928f) / -1.5707964f);
+		r = (63 - eax) & 3;
+	}
+	setResult(in, std::to_string(r));
+	return TCL_OK;
+}
+
 int cmdDigResetId(Engine& e, Tcl_Interp* in, Args& a)
 {
 	if (ScriptObject* o = a.size() > 1 ? e.object(e.resolveObj(in, a[1])) : nullptr) o->digSetId = -1;
@@ -101,6 +118,7 @@ std::vector<CmdEntry> build()
 	    {"dig_apply", cmdDigApply},
 	    {"dig_resetid", cmdDigResetId},
 	    {"inc_playerdigmarkid", cmdIncDigMarkId},
+	    {"get_angle_num4", cmdAngleNum4},
 	};
 }
 

@@ -35,6 +35,7 @@ void DigTerrain::init(const Pmp& pmp)
 	id_.assign(n, 0);
 	material_.assign(n, 2);
 	playerDigMarkId = 0;
+	hasBounds_.fill(false);
 	auto raw = [&](int x, int y) { return uint8_t(pmp.types[size_t(y) * size_t(w_) + size_t(x)] & 0x7F); };
 	for (int y = 0; y < h_; ++y)
 		for (int x = 0; x < w_; ++x)
@@ -63,6 +64,17 @@ void DigTerrain::setMark(int tx, int ty, int owner, int cnt, bool dummy)
 	uint32_t nib = dummy ? 3u : uint32_t((cnt & 3) | 8);
 	state_[i] = (state_[i] & ~(0xFu << s)) | nib << s;
 	id_[i] = (id_[i] & ~(0xFu << s)) | uint32_t(playerDigMarkId & 15) << s;
+	auto& b = bounds_[size_t(owner)];
+	if (!hasBounds_[size_t(owner)]) b = {tx, ty, tx, ty}, hasBounds_[size_t(owner)] = true;
+	else b = {std::min(b[0], tx), std::min(b[1], ty), std::max(b[2], tx), std::max(b[3], ty)};
+}
+
+bool DigTerrain::bounds(int owner, int& x0, int& y0, int& x1, int& y1) const
+{
+	if (owner < 0 || owner >= 8 || !hasBounds_[size_t(owner)]) return false;
+	const auto& b = bounds_[size_t(owner)];
+	x0 = b[0], y0 = b[1], x1 = b[2], y1 = b[3];
+	return true;
 }
 
 void DigTerrain::clearMark(int tx, int ty, int owner)

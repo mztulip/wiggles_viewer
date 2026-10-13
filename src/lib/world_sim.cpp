@@ -40,6 +40,7 @@ void WorldSim::initUnits()
 	units.clear();
 	idToIdx.clear(), idxToId.clear(), nextScriptId = 100000;
 	digMarks.clear(), glides.clear();
+	planner.reset();
 	for (int i = 0; i < scene_.objectCount(); ++i) idOf(i);
 	selected = -1;
 	if (const Pmp* g = simGrid()) nav.build(*g, scene_.blockDb()), walk.build(*g, scene_.blockDb()), digTerrain.init(*g);
@@ -88,9 +89,22 @@ void WorldSim::simUpdate(float dt)
 		{
 			scriptAcc_ -= 0.1;
 			scripts->tick(0.1);
+			planner.logicTick();
 		}
 	}
 	for (auto& u : units) updateUnit(u, dt);
+	if (scriptDigging())
+	{
+		planner.tick(dt);
+		// Znaczniki pól do pokazania (digMarks): pole znika, gdy żaden z jego czterech węzłów nie ma już znacznika gracza.
+		for (auto it = digMarks.begin(); it != digMarks.end();)
+		{
+			auto [x, y] = *it;
+			bool any = digTerrain.marked(x, y, 0) || digTerrain.marked(x + 1, y, 0) || digTerrain.marked(x, y + 1, 0) ||
+			    digTerrain.marked(x + 1, y + 1, 0);
+			it = any ? std::next(it) : digMarks.erase(it);
+		}
+	}
 	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
 	if (trace && int((simTime_ + dt) * 2.f) != int(simTime_ * 2.f)) // OW_TRACE_SIM=2: postacie co 0,5 s
 		for (const auto& u : units)
@@ -372,6 +386,8 @@ bool WorldSim::carveNode(int nx, int ny, int owner, int& dugId, bool rebuild)
 	if (!g || !digTerrain.ready()) return false;
 	std::vector<std::pair<int, int>> changed;
 	bool ok = digTerrain.carveStep(*g, scene_.blockDb(), nx, ny, owner, dugId, changed);
+	static const bool trace = std::getenv("OW_TRACE_SIM") && std::atoi(std::getenv("OW_TRACE_SIM")) >= 2;
+	if (trace && ok) std::fprintf(stderr, "[sim %.1f] wycięcie węzła (%d, %d) gracz %d\n", simTime_, nx, ny, owner);
 	if (changed.empty()) return ok;
 	for (auto [x, y] : changed)
 	{
@@ -520,7 +536,8 @@ bool WorldSim::digEdgeTile(int sx, int sy, int rx, int ry, int& ex, int& ey) con
 			long d = long(tx - rx) * (tx - rx) + long(ty - ry) * (ty - ry);
 			if (best < 0 || d < best) best = d, ex = tx, ey = ty;
 		}
-		if (!(tx == sx && ty == sy) && !digMarks.count({tx, ty})) continue; // dalej z pola startu (znacznik) i pól zaznaczonych do kopania
+		if (!(tx == sx && ty == sy) && !digMarks.count({tx, ty}) && !digTerrain.marked(tx, ty, 0))
+			continue; // dalej z pola startu (znacznik) i pól zaznaczonych do kopania
 		for (auto [nx, ny] : {std::pair{tx + 1, ty}, {tx - 1, ty}, {tx, ty + 1}, {tx, ty - 1}})
 		{
 			if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[size_t(ny) * W + nx]) continue;
@@ -592,6 +609,15 @@ void WorldSim::markDig(int x0, int y0, int x1, int y1)
 		for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x)
 			if (simGrid() && x >= 0 && y >= 0 && x < int(simGrid()->width) && y < int(simGrid()->height) && digNeeded(x, y))
 				n += digMarks.insert({x, y}).second;
+	if (scriptDigging() && simGrid() && digTerrain.ready())
+	{ // jak w grze: znacznik tunelu (dig_mark tryb 1) w węzłach pól [x0, x1 + 1] × [y0, y1 + 1]; kopią krasnale z planisty
+		for (int y = std::min(y0, y1); y <= std::max(y0, y1) + 1; ++y)
+			for (int x = std::min(x0, x1); x <= std::max(x0, x1) + 1; ++x)
+				if (digTerrain.diggable(x, y) && digTerrain.markRimGate(*simGrid(), scene_.blockDb(), x, y, 3))
+					digTerrain.setMark(x, y, 0, 0, true);
+		status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());
+		return;
+	}
 	if (selected >= 0 && selected < int(units.size())) units[size_t(selected)].digJob = true;
 	status = std::string(tr("Do kopania: ")) + std::to_string(digMarks.size());
 	(void)n;

@@ -123,6 +123,10 @@ struct Host
 	virtual bool digNext(const float /*poz*/[3], int /*gracz*/, int /*id kopiącego*/, int /*próba*/, bool /*tylko id*/, float /*out*/[3]) { return false; }
 	virtual bool digApply(int /*nx*/, int /*ny*/, int /*gracz*/, int& /*id znacznika*/) { return false; }
 	virtual void incDigMarkId(int /*gracz*/) {}
+	// Planista pracy (cmd_work.cpp, lib/prod_planner): gnome_idle, gnome_failed_work/gnome_stopped_work, gnome_announce_dig.
+	virtual void gnomeIdle(int /*id*/, bool /*bezczynny*/) {}
+	virtual void gnomeFailedWork(int /*id*/) {}
+	virtual void announceDig(int /*x*/, int /*y*/) {}
 	virtual bool getView(float /*v*/[5]) { return false; }
 	virtual void setView(const float /*v*/[5], bool /*move: płynny przejazd*/) {}
 };

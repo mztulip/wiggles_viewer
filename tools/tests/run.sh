@@ -751,6 +751,19 @@ t_http_dig() {
 	[ "$m" = 222222222222 ] && [ "$r" = "{4 4 4 4} {1 1} 0 {-1 -1 -1}" ] && ok "$r" || fail "materiał $m, kroki $r (gra: {4 4 4 4} {1 1})"
 }
 
+test_ http_planner "planista pracy: bezczynny krasnal dostaje evt_autoprod_dig i skrypt gry (z_dignwalk.tcl) sam wykopuje zaznaczone węzły nad korytarzem urw_gng_042_a"
+t_http_planner() {
+	http_ok || return
+	http_start wigview --template urw_gng_042_a --simulate --populate 1 0 || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	hpost /api/pause >/dev/null
+	local a b
+	a=$(hpost /api/eval 'foreach {x y} {5 3 6 3 7 3 5 4 6 4 7 4} { dig_mark 0 $x $y 1 } ; list [get_hmap 6 4] [is_dig_marked 5 3 8 5]' | jget 'd["result"]')
+	hpost "/api/step?seconds=60" >/dev/null
+	b=$(hpost /api/eval 'list [get_hmap 6 4] [get_hmap 5 4] [is_dig_marked 5 3 8 5]' | jget 'd["result"]')
+	ui_stop
+	[ "$a" = "15 1" ] && [ "$b" = "11 11 0" ] && ok "przed $a, po 60 s $b" || fail "przed $a (oczekiwane 15 1), po 60 s $b (oczekiwane 11 11 0)"
+}
+
 test_ http_wigview "serwer HTTP w wigview: /tclshell jak WebTraq, eval, pauza i krok, sterowanie postacią, czekanie, zrzut; światło lampy z new idzie za set_pos"
 t_http_wigview() {
 	http_ok || return

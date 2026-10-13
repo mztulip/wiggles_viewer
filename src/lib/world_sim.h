@@ -11,6 +11,7 @@
 #include "lib/map_scene.h"
 #include "lib/nav.h"
 #include "lib/nav_world.h"
+#include "lib/prod_planner.h"
 #include "lib/walk_plan.h"
 #include "lib/script/engine.h"
 
@@ -171,6 +172,9 @@ public:
 	// pola (narożniki), zszyte z sąsiadami grafem BlockDB (docs/silnik/19_kopanie.md).
 	void dig(int x, int y);
 	DigTerrain digTerrain; // znaczniki graczy i materiał pól (dig_mark, dig_next, dig_apply)
+	ProdPlanner planner{*this}; // planista pracy: bezczynne krasnale dostają evt_autoprod_* (docs/silnik/20_planista.md)
+	// Krasnale ze skryptami kopią przez planistę i skrypty gry (evt_autoprod_dig → z_dignwalk.tcl), inaczej naszą pętlą.
+	bool scriptDigging() const { return scripts && scriptGnomes; }
 	// Jeden krok wycinania węzła (dig_apply) z przebudową ruchu zmienionych pól i terenu (rebuild: od razu;
 	// inaczej terrainDirty i jedna przebudowa później).
 	bool carveNode(int nx, int ny, int owner, int& dugId, bool rebuild = true);
@@ -223,6 +227,9 @@ public:
 	bool digNext(const float pos[3], int owner, int gnomeId, int tryN, bool matchId, float out[3]) override;
 	bool digApply(int nx, int ny, int owner, int& id) override { return carveNode(nx, ny, owner, id); }
 	void incDigMarkId(int) override { ++digTerrain.playerDigMarkId; }
+	void gnomeIdle(int id, bool idle) override { planner.gnomeIdle(id, idle); }
+	void gnomeFailedWork(int id) override { planner.releaseGnome(id); }
+	void announceDig(int x, int y) override { planner.announceDig(x, y); }
 	bool getView(float v[5]) override { return viewGet && viewGet(v); }
 	void setView(const float v[5], bool move) override
 	{

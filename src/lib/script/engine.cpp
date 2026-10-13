@@ -1634,7 +1634,6 @@ const Entry kCommands[] = {
     {"get_owner_attrib", cmdOwnerAttrib},
     {"set_owner_attrib", cmdOwnerAttrib},
     {"add_owner_attrib", cmdOwnerAttrib},
-    {"gnome_idle", cmdNop},
     {"get_owner", cmdOwner},
     {"set_owner", cmdOwner},
     {"get_roty", cmdRot},
@@ -1710,7 +1709,7 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
-	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands()})
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands(), &workCommands()})
 		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 

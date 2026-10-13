@@ -3,6 +3,7 @@
 // Runtime/World/DiggableTerrain.cs (adresy FUN_… gry tam cytowane); 🔶 o ile nie sprawdzone w laboratorium.
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -42,6 +43,8 @@ public:
 	int markId(int tx, int ty, int owner) const;
 	static int decodeTarget(int nibble); // 0 → 15 (brak), dummy → 11, cnt|8 → cnt ? 4·cnt − 1 : 0
 	int playerDigMarkId = 0;
+	// Prostokąt pól, na których gracz kiedykolwiek malował znaczniki (gra: rośnie przy malowaniu, nie maleje).
+	bool bounds(int owner, int& x0, int& y0, int& x1, int& y1) const;
 
 	// Krawędź węzła (nx, ny) = wspólny narożnik pól (nx−1, ny−1) SE, (nx, ny−1) SW, (nx−1, ny) NE, (nx, ny) NW:
 	// największa bramka po przejściu każdego narożnika grafem BlockDB; −1, gdy żaden narożnik nie ma przejścia.
@@ -63,6 +66,8 @@ private:
 	int w_ = 0, h_ = 0;
 	std::vector<uint8_t> material_;
 	std::vector<uint32_t> state_, id_; // półbajty 8 graczy
+	std::array<std::array<int, 4>, 8> bounds_{};
+	std::array<bool, 8> hasBounds_{};
 	bool in(int x, int y) const { return x >= 0 && y >= 0 && x < w_ && y < h_; }
 	bool stepCorner(Pmp& pmp, const BlockDb& db, int tx, int ty, int corner, int rim, std::vector<std::pair<int, int>>& changed);
 };

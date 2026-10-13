@@ -14,8 +14,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | inne | 36 | 8 | 0 | 3 | 7 | 18 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
-| object | 183 | 136 | 5 | 13 | 7 | 22 |
-| obj | 82 | 27 | 9 | 15 | 19 | 12 |
+| object | 183 | 137 | 5 | 13 | 6 | 22 |
+| obj | 82 | 32 | 9 | 12 | 18 | 11 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
 | trigger | 1 | 1 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 272 | 31 | 83 | 112 | 141 |
+| **razem** | 639 | 278 | 31 | 80 | 110 | 140 |
 
 ## 3db
 
@@ -467,12 +467,10 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `check_ghost_coll` | ❌ | P1 | 6 | 6 | 3 | check_ghost_coll <param> <objref> <prodref>check collision with ghost object |
 | `fight_setactions_strikeback` | ❌ | P1 | 4 | 3 | 3 | fight_setactions_strikeback <attacker> (<radius>) (<forcehit>) (<scanpos>)set actions for current fight |
 | `get_prod_unpack` | ❌ | P1 | 4 | 4 | 3 | get_prod_unpack <object>get object unpack task state |
-| `gnome_failed_work` | ❌ | P2 | 42 | 0 | 6 | gnome_failed_work <objref>notify gnome work break |
 | `set_energyconsumption` | ❌ | P2 | 37 | 0 | 37 | set_energyconsumption <objref> <value>set need of energy during production |
 | `set_inventoryslotuse` | ❌ | P2 | 31 | 0 | 30 | set_inventoryslotuse <objref> <value>set of inventory slots |
 | `set_texturevariation` | ❌ | P2 | 28 | 0 | 6 | set_texturevariation <objref> <num0>.. <num15>sets the texturevariation of the object |
 | `set_energyclass` | ❌ | P2 | 26 | 0 | 26 | set_energyclass <objref> <energyclass>set energy value the of object |
-| `prod_gnome_state` | ❌ | P2 | 20 | 0 | 3 | prod_gnome_state <objref> unknownset current gnome state |
 | `set_prod_schedule` | ❌ | P2 | 19 | 0 | 8 | set_prod_schedule <objref> <true/false>set switched production mode |
 | `set_prod_switchmode` | ❌ | P2 | 16 | 0 | 13 | set_prod_switchmode <objref> <true/false>set switched production mode |
 | `set_prod_enabled` | ❌ | P2 | 14 | 0 | 5 | set_prod_enabled <objref> <newstate>enable or disable production |
@@ -480,7 +478,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_doorproperties` | ❌ | P2 | 9 | 0 | 3 | set_doorproperties <objref> <mode> [<classlist>]set properties for door |
 | `set_energystore` | ❌ | P2 | 9 | 0 | 5 | set_energystore <objref> <value>set the energy store of an energysource |
 | `set_prod_exclusivemode` | ❌ | P2 | 8 | 0 | 5 | set_prod_exclusivemode <objref> <true/false>set exclusive production mode |
-| `gnome_idle` | ⚪ | P2 | 6 | 0 | 3 | gnome_idle <objref> [true\|false]notify gnome is idle |
 | `set_prod_directevents` | ❌ | P2 | 5 | 0 | 4 | set_prod_directevents <objref> <true/false>set switched production mode |
 | `create_doorlogic` | ❌ | P3 | 4 | 0 | 2 | create_doorlogic <objref>create door logic for a door |
 | `delete_transportlogic` | ❌ | P3 | 4 | 0 | 2 | delete_transportlogic <objref>deletes transport logic |
@@ -488,7 +485,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_energyrange` | ❌ | P3 | 4 | 0 | 4 | set_energyrange <objref> <range>set energy range the of object |
 | `create_elevatorlogic` | ❌ | P3 | 3 | 0 | 1 | create_elevatorlogic <objref> <cabine> <brope>create elevator logic for an Elevator |
 | `create_ladderlogic` | ❌ | P3 | 3 | 0 | 1 | create_ladderlogic <objref>create ladder logic for a ladder |
-| `gnome_announce_dig` | ❌ | P3 | 3 | 0 | 1 | gnome_announce_dig <objref> <pos>announce dig action |
 | `set_elevatorproperties` | ❌ | P3 | 3 | 0 | 1 | set_elevatorproperties <objref> <maxrange> <accelerationtype> <acceleration/speed> <brakeacceleration> <maxuse |
 | `set_ladderrange` | ❌ | P3 | 3 | 0 | 1 | set_ladderrange <objref> <maxrange>set range of a ladder |
 | `set_prod_unpack` | ❌ | P3 | 3 | 0 | 3 | set_prod_unpack <object> <newstate>set object unpack task state |
@@ -508,7 +504,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_prod_task_list` | ❌ | martwa | 0 | 0 | 0 | get_prod_task_list <object>get list of open tasks |
 | `get_prod_toolneed` | ❌ | martwa | 0 | 0 | 0 | get_prod_toolneed <objref>set the need of tools |
 | `get_prod_total_task_cnt` | ❌ | martwa | 0 | 0 | 0 | get_prod_total_task_cnt <object>get total number of open tasks |
-| `gnome_stopped_work` | ❌ | martwa | 0 | 0 | 0 | gnome_stopped_work <objref>notify gnome work break |
 | `prod_gnomeidle` | ❌ | martwa | 0 | 0 | 0 | prod_gnomeidle <objref> [true\|false]announce worker is idle |
 | `set_prod_buildup` | ❌ | martwa | 0 | 0 | 0 | set_prod_buildup <object> <newstate>set object unpack task state |
 | `set_prod_toolneed` | ❌ | martwa | 0 | 0 | 0 | set_prod_toolneed <objref> <true/false>set the need of tools |
@@ -522,9 +517,13 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `auto_choose_gender` | ✅ |  | 4 | 4 | 3 | auto_choose_gender <objref>choose gender for this object automatically, returns new gender |
 | `prod_gnome_get_preferred_workplace` | ✅ |  | 4 | 4 | 3 | prod_gnome_get_preferred_workplace <objref>get preferred work place |
 | `set_prod_slot_cnt` | ✅ |  | 48 | 0 | 11 | set_prod_slot_cnt <object> <itemclass> <newcount>set task count for production slot |
+| `gnome_failed_work` | ✅ |  | 42 | 0 | 6 | gnome_failed_work <objref>notify gnome work break |
+| `prod_gnome_state` | ✅ |  | 20 | 0 | 3 | prod_gnome_state <objref> unknownset current gnome state |
+| `gnome_idle` | ✅ |  | 6 | 0 | 3 | gnome_idle <objref> [true\|false]notify gnome is idle |
 | `info_progress_prod` | ✅ |  | 6 | 0 | 1 | info_progress_prod <objref> <currentstep> <maxstep>notify production start |
 | `prod_gnome_last_workplace` | ✅ |  | 5 | 0 | 1 | prod_gnome_last_workplace <objref> [<work-place>]announce current work place |
 | `auto_choose_workingtime` | ✅ |  | 3 | 0 | 3 | auto_choose_workingtime <objref>choose working time for this object automatically |
+| `gnome_announce_dig` | ✅ |  | 3 | 0 | 1 | gnome_announce_dig <objref> <pos>announce dig action |
 | `info_end_prod` | ✅ |  | 3 | 0 | 2 | info_end_prod <objref>notify production end |
 | `set_prod_ownerstrength` | ✅ |  | 3 | 0 | 1 | set_prod_ownerstrength <object> <newstrength>set object owner strength |
 | `set_rendermaterial` | ✅ |  | 3 | 0 | 2 | set_rendermaterial <objref> <materialname>set object rendering material |
@@ -536,6 +535,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `prod_gnome_preferred_workplace` | ✅ |  | 2 | 0 | 2 | prod_gnome_preferred_workplace <objref> [<work-place>]announce preferred work place |
 | `prod_assignworker` | ✅ |  | 1 | 0 | 1 | prod_assignworker <objref> <prodplace>announce worker assignment |
 | `get_rendermaterial` | ✅ |  | 0 | 0 | 0 | get_rendermaterial <objref>get object rendering material |
+| `gnome_stopped_work` | ✅ |  | 0 | 0 | 0 | gnome_stopped_work <objref>notify gnome work break |
 | `inv_cnt_raw` | ✅ |  | 0 | 0 | 0 | inv_cnt_raw <objref>get number of packed objects |
 | `inv_find_raw` | ✅ |  | 0 | 0 | 0 | inv_find_raw <objref> <object>get index of packed óbject |
 | `inv_get_raw` | ✅ |  | 0 | 0 | 0 | inv_get_raw <objref> <object>get packed object |
@@ -563,7 +563,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `fight_weapon_kombi` | ❌ | P2 | 5 | 0 | 1 | fight_weapon_kombi <classlist> <raisevallist>defines special Weapon Kombinations |
 | `hide_obj_ghost` | ❌ | P2 | 5 | 0 | 4 | hide_obj_ghost <objref>hide object ghost if present |
 | `set_objicon` | ❌ | P2 | 5 | 0 | 2 | set_objicon <objref> <idx> <type> <value> <duration>set object info icon |
-| `get_angle_num4` | ❌ | P3 | 2 | 2 | 1 | get_angle_num4 <pos1> <pos2>returns 0 for pos2 is over pos1, 1 for right... |
 | `get_velcomp` | ❌ | P3 | 2 | 2 | 2 | get_velcomp <objref>get current object's velocity as packed vector |
 | `get_light` | ❌ | P3 | 1 | 1 | 1 | get_light <object>returns the state of light |
 | `get_objownertype` | ❌ | P3 | 1 | 1 | 1 | get_objownertype <object>returns the owner type of an object (0=none 1=human 2=ai) |
@@ -685,6 +684,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_snaptowall` | ✅ |  | 3 | 0 | 1 | set_snaptowall <objref> <newstate>set object snap to wall |
 | `set_user_groups` | ✅ |  | 3 | 0 | 2 | set_user_groups <objref> <list>set list of user group assignments |
 | `get_alternateanimdb` | ✅ |  | 2 | 2 | 1 | get_alternateanimdb <objref>get object alternate anim state |
+| `get_angle_num4` | ✅ |  | 2 | 2 | 1 | get_angle_num4 <pos1> <pos2>returns 0 for pos2 is over pos1, 1 for right... |
 | `get_instore` | ✅ |  | 2 | 2 | 1 | get_instore <objref>find out if object is in a store |
 | `get_invulnerable` | ✅ |  | 2 | 2 | 2 | get_invulnerable <objref>find out if object (creature) is invulnerable |
 | `get_posbottom` | ✅ |  | 2 | 2 | 2 | get_posbottom <objref>get current object's bottom's position as packed vector |

@@ -27,7 +27,8 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
 - [x] G3 Zaznaczanie (LPM) i rozkaz „idź” (PPM): siatka pól i A* ([`src/lib/nav.h`](src/lib/nav.h))
 - [x] G4 Kopanie (PPM na skale, przeciągnięcie PPM = obszar do kopania dla zaznaczonego krasnala): tunel 4523 z gruntem pola, znaleziska 4%, odkrywanie mgły przez krasnale
 - [x] Kopanie jak w grze: materiał pól (skała nie do kopania), znaczniki graczy, wycinanie węzłów grafem przejść BlockDB, komendy `dig_mark`, `dig_next`, `dig_apply`, `get_material` (zgodne z grą co do kroków), [rozdział 19](docs/silnik/19_kopanie.md)
-- [ ] Krasnale gracza kopią skryptem gry (`evt_task_dig` → `z_dignwalk.tcl`) zamiast naszej pętli `digAt`; obiekty blokujące wycinanie i dekoracje usuwane przez wykop; stemple jaskiń
+- [x] Krasnale gracza kopią skryptem gry (planista `evt_autoprod_dig`, klik `evt_task_dig` → `z_dignwalk.tcl`); nasza pętla `digAt` zostaje tylko bez skryptów
+- [ ] Kopanie: obiekty blokujące wycinanie i dekoracje usuwane przez wykop; stemple jaskiń
 - [x] G5 Zapis: dekoracje spoza listy obiektów (nasiona w kubełkach, obiekty zastępcze) aż do znacznika 7
 - [ ] Zapis: sekcje od znacznika 7 (światła klas, sterowanie, animacje, cząsteczki, fabuła, AI): potrzebne do wczytania zapisu do działającej gry
 - [x] G6 Symulacja płynów (źródła `Wasser`/`Sulfur`/`Lava`, przepływ 10 Hz), zgodna z zapisem gry
@@ -245,7 +246,9 @@ Kolejność wg [mapy Diggles-Unity](docs/DIGGLES_UNITY.md) §6: najpierw to, co 
   - [x] Partia E: kopanie ([cmd_dig](src/lib/script/cmd_dig.cpp), [rozdział 19](docs/silnik/19_kopanie.md)), test `http_dig`
   - [x] Partia F: wyzwalacze ([cmd_trigger](src/lib/script/cmd_trigger.cpp): trigger create/delete/set_*/get_actuators, skan co turę, `set_sequence` wstrzymuje), dopasowanie właściciela jak w grze (`Engine::ownerMatches`, też w `obj_query -owner`), `owscript --tick`, test `script_trigger`, [rozdział 11.4a](docs/silnik/11_obiekty_tcl_i_petla.md)
   - [x] Partia G: stan produkcji ([cmd_prod](src/lib/script/cmd_prod.cpp): get/set_prod_* z wartościami domyślnymi gry, sloty, katalog, info_*_prod, prod_guest, stanowiska), test `script_prod`
-  - [ ] Dalej: planista produkcji (Diggles-Unity WORK_DISPATCHER_NATIVE.md, ProdDispatcher.cs), newsticker, layout, elf, płynna kamera przerywników (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
+  - [x] Planista etap 1 ([prod_planner](src/lib/prod_planner.h), [rozdział 20](docs/silnik/20_planista.md)): pula `gnome_idle`, przegląd graczy co 0,5 s, prośby kopania, koszt dopasowania, rezerwacja, `evt_autoprod_dig`, porażki (`gnome_failed_work`), `get_angle_num4`; krasnale gracza kopią skryptem gry (przeciągnięcie = znaczniki, klik = `evt_task_dig`), testy `http_planner`, `dig_standoff`
+  - [ ] Planista etap 2: zbiory (kind 6: brakujący materiał → zasób), produkcja (kind 3 workat, priorytet slotu), wynalazki (kind 2), pakowanie i rozpakowanie (kind 0/1, plany krokowe), dowóz (kind 4)
+  - [ ] Dalej: newsticker, layout, elf, płynna kamera przerywników (get_prod_*), energia, newsticker, layout, mapa (get_material, dig_next, map), walka
 - [x] Model obiektowy: `def_class`, `method`, `obj_init`, `new`, `del`, `sel`, `call_method`, `def_event`, `handle_event`, `state_*`, `def_attrib` (G7a)
 - [x] Zaślepki komend natywnych z dziennikiem (`openwiggles_tcl.log`); klasy wczytują się bez błędów
 - [x] Kolejka zadań postaci (`tasklist_*`, G7b)
