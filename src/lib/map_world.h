@@ -115,6 +115,7 @@ struct BuiltWorld
 	int skyTiles = 0;                    // ile pól dostało światło dzienne (reguła set_light_begin)
 	std::vector<uint8_t> fluidType;      // płyn w polu (z zapisu; puste = brak)
 	std::vector<float> fluidFill;
+	std::vector<uint8_t> hasTpl;         // 1 = pole pod nałożonym szablonem (gra: tile+0x13 bit 0); puste = nieznane
 	std::vector<std::string> placedScripts;
 	std::vector<std::string> errors;
 };

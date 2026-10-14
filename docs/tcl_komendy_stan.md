@@ -8,15 +8,15 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 82 | 7 | 32 | 39 | 57 |
+| misc | 217 | 85 | 7 | 30 | 38 | 57 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
 | object | 183 | 140 | 4 | 12 | 5 | 22 |
 | obj | 82 | 34 | 8 | 12 | 17 | 11 |
-| map | 49 | 9 | 3 | 2 | 19 | 16 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
+| map | 49 | 29 | 2 | 2 | 3 | 13 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
 | inne | 36 | 9 | 0 | 2 | 7 | 18 |
 | graphics | 6 | 2 | 0 | 1 | 0 | 3 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
 | trigger | 1 | 1 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 307 | 27 | 71 | 97 | 137 |
+| **razem** | 639 | 330 | 26 | 69 | 80 | 134 |
 
 ## 3db
 
@@ -177,29 +177,12 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
 | `map` | ❌ | P1 | 42 | 12 | 32 | map create <width> <height> (<xoffset>) (<yoffset>) (<completion-code>)create new map |
-| `lg_get_level` | ❌ | P1 | 4 | 4 | 2 | lg_get_levelreturns the last generated level |
 | `get_place_long` | ❌ | P1 | 3 | 3 | 3 | get_place_long <center> <range> [<fixwalkable=f>] [<walkable=f>]find a passable point (no collision-map-check  |
 | `generate_color_variation` | ❌ | P2 | 8 | 0 | 8 | generate_color_variation <left> <top> <right> <bottom> <type>generate variations for 1st texture-layer of the  |
 | `reset_map` | ❌ | P2 | 6 | 0 | 5 | reset_map <left> <top> <right> <bottom>reset maparea |
-| `lg_set_leveltype` | ❌ | P3 | 4 | 0 | 2 | lg_set_leveltype base\|resourceset leveltype for levelgeneration |
-| `lg_set_templategroupvalue` | ❌ | P3 | 4 | 0 | 1 | lg_set_templategroupvalue <setname> <val>set weighing value for templategroup |
-| `lg_set_templateratio` | ❌ | P3 | 4 | 0 | 2 | lg_set_templateratio <minimum> <optimum> <maximum>set ratio of templates for levelgeneration |
-| `lg_start` | ❌ | P3 | 4 | 0 | 2 | lg_startstarts levelgeneration |
-| `lg_tp_addtemplatesets` | ❌ | P3 | 4 | 0 | 2 | lg_tp_addtemplatesets {<setname> <setname>...}adds templates to templatepool |
-| `lg_tp_clear` | ❌ | P3 | 4 | 0 | 2 | lg_tp_clearflushes the template pool for levelgeneration |
-| `lg_set_area` | ❌ | P3 | 3 | 0 | 2 | lg_set_area <left> <top> <right> <bottom>set area for levelgeneration |
 | `lg_add_preset` | ❌ | P3 | 2 | 0 | 1 | lg_add_preset <template> <x> <y>add preset template for levelgeneration |
-| `lg_set_templategroupprops` | ❌ | P3 | 2 | 0 | 1 | lg_set_templategroupprops <tempgroup> [-gamecount <num>] [-levelcount <num>] [-tunnel <float>]sets template gr |
 | `remove_black_fog` | ❌ | P3 | 2 | 0 | 2 | remove_black_fog <player> <left> <top> <right> <bottom>reset maparea |
 | `cave_skin` | ❌ | P3 | 1 | 0 | 1 | cave_skin add <iSize> <xn> <yn> <xp> <yp>add caveskin |
-| `lg_addfilterclass` | ❌ | P3 | 1 | 0 | 1 | lg_addfilterclass {<classname> <classname>...}adds a class as filter for a template for levelgenerating |
-| `lg_get_temp_size` | ❌ | P3 | 1 | 1 | 1 | lg_get_temp_size <tempname>returns size of template {w h} |
-| `lg_set_objcount` | ❌ | P3 | 1 | 0 | 1 | lg_set_objcount <classname> <minimum> <optimum> <maximum>set object count for levelgeneration |
-| `lg_set_starttemplatepro` | ❌ | P3 | 1 | 1 | 1 | lg_set_starttemplatepro [<digmarkalign>] [<setunique>]set first templates for levelgeneration |
-| `lg_set_templategroup` | ❌ | P3 | 1 | 0 | 1 | lg_set_templategroup <setname> {<tclmapfile> <tclmapfile>...}defines a templategroup |
-| `lg_set_templatevalue` | ❌ | P3 | 1 | 0 | 1 | lg_set_templatevalue <tempname> <val>set weighing value for template |
-| `lg_tp_objfilter` | ❌ | P3 | 1 | 0 | 1 | lg_tp_objfilter {<classname> <classname>...}filter templates from templatepool with these classes |
-| `lg_tp_setfilter` | ❌ | P3 | 1 | 0 | 1 | lg_tp_setfilter {<setname> <setname>...}filter sets from templatepool |
 | `get_lmap_blue` | ❌ | martwa | 0 | 0 | 0 | get_lmap_blue <x> <y>returns the blue color at a point in the map |
 | `get_lmap_green` | ❌ | martwa | 0 | 0 | 0 | get_lmap_green <x> <y>returns the green color at a point in the map |
 | `get_lmap_red` | ❌ | martwa | 0 | 0 | 0 | get_lmap_red <x> <y>returns the red color at a point in the map |
@@ -208,12 +191,9 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `ground_fix` | ❌ | martwa | 0 | 0 | 0 | ground_fixfix a vector to ground |
 | `lg_dec_templatecount` | ❌ | martwa | 0 | 0 | 0 | lg_dec_templatecount <tclmapfile>returns the last generated level |
 | `lg_get_objcount` | ❌ | martwa | 0 | 0 | 0 | lg_get_objcount <classname>get numer of objects in the last generated level |
-| `lg_mark_area` | ❌ | martwa | 0 | 0 | 0 | lg_mark_area <left> <top> <right> <bottom>mark an area as filled with templates |
 | `lg_set_callback` | ❌ | martwa | 0 | 0 | 0 | lg_set_callback <object> <procname>set callback for levelgeneration |
 | `lg_set_starttemplate` | ❌ | martwa | 0 | 0 | 0 | lg_set_starttemplate <tclmapfile>set first template for levelgeneration |
-| `lg_set_templateprops` | ❌ | martwa | 0 | 0 | 0 | lg_set_templateprops <tclmapfile> [-gamecount <num>] [-levelcount <num>] [-tunnel <float>]sets template proper |
 | `lg_tp_addtemplates` | ❌ | martwa | 0 | 0 | 0 | lg_tp_addtemplates {<tclmapfile> <tclmapfile>...}adds templates to templatepool |
-| `lg_tp_log` | ❌ | martwa | 0 | 0 | 0 | lg_tp_loglog template pool to logger |
 | `lg_tp_mapfilter` | ❌ | martwa | 0 | 0 | 0 | lg_tp_mapfilter {<tclmapfile> <tclmapfile>...}filter map files from templatepool |
 | `placelock_log` | ❌ | martwa | 0 | 0 | 0 | placelock_log [<id>]dump placelocks to logger |
 | `get_place` | ✅ |  | 65 | 65 | 25 | get_place <params>find a free place |
@@ -221,10 +201,30 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `dig_next` | ✅ |  | 18 | 18 | 5 | dig_next <vector> <object> [<bestidx>] [<OnlyLastDigID>]get next best dig position |
 | `get_material` | ✅ |  | 7 | 7 | 4 | get_material <vector>get type of material: 0-stone 1/2-sand/earth 3-scapehole |
 | `dig_apply` | ✅ |  | 4 | 1 | 4 | dig_apply <vector> <object>dig a hole |
+| `lg_get_level` | ✅ |  | 4 | 4 | 2 | lg_get_levelreturns the last generated level |
 | `map_setlayer2` | ✅ |  | 2971 | 0 | 2971 | map_setlayer2 <x> <y> <file>set 2nd texturelayer |
 | `dig_mark` | ✅ |  | 11 | 0 | 6 | dig_mark <player> <x> <y> <cave=0/tunnel=1/undo=2> [<depth>]mark for dig |
+| `lg_set_leveltype` | ✅ |  | 4 | 0 | 2 | lg_set_leveltype base\|resourceset leveltype for levelgeneration |
+| `lg_set_templategroupvalue` | ✅ |  | 4 | 0 | 1 | lg_set_templategroupvalue <setname> <val>set weighing value for templategroup |
+| `lg_set_templateratio` | ✅ |  | 4 | 0 | 2 | lg_set_templateratio <minimum> <optimum> <maximum>set ratio of templates for levelgeneration |
+| `lg_start` | ✅ |  | 4 | 0 | 2 | lg_startstarts levelgeneration |
+| `lg_tp_addtemplatesets` | ✅ |  | 4 | 0 | 2 | lg_tp_addtemplatesets {<setname> <setname>...}adds templates to templatepool |
+| `lg_tp_clear` | ✅ |  | 4 | 0 | 2 | lg_tp_clearflushes the template pool for levelgeneration |
+| `lg_set_area` | ✅ |  | 3 | 0 | 2 | lg_set_area <left> <top> <right> <bottom>set area for levelgeneration |
+| `lg_set_templategroupprops` | ✅ |  | 2 | 0 | 1 | lg_set_templategroupprops <tempgroup> [-gamecount <num>] [-levelcount <num>] [-tunnel <float>]sets template gr |
+| `lg_addfilterclass` | ✅ |  | 1 | 0 | 1 | lg_addfilterclass {<classname> <classname>...}adds a class as filter for a template for levelgenerating |
+| `lg_get_temp_size` | ✅ |  | 1 | 1 | 1 | lg_get_temp_size <tempname>returns size of template {w h} |
+| `lg_set_objcount` | ✅ |  | 1 | 0 | 1 | lg_set_objcount <classname> <minimum> <optimum> <maximum>set object count for levelgeneration |
+| `lg_set_starttemplatepro` | ✅ |  | 1 | 1 | 1 | lg_set_starttemplatepro [<digmarkalign>] [<setunique>]set first templates for levelgeneration |
+| `lg_set_templategroup` | ✅ |  | 1 | 0 | 1 | lg_set_templategroup <setname> {<tclmapfile> <tclmapfile>...}defines a templategroup |
+| `lg_set_templatevalue` | ✅ |  | 1 | 0 | 1 | lg_set_templatevalue <tempname> <val>set weighing value for template |
 | `lg_sort_level` | ✅ |  | 1 | 1 | 1 | lg_sort_level <x> <y> <level>sorts the level |
+| `lg_tp_objfilter` | ✅ |  | 1 | 0 | 1 | lg_tp_objfilter {<classname> <classname>...}filter templates from templatepool with these classes |
+| `lg_tp_setfilter` | ✅ |  | 1 | 0 | 1 | lg_tp_setfilter {<setname> <setname>...}filter sets from templatepool |
 | `sm_mark_temparea` | ✅ |  | 1 | 0 | 1 | sm_mark_temparea <x> <y> <template>marks area of template |
+| `lg_mark_area` | ✅ |  | 0 | 0 | 0 | lg_mark_area <left> <top> <right> <bottom>mark an area as filled with templates |
+| `lg_set_templateprops` | ✅ |  | 0 | 0 | 0 | lg_set_templateprops <tclmapfile> [-gamecount <num>] [-levelcount <num>] [-tunnel <float>]sets template proper |
+| `lg_tp_log` | ✅ |  | 0 | 0 | 0 | lg_tp_loglog template pool to logger |
 
 ## misc
 
@@ -244,11 +244,9 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `start_fade` | ❌ | P2 | 132 | 0 | 43 | start_fade <seconds> <in/out>start fade. in/out=true -> fadein false -> fadeout |
 | `show_loading` | ⚪ | P2 | 60 | 0 | 32 | show_loading <newstate> (<progress>)show or hide load screen |
 | `create_particlesource` | ❌ | P2 | 39 | 0 | 14 | create_particlesource <type> <pos> <dir> <num> <time>creates temporary particle source |
-| `sm_def_temp_group` | ❌ | P2 | 38 | 0 | 16 | sm_def_temp_group <name> <templist>Defines Unique Template Group (copy'n paste from LevelEditor output) |
 | `sleep` | ❌ | P2 | 32 | 0 | 24 | sleep <milliseconds>pause execution |
 | `obj_clear` | ❌ | P2 | 30 | 0 | 30 | obj_clearremove all objects |
 | `prodslot_override` | ❌ | P2 | 30 | 0 | 2 | prodslot_override resetreset all prodslot overrides |
-| `sm_add_temp` | ❌ | P2 | 27 | 0 | 1 | sm_add_temp <name> [<miny>] [<maxy>] [<params>...]Add Unique Template |
 | `laserbeam` | ❌ | P2 | 26 | 0 | 2 | laserbeam <vStart> <vDest> <vDir> <fDuration> <color red> <green> <blue> |
 | `def_texture` | ❌ | P2 | 24 | 0 | 1 | def_texture <texturename> <filename0>.. <filename15>set the texture variations |
 | `lightning` | ❌ | P2 | 22 | 0 | 3 | lightning <vStart> <vDest> <vDir> <fDuration> <color red> <green> <blue> |
@@ -307,7 +305,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_brightness` | ❌ | P3 | 1 | 0 | 1 | set_brightness <brighness>set brightness (0..2) |
 | `set_ground_begin` | ❌ | P3 | 1 | 0 | 1 | set_ground_begin <num>sets the Y-beginning of the ground |
 | `set_run_info` | ⚪ | P3 | 1 | 0 | 1 | set_run_info info-textset current load info |
-| `sm_get_level_info` | ❌ | P3 | 1 | 1 | 1 | sm_get_level_info <x> <y>get info for level generation |
 | `autoloadlevel` | ❌ | martwa | 0 | 0 | 0 | autoloadlevel levelfilemake the game autoload a level. no name disables |
 | `camctrlmapping` | ❌ | martwa | 0 | 0 | 0 | camctrlmapping [<newval>]get/set camera control mapping |
 | `delete_lightning` | ❌ | martwa | 0 | 0 | 0 | delete_lightningdeletes all ballistic particle sources of type "laserbeam" |
@@ -414,6 +411,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_view` | ✅ |  | 61 | 0 | 45 | set_view <x> <y> <zoom> [<dx> <dy> [<move>] [<freeze>] [<speed>] [<set>]]set view pos, zoom and optionally rot |
 | `gametime` | ✅ |  | 58 | 0 | 28 | gametime <command> [<value>]handle game time |
 | `set_diplomacy` | ✅ |  | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
+| `sm_def_temp_group` | ✅ |  | 38 | 0 | 16 | sm_def_temp_group <name> <templist>Defines Unique Template Group (copy'n paste from LevelEditor output) |
+| `sm_add_temp` | ✅ |  | 27 | 0 | 1 | sm_add_temp <name> [<miny>] [<maxy>] [<params>...]Add Unique Template |
 | `sm_set_event` | ✅ |  | 22 | 0 | 11 | sm_set_event <name> (<bool>)Set Story Event as fulfilled |
 | `sm_add_zone` | ✅ |  | 12 | 0 | 3 | sm_add_zone <zone>adds a new zone |
 | `sm_draw_stone` | ✅ |  | 10 | 0 | 8 | sm_draw_stone [<params>...]Sets map material to Stone |
@@ -437,6 +436,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `global_inv_rem` | ✅ |  | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
 | `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
 | `sm_dig_message` | ✅ |  | 1 | 0 | 1 | sm_dig_message <true/false>Activates callback dig messages |
+| `sm_get_level_info` | ✅ |  | 1 | 1 | 1 | sm_get_level_info <x> <y>get info for level generation |
 | `sm_get_resolution` | ✅ |  | 1 | 1 | 1 | sm_get_resolutionreturns map resolution |
 | `sm_map_get` | ✅ |  | 1 | 1 | 1 | sm_map_get <x> <y>get map area status |
 | `sm_scan` | ✅ |  | 1 | 1 | 1 | sm_scanreturns position of DigMark |

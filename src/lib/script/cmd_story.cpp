@@ -183,6 +183,29 @@ int cmdSmSetTemp(Engine& e, Tcl_Interp* in, Args& a)
 			if (n.size() > 4 && Vfs::lower(n.substr(n.size() - 4)) == ".tcl") n.resize(n.size() - 4);
 			e.story_.placed.emplace_back(n, std::atoi(t[1].c_str()), std::atoi(t[2].c_str()));
 		}
+	// Rejestr sm_add_temp: szablon użyty; grupa (sm_def_temp_group) użyta, gdy użyte są wszystkie jej części.
+	auto used = [&](const std::string& name) {
+		for (const auto& [n, x, y] : e.story_.placed)
+			if (Vfs::lower(n) == Vfs::lower(name)) return true;
+		return false;
+	};
+	for (auto& t : e.story_.temps)
+	{
+		if (t.placed) continue;
+		if (used(t.name)) t.placed = true;
+		else if (auto g = e.story_.tempGroups.find(t.name); g != e.story_.tempGroups.end())
+		{
+			bool all = true, any = false;
+			for (const auto& row : listItems(in, g->second))
+			{
+				auto f = listItems(in, row);
+				if (f.size() < 3 || f[0] == "mat") continue;
+				any = true;
+				all = all && used(f[2]);
+			}
+			t.placed = any && all;
+		}
+	}
 	setResult(in, "");
 	return TCL_OK;
 }

@@ -451,8 +451,10 @@ class Bot:
 				self.orders[g["id"]] = ("walk", deep, s["time"])
 				self.log(s["time"], "%s idzie na zwiad do najgłębszego pola %s" % (g["name"], deep))
 			return
-		# na dnie: szyb 2 pola szeroki, 6 w dół (tylko skała do kopania)
-		shaft = [(deep[0] + dx, deep[1] + dy) for dy in range(1, 7) for dx in (0, 1)]
+		# na dnie: szyb 2 pola szeroki, 6 w dół (tylko skała do kopania), na kolumnach 4k+1 i 4k+2 jak tunele
+		# z interfejsu gry: generator świata sprawdza znacznik tunelu w środku pola 4 × 4 przebicia (rozdział 21.8)
+		x0 = (deep[0] & ~3) + 1
+		shaft = [(x0 + dx, deep[1] + dy) for dy in range(1, 7) for dx in (0, 1)]
 		new = [c for c in shaft if self.ter.at(*c) == "x" and c not in self.marked]
 		for c in new:
 			self.g.eval("dig_mark %d %d %d 1" % (self.player, c[0], c[1]))

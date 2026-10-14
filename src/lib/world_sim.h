@@ -229,6 +229,12 @@ public:
 	bool digApply(int nx, int ny, int owner, int& id) override { return carveNode(nx, ny, owner, id); }
 	void incDigMarkId(int) override { ++digTerrain.playerDigMarkId; }
 	bool stampMap(const std::string& file, int x, int y, bool layer) override;
+	bool tileTemplated(int x, int y) override { return scene_.tileTemplated(x, y); }
+	void mapSize(int& w, int& h) override
+	{
+		const Pmp* g = scene_.mutableGrid();
+		w = g ? int(g->width) + scene_.origin()[0] : 0, h = g ? int(g->height) + scene_.origin()[1] : 0;
+	}
 	int digNibble(int nx, int ny, int owner) override { return digTerrain.ready() ? digTerrain.nibble(nx, ny, owner) : 0; }
 	void gnomeIdle(int id, bool idle) override { planner.gnomeIdle(id, idle); }
 	void gnomeFailedWork(int id) override { planner.releaseGnome(id); }

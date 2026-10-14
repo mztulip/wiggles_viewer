@@ -393,6 +393,11 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 		out.view->y -= float(y0);
 	}
 	out.grid = makeWorldGrid(x1 - x0, y1 - y0);
+	out.hasTpl.assign(size_t(out.grid.width) * out.grid.height, 0);
+	auto markTpl = [&](int ox, int oy, int w, int h) { // cały prostokąt szablonu, także pola przezroczyste
+		for (int y = std::max(oy, 0); y < std::min(oy + h, int(out.grid.height)); ++y)
+			for (int x = std::max(ox, 0); x < std::min(ox + w, int(out.grid.width)); ++x) out.hasTpl[size_t(y) * out.grid.width + x] = 1;
+	};
 	out.layer.width = out.grid.width;
 	out.layer.height = out.grid.height;
 	out.layer.values.assign(size_t(out.grid.width) * out.grid.height, 0);
@@ -400,6 +405,7 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 	{
 		int ox = l.place.x - x0, oy = l.place.y - y0;
 		blitTemplate(out.grid, out.layer, l.pmp, l.l2m ? &*l.l2m : nullptr, ox, oy);
+		markTpl(ox, oy, int(l.pmp.width), int(l.pmp.height));
 		for (auto o : l.script.objects)
 		{
 			o.pos[0] += float(ox);
@@ -414,7 +420,10 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 		if (!st.src->stone.empty())
 			drawStoneOption(out.grid, x0, y0, sc.width > 0 ? sc.width : x1, sc.height > 0 ? sc.height : y1, st.src->stone, rnd);
 		else
+		{
 			blitTemplate(out.grid, out.layer, st.src->layer ? kNoPmp : st.pmp, st.l2m ? &*st.l2m : nullptr, st.src->x - x0, st.src->y - y0);
+			if (!st.src->layer) markTpl(st.src->x - x0, st.src->y - y0, int(st.pmp.width), int(st.pmp.height));
+		}
 	for (auto o : sc.objects)
 	{
 		o.pos[0] -= float(x0);

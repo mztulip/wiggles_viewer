@@ -861,6 +861,25 @@ t_http_campaign() {
 	[ -z "$e" ] && ok || fail "$e"
 }
 
+test_ http_growth "wzrost świata kampanii (kroki 4–5, level_gen.cpp, cmd_levelgen.cpp): szyb ze znacznikami tunelu przy x 301–302 i dig_apply → zatrzask, sm_get_level_info, lg_set_starttemplatepro, lg_start, lg_get_level, nakładanie przez load_next; z ziarnem 7 klaster z szablonem pustelnika (Trigger_Einsiedler_1/2)"
+t_http_growth() {
+	http_ok || return
+	HENV="OW_LEVEL_SEED=7 OW_TRACE_WORLDGEN=1" http_start wigview --scenario single_Campaign.tcl --simulate || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
+	local r e="" n
+	hpost /api/pause >/dev/null
+	r=$(hpost /api/eval 'list [lg_get_temp_size urw_gng_001_a.tcl] [lg_get_temp_size urw_unq_start.tcl] [llength [glob data/templates/tcl/urw_gng_*.tcl]]' | jget 'd["result"]')
+	[ "$r" = "{4 4} {60 36} 143" ] || e="rejestr szablonów: $r"
+	hpost /api/eval 'set g [lindex [obj_query 0 -class Zwerg] 0] ; for {set y 60} {$y < 100} {incr y} {dig_mark 0 301 $y 1 ; dig_mark 0 302 $y 1} ; for {set y 63} {$y < 73} {incr y} {dig_apply [list 301 $y 10] $g}' >/dev/null
+	hpost "/api/step?seconds=25" >/dev/null
+	grep -q 'lg_start udany' "$TMP/http.log" || e="${e:+$e; }brak udanej generacji: $(grep -m3 '\[świat\]' "$TMP/http.log" | tr '\n' ' ')"
+	n=$(grep -c 'nałożenie' "$TMP/http.log")
+	[ "$n" -ge 20 ] || e="${e:+$e; }nałożeń $n"
+	r=$(hpost /api/eval 'list [llength [obj_query 0 -class {Trigger_Einsiedler_1 Trigger_Einsiedler_2}]] [sm_scan]' | jget 'd["result"]')
+	[ "$r" = "2 0" ] || e="${e:+$e; }pustelnik i zatrzask: $r"
+	ui_stop
+	[ -z "$e" ] && ok "$n nałożeń, $(grep -m1 -o 'lg_start udany: [0-9]* elementów' "$TMP/http.log")" || fail "$e"
+}
+
 test_ bot_ow "bot kampanii (tools/bot/wigbot.py) w naszej grze na starcie kampanii (OW_LEVEL_SEED=7): procedury wigbot.tcl, stan świata, teren i rozkazy przez /api/eval; 60 s gry"
 t_bot_ow() {
 	http_ok || return

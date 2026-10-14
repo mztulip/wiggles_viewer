@@ -11,6 +11,7 @@
 // sprawdzona w całości (różnice expr, kodowanie). Lista zaślepek: openwiggles_tcl.log.
 #pragma once
 
+#include "lib/level_gen.h"
 #include "lib/messages.h"
 
 #include <array>
@@ -26,6 +27,8 @@
 #include <vector>
 
 struct Tcl_Interp;
+
+#include <random>
 
 namespace ow
 {
@@ -132,6 +135,8 @@ struct Host
 	// nałożenie szablonu .pmp albo warstwy .l2m w polu (x, y) świata; false = brak pliku albo świata.
 	virtual bool stampMap(const std::string& /*plik*/, int /*x*/, int /*y*/, bool /*warstwa .l2m*/) { return false; }
 	virtual int digNibble(int /*nx*/, int /*ny*/, int /*gracz*/) { return 0; } // półbajt znacznika węzła (tile+0x08)
+	virtual bool tileTemplated(int /*x*/, int /*y*/) { return false; }          // pole pod szablonem (tile+0x13)
+	virtual void mapSize(int& w, int& h) { w = h = 0; }                          // wymiary świata w polach
 	// Planista pracy (cmd_work.cpp, lib/prod_planner): gnome_idle, gnome_failed_work/gnome_stopped_work, gnome_announce_dig.
 	virtual void gnomeIdle(int /*id*/, bool /*bezczynny*/) {}
 	virtual void gnomeFailedWork(int /*id*/) {}
@@ -337,6 +342,20 @@ public:
 		int zoneFloor = 0;                                       // sm_force_zone
 		std::vector<std::tuple<std::string, int, int>> placed;  // sm_set_temp: użyte szablony unikalne
 		bool replaying = false; // powtórka wywołań z przebiegu wstępnego: sm_draw_stone tylko znaczy mapę fabuły
+		// Szablony unikalne (sm_add_temp; cmd_levelgen.cpp) i grupy szablonów (sm_def_temp_group).
+		struct Temp
+		{
+			std::string name;
+			int lo = 0, hi = 0, zone = 0;
+			std::string minDistRef, digConnect;
+			float minDistVal = 0, midDist = 0, nonRelevant = 0;
+			bool placed = false;
+		};
+		std::vector<Temp> temps;
+		std::map<std::string, std::string> tempGroups;
+		// Ostatni sm_get_level_info / lg_set_starttemplatepro: surowy wolny prostokąt, pole przebicia, wynik, szablon.
+		int rawX = 0, rawY = 0, rawW = 0, rawH = 0, scanX = 0, scanY = 0, rectX = 0, rectY = 0, rectW = 0, rectH = 0;
+		std::string utemp;
 		int get(int cx, int cy) const
 		{
 			if (mapW > 0 && (cx < 0 || cy < 0 || cx >= mapW || cy >= mapH)) return 1; // poza mapą: jak wyrośnięte
@@ -345,6 +364,12 @@ public:
 		void markRect(int cx, int cy, int cw, int ch); // cały prostokąt w mapie, inaczej nic (gra: FUN_005fa510)
 		static int cell(int v) { return (v + ((v >> 31) & 3)) >> 2; }
 	} story_;
+	// Generator świata (lib/level_gen, komendy lg_*), tworzony przy pierwszym użyciu; wspólne losowanie fabuły
+	// (OW_LEVEL_SEED ustala ziarno).
+	LevelGen& levelGen();
+	int storyRand(); // 0..0x7fff
+	std::unique_ptr<LevelGen> levelGen_;
+	std::unique_ptr<std::mt19937> storyRng_;
 	// Nacisk kopania (gra: CStoryMgr::DigNotify), z dig_apply przed wycięciem węzła (nx, ny) przez gracza owner.
 	void storyDigNotify(int nx, int ny, int owner);
 	std::vector<TriggerRec> triggers_; // trigger: rekordy (miejsce = numer zwracany przez create)

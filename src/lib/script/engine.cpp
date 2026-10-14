@@ -252,15 +252,22 @@ int cmdPwd(Engine& e, Tcl_Interp* in, Args&)
 	setResult(in, e.cwd_);
 	return TCL_OK;
 }
+// glob [-opcje] wzorzec…: pliki z VFS gry. Wzorzec ze ścieżką ("data/templates/tcl/urw_gng_*.tcl", lgtools.tcl)
+// szuka w jej katalogu (względem Data/ jak call) i zwraca nazwy z tą ścieżką; bez ścieżki: bieżący katalog (cd).
 int cmdGlob(Engine& e, Tcl_Interp* in, Args& a)
 {
 	std::string out;
 	for (size_t i = 1; i < a.size(); ++i)
 	{
 		if (a[i][0] == '-') continue;
-		std::string pat = Vfs::lower(a[i]);
-		for (const auto& f : e.vfs_.list(e.cwd_))
-			if (fnmatch(pat.c_str(), Vfs::lower(f).c_str(), 0) == 0) out += (out.empty() ? "" : " ") + f;
+		std::string p = a[i];
+		std::replace(p.begin(), p.end(), '\\', '/');
+		size_t slash = p.find_last_of('/');
+		std::string dir = slash == std::string::npos ? e.cwd_ : e.resolvePath(p.substr(0, slash));
+		std::string prefix = slash == std::string::npos ? "" : p.substr(0, slash + 1);
+		std::string pat = Vfs::lower(slash == std::string::npos ? p : p.substr(slash + 1));
+		for (const auto& f : e.vfs_.list(dir))
+			if (fnmatch(pat.c_str(), Vfs::lower(f).c_str(), 0) == 0) out += (out.empty() ? "" : " ") + prefix + f;
 	}
 	setResult(in, out);
 	return TCL_OK;
@@ -1766,7 +1773,7 @@ proc unknown {args} {
 void Engine::registerCommands(Tcl_Interp* in)
 {
 	for (const auto& c : kCommands) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
-	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands(), &workCommands(), &storyCommands()})
+	for (const auto* mod : {&objectPropCommands(), &miscCommands(), &inventoryCommands(), &uiCommands(), &digCommands(), &triggerCommands(), &prodCommands(), &workCommands(), &storyCommands(), &levelGenCommands()})
 		for (const auto& c : *mod) Tcl_CreateObjCommand(in, c.name, dispatch, reinterpret_cast<ClientData>(c.fn), nullptr);
 }
 
@@ -2024,9 +2031,15 @@ bool Engine::loadClassCache(const std::string& sig)
 bool Engine::boot(std::string& err)
 {
 	std::string sig = scriptsSignature();
+	// Rejestr szablonów generatora świata (lg_set_templategroup …) to stan natywny, nie klasy: lginit.tcl zawsze,
+	// także z pamięci podręcznej klas (systeminit.tcl: po classinit.tcl).
+	auto lgInit = [&]() {
+		if (vfs_.exists(resolvePath("scripts/init/lginit.tcl"))) callFile(main_, "scripts/init/lginit.tcl");
+	};
 	if (!std::getenv("OW_NO_CLASS_CACHE") && loadClassCache(sig))
 	{
 		fromCache_ = true;
+		lgInit();
 		return true;
 	}
 	// Kolejność jak w systeminit.tcl (rozdział 2.4), bez menu startowego, dźwięku i SI.
@@ -2041,6 +2054,7 @@ bool Engine::boot(std::string& err)
 	if (Tcl_EvalEx(main_, kCaptureGlobals, -1, TCL_EVAL_GLOBAL) == TCL_OK) mainGlobals_ = Tcl_GetStringResult(main_);
 	if (Tcl_EvalEx(main_, kCaptureProcs, -1, TCL_EVAL_GLOBAL) == TCL_OK) mainProcs_ = Tcl_GetStringResult(main_);
 	if (!classes_.empty() && errors_.empty()) writeClassCache(sig);
+	lgInit();
 	if (classes_.empty())
 	{
 		err = tr("nie wczytano żadnej klasy");

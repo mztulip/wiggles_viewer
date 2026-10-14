@@ -153,6 +153,9 @@ public:
 	// prawem blitTemplate (map_world.h). rect: zmieniony prostokąt siatki x0 y0 x1 y1 (bez końca). Potem rebuildTerrain.
 	bool stamp(const Pmp* tpl, const L2m* layer, int wx, int wy, int rect[4]);
 	const Vfs* vfs() const { return vfs_; }
+	// Pole (współrzędne świata) pod nałożonym szablonem (gra: tile+0x13 bit 0; generator nie nakłada na nie
+	// nowych szablonów). Świat z zapisu: przybliżenie „blok inny niż lita skała 0” 🔶.
+	bool tileTemplated(int wx, int wy) const;
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
 	// Odkrycie mgły wokół punktu (krasnale gracza). 🔶 Koło zamiast promieni z rozdziału 10.3.
@@ -345,6 +348,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	std::optional<TemplateScript> script_;
 	std::optional<Pmp> pmp_;
 	std::optional<L2m> l2m_;
+	std::vector<uint8_t> hasTpl_; // jak BuiltWorld::hasTpl, uzupełniane przez stamp
 	std::shared_ptr<SaveGame> baseSave_;
 	std::vector<PlacedObject> objects_;
 	glm::vec3 center_{0.f};

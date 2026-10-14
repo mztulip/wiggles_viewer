@@ -162,3 +162,78 @@ Nacisku nie zeruje ani `sm_scan`, ani przebicie; zeruje go dopiero udana generac
 
 **Doświadczenie w laboratorium** (czas gry zatrzymany, `gametime stop`): znaczniki tunelu w kolumnach x 300–301, y 60–99 (`dig_mark 0 x y 1`), potem `dig_apply {x y 10} krasnal` w dół. Po szybie x 300 do y 95 szyb x 301 od y 78 dał w oryginale i u nas tę samą serię `sm_scan`: 0 przez 14 kopnięć, potem `{75 24}` cztery razy (sąsiad y+4 wchodzi w wolne pole fabuły 24). Wykopane pola fabuły (75, 15–23) są zajęte w obu. U nas pierwszy zatrzask przychodzi po 9. kopnięciu (9 × 4 = 36 > 32). W oryginale pierwsze kopnięcia tej serii zwracały 0 (❓ może przez wcześniejszy nieudany skrypt), a wynik `dig_apply` na szybie x 300 szedł w rytmie 1, 0, 0, 1 (u nas zawsze 1; różnica wycinania, rozdział 19).
 
+## 21.8 Wzrost świata: generator (lg_*) 🔶
+
+Gdy `sm_scan` odda przebicie, StoryMgr woła `generate_next cx cy` (STORY.TCL). Ten składa jeden **klaster** szablonów i wrzuca go do kolejki `temp_buffer`, z której `load_next` nakłada po jednym szablonie na turę (21.3, krok 2). Prawa za Diggles-Unity (`LevelGenerator.cs`, `DigglesTclEngine.cs`, `Docs/LEVEL_GENERATOR.md`, `WORLDGEN_ORIGINAL_RE.md`, adresy `FUN_…` to ich źródło). U nas sprawdzone tylko tyle, że świat rośnie, a w klastrze pojawia się szablon pustelnika (test `http_growth`); porównania z oryginałem brak (❓).
+
+**Rejestr szablonów.** `lginit.tcl` (przy starcie gry, po klasach) przez procedurę `LG_set_templategroup` z `lgtools.tcl` przegląda katalogi szablonów (`glob data/templates/tcl/urw_gng_*.tcl`) i rejestruje grupy: `Urwald.Std.Gng` (korytarze), `.Gsg` (pierścienie), `.Hol` (jaskinie; `-levelcount 1`, czyli najwyżej jedna na generację). Dla każdego szablonu generator czyta przy pierwszym użyciu:
+- wymiary: z pliku `.pmp`, a dla szablonu dzielonego z nagłówka `split_template`;
+- obiekty klas filtra (`lg_addfilterclass {Zwerg Wuker Troll Pilz Kohle …}`) z wierszy `new`;
+- **drzwi** z pliku `.ent` (`map_entry 1 Xpx Ypx`, 8 pikseli na pole). Współrzędna jest kwantowana do wielokrotności 4 pól. Reszta z dzielenia przez 32 piksele mówi, na której krawędzi leżą drzwi, i dokłada +2 w połowie krawędzi (pozioma: x+2; pionowa: y+2). Kierunek wynika z krawędzi: x = 0 lewo, y = 0 góra, x = W prawo, y = H dół. Drzwi poza krawędzią odpadają.
+
+**`generate_next`** (skrót STORY.TCL):
+
+```
+strefa = sm_get_zone(y·4); lg_tp_clear; lg_tp_addtemplatesets "<strefa>.Std"; lg_tp_objfilter {Troll Zwerg}
+linfo = sm_get_level_info x y            ;# obszar w polach fabuły + szablon unikalny
+za mały (< 16 pól)? zajmij pole, koniec
+linfo = lg_set_starttemplatepro 1 1      ;# element startowy przy przebiciu, "nodigmark" = koniec
+jest szablon unikalny? lg_tp_setfilter "<strefa>.Std.Gsg"   ;# bez pierścieni
+define_obj_counts                         ;# lg_set_objcount: brakujące złoża i grzyby strefy
+lg_set_templateratio 0 0.10 1.0 ; lg_start ; level = lg_get_level
+pusty: failcount++ (nacisk kopania zostaje, kolejne kopnięcie ponawia); inaczej sm_set_temp, fill_temp_buffer
+```
+
+**`sm_get_level_info cx cy`** (FUN_005fac90):
+1. Surowy wolny prostokąt rośnie od pola przebicia paskami wolnych pól fabuły, kolejno w lewo, w górę, w dół i w prawo, dopóki się da.
+2. Wybór szablonu unikalnego z rejestru `sm_add_temp nazwa lo hi [-opcje]` (CampaignInit.tcl). Kandydaci idą w kolejności rejestracji. Odpadają:
+   - szablon już użyty;
+   - szablon z innej strefy;
+   - przebicie płytsze niż `lo` (względem początku strefy);
+   - przy `-mindist`: wzorzec jeszcze nieużyty;
+   - przy `-middist`: przebicie w środkowej kolumnie mapy.
+
+   Dla pozostałych losowanie: przechodzi, gdy waga ≥ los. Waga to `-nonrelevant` albo rampa (y − lo + 1)/(hi − lo); poza oknem jest ≥ 1, czyli pewna. Potem szablon musi się zmieścić w wolnym prostokącie, inaczej idzie następny kandydat.
+3. Wynik (FUN_005fa9a0): prostokąt co najmniej 16 (do 24) × 8 pól wokół pola przebicia, na środku, a z szablonem unikalnym w losowym miejscu.
+
+**`lg_set_starttemplatepro`** (FUN_00650f90):
+- Element startowy stoi zawsze o jedno pole fabuły dalej niż zatrzask, w kierunku kopania (krok wstępny), więc nie nachodzi na tunel gracza. Krasnal przekopuje się do niego sam.
+- Przebieg kotwiczenia: do 4 prób. W każdej znacznik tunelu w środku pola zatrzasku, świeżo wylosowany element 4 × 4 (przy kopaniu w dół korytarz poprzeczny z drzwiami lewo i prawo, w inne strony jedne drzwi „dalej”) i miejsce: wyrównane do 4, ≥ 8 pól od brzegu mapy, nie na polu pod szablonem.
+- Z szablonem unikalnym prostokąt jest ustawiany na nowo: przebicie przy krawędzi od strony kopania. Szablon unikalny (albo grupa `sm_def_temp_group`) ląduje w ≤ 4 losowych miejscach daleko od przebicia.
+
+**`lg_start`** (FUN_00589790): najpierw elementy wymuszone, czyli startowy i unikalny, każdy dokładnie w swoim miejscu; nieudany element psuje całą generację. Potem jeden klaster:
+
+```
+dopóki są otwarte drzwi:
+    d = pierwsze otwarte drzwi (czoło frontu)
+    pula posortowana kosztem (niżej lepiej); dla elementu i jego drzwi przeciwnych do d:
+        TryPlace(element, d − drzwi): wyrównanie do 4, w obszarze, bez nakładania,
+            drzwi w tym samym polu co otwarte drzwi frontu domykają je (para), pozostałe dochodzą do frontu,
+            margines 4 pól po stronach bez drzwi zajęty na stałe (ściany jaskiń nie stykają się),
+            walidator: każde otwarte drzwi ≥ 2 pola od brzegu obszaru i z co najmniej jednym wolnym polem wokół
+        pierwsze udane: następne drzwi
+    żaden element nie pasuje: cała generacja się nie udaje (prawo pełnego zamknięcia)
+```
+
+**Koszt** (FUN_00586710, stałe z `.rdata` gry): (2 · |20 − (W + H)| · (2 − postęp) + pasmo drzwi · 100 + 200 · min(limit gry, 5) + 250 · użyć w tej generacji + los) · wartość · 100 · nacisk złóż. Postęp = zapełnienie obszaru / 0,10. Pasmo drzwi = |docelowa liczba drzwi − drzwi elementu|; cel to 3 na początku, potem 2,5, 2 i 1 (od 80 % postępu ×10: klaster się domyka). Odpadają (koszt maksymalny):
+- element przekraczający limit klasy obiektów;
+- wariant z obiektami użyty już w tej sesji gry;
+- element za blisko innego z obiektami;
+- element przepełniający obszar;
+- element ponad `-levelcount`.
+
+Elementy 4 × 4 idą na koniec listy.
+
+**`lg_get_level`**: lista `{szablon x y}`; pola fabuły pod elementami zajęte; ograniczenia złóż od zera. Gdy coś wyszło, nacisk kopania jest zerowany, więc następne przebicie wymaga nowego kopania.
+
+**Różnice u nas:**
+- 🔶 brak routera korytarza między elementem startowym a szablonem unikalnym (FUN_00587480): szablon unikalny stoi osobno i krasnale dokopują się do niego same;
+- 🔶 brak przycinania ślepych odnóg (FUN_00585390);
+- 🔶 brak dziedzińców `mat` grup;
+- 🔶 brak `sm_draw_stone -exlimit/-utmat`;
+- 🔶 losowanie z własnego generatora (`OW_LEVEL_SEED`), nie ze wspólnego MT19937 gry;
+- 🔶 pole pod szablonem: z nałożeń przy składaniu i w trakcie gry, a w świecie z zapisu przybliżone jako blok inny niż 0;
+- 🔶 rytm `dig_apply`: patrz 21.7.
+
+`OW_TRACE_WORLDGEN=1` wypisuje każdy krok (`[świat] …`).
+

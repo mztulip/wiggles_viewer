@@ -261,6 +261,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 
 	if (!prebuilt) report(0.04f, N_("Składanie świata z szablonów"));
 	fluidType_.clear();
+	hasTpl_.clear();
 	fluidFill_.clear();
 	BuiltWorld bw = prebuilt ? std::move(*prebuilt) : buildWorld(*vfs_, sc, margin, blocks_.loaded() ? &blocks_ : nullptr);
 	if (!prebuilt) saveFog_.clear();
@@ -277,6 +278,7 @@ bool MapScene::finishLoad(const Scenario& sc, int margin, std::string world, Bui
 		pmp_ = std::move(bw.grid);
 		fluidType_ = std::move(bw.fluidType);
 		fluidFill_ = std::move(bw.fluidFill);
+		hasTpl_ = std::move(bw.hasTpl);
 		l2m_ = std::move(bw.layer);
 		script_ = TemplateScript{};
 		script_->objects = std::move(bw.objects);
@@ -931,6 +933,15 @@ void MapScene::setBlock(int x, int y, uint32_t block, uint8_t type)
 	if (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) l2m_->values[i] = 0; // bez starego detalu (mech, trawa)
 }
 
+bool MapScene::tileTemplated(int wx, int wy) const
+{
+	if (!pmp_) return false;
+	int x = wx - worldOrigin_[0], y = wy - worldOrigin_[1];
+	if (x < 0 || y < 0 || x >= int(pmp_->width) || y >= int(pmp_->height)) return false;
+	size_t i = size_t(y) * pmp_->width + x;
+	return hasTpl_.size() == pmp_->blocks.size() ? hasTpl_[i] != 0 : pmp_->blocks[i] != 0;
+}
+
 bool MapScene::stamp(const Pmp* tpl, const L2m* layer, int wx, int wy, int rect[4])
 {
 	if (!pmp_) return false;
@@ -943,6 +954,9 @@ bool MapScene::stamp(const Pmp* tpl, const L2m* layer, int wx, int wy, int rect[
 	static const Pmp kNone;
 	int ox = wx - worldOrigin_[0], oy = wy - worldOrigin_[1];
 	blitTemplate(*pmp_, *l2m_, tpl ? *tpl : kNone, layer, ox, oy);
+	if (tpl && hasTpl_.size() == pmp_->types.size())
+		for (int y = std::max(oy, 0); y < std::min(oy + int(tpl->height), int(pmp_->height)); ++y)
+			for (int x = std::max(ox, 0); x < std::min(ox + int(tpl->width), int(pmp_->width)); ++x) hasTpl_[size_t(y) * pmp_->width + x] = 1;
 	int w = tpl ? int(tpl->width) : layer ? int(layer->width)
 	                                      : 0,
 	    h = tpl ? int(tpl->height) : layer ? int(layer->height)
