@@ -22,6 +22,9 @@ public:
 	// Rozmiar i materiał pól z mapy; znaczniki od zera.
 	void init(const Pmp& pmp);
 	bool ready() const { return w_ > 0; }
+	// Materiał pól prostokąta [x0, x1) × [y0, y1) odczytany na nowo z mapy (po nałożeniu szablonu w trakcie gry);
+	// znaczniki zostają (gra: nałożenie nie rusza półbajtów tile+0x08).
+	void refreshMaterial(const Pmp& pmp, int x0, int y0, int x1, int y1);
 
 	// Materiał pola (gra: tile+0x18 & 3): 0 skała nie do kopania, 1 piasek, 2 ziemia, 3 otwarte. Z bajtu typu
 	// .pmp: 2 → 2, 3 → 1, 4 → 0, 5 → 3; 0 i 1 biorą pierwszy niezerowy bajt pola niżej, z prawej, z prawej niżej,

@@ -38,6 +38,25 @@ del (wszystkie Wuker)                                               ;# start bez
 FogRemover w (239, 14): fog_remove 0 46 22                           ;# odsłonięty obóz
 ```
 
+**Granit na brzegach: `sm_draw_stone -border` i `-funnel`** ✅ (prawo za Diggles-Unity, `BdbPmpWorldBuilder.DrawStoneIntoWorld`, opis `FUN_005fc9d0`; wynik sprawdzony w laboratorium). Świat z `map create` to ziemia (klasa 2, do kopania). Malarz klasy kamienia zmienia pola klasy 1 i 2 w prostokącie losowo:
+
+```
+malarz(x0, y0, x1, y1, flagi, klasa, siła):     ;# prostokąt przycięty do mapy, bez ostatniego wiersza i kolumny
+    s' = siła / (min(w, h) · 0,2)
+    dla pola (x, y):
+        p = 1
+        flaga 4 i x > środekX: p −= ((środekX − x) / w)² / s'     ;# zanik w prawo
+        flaga 8 i x < środekX: to samo                             ;# zanik w lewo
+        flaga 1 i y > środekY, flaga 2 i y < środekY: to samo w pionie
+        jeśli klasa pola ∈ {1, 2} i los(0..32767) ≤ p · 32768: klasa pola = klasa
+-border: malarz(0, 0, W, 32, 1, 0, 2,5); malarz(0, 0, 32, H+4, 4, 0, 1); malarz(W−32, 0, W, H+4, 8, 0, 1)
+-funnel: y = 16, b = (W/4)·2 − 20; dopóki b > 0: malarz(W−b, y, W, y+6, 8, 0, 1); malarz(0, y, b, y+6, 4, 0, 1); y += 4, b −= 8
+```
+
+Brzegi mapy to więc pas granitu: z boków pełny na zewnętrznych ok. 16 polach i zanikający do ok. 29 pól, u góry 32 wiersze. Pod powierzchnią „lejek”: dwa trójkąty granitu zwężające się w dół (do ok. y 136), więc od obozu da się kopać tylko w środkowej części mapy. Dołu mapy nic nie zamyka. Szablony nakładane później zastępują granit swoimi polami.
+
+**Sprawdzenie w laboratorium:** materiał (`get_material`) w 14 punktach (brzegi, środek, lejek) w oryginale i u nas: `0 0 0 0 0 0 0 3 3 2 2 2 0 0` w obu. Liczba pól granitu w wierszach y = 2, 10, …, 154 (co 4. kolumna), oryginał: 114 115 115 116 94 95 81 79 71 55 52 43 36 28 20 11 12 11 11 11; u nas: 114 115 116 120 103 101 85 77 76 61 52 45 37 28 21 14 13 13 12 13 (różnice to losowanie).
+
 **Szablony dzielone.** Duże szablony mają plik `.tcl` z jednym wywołaniem `split_template nazwa plik.pmp W H {części}`: lista części 16×16 pól `{skrypt plik.pmp dx dy}`. Wersja z STORY.TCL przy ustawionym `temppos` (start kampanii) od razu nakłada każdą część: `map_template data/templates/pmp/split/<pmp> (temppos+dx, temppos+dy)`, potem `call data/templates/tcl/split/<skrypt>` i jego `MapTemplateSet` w tym samym miejscu (warstwa `.l2m` części i jej obiekty). Przy `temppos 0` (dorastanie świata) części trafiają do kolejki i są nakładane po jednej co 0,2 s (`load_next_split`). Obóz `urw_unq_start` to 12 części (4 × 3), krasnale stoją w części `tBB`.
 
 **`first_level startx starty`** losuje (`irandom`) jaskinie pod obozem. Środek układu: `std_x = startx + 36`, `std_y = starty + 40`.
@@ -90,16 +109,17 @@ Trigger_Einsiedler_2: 6 chomików w promieniu 5 -> urw_23b, Karte, Einsiedler_Ka
 - `call_method` (do powtórzenia po starcie, np. `fog_remove`);
 - `irandom`, `lrem`, `set_view`, `set_light_begin`, `set_fow_begin`.
 
-`call_method <StoryMgr> load_level P` wykonuje tu tylko `scripts/gameplay/P.tcl`, a `split_template` działa jak w 21.2. Pozostałe komendy gry nic nie robią. `buildWorld` nakłada zapisane `.pmp` i `.l2m` jak szablony (rozdział 3.3). Świat zaczyna się w (0, 0) jak w grze (te same współrzędne obiektów i skryptów), a z prawej i od dołu jest przycięty do użytego obszaru z zapasem 12 pól litej skały.
+`call_method <StoryMgr> load_level P` wykonuje tu tylko `scripts/gameplay/P.tcl`, a `split_template` działa jak w 21.2. Pozostałe komendy gry nic nie robią. `buildWorld` nakłada zapisane `.pmp` i `.l2m` jak szablony (rozdział 3.3) i maluje pasy granitu `sm_draw_stone` (21.2), w kolejności skryptu. Świat to cała mapa z `map create` (512 × 640), bez przycięcia: te same współrzędne obiektów i skryptów co w grze i miejsce na wzrost świata. Wczytanie trwa ok. 2 s.
+
+**Nakładanie w trakcie gry** (krok 2 wzrostu świata). `map_template PLIK X Y` i `map_setlayer2 X Y PLIK` w działającej grze nakładają szablon tym samym prawem co przy składaniu świata (rozdział 3.3; gra: `FUN_005992b0`, za Diggles-Unity). Szablon wygrywa z tym, co było pod nim, także z wykopanym tunelem; znaczniki kopania zostają. Potem odświeżane są nawigacja, chodzenie i materiał pól zmienionego prostokąta, a teren jest przebudowywany raz na turę logiki (🔶 cała siatka, ok. 170 ms dla 512 × 640; gra przelicza tylko zmieniony prostokąt). Kolejkę StoryMgr (`temp_buffer`) wypełnia `fill_temp_buffer` posortowany przez `lg_sort_level` (rosnąco po kwadracie odległości lewego górnego rogu szablonu od punktu `act_sort_x/y`, 🔶 za Diggles-Unity), a `load_next` nakłada jeden szablon na turę (21.3).
 
 **W grze** ([`world_sim`](../../src/lib/world_sim.cpp), `attachScripts`): po `obj_init` wszystkich obiektów StoryMgr wykonuje `call scripts/gameplay/CampaignInit.tcl` w swoim interpreterze (`is_storymgr` = 1). Potem idą zapisane `call_method`. Komendy fabuły: [`cmd_story`](../../src/lib/script/cmd_story.cpp).
 
-**Ziarno.** `OW_LEVEL_SEED=N` ustala losowanie `first_level` (testy). Bez niego układ jest losowy przy każdym starcie, jak w grze.
+**Ziarno.** `OW_LEVEL_SEED=N` ustala losowanie `first_level` i pasów granitu (testy). Bez niego układ jest losowy przy każdym starcie, jak w grze.
 
 **Różnice:**
-- 🔶 brak `sm_draw_stone` (granitowa ramka i lejek) i `generate_color_variation`;
-- 🔶 świat nie dorasta: `sm_scan` zwraca 0; generator to TODO G13;
-- 🔶 przycięcie świata: z prawej i od dołu zapas 12 pól za startem, dalej koniec mapy (gra: 512 × 640);
+- 🔶 brak `generate_color_variation` i pozostałych opcji `sm_draw_stone` (`-exlimit`, `-utmat`, `-matlist` należą do wzrostu świata);
+- 🔶 świat nie dorasta sam: `sm_scan` zwraca 0 (nacisk kopania i generator `lg_*` to TODO G13); kolejka `load_next` i nakładanie w trakcie gry już działają;
 - 🔶 `GameOver` i przejścia między światami nie sprawdzone.
 
 ## 21.6 Sprawdzenie w laboratorium ✅
@@ -108,3 +128,37 @@ Oryginał (`live2.sh`, ukryte okno), w działającej grze `obj_clear ; sel /obj 
 - krasnale w (231,54 30,44) (232,83 30,5) (234,00 30,44) (235,06 30,44) (236,10 30,5): u nas te same pozycje (test `campaign_start`);
 - obraz obozu z kamery startowej zgadza się z naszym (drzewa, ścieżka, skała, płot), także beczki `Schatztonne` i grzyby w grze ze skryptami;
 - jaskinie pod obozem różnią się między startami (losowanie `first_level`).
+
+## 21.7 Wzrost świata: mapa fabuły i nacisk kopania ✅
+
+Świat kampanii dorasta tam, gdzie gracz kopie. StoryMgr trzyma **mapę fabuły**: siatkę pól 4 × 4 pól świata (128 × 160 dla mapy 512 × 640), w której 1 znaczy „zajęte” (już wyrośnięte, wykopane albo zarezerwowane). Prawa za Diggles-Unity (`WORLDGEN_ORIGINAL_RE.md` A1–A2, `StoryDigNotify`); wynik sprawdzony w laboratorium (niżej).
+
+| komenda | działanie |
+|---|---|
+| `sm_create_map W H` | mapa fabuły W/4 × H/4, pusta; nowa gra: zatrzask, nacisk 0, próg 5, strefy i rejestry od zera |
+| `sm_set_digcount N` | próg nacisku (kampania: 32) |
+| `sm_map_set cx cy [cw ch]` / `sm_map_get cx cy` | prostokąt pól fabuły zajęty (cały w mapie, inaczej nic) / stan pola (poza mapą 1) |
+| `sm_mark_temparea x y szablon` | pola pod szablonem (rozmiar zaokrąglony w górę do 4) zajęte (`first_level`) |
+| `sm_set_temp {{szablon x y} …}` | szablony unikalne użyte (nie wylosują się drugi raz) |
+| `sm_draw_stone -border` / `-funnel` | oprócz granitu (21.2) zajmuje pola fabuły swoich pasów; `-border` także 9 górnych wierszy: świat nie rośnie przy brzegach ani przy powierzchni |
+| `sm_add_zone`, `sm_set_zone nr y`, `sm_force_zone nr`, `sm_get_zone y` | strefy (Urwald, Metall, Kristall, Lava): strefa nr sięga do y = granica nr (−1: bez końca) |
+| `sm_scan` | zatrzaśnięte przebicie jako pole fabuły „cx cy” (i oznaczenie go jako oddanego), inaczej 0 |
+
+**Nacisk kopania** (gra: `CStoryMgr::DigNotify`), przy każdym `dig_apply`, przed wycięciem węzła (x, y):
+
+```
+jeśli węzeł bliżej niż 8 pól od brzegu mapy: koniec
+jeśli sm_dig_message: wywołanie zwrotne "<callback> dig shut -1"     ;# w danych gry wyłączone
+zatrzask = brak; pole fabuły węzła = zajęte
+jeśli półbajt znacznika węzła nie jest znacznikiem tunelu (≠ 0, bit 3 zgaszony): koniec
+dla (dx, dy, kierunek, waga) w (+4, 0, 8, 2), (0, +4, 2, 4), (−4, 0, 4, 2), (0, −4, 1, 1):
+    sąsiad = (x+dx, y+dy); jeśli jego pole fabuły zajęte albo nie ma znacznika tunelu: następny
+    nacisk += waga
+    jeśli nacisk > próg: zatrzask = {kierunek, sąsiad}
+    koniec                                                            ;# najwyżej jeden przyrost na kopnięcie
+```
+
+Nacisku nie zeruje ani `sm_scan`, ani przebicie; zeruje go dopiero udana generacja (`lg_get_level`, krok 5). Po przekroczeniu progu każde kopnięcie z oznaczonym, wolnym sąsiadem zatrzaskuje więc przebicie od nowa. StoryMgr w stanie `idle` co 0,5 s woła `sm_scan`, a z wynikiem woła `generate_next` (21.3).
+
+**Doświadczenie w laboratorium** (czas gry zatrzymany, `gametime stop`): znaczniki tunelu w kolumnach x 300–301, y 60–99 (`dig_mark 0 x y 1`), potem `dig_apply {x y 10} krasnal` w dół. Po szybie x 300 do y 95 szyb x 301 od y 78 dał w oryginale i u nas tę samą serię `sm_scan`: 0 przez 14 kopnięć, potem `{75 24}` cztery razy (sąsiad y+4 wchodzi w wolne pole fabuły 24). Wykopane pola fabuły (75, 15–23) są zajęte w obu. U nas pierwszy zatrzask przychodzi po 9. kopnięciu (9 × 4 = 36 > 32). W oryginale pierwsze kopnięcia tej serii zwracały 0 (❓ może przez wcześniejszy nieudany skrypt), a wynik `dig_apply` na szybie x 300 szedł w rytmie 1, 0, 0, 1 (u nas zawsze 1; różnica wycinania, rozdział 19).
+

@@ -36,9 +36,16 @@ void DigTerrain::init(const Pmp& pmp)
 	material_.assign(n, 2);
 	playerDigMarkId = 0;
 	hasBounds_.fill(false);
+	refreshMaterial(pmp, 0, 0, w_, h_);
+}
+
+void DigTerrain::refreshMaterial(const Pmp& pmp, int x0, int y0, int x1, int y1)
+{
+	if (int(pmp.width) != w_ || int(pmp.height) != h_) return;
+	x0 = std::max(x0, 0), y0 = std::max(y0, 0), x1 = std::min(x1, w_), y1 = std::min(y1, h_);
 	auto raw = [&](int x, int y) { return uint8_t(pmp.types[size_t(y) * size_t(w_) + size_t(x)] & 0x7F); };
-	for (int y = 0; y < h_; ++y)
-		for (int x = 0; x < w_; ++x)
+	for (int y = y0; y < y1; ++y)
+		for (int x = x0; x < x1; ++x)
 		{
 			uint8_t v = raw(x, y);
 			if (v == 0 && y + 1 < h_) v = raw(x, y + 1); // pierwszy niezerowy: niżej, z prawej, z prawej niżej

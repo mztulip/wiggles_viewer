@@ -3,9 +3,13 @@
 #include "lib/blockdb.h"
 #include "lib/i18n.h"
 #include "lib/map_template.h"
+#include "lib/map_world.h"
 #include "lib/vfs.h"
 
+#include <tcl.h>
+
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -90,6 +94,15 @@ void WorldSim::simUpdate(float dt)
 			scriptAcc_ -= 0.1;
 			scripts->tick(0.1);
 			planner.logicTick();
+		}
+		if (terrainDirty)
+		{ // np. po map_template ze skryptu
+			auto t0 = std::chrono::steady_clock::now();
+			scene_.rebuildTerrain(), terrainDirty = false;
+			static const bool trace = std::getenv("OW_TRACE_SIM") != nullptr;
+			if (trace)
+				std::fprintf(stderr, "[sim %.1f] przebudowa terenu %.0f ms\n", simTime_,
+				    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
 		}
 	}
 	for (auto& u : units) updateUnit(u, dt);
@@ -378,6 +391,49 @@ int WorldSim::spawnUnit(float x, float y, bool gnome)
 	if (scripts && (!gnome || scriptGnomes)) scripts->attach(id, cls, "");
 	if (gnome) selected = u;
 	return u;
+}
+
+// Nałożenie szablonu w trakcie gry (wzrost świata, rozdział 21): mapa, ruch, materiał pól; teren przebudowany
+// raz na turę symulacji (terrainDirty), bo StoryMgr nakłada części szablonu kolejno.
+bool WorldSim::stampMap(const std::string& file, int x, int y, bool layer)
+{
+	const Vfs* vfs = scene_.vfs();
+	if (!vfs || !scene_.mutableGrid()) return false;
+	auto data = readTemplateData(*vfs, file);
+	if (!data) return false;
+	int rect[4];
+	try
+	{
+		if (layer)
+		{
+			L2m l = parseL2m(*data);
+			if (!scene_.stamp(nullptr, &l, x, y, rect)) return false;
+		}
+		else
+		{
+			Pmp t = parsePmp(*data);
+			if (!scene_.stamp(&t, nullptr, x, y, rect)) return false;
+		}
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
+	static const bool trace = std::getenv("OW_TRACE_SIM") != nullptr;
+	if (trace) std::fprintf(stderr, "[sim %.1f] nałożenie %s w (%d, %d)\n", simTime_, file.c_str(), x, y);
+	if (!layer)
+	{
+		const Pmp& g = *scene_.mutableGrid();
+		for (int ty = rect[1]; ty < rect[3]; ++ty)
+			for (int tx = rect[0]; tx < rect[2]; ++tx)
+			{
+				nav.updateTile(g, scene_.blockDb(), tx, ty);
+				walk.revalidateTile(tx, ty);
+			}
+		if (digTerrain.ready()) digTerrain.refreshMaterial(g, rect[0] - 1, rect[1] - 1, rect[2] + 1, rect[3] + 1);
+	}
+	terrainDirty = true;
+	return true;
 }
 
 bool WorldSim::carveNode(int nx, int ny, int owner, int& dugId, bool rebuild)
@@ -977,6 +1033,18 @@ void WorldSim::attachScripts()
 			{
 				scripts->storyMgr = true;
 				scripts->runIn(*o, "call scripts/gameplay/CampaignInit.tcl", "load_level");
+				// Wywołania sm_* z Campaign.tcl (po CampaignInit, jak w load_level): mapa fabuły, użyte szablony.
+				scripts->story_.replaying = true;
+				for (const auto& c : scene_.levelStoryCalls())
+				{
+					Tcl_Obj* l = Tcl_NewListObj(0, nullptr);
+					for (const auto& w : c) Tcl_ListObjAppendElement(nullptr, l, Tcl_NewStringObj(w.data(), int(w.size())));
+					Tcl_IncrRefCount(l);
+					std::string code = Tcl_GetString(l);
+					Tcl_DecrRefCount(l);
+					scripts->runIn(*o, code, "load_level");
+				}
+				scripts->story_.replaying = false;
 				break;
 			}
 	for (const auto& c : scene_.levelCalls())

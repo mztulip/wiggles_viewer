@@ -11,6 +11,7 @@
 
 #include "lib/map_template.h"
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -28,19 +29,35 @@ void blitTemplate(Pmp& world, L2m& worldLayer, const Pmp& tpl, const L2m* tplLay
 // Plik szablonu wskazany w skrypcie: "gng_021.pmp" albo "data/templates/gng_021.pmp".
 std::optional<std::vector<uint8_t>> readTemplateData(const Vfs& vfs, const std::string& name);
 
+// Rozmiar szablonu w polach z jego skryptu (Data/Templates/<nazwa>.tcl albo tcl/<nazwa>.tcl, z .tcl albo bez):
+// split_template … W H …, inaczej nagłówek pliku .pmp z map_template. false = nie znaleziono.
+bool templateSize(const Vfs& vfs, const std::string& name, int& w, int& h);
+
 struct ScenarioPlacement
 {
 	std::string script; // plik w Data/Templates, np. "urw_gng_021_a.tcl"
 	int x = 0, y = 0;   // w blokach
 };
 
-// Nałożenie z przebiegu skryptu poziomu (level_script.h): map_template albo map_setlayer2 wprost.
+// Nałożenie z przebiegu skryptu poziomu (level_script.h): map_template, map_setlayer2 albo sm_draw_stone.
 struct ScenarioStamp
 {
 	bool layer = false; // false: .pmp (map_template), true: .l2m (map_setlayer2)
 	std::string file;   // jak w skrypcie, np. "data/templates/pmp/split/splt_unq_start_tAA.pmp"
 	int x = 0, y = 0;
+	std::string stone;  // niepuste: sm_draw_stone z tą opcją (-border, -funnel) zamiast nałożenia pliku
 };
+
+// Malarz klasy kamienia StoryMgr (FUN_005fc9d0, sm_draw_stone), za Zimennik/Diggles-Unity (MIT,
+// BdbPmpWorldBuilder.DrawStoneIntoWorld): prostokąt [x0,x1)×[y0,y1) przycięty do mapy (bez ostatniego wiersza
+// i kolumny), klasa 1↔2 zamieniona; prawdopodobieństwo p = 1 minus spadek kwadratowy za środkiem pasa w
+// kierunkach flag (4: x > środka, 8: x < środka, 1: y > środka, 2: y < środka), p −= (d/w)²/s', s' = siła /
+// (min(w,h)·0,2); malowane tylko pola klasy 1 i 2, gdy los (0..32767) ≤ p·32768. Klasa w typie pola:
+// 0 → 4 (granit), 1 → 3, 2 → 2, 3 → 5. rnd: generator 0..0x7fff.
+void drawStone(Pmp& grid, int x0, int y0, int x1, int y1, unsigned flags, int cls, float strength, const std::function<int()>& rnd);
+// Pasy sm_draw_stone dla opcji -border (granit wzdłuż góry, lewej i prawej krawędzi mapy W×H) i -funnel
+// (lejek pod powierzchnią); gridOx/gridOy: lewy górny róg siatki w świecie.
+void drawStoneOption(Pmp& grid, int gridOx, int gridOy, int mapW, int mapH, const std::string& option, const std::function<int()>& rnd);
 
 // call_method obiektu ze skryptu poziomu, powtarzane po starcie świata (obiekt = indeks w Scenario::objects).
 struct ScenarioCall
@@ -70,7 +87,11 @@ struct Scenario
 	std::vector<ScenarioStamp> stamps;      // z przebiegu skryptu poziomu (po placements)
 	std::vector<ScenarioCall> calls;        // z przebiegu skryptu poziomu
 	std::string storyLevel;                 // StoryMgr load_level POZIOM (np. "Campaign"), pusty = brak
+	// Wywołania sm_* skryptu poziomu (sm_draw_stone, sm_set_temp, sm_mark_temparea, sm_map_set, strefy), do
+	// powtórzenia w grze po CampaignInit.tcl (mapa fabuły StoryMgr).
+	std::vector<std::vector<std::string>> storyCalls;
 	std::vector<std::string> levelErrors;   // błędy przebiegu skryptu poziomu
+	unsigned levelSeed = 0;                 // ziarno losowania przebiegu (irandom, sm_draw_stone)
 	bool usesGenerator = false; // StoryMgr load_level/load_sandbox: świat proceduralny (nieobsługiwany)
 	// Obiekty tworzone wprost w skrypcie: set_pos [qnew|new Klasa ...] {x y z} (np. krasnale), współrzędne świata.
 	std::vector<TemplateObject> objects;

@@ -110,6 +110,18 @@ int cmd(ClientData cd, Tcl_Interp* in, int argc, const char** argv)
 	{
 		if (a.size() >= 4) r.sc.stamps.push_back({true, a[3], num(1), num(2)});
 	}
+	else if (c.rfind("sm_", 0) == 0 && c != "sm_draw_stone")
+		r.sc.storyCalls.push_back(a);
+	else if (c == "sm_draw_stone")
+	{
+		r.sc.storyCalls.push_back(a); // -border, -funnel: pasy granitu malowane przy składaniu świata (map_world.h drawStoneOption)
+		if (a.size() > 1 && (a[1] == "-border" || a[1] == "-funnel"))
+		{
+			ScenarioStamp st;
+			st.stone = a[1];
+			r.sc.stamps.push_back(st);
+		}
+	}
 	else if (c == "loading_objdetail")
 	{
 		if (a.size() > 1) r.detail = a[1];
@@ -260,12 +272,14 @@ const char* kUnknown = "proc unknown {args} {return 0}\n"
 Scenario runLevelScript(const Vfs& vfs, const std::string& gamePath, unsigned seed)
 {
 	Scenario sc;
-	Recorder r{vfs, sc, std::mt19937(seed ? seed : std::random_device{}()), {}, {}, {}, 0};
+	sc.levelSeed = seed ? seed : std::random_device{}();
+	Recorder r{vfs, sc, std::mt19937(sc.levelSeed), {}, {}, {}, 0};
 	Tcl_Interp* in = Tcl_CreateInterp();
 	for (const char* c : {"call", "callnc", "map", "map_template", "map_setlayer2", "loading_objdetail", "new", "qnew", "del",
 	         "obj_clear", "obj_query", "set_owner", "set_physic", "set_pos", "set_posbottom", "set_objname",
 	         "call_method", "irandom", "random", "lrem", "set_view", "set_light_begin", "set_ground_begin",
-	         "set_fow_begin", "log"})
+	         "set_fow_begin", "log", "sm_draw_stone", "sm_set_temp", "sm_mark_temparea", "sm_map_set",
+	         "sm_set_zone", "sm_force_zone", "sm_dig_message"})
 		Tcl_CreateCommand(in, c, cmd, &r, nullptr);
 	Tcl_EvalEx(in, kUnknown, -1, TCL_EVAL_GLOBAL);
 	std::string p = gamePath;

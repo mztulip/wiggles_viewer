@@ -827,16 +827,36 @@ t_http_planner_prod() {
 	[ -z "$e" ] && ok "wynalazek, dowóz, produkcja, zbiór, pakowanie i rozpakowanie" || fail "$e"
 }
 
-test_ http_campaign "kampania z symulacją: StoryMgr w stanie idle, CampaignInit.tcl w jego interpreterze (wydarzenia, newslist), is_storymgr, obj_eval, 30 s gry bez utraty krasnali"
+test_ http_campaign "kampania z symulacją: pełna mapa 512×640 z pasami granitu sm_draw_stone (punkty zgodne z oryginałem), nałożenie szablonu w trakcie gry (fill_temp_buffer, lg_sort_level, load_next, map_template), mapa fabuły i nacisk kopania (sm_scan), StoryMgr w stanie idle, CampaignInit.tcl w jego interpreterze (wydarzenia, newslist), is_storymgr, obj_eval, 30 s gry bez utraty krasnali"
 t_http_campaign() {
 	http_ok || return
 	HENV="OW_LEVEL_SEED=7" http_start wigview --scenario single_Campaign.tcl --simulate || { ui_stop; fail "serwer nie odpowiada ($(tail -2 "$TMP/http.log"))"; return; }
 	local r e=""
 	r=$(hpost /api/eval 'set sm [obj_query 0 -class StoryMgr] ; list [is_storymgr] [state_get $sm] [obj_eval $sm {llength $newslist}] [sm_get_event GameOverCheck] [sm_add_event QL_Bring_Hamsters] [sm_get_event QL_Bring_Hamsters]' | jget 'd["result"]')
 	echo "$r" | grep -Eq '^1 idle 4[0-9] 1 [0-9]+ 0$' || e="stan fabuły: $r"
+	# granit sm_draw_stone -border/-funnel: te same punkty co w oryginale (BAZA_WIEDZY §8.17)
+	r=$(hpost /api/eval 'set r {} ; foreach {x y} {3 100 10 100 20 100 28 100 40 100 508 300 500 300 250 3 250 12 250 40 250 300 250 630 100 60 30 20} {lappend r [get_material [list $x.5 $y.5 8]]} ; set r' | jget 'd["result"]')
+	[ "$r" = "0 0 0 0 0 0 0 3 3 2 2 2 0 0" ] || e="${e:+$e; }granit: $r"
+	# wzrost świata, krok 2: kolejka StoryMgr (fill_temp_buffer, lg_sort_level) i load_next nakładają szablon w trakcie gry
+	local open='set n 0 ; for {set y 200} {$y < 208} {incr y} {for {set x 300} {$x < 320} {incr x} {if {[get_hmap $x.5 $y.5] < 15} {incr n}}} ; list $n [llength [obj_query 0 -class Raupe -limit 300]]'
+	local before after
+	before=$(hpost /api/eval "$open" | jget 'd["result"]')
+	r=$(hpost /api/eval 'set sm [obj_query 0 -class StoryMgr] ; obj_eval $sm {set act_sort_x 240 ; set act_sort_y 290 ; fill_temp_buffer {{urw_hol_001_a.tcl 300 200} {urw_gng_001_a.tcl 240 300}}} ; obj_eval $sm {set temp_buffer}' | jget 'd["result"]')
+	[ "$r" = "{urw_gng_001_a.tcl 240 300} {urw_hol_001_a.tcl 300 200}" ] || e="${e:+$e; }lg_sort_level: $r"
+	hpost "/api/step?seconds=8" >/dev/null
+	after=$(hpost /api/eval "$open" | jget 'd["result"]')
+	[ "${before%% *}" = 0 ] && [ "${after%% *}" -gt 40 ] && [ "${after##* }" = $((${before##* } + 3)) ] || e="${e:+$e; }nałożenie jaskini: przed $before, po $after (otwarte pola, gąsienice)"
 	hpost "/api/step?seconds=30" >/dev/null
 	r=$(hpost /api/eval 'list [llength [obj_query 0 -class Zwerg -limit 50]] [state_get [obj_query 0 -class StoryMgr]]' | jget 'd["result"]')
 	[ "$r" = "5 idle" ] || e="${e:+$e; }po 30 s: $r"
+	# wzrost świata, krok 3: mapa fabuły (górne 9 wierszy, lejek, szablony first_level) i nacisk kopania w dig_apply
+	# (waga 4 w dół, próg 32: zatrzask po 9. kopnięciu w sąsiedzie o 4 pola niżej). Szyb x 301 po szybie x 300:
+	# ta sama seria sm_scan co w oryginale (BAZA_WIEDZY §8.17).
+	hpost /api/pause >/dev/null
+	r=$(hpost /api/eval 'list [sm_map_get 60 5] [sm_map_get 62 10] [sm_map_get 75 30] [sm_get_zone 100] [sm_scan]' | jget 'd["result"]')
+	[ "$r" = "1 0 0 Urwald 0" ] || e="${e:+$e; }mapa fabuły: $r"
+	r=$(hpost /api/eval 'set g [lindex [obj_query 0 -class Zwerg] 0] ; for {set y 60} {$y < 100} {incr y} {dig_mark 0 300 $y 1 ; dig_mark 0 301 $y 1} ; set r {} ; for {set y 63} {$y < 72} {incr y} {dig_apply [list 300 $y 10] $g ; lappend r [sm_scan]} ; for {set y 72} {$y < 96} {incr y} {dig_apply [list 300 $y 10] $g ; sm_scan} ; for {set y 78} {$y < 96} {incr y} {dig_apply [list 301 $y 10] $g ; lappend r [sm_scan]} ; set r' | jget 'd["result"]')
+	[ "$r" = "0 0 0 0 0 0 0 0 {75 18} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 {75 24} {75 24} {75 24} {75 24}" ] || e="${e:+$e; }nacisk kopania: $r"
 	ui_stop
 	[ -z "$e" ] && ok || fail "$e"
 }

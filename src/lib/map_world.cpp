@@ -8,6 +8,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <climits>
+#include <random>
 #include <sstream>
 
 namespace ow
@@ -73,6 +74,94 @@ std::optional<std::vector<uint8_t>> readTemplateData(const Vfs& vfs, const std::
 	for (const char* dir : {"pmp/", "pmp/split/", "l2m/", "l2m/split/"})
 		if (auto d = vfs.read(std::string("Data/Templates/") + dir + base)) return d;
 	return std::nullopt;
+}
+
+bool templateSize(const Vfs& vfs, const std::string& name, int& w, int& h)
+{
+	std::string n = name;
+	if (Vfs::lower(n).size() < 4 || Vfs::lower(n).substr(n.size() - 4) != ".tcl") n += ".tcl";
+	std::optional<std::vector<uint8_t>> text;
+	for (const char* dir : {"Data/Templates/", "Data/Templates/tcl/"})
+		if ((text = vfs.read(dir + n))) break;
+	if (!text) return false;
+	std::istringstream in(std::string(text->begin(), text->end()));
+	std::string line;
+	while (std::getline(in, line))
+	{
+		std::istringstream ws(line);
+		std::string cmd, a, b;
+		ws >> cmd;
+		if (cmd == "split_template" && ws >> a >> b >> w >> h) return true;
+		if (cmd == "map_template" && ws >> a)
+			if (auto d = readTemplateData(vfs, a); d && d->size() >= 8)
+			{
+				w = int((*d)[0] | (*d)[1] << 8 | (*d)[2] << 16 | (*d)[3] << 24);
+				h = int((*d)[4] | (*d)[5] << 8 | (*d)[6] << 16 | (*d)[7] << 24);
+				return true;
+			}
+	}
+	return false;
+}
+
+void drawStone(Pmp& grid, int x0, int y0, int x1, int y1, unsigned flags, int cls, float strength, const std::function<int()>& rnd)
+{
+	const int W = int(grid.width), H = int(grid.height);
+	x0 = std::max(x0, 0), y0 = std::max(y0, 0);
+	x1 = std::min(x1, W), y1 = std::min(y1, H);
+	if (cls == 1) cls = 2;
+	else if (cls == 2) cls = 1;
+	static const uint8_t kOut[4] = {4, 3, 2, 5};
+	uint8_t out = kOut[std::clamp(cls, 0, 3)];
+	int w = x1 - x0, h = y1 - y0;
+	if (w <= 0 || h <= 0) return;
+	float sp = strength / (float(std::min(w, h)) * 0.2f);
+	int midX = w / 2 + x0, midY = h / 2 + y0;
+	auto classOf = [](uint8_t t) {
+		switch (t & 0x7F)
+		{
+		case 4: return 0;
+		case 3: return 1;
+		case 5: return 3;
+		default: return 2; // 2 oraz 0/1 (świat z map create)
+		}
+	};
+	for (int x = x0; x < x1 - 1; ++x)
+		for (int y = y0; y < y1 - 1; ++y)
+		{
+			float p = 1.f;
+			float dx = float(midX - x), dy = float(midY - y);
+			if ((flags & 4) && midX < x) p -= (dx / float(w)) * dx / float(w) / sp;
+			if ((flags & 8) && x < midX) p -= (dx / float(w)) * dx / float(w) / sp;
+			if ((flags & 1) && midY < y) p -= (dy / float(h)) * dy / float(h) / sp;
+			if ((flags & 2) && y < midY) p -= (dy / float(h)) * dy / float(h) / sp;
+			uint8_t& t = grid.types[size_t(y) * W + x];
+			int c = classOf(t);
+			if (c == 0 || c == 3) continue;
+			if (float(rnd() & 0x7fff) <= p * 32768.f) t = uint8_t((t & 0x80) | out);
+		}
+}
+
+void drawStoneOption(Pmp& grid, int ox, int oy, int W, int H, const std::string& option, const std::function<int()>& rnd)
+{
+	auto band = [&](int x0, int y0, int x1, int y1, unsigned flags, float strength) {
+		drawStone(grid, x0 - ox, y0 - oy, x1 - ox, y1 - oy, flags, 0, strength, rnd);
+	};
+	if (option == "-border")
+	{ // FUN_0065e090:930-941: góra, lewa, prawa; dołu nie ma
+		band(0, 0, W, 32, 1, 2.5f);
+		band(0, 0, 32, H + 4, 4, 1.f);
+		band(W - 32, 0, W, H + 4, 8, 1.f);
+	}
+	else if (option == "-funnel")
+	{ // FUN_0065e090:213-237: dwa zwężające się trójkąty kamienia pod powierzchnią, co 4 wiersze
+		int y = 16, bw = (W / 4) * 2 - 20;
+		while (bw > 0)
+		{
+			band(W - bw, y, W, y + 6, 8, 1.f);
+			band(0, y, bw, y + 6, 4, 1.f);
+			y += 4, bw -= 8;
+		}
+	}
 }
 
 namespace
@@ -246,6 +335,11 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 	std::vector<Stamp> stamps;
 	for (const auto& st : sc.stamps)
 	{
+		if (!st.stone.empty())
+		{
+			stamps.push_back({&st, {}, {}});
+			continue;
+		}
 		try
 		{
 			auto d = readTemplateData(vfs, st.file);
@@ -282,9 +376,14 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 	y1 += margin;
 	if (sc.width > 0) x0 = std::max(x0, 0), x1 = std::min(x1, sc.width);
 	if (sc.height > 0) y0 = std::max(y0, 0), y1 = std::min(y1, sc.height);
-	// Świat StoryMgr (kampania): bez przesunięcia początku, żeby współrzędne były te same co w grze (skrypty
-	// fabuły, kamery przerywników i wyzwalacze mają pozycje bezwzględne); przycięcie tylko z prawej i od dołu.
-	if (!sc.storyLevel.empty()) x0 = y0 = 0;
+	// Świat StoryMgr (kampania): cała mapa z map create, bez przycięcia, żeby współrzędne były te same co
+	// w grze (skrypty fabuły, kamery przerywników i wyzwalacze mają pozycje bezwzględne), a świat miał gdzie rosnąć.
+	if (!sc.storyLevel.empty())
+	{
+		x0 = y0 = 0;
+		if (sc.width > 0) x1 = sc.width;
+		if (sc.height > 0) y1 = sc.height;
+	}
 	out.originX = x0;
 	out.originY = y0;
 	if (sc.view)
@@ -309,8 +408,13 @@ BuiltWorld buildWorld(const Vfs& vfs, const Scenario& sc, int margin, const Bloc
 		}
 	}
 	static const Pmp kNoPmp;
+	std::mt19937 stoneRng(sc.levelSeed);
+	auto rnd = [&]() { return int(stoneRng() & 0x7fff); };
 	for (const auto& st : stamps)
-		blitTemplate(out.grid, out.layer, st.src->layer ? kNoPmp : st.pmp, st.l2m ? &*st.l2m : nullptr, st.src->x - x0, st.src->y - y0);
+		if (!st.src->stone.empty())
+			drawStoneOption(out.grid, x0, y0, sc.width > 0 ? sc.width : x1, sc.height > 0 ? sc.height : y1, st.src->stone, rnd);
+		else
+			blitTemplate(out.grid, out.layer, st.src->layer ? kNoPmp : st.pmp, st.l2m ? &*st.l2m : nullptr, st.src->x - x0, st.src->y - y0);
 	for (auto o : sc.objects)
 	{
 		o.pos[0] -= float(x0);

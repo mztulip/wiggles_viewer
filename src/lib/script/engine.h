@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -127,6 +128,10 @@ struct Host
 	virtual bool digNext(const float /*poz*/[3], int /*gracz*/, int /*id kopiącego*/, int /*próba*/, bool /*tylko id*/, float /*out*/[3]) { return false; }
 	virtual bool digApply(int /*nx*/, int /*ny*/, int /*gracz*/, int& /*id znacznika*/) { return false; }
 	virtual void incDigMarkId(int /*gracz*/) {}
+	// map_template PLIK X Y / map_setlayer2 X Y PLIK w trakcie gry (wzrost świata, StoryMgr load_next):
+	// nałożenie szablonu .pmp albo warstwy .l2m w polu (x, y) świata; false = brak pliku albo świata.
+	virtual bool stampMap(const std::string& /*plik*/, int /*x*/, int /*y*/, bool /*warstwa .l2m*/) { return false; }
+	virtual int digNibble(int /*nx*/, int /*ny*/, int /*gracz*/) { return 0; } // półbajt znacznika węzła (tile+0x08)
 	// Planista pracy (cmd_work.cpp, lib/prod_planner): gnome_idle, gnome_failed_work/gnome_stopped_work, gnome_announce_dig.
 	virtual void gnomeIdle(int /*id*/, bool /*bezczynny*/) {}
 	virtual void gnomeFailedWork(int /*id*/) {}
@@ -314,6 +319,34 @@ public:
 	std::map<std::string, std::string> storyValues_;
 	int storyCallbackObj_ = 0;
 	std::string storyCallbackProc_;
+	// Mapa fabuły i nacisk kopania (cmd_story.cpp, rozdział 21.7): pola 4 × 4 pól świata, 1 = wyrośnięte/zajęte.
+	struct StoryWorld
+	{
+		int mapW = 0, mapH = 0; // w polach fabuły (sm_create_map / 4)
+		std::vector<uint8_t> map;
+		int weight = 0, threshold = 5;               // nacisk kopania i próg (sm_set_digcount)
+		int latchDir = 0, latchX = 0, latchY = 0;   // zatrzask przebicia: kierunek 8 +x, 2 +y, 4 −x, 1 −y; pole świata
+		bool latchConsumed = false;                  // sm_scan już go oddał
+		bool digMessage = false;                     // sm_dig_message: wywołanie zwrotne "dig shut -1" przy kopaniu
+		struct Zone
+		{
+			std::string name;
+			int bound = -1; // górna granica y strefy (sm_set_zone), −1 = bez końca
+		};
+		std::vector<Zone> zones;
+		int zoneFloor = 0;                                       // sm_force_zone
+		std::vector<std::tuple<std::string, int, int>> placed;  // sm_set_temp: użyte szablony unikalne
+		bool replaying = false; // powtórka wywołań z przebiegu wstępnego: sm_draw_stone tylko znaczy mapę fabuły
+		int get(int cx, int cy) const
+		{
+			if (mapW > 0 && (cx < 0 || cy < 0 || cx >= mapW || cy >= mapH)) return 1; // poza mapą: jak wyrośnięte
+			return mapW > 0 ? map[size_t(cy) * size_t(mapW) + size_t(cx)] : 0;
+		}
+		void markRect(int cx, int cy, int cw, int ch); // cały prostokąt w mapie, inaczej nic (gra: FUN_005fa510)
+		static int cell(int v) { return (v + ((v >> 31) & 3)) >> 2; }
+	} story_;
+	// Nacisk kopania (gra: CStoryMgr::DigNotify), z dig_apply przed wycięciem węzła (nx, ny) przez gracza owner.
+	void storyDigNotify(int nx, int ny, int owner);
 	std::vector<TriggerRec> triggers_; // trigger: rekordy (miejsce = numer zwracany przez create)
 	bool sequenceActive = false;       // set_sequence: przerywnik (wstrzymuje wyzwalacze)
 	void scanTriggers();               // co turę logiki (cmd_trigger.cpp)

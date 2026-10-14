@@ -39,4 +39,4 @@ Bot rozkazuje tak jak gracz. Wysyła krasnalom zdarzenia `evt_task_*`, maluje zn
 | czas | rzeczywisty, przyspieszony `gametime factor N` | gra zatrzymana, `POST /api/step?seconds=…` |
 | nowa kampania | `--new`: `obj_clear; sel /obj; set sm [new StoryMgr]; call_method $sm load_level Campaign` (początek `single_CampaignX.tcl`; `gameload` pliku `.tcl` nic nie robi) | gra uruchomiona z `--scenario single_Campaign.tcl` (stałe ziarno układu jaskiń: `OW_LEVEL_SEED=N`, [rozdział 21](silnik/21_start_kampanii.md)); świat jeszcze nie dorasta, więc pustelnika nie ma (TODO G13) |
 
-Pułapki WebTraq: skrypt ze znakami `<` albo `:` się psuje (bot odmawia wysłania). Długi skrypt w GET (kilka KB) jest obcinany i może wywrócić grę, dlatego zapytania o teren są krótkie i porcjowane. Wynik strony: `Result:<br>Ok.<br>wynik<br><hr>`.
+Pułapki WebTraq: skrypt ze znakami `<`, `:`, `=` albo `+` się psuje (bot odmawia wysłania; zamiast `==` i `<` pisać np. `![…]` i `160 > $y`, zamiast `$x+0.5` np. `$x.5`). Długi skrypt w GET (kilka KB) jest obcinany i może wywrócić grę, dlatego zapytania o teren są krótkie i porcjowane. Wynik strony: `Result:<br>Ok.<br>wynik<br><hr>`.

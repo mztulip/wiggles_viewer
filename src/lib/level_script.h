@@ -13,8 +13,10 @@
 //   call_method SM load_level POZIOM: tu wykonuje tylko scripts/gameplay/POZIOM.tcl (mapa);
 //                                    CampaignInit.tcl (wydarzenia fabuły) wykonuje skrypt StoryMgr w grze
 //   set_view, set_light_begin, set_fow_begin, set_ground_begin
+//   sm_draw_stone -border|-funnel -> pasy granitu (map_world.h drawStoneOption), w kolejności skryptu
+//   sm_draw_stone, sm_set_temp, sm_mark_temparea, sm_map_set, sm_set_zone, … -> powtórzone w grze (mapa fabuły)
 // Pozostałe komendy gry nic nie robią (unknown). split_template jak w STORY.TCL przy ustawionym temppos.
-// 🔶 Bez sm_draw_stone (granitowa ramka mapy, lejek) i generate_color_variation.
+// 🔶 Bez generate_color_variation i pozostałych opcji sm_draw_stone.
 #pragma once
 
 #include "lib/map_world.h"

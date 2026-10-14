@@ -1,5 +1,5 @@
 // Kopanie ze skryptów (z_dignwalk.tcl): get_material, dig_mark, is_dig_marked, dig_next, dig_apply, dig_resetid,
-// inc_playerdigmarkid. Prawa za Zimennik/Diggles-Unity (MIT), Runtime/Tcl/Engine/DigglesTclEngine.cs i
+// inc_playerdigmarkid; teren w trakcie gry: map_template, map_setlayer2. Prawa za Zimennik/Diggles-Unity (MIT), Runtime/Tcl/Engine/DigglesTclEngine.cs i
 // Docs/DIGGING_MECHANIC.md; świat dostarcza Host (WorldSim: lib/dig_terrain). 🔶 o ile nie sprawdzone w laboratorium.
 #include "lib/script/commands.h"
 
@@ -70,6 +70,7 @@ int cmdDigApply(Engine& e, Tcl_Interp* in, Args& a)
 	{
 		int id = 0;
 		int nx = int(std::floor(p[0] + 0.5f)), ny = int(std::floor(p[1] + 0.5f));
+		e.storyDigNotify(nx, ny, 0); // przed wycięciem, gracz lokalny (gra: FUN_006347a0:103)
 		ok = e.host_->digApply(nx, ny, o && o->owner >= 0 ? o->owner : 0, id);
 		if (ok && o) o->digSetId = id;
 	}
@@ -108,9 +109,24 @@ int cmdIncDigMarkId(Engine& e, Tcl_Interp* in, Args& a)
 	return TCL_OK;
 }
 
+// map_template PLIK X Y: nałożenie szablonu .pmp w trakcie gry (rozdział 3.3, wzrost świata rozdział 21);
+// map_setlayer2 X Y PLIK: nałożenie warstwy detali .l2m.
+int cmdMapTemplate(Engine& e, Tcl_Interp* in, Args& a)
+{
+	bool layer = a[0] == "map_setlayer2";
+	setResult(in, "");
+	if (!e.host_ || a.size() < 4) return TCL_OK;
+	const std::string& file = layer ? a[3] : a[1];
+	int x = std::atoi((layer ? a[1] : a[2]).c_str()), y = std::atoi((layer ? a[2] : a[3]).c_str());
+	e.host_->stampMap(file, x, y, layer);
+	return TCL_OK;
+}
+
 std::vector<CmdEntry> build()
 {
 	return {
+	    {"map_template", cmdMapTemplate},
+	    {"map_setlayer2", cmdMapTemplate},
 	    {"get_material", cmdGetMaterial},
 	    {"dig_mark", cmdDigMark},
 	    {"is_dig_marked", cmdIsDigMarked},

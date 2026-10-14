@@ -458,6 +458,10 @@ Narzędzie: [bot](BOT.md) w oryginale (`OW_HIDDEN=1 live2.sh start`, potem `wigb
 - `set_objname obj auto [płeć]` dawał imię „auto” zamiast losowego z `names.txt`;
 - `sm_get_event` był zaślepką (zawsze 0), nie było rejestru wydarzeń ani `sm_send_message`.
 
+**Granit na brzegach mapy kampanii** (2026-10-14, [rozdział 21.2](silnik/21_start_kampanii.md)): `get_material` w 14 punktach identyczny z naszym `sm_draw_stone -border/-funnel`, profil liczby pól granitu w wierszach zgodny w granicach losowania. Przy okazji: WebTraq psuje też skrypty ze znakami `=` i `+` (nie tylko `<` i `:`).
+
+**Mapa fabuły i nacisk kopania** (2026-10-14, [rozdział 21.7](silnik/21_start_kampanii.md)): `sm_map_get` wycinka pól 40–89 × 0–29 po starcie kampanii zgodny z naszym (9 górnych wierszy, trójkąty lejka; jaskinie losowe). Szyb ze znacznikami tunelu i `dig_apply` przy zatrzymanym czasie: ta sama seria `sm_scan` co u nas. Do zbadania przy kopaniu (rozdział 19): w oryginale `dig_apply` w szybie zwraca 1, 0, 0, 1… (wycinanie węzła w krokach), u nas zawsze 1; `dig_apply` w oryginale wymaga dwóch argumentów (pozycja, krasnal).
+
 Różnice do sprawdzenia: w oryginale jedzenie krasnali stoi na 0,9 przez pierwsze ok. 180 s, potem spada ok. 0,00036/s; u nas spada od startu ok. 0,0002/s. Dwóch krasnali w jaskini z chomikami straciło po 0,12 życia (prawdopodobnie `Fresspflanze`).
 
 ## 9. Mapy i teren: przebieg badań

@@ -120,6 +120,7 @@ bool MapScene::loadTemplate(const std::string& file)
 	scenarioMode_ = false;
 	storyLevel_.clear();
 	levelCalls_.clear();
+	levelStoryCalls_.clear();
 	Scenario sc;
 	sc.placements.push_back({file, 0, 0});
 	std::string world = Vfs::lower(file.substr(0, file.find('_')));
@@ -159,6 +160,7 @@ bool MapScene::loadSaveData(const std::string& file, const std::vector<uint8_t>&
 	scenarioInfo_.clear();
 	storyLevel_.clear();
 	levelCalls_.clear();
+	levelStoryCalls_.clear();
 	saveFog_.clear();
 	error_.clear();
 	Scenario sc;
@@ -217,10 +219,11 @@ bool MapScene::loadScenario(const std::string& file)
 		for (auto& e : sc.levelErrors) std::fprintf(stderr, "skrypt poziomu: %s\n", e.c_str());
 		if (sc.stamps.empty())
 			scenarioInfo_ = tr("Świat generowany proceduralnie (StoryMgr load_level/load_sandbox) - jeszcze nieobsługiwany.");
-		margin = 12; // 🔶 zapas litej skały wokół startu (świat rośnie dopiero z generatorem, TODO G13)
+		margin = 0; // świat StoryMgr: cała mapa z map create (buildWorld)
 	}
 	storyLevel_ = sc.storyLevel;
 	levelCalls_ = sc.calls;
+	levelStoryCalls_ = sc.storyCalls;
 	// Świat ze szablonu o największej liczbie wystąpień (urw, kris, lava, swf).
 	std::map<std::string, int> worlds;
 	for (auto& p : sc.placements) worlds[Vfs::lower(p.script.substr(0, p.script.find('_')))]++;
@@ -926,6 +929,27 @@ void MapScene::setBlock(int x, int y, uint32_t block, uint8_t type)
 	pmp_->blocks[i] = block;
 	pmp_->types[i] = type;
 	if (l2m_ && l2m_->width == pmp_->width && i < l2m_->values.size()) l2m_->values[i] = 0; // bez starego detalu (mech, trawa)
+}
+
+bool MapScene::stamp(const Pmp* tpl, const L2m* layer, int wx, int wy, int rect[4])
+{
+	if (!pmp_) return false;
+	if (!l2m_ || l2m_->width != pmp_->width || l2m_->height != pmp_->height)
+	{
+		l2m_ = L2m{};
+		l2m_->width = pmp_->width, l2m_->height = pmp_->height;
+		l2m_->values.assign(size_t(pmp_->width) * pmp_->height, 0);
+	}
+	static const Pmp kNone;
+	int ox = wx - worldOrigin_[0], oy = wy - worldOrigin_[1];
+	blitTemplate(*pmp_, *l2m_, tpl ? *tpl : kNone, layer, ox, oy);
+	int w = tpl ? int(tpl->width) : layer ? int(layer->width)
+	                                      : 0,
+	    h = tpl ? int(tpl->height) : layer ? int(layer->height)
+	                                       : 0;
+	rect[0] = std::max(ox, 0), rect[1] = std::max(oy, 0);
+	rect[2] = std::min(ox + w, int(pmp_->width)), rect[3] = std::min(oy + h, int(pmp_->height));
+	return rect[2] > rect[0] && rect[3] > rect[1];
 }
 
 void MapScene::rebuildTerrain()

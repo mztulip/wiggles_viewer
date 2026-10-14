@@ -49,6 +49,7 @@ public:
 	// i call_method obiektów do powtórzenia po starcie skryptów (indeks obiektu sceny).
 	const std::string& storyLevel() const { return storyLevel_; }
 	const std::vector<ScenarioCall>& levelCalls() const { return levelCalls_; }
+	const std::vector<std::vector<std::string>>& levelStoryCalls() const { return levelStoryCalls_; }
 
 	// Postęp wczytywania: ułamek 0..1 i nazwa etapu. Ustawiany przez pętlę główną (rysuje pasek).
 	std::function<void(float, const char*)> progress;
@@ -148,6 +149,10 @@ public:
 	Pmp* mutableGrid() { return pmp_ ? &*pmp_ : nullptr; } // zmiany bloków: potem setBlock/rebuildTerrain
 	const BlockDb& blockDb() const { return blocks_; }
 	void setBlock(int x, int y, uint32_t block, uint8_t type);
+	// Nałożenie w trakcie gry (map_template / map_setlayer2, współrzędne świata): szablon tpl albo warstwa layer
+	// prawem blitTemplate (map_world.h). rect: zmieniony prostokąt siatki x0 y0 x1 y1 (bez końca). Potem rebuildTerrain.
+	bool stamp(const Pmp* tpl, const L2m* layer, int wx, int wy, int rect[4]);
+	const Vfs* vfs() const { return vfs_; }
 	void rebuildTerrain(); // po setBlock: siatka terenu, wysokości, płyny
 	float time() const { return time_; }
 	// Odkrycie mgły wokół punktu (krasnale gracza). 🔶 Koło zamiast promieni z rozdziału 10.3.
@@ -307,6 +312,7 @@ protected: // dostęp dla panelu przeglądarki (MapView)
 	std::string scenarioInfo_;
 	std::string storyLevel_;
 	std::vector<ScenarioCall> levelCalls_;
+	std::vector<std::vector<std::string>> levelStoryCalls_;
 	std::optional<GameView> gameView_;
 	int placed_ = 0, worldOrigin_[2] = {0, 0};
 	int skyTiles_ = 0, lightBegin_ = Scenario::kNoSky;

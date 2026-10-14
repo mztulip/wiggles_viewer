@@ -92,8 +92,8 @@ class Orig:
 		self.url, self.speed = url, speed
 
 	def eval(self, script):
-		if "<" in script or ":" in script:
-			raise ValueError("WebTraq psuje skrypty ze znakami < i : (użyj procedury z wigbot.tcl)")
+		if any(c in script for c in "<:=+"):
+			raise ValueError("WebTraq psuje skrypty ze znakami < : = + (użyj procedury z wigbot.tcl)")
 		q = urllib.parse.urlencode({"script": script})
 		with urllib.request.urlopen(self.url + "/tclshell?" + q, timeout=60) as r:
 			page = r.read().decode("latin-1")

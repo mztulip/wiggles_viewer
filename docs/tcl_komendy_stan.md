@@ -8,17 +8,17 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | moduł | komend | ✅ | brak P1 | brak P2 | brak P3 | brak martwe |
 |---|---|---|---|---|---|---|
-| misc | 217 | 71 | 8 | 36 | 45 | 57 |
+| misc | 217 | 82 | 7 | 32 | 39 | 57 |
 | sound | 2 | 0 | 0 | 2 | 0 | 0 |
-| map | 49 | 6 | 3 | 3 | 21 | 16 |
-| inne | 36 | 8 | 0 | 3 | 7 | 18 |
 | ui | 1 | 0 | 1 | 0 | 0 | 0 |
 | fight | 5 | 0 | 1 | 3 | 1 | 0 |
 | object | 183 | 140 | 4 | 12 | 5 | 22 |
 | obj | 82 | 34 | 8 | 12 | 17 | 11 |
+| map | 49 | 9 | 3 | 2 | 19 | 16 |
 | elf | 1 | 0 | 1 | 0 | 0 | 0 |
 | attrib | 17 | 8 | 1 | 3 | 3 | 2 |
 | event | 10 | 5 | 0 | 1 | 1 | 3 |
+| inne | 36 | 9 | 0 | 2 | 7 | 18 |
 | graphics | 6 | 2 | 0 | 1 | 0 | 3 |
 | ai | 1 | 0 | 0 | 1 | 0 | 0 |
 | prod | 3 | 0 | 1 | 0 | 2 | 0 |
@@ -29,7 +29,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | shaders | 2 | 0 | 0 | 0 | 0 | 2 |
 | states | 7 | 7 | 0 | 0 | 0 | 0 |
 | trigger | 1 | 1 | 0 | 0 | 0 | 0 |
-| **razem** | 639 | 292 | 28 | 77 | 105 | 137 |
+| **razem** | 639 | 307 | 27 | 71 | 97 | 137 |
 
 ## 3db
 
@@ -135,7 +135,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 
 | komenda | stan | priorytet | wywołań | jako wartość | plików | opis |
 |---|---|---|---|---|---|---|
-| `map_template` | ❌ | P2 | 1574 | 0 | 1573 |  |
 | `fight_map_obj2db` | ❌ | P2 | 18 | 0 | 1 |  |
 | `screenvibe` | ❌ | P2 | 15 | 0 | 8 |  |
 | `check_weapon_exp` | ❌ | P3 | 2 | 2 | 2 |  |
@@ -166,6 +165,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `lmsg` | ✅ |  | 214 | 214 | 24 |  |
 | `is_storymgr` | ✅ |  | 6 | 6 | 4 |  |
 | `placelock_check` | ✅ |  | 4 | 4 | 2 |  |
+| `map_template` | ✅ |  | 1574 | 0 | 1573 |  |
 | `set_particlesource` | ✅ |  | 576 | 0 | 87 |  |
 | `placelock_set` | ✅ |  | 8 | 0 | 5 |  |
 | `placelock_rem` | ✅ |  | 7 | 0 | 5 |  |
@@ -179,7 +179,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `map` | ❌ | P1 | 42 | 12 | 32 | map create <width> <height> (<xoffset>) (<yoffset>) (<completion-code>)create new map |
 | `lg_get_level` | ❌ | P1 | 4 | 4 | 2 | lg_get_levelreturns the last generated level |
 | `get_place_long` | ❌ | P1 | 3 | 3 | 3 | get_place_long <center> <range> [<fixwalkable=f>] [<walkable=f>]find a passable point (no collision-map-check  |
-| `map_setlayer2` | ❌ | P2 | 2971 | 0 | 2971 | map_setlayer2 <x> <y> <file>set 2nd texturelayer |
 | `generate_color_variation` | ❌ | P2 | 8 | 0 | 8 | generate_color_variation <left> <top> <right> <bottom> <type>generate variations for 1st texture-layer of the  |
 | `reset_map` | ❌ | P2 | 6 | 0 | 5 | reset_map <left> <top> <right> <bottom>reset maparea |
 | `lg_set_leveltype` | ❌ | P3 | 4 | 0 | 2 | lg_set_leveltype base\|resourceset leveltype for levelgeneration |
@@ -199,10 +198,8 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `lg_set_starttemplatepro` | ❌ | P3 | 1 | 1 | 1 | lg_set_starttemplatepro [<digmarkalign>] [<setunique>]set first templates for levelgeneration |
 | `lg_set_templategroup` | ❌ | P3 | 1 | 0 | 1 | lg_set_templategroup <setname> {<tclmapfile> <tclmapfile>...}defines a templategroup |
 | `lg_set_templatevalue` | ❌ | P3 | 1 | 0 | 1 | lg_set_templatevalue <tempname> <val>set weighing value for template |
-| `lg_sort_level` | ❌ | P3 | 1 | 1 | 1 | lg_sort_level <x> <y> <level>sorts the level |
 | `lg_tp_objfilter` | ❌ | P3 | 1 | 0 | 1 | lg_tp_objfilter {<classname> <classname>...}filter templates from templatepool with these classes |
 | `lg_tp_setfilter` | ❌ | P3 | 1 | 0 | 1 | lg_tp_setfilter {<setname> <setname>...}filter sets from templatepool |
-| `sm_mark_temparea` | ❌ | P3 | 1 | 0 | 1 | sm_mark_temparea <x> <y> <template>marks area of template |
 | `get_lmap_blue` | ❌ | martwa | 0 | 0 | 0 | get_lmap_blue <x> <y>returns the blue color at a point in the map |
 | `get_lmap_green` | ❌ | martwa | 0 | 0 | 0 | get_lmap_green <x> <y>returns the green color at a point in the map |
 | `get_lmap_red` | ❌ | martwa | 0 | 0 | 0 | get_lmap_red <x> <y>returns the red color at a point in the map |
@@ -224,7 +221,10 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `dig_next` | ✅ |  | 18 | 18 | 5 | dig_next <vector> <object> [<bestidx>] [<OnlyLastDigID>]get next best dig position |
 | `get_material` | ✅ |  | 7 | 7 | 4 | get_material <vector>get type of material: 0-stone 1/2-sand/earth 3-scapehole |
 | `dig_apply` | ✅ |  | 4 | 1 | 4 | dig_apply <vector> <object>dig a hole |
+| `map_setlayer2` | ✅ |  | 2971 | 0 | 2971 | map_setlayer2 <x> <y> <file>set 2nd texturelayer |
 | `dig_mark` | ✅ |  | 11 | 0 | 6 | dig_mark <player> <x> <y> <cave=0/tunnel=1/undo=2> [<depth>]mark for dig |
+| `lg_sort_level` | ✅ |  | 1 | 1 | 1 | lg_sort_level <x> <y> <level>sorts the level |
+| `sm_mark_temparea` | ✅ |  | 1 | 0 | 1 | sm_mark_temparea <x> <y> <template>marks area of template |
 
 ## misc
 
@@ -237,7 +237,6 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `startcache` | ⚪ | P1 | 7 | 3 | 1 | startcache enabled |
 | `get_weapon_pose` | ❌ | P1 | 4 | 4 | 2 | get_weapon_pose <id>returns pose of weapon |
 | `get_place_info` | ❌ | P1 | 3 | 3 | 1 | get_place_inforeturns placing info {placing placeok placebox} |
-| `sm_get_zone` | ❌ | P1 | 3 | 3 | 3 | sm_get_zone <y>returns zone at y |
 | `loading_objdetail` | ❌ | P2 | 10110 | 0 | 3117 | loading_objdetailreturns object detail level |
 | `textwin` | ❌ | P2 | 1072 | 0 | 213 | textwin show |
 | `log` | ⚪ | P2 | 1004 | 0 | 130 | log args...print to logger |
@@ -260,30 +259,22 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `keybind` | ❌ | P2 | 17 | 0 | 3 | keybind set <keyname> ?shift? ?alt? ?ctrl? ?down? <command>set a new key binding |
 | `print` | ⚪ | P2 | 17 | 0 | 7 | print args...print to console |
 | `set_fsource` | ❌ | P2 | 14 | 0 | 2 | set_fsource <object> <params>set fsource properties |
-| `sm_add_zone` | ❌ | P2 | 12 | 0 | 3 | sm_add_zone <zone>adds a new zone |
 | `load_info` | ⚪ | P2 | 11 | 0 | 4 | load_info info-textset current load info |
 | `set_fow_begin` | ❌ | P2 | 11 | 0 | 10 | set_fow_begin <num> <player>sets the Y-beginning of fog of war |
 | `set_light_begin` | ❌ | P2 | 10 | 0 | 10 | set_light_begin <num>sets the Y-beginning of light and ground |
-| `sm_draw_stone` | ❌ | P2 | 10 | 0 | 8 | sm_draw_stone [<params>...]Sets map material to Stone |
-| `sm_set_temp` | ❌ | P2 | 9 | 0 | 6 | sm_set_temp <level>set unique templates as setted |
 | `load_scape_texture` | ❌ | P2 | 8 | 0 | 1 | load_scape_texture <set> <level> {{tile0000variation0... tile0000variationN}... {tile1111variation0... tile111 |
 | `logdebug` | ⚪ | P2 | 8 | 0 | 3 | logdebug <text>log tcl debug info |
 | `notifyflare` | ❌ | P2 | 8 | 0 | 1 | notifyflare <x-prc> <y-prc>show notification flare |
-| `sm_force_zone` | ❌ | P2 | 8 | 0 | 8 | sm_force_zone <zone>forces minimal zone for levelgenerating |
 | `cancel_fade` | ❌ | P2 | 7 | 0 | 6 | cancel_fadecancel fade |
 | `set_speechout` | ❌ | P2 | 7 | 0 | 1 | set_speechout <duration> <coltextlist> (<ForceShow>)speech while sequence playing |
 | `viewlock` | ❌ | P2 | 7 | 0 | 2 | viewlock [<newstate>]viewlock []@lock view, disable camera control |
 | `set_ingame_loading` | ❌ | P2 | 6 | 0 | 1 | set_ingame_loading <true/false>activate/deactivate ingame levelloading |
 | `scroller` | ❌ | P3 | 4 | 0 | 3 | scroller runningcheck if scroller is running |
 | `set_water` | ❌ | P3 | 4 | 0 | 1 | set_water <bool>enable/disable water |
-| `sm_map_set` | ❌ | P3 | 4 | 0 | 1 | sm_map_set <x> <y> [<w> <h>]set map area as setted |
 | `exec_deferred` | ❌ | P3 | 3 | 0 | 1 | exec_deferred <script>schedule execution of script for next shell tick |
 | `gui_new_game` | ❌ | P3 | 3 | 0 | 3 | gui_new_game (<permanently>)show "New Game" window |
 | `laser` | ❌ | P3 | 3 | 0 | 2 | laser <vStart> <vDest> <vDir> <fDuration> |
 | `rem_fsource` | ❌ | P3 | 3 | 0 | 1 | rem_fsource <object>remove fsource of this object |
-| `sm_create_map` | ❌ | P3 | 3 | 0 | 3 | sm_create_map <w> <h>defines the map |
-| `sm_set_digcount` | ❌ | P3 | 3 | 0 | 3 | sm_set_digcount <maxdigcount>Set digcount |
-| `sm_set_zone` | ❌ | P3 | 3 | 0 | 1 | sm_set_zone <id> <y>Set Story Event as fulfilled |
 | `get_fsource` | ❌ | P3 | 2 | 2 | 2 | get_fsource <object> <param>get fsource-property |
 | `get_ftype` | ❌ | P3 | 2 | 2 | 1 | get_ftype <pos>return ftype- 0=none, 1=water, 2=sulfur, 3=lava, 4=lavawater |
 | `get_sequencebreaked` | ❌ | P3 | 2 | 2 | 2 | get_sequencebreakedreturns distance between camera-follow-object and viewport-center |
@@ -316,9 +307,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `set_brightness` | ❌ | P3 | 1 | 0 | 1 | set_brightness <brighness>set brightness (0..2) |
 | `set_ground_begin` | ❌ | P3 | 1 | 0 | 1 | set_ground_begin <num>sets the Y-beginning of the ground |
 | `set_run_info` | ⚪ | P3 | 1 | 0 | 1 | set_run_info info-textset current load info |
-| `sm_dig_message` | ❌ | P3 | 1 | 0 | 1 | sm_dig_message <true/false>Activates callback dig messages |
 | `sm_get_level_info` | ❌ | P3 | 1 | 1 | 1 | sm_get_level_info <x> <y>get info for level generation |
-| `sm_map_get` | ❌ | P3 | 1 | 1 | 1 | sm_map_get <x> <y>get map area status |
 | `autoloadlevel` | ❌ | martwa | 0 | 0 | 0 | autoloadlevel levelfilemake the game autoload a level. no name disables |
 | `camctrlmapping` | ❌ | martwa | 0 | 0 | 0 | camctrlmapping [<newval>]get/set camera control mapping |
 | `delete_lightning` | ❌ | martwa | 0 | 0 | 0 | delete_lightningdeletes all ballistic particle sources of type "laserbeam" |
@@ -418,6 +407,7 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_local_player` | ✅ |  | 4 | 4 | 4 | get_local_playerget local player id |
 | `vector_random` | ✅ |  | 4 | 4 | 3 | vector_random <x> <y> <z>create random vector with given bounds |
 | `calc_text_time` | ✅ |  | 3 | 3 | 1 | calc_text_time <text>returns length of text in seconds |
+| `sm_get_zone` | ✅ |  | 3 | 3 | 3 | sm_get_zone <y>returns zone at y |
 | `call` | ✅ |  | 1886 | 0 | 406 | call <script name>call external script |
 | `lrep` | ✅ |  | 125 | 0 | 20 | lrep <listvarname> <elementindex> <newelement>replaces one list element |
 | `sm_add_event` | ✅ |  | 85 | 0 | 13 | sm_add_event <name> [<triggerclass>] [<triggermsg>]Add Story Event |
@@ -425,9 +415,17 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `gametime` | ✅ |  | 58 | 0 | 28 | gametime <command> [<value>]handle game time |
 | `set_diplomacy` | ✅ |  | 43 | 0 | 13 | set_diplomacy <owner> <owner> <ally/friend/neutral/enemy>sets owner diplomacy state |
 | `sm_set_event` | ✅ |  | 22 | 0 | 11 | sm_set_event <name> (<bool>)Set Story Event as fulfilled |
+| `sm_add_zone` | ✅ |  | 12 | 0 | 3 | sm_add_zone <zone>adds a new zone |
+| `sm_draw_stone` | ✅ |  | 10 | 0 | 8 | sm_draw_stone [<params>...]Sets map material to Stone |
+| `sm_set_temp` | ✅ |  | 9 | 0 | 6 | sm_set_temp <level>set unique templates as setted |
+| `sm_force_zone` | ✅ |  | 8 | 0 | 8 | sm_force_zone <zone>forces minimal zone for levelgenerating |
 | `set_selectedobject` | ✅ |  | 6 | 0 | 5 | set_selectedobject [<objref>]change selection |
 | `set_view_begin` | ✅ |  | 6 | 0 | 6 | set_view_begin <num>sets the Y-beginning of the view |
+| `sm_map_set` | ✅ |  | 4 | 0 | 1 | sm_map_set <x> <y> [<w> <h>]set map area as setted |
 | `set_sequence` | ✅ |  | 3 | 0 | 2 | set_sequence <enabled>enables or disables sequence playing |
+| `sm_create_map` | ✅ |  | 3 | 0 | 3 | sm_create_map <w> <h>defines the map |
+| `sm_set_digcount` | ✅ |  | 3 | 0 | 3 | sm_set_digcount <maxdigcount>Set digcount |
+| `sm_set_zone` | ✅ |  | 3 | 0 | 1 | sm_set_zone <id> <y>Set Story Event as fulfilled |
 | `hceil` | ✅ |  | 2 | 2 | 2 | hceil <num>calc ceil value |
 | `hfloor` | ✅ |  | 2 | 2 | 2 | hfloor <num>calc floor value |
 | `is_dig_marked` | ✅ |  | 2 | 2 | 1 | is_dig_marked <xn> <yn> <xp> <yp>checks area for digmark |
@@ -438,7 +436,9 @@ Stan: ✅ mamy, ⚪ mamy, ale nic nie robi (log, nop, 0, stała odpowiedź), ❌
 | `get_digedge` | ✅ |  | 1 | 1 | 1 | get_digedge <topos> <obj>gets a point at the edge of a zone marked for dig |
 | `global_inv_rem` | ✅ |  | 1 | 0 | 1 | global_inv_rem <objlist>remove objects from any inventory |
 | `set_viewpos` | ✅ |  | 1 | 0 | 1 | set_viewpos <x> <y> <z> <zoom> <dx> <dy> [<move>] [<freeze>] [<speed>] [<cameraset>]set view pos, zoom and opt |
+| `sm_dig_message` | ✅ |  | 1 | 0 | 1 | sm_dig_message <true/false>Activates callback dig messages |
 | `sm_get_resolution` | ✅ |  | 1 | 1 | 1 | sm_get_resolutionreturns map resolution |
+| `sm_map_get` | ✅ |  | 1 | 1 | 1 | sm_map_get <x> <y>get map area status |
 | `sm_scan` | ✅ |  | 1 | 1 | 1 | sm_scanreturns position of DigMark |
 | `callnc` | ✅ |  | 0 | 0 | 0 | callnc <script name>call external script skipping Tcl cache |
 | `hi2f` | ✅ |  | 0 | 0 | 0 | hi2f <num>convert int to float |

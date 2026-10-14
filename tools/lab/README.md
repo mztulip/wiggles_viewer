@@ -77,7 +77,7 @@ tools/lab/live.sh stop
 
 Pułapki (BAZA_WIEDZY §9.8–9.10):
 - sprawdzaj, czy `tcl` zwraca `Ok.`; błąd idzie w treści wyniku, a nie w kodzie wyjścia;
-- WebTraq ucina skrypt na pierwszym znaku `:` (więc bez `::`);
+- WebTraq ucina skrypt na pierwszym znaku `:` (więc bez `::`), a znaki `<`, `=` i `+` też psują skrypt mimo kodowania adresu: pisać `160 > $y`, `![…]` zamiast `== 0`, `$x.5` zamiast `$x+0.5`;
 - dekoracje `Dummy_*` po utworzeniu nie mają już obiektu Tcl (`invalid object`);
 - nowy krasnal (`new Zwerg`) chodzi sam: `state_disable $G`;
 - zapis bez `FogRemover` jest czarny (mgła wojny);
