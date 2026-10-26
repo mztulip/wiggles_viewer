@@ -2,9 +2,18 @@
 
 Otwartoźródłowa **przeglądarka assetów i biblioteka** do gry **Wiggles** (ang. *Diggles – The Myth of Fenris*, SEK-Ost / Innonics, 2001), razem z **dokumentacją działania gry** (formaty plików, przewodnik po silniku, dziennik badań). Ma być bazą dla każdego, kto chce napisać własny silnik tej gry.
 
-Wszystko działa na oryginalnych danych (assety trzeba mieć z własnej kopii gry), podobnie jak OpenMW czy OpenRCT2. Na tej bibliotece powstaje osobno silnik gry **OpenWiggles** (osobne repozytorium, korzysta z tego jako submodułu git).
+Wszystko działa na oryginalnych danych (assety trzeba mieć z własnej kopii gry), podobnie jak OpenMW czy OpenRCT2. 
 
 To nie jest gra z najwyższej półki graficznej, więc renderer ma być prosty.
+
+![Wiggles Viewer — screen 1](screens/screen1.png)
+![Wiggles Viewer — screen 2](screens/screen2.png)
+![Wiggles Viewer — screen 3](screens/screen3.png)
+![Wiggles Viewer — screen 4](screens/screen4.png)
+![Wiggles Viewer — screen 5](screens/screen5.png)
+![Wiggles Viewer — screen 6](screens/screen6.png)
+![Wiggles Viewer — screen 7](screens/screen7.png)
+![Wiggles Viewer — screen 8](screens/screen8.png)
 
 ## Cele
 
@@ -134,7 +143,7 @@ Społeczność: [Wiggles Forum](https://wiggles.ruka.at/forum/), [DigglesMods na
 
 ## Licencja
 
-Kod OpenWiggles jest udostępniony na licencji **MIT** (plik [`LICENSE`](LICENSE)); do 2026-10-06 był na GNU GPL v3. Z repozytoriów społeczności (także na GPL, np. [DigglesMods](https://github.com/DigglesMods)) bierzemy tylko wiedzę o formatach i działaniu gry, nie kod ([CREDITS.md](CREDITS.md)), a biblioteki w `third_party/` mają licencje zgodne z MIT.
+Kod OpenWiggles jest udostępniony na licencji **MIT** (plik [`LICENSE`](LICENSE));. Z repozytoriów społeczności (także na GPL, np. [DigglesMods](https://github.com/DigglesMods)) bierzemy tylko wiedzę o formatach i działaniu gry, nie kod ([CREDITS.md](CREDITS.md)), a biblioteki w `third_party/` mają licencje zgodne z MIT.
 
 Projekt **nie zawiera** żadnych danych z oryginalnej gry. Do uruchomienia potrzebna jest legalna kopia Wiggles/Diggles. Prawa do gry należą do jej twórców (SEK-Ost, Innonics).
 
